@@ -1,0 +1,861 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Five Fairnesses</title>
+<meta name="description" content="One brief solved five times under five different definitions of fairness.">
+<link rel="icon" href="data:,">
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  :root{
+    --ground:#E3EAEA; --surface:#F4F8F8; --panel:#FBFDFD;
+    --ink:#0E1B1B; --muted:#5D7171; --line:#C6D2D2; --line-soft:#DCE5E5;
+    --roleA:#B26320; --roleA-tint:#F2E3D2; --roleA-ink:#7C4413;
+    --roleB:#2F6288; --roleB-tint:#D6E3EE; --roleB-ink:#204863;
+    --signal:#0C8478; --fault:#B03F35;
+    --sky-1:#DDE7E8; --sky-2:#EEF3F3;
+    --terra:#B9C2BF; --terra-deep:#9EA9A6; --water:#9DBEC6; --deck:#2C3A3A;
+    --shadow:0 1px 2px rgba(14,27,27,.06), 0 8px 24px rgba(14,27,27,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#080F10; --surface:#101B1C; --panel:#152122;
+      --ink:#E5EDEC; --muted:#8CA3A2; --line:#26393A; --line-soft:#1C2B2C;
+      --roleA:#DE9744; --roleA-tint:#2A1E1092; --roleA-ink:#EBB673;
+      --roleB:#6FA6D4; --roleB-tint:#12222E92; --roleB-ink:#9CC4E5;
+      --signal:#3CBCAE; --fault:#DF6C5E;
+      --sky-1:#0C1719; --sky-2:#121F21;
+      --terra:#26312F; --terra-deep:#1B2423; --water:#153741; --deck:#C9D6D5;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#080F10; --surface:#101B1C; --panel:#152122;
+    --ink:#E5EDEC; --muted:#8CA3A2; --line:#26393A; --line-soft:#1C2B2C;
+    --roleA:#DE9744; --roleA-tint:#2A1E1092; --roleA-ink:#EBB673;
+    --roleB:#6FA6D4; --roleB-tint:#12222E92; --roleB-ink:#9CC4E5;
+    --signal:#3CBCAE; --fault:#DF6C5E;
+    --sky-1:#0C1719; --sky-2:#121F21;
+    --terra:#26312F; --terra-deep:#1B2423; --water:#153741; --deck:#C9D6D5;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--ground); color:var(--ink);
+    font-family:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size:14px; line-height:1.55; -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:Archivo, ui-sans-serif, system-ui, sans-serif; margin:0; text-wrap:balance; letter-spacing:-.015em}
+  button{font:inherit; color:inherit}
+  :focus-visible{outline:2px solid var(--signal); outline-offset:2px}
+  .wrap{max-width:1180px; margin:0 auto; padding:34px 26px 70px}
+
+  /* ---------- masthead ---------- */
+  .mast{border-bottom:1px solid var(--line); padding-bottom:22px; margin-bottom:26px}
+  .kicker{
+    font-family:"IBM Plex Mono", monospace; font-size:10.5px; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--muted); margin:0 0 10px;
+  }
+  .mast h1{font-size:clamp(30px, 4.4vw, 46px); font-weight:700; line-height:1.05; max-width:16ch}
+  .thesis{margin:14px 0 0; font-size:16px; max-width:64ch; color:var(--ink)}
+  .thesis b{font-weight:600; box-shadow:inset 0 -.55em 0 color-mix(in srgb, var(--signal) 16%, transparent)}
+  .site-line{
+    margin:16px 0 0; font-family:"IBM Plex Mono", monospace; font-size:11px;
+    letter-spacing:.06em; color:var(--muted);
+  }
+
+  /* ---------- the shared brief ---------- */
+  .brief{
+    border:1px solid var(--line); border-radius:12px; background:var(--surface);
+    padding:16px 18px; margin-bottom:30px;
+  }
+  .brief-head{display:flex; justify-content:space-between; align-items:baseline; gap:16px; flex-wrap:wrap; margin-bottom:12px}
+  .brief-head h2{font-size:15px; font-weight:600}
+  .brief-head p{margin:0; font-size:12.5px; color:var(--muted)}
+  .cols{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+  .col > .col-label{
+    font-family:"IBM Plex Mono", monospace; font-size:9.5px; letter-spacing:.12em;
+    text-transform:uppercase; margin-bottom:8px; display:block;
+  }
+  .col.a .col-label{color:var(--roleA)}
+  .col.b .col-label{color:var(--roleB)}
+  .stmts{display:flex; flex-direction:column; gap:6px}
+  .stmt{
+    text-align:left; width:100%; cursor:pointer; border-radius:9px; padding:8px 11px;
+    border:1px solid var(--line); background:var(--panel); transition:border-color .15s, opacity .15s;
+    display:flex; flex-direction:column; gap:5px;
+  }
+  .stmt:hover{border-color:var(--ink)}
+  .stmt[aria-pressed="false"]{opacity:.42}
+  .stmt[aria-pressed="false"] .said{text-decoration:line-through; text-decoration-thickness:1px}
+  .col.a .stmt[aria-pressed="true"]{background:var(--roleA-tint); border-color:color-mix(in srgb, var(--roleA) 55%, transparent)}
+  .col.b .stmt[aria-pressed="true"]{background:var(--roleB-tint); border-color:color-mix(in srgb, var(--roleB) 55%, transparent)}
+  .said{font-size:13px}
+  .col.a .stmt[aria-pressed="true"] .said{color:var(--roleA-ink)}
+  .col.b .stmt[aria-pressed="true"] .said{color:var(--roleB-ink)}
+  .chips{display:flex; gap:4px; flex-wrap:wrap}
+  .chip{
+    font-family:"IBM Plex Mono", monospace; font-size:9.5px; padding:1px 6px;
+    border-radius:4px; border:1px dashed var(--line); color:var(--muted);
+  }
+  .col.a .chip{border-color:color-mix(in srgb, var(--roleA) 45%, transparent); color:var(--roleA)}
+  .col.b .chip{border-color:color-mix(in srgb, var(--roleB) 45%, transparent); color:var(--roleB)}
+  .brief-foot{
+    display:flex; justify-content:space-between; align-items:center; gap:14px;
+    margin-top:14px; padding-top:12px; border-top:1px solid var(--line-soft); flex-wrap:wrap;
+  }
+  .brief-foot p{margin:0; font-size:12px; color:var(--muted); max-width:62ch}
+  .reset{
+    background:transparent; border:1px solid var(--line); border-radius:999px;
+    padding:5px 13px; font-size:12px; cursor:pointer; color:var(--muted); white-space:nowrap;
+  }
+  .reset:hover{border-color:var(--ink); color:var(--ink)}
+
+  /* ---------- the five plates ---------- */
+  .plates{display:flex; flex-direction:column; gap:14px}
+  .plate{
+    display:grid; grid-template-columns:250px minmax(0,1fr) 232px;
+    border:1px solid var(--line); border-radius:12px; background:var(--panel);
+    overflow:hidden; box-shadow:var(--shadow);
+  }
+  .plate.flipped{border-color:var(--signal)}
+  .rule{padding:16px 16px 14px; border-right:1px solid var(--line-soft); display:flex; flex-direction:column; gap:8px}
+  .rule h3{font-size:17px; font-weight:600}
+  .formula{
+    font-family:"IBM Plex Mono", monospace; font-size:13px; letter-spacing:.02em;
+    color:var(--signal); background:color-mix(in srgb, var(--signal) 8%, transparent);
+    border:1px solid color-mix(in srgb, var(--signal) 26%, transparent);
+    border-radius:6px; padding:4px 8px; align-self:flex-start;
+  }
+  .lineage{
+    margin:0; font-family:"IBM Plex Mono", monospace; font-size:10px; letter-spacing:.05em;
+    text-transform:uppercase; color:var(--muted);
+  }
+  .risk{margin:2px 0 0; font-size:12.5px; color:var(--muted)}
+  .flip{
+    margin-top:auto; font-family:"IBM Plex Mono", monospace; font-size:9.5px;
+    letter-spacing:.1em; text-transform:uppercase; color:var(--signal);
+  }
+  .draw{position:relative; background:var(--surface); border-right:1px solid var(--line-soft); min-height:186px}
+  .draw canvas{display:block; width:100%; height:100%}
+  .built{
+    position:absolute; left:12px; bottom:10px;
+    font-family:"IBM Plex Mono", monospace; font-size:10.5px; letter-spacing:.04em;
+    color:var(--ink); background:color-mix(in srgb, var(--panel) 84%, transparent);
+    padding:3px 8px; border-radius:5px; border:1px solid var(--line);
+  }
+  .built.none{color:var(--fault); border-color:color-mix(in srgb, var(--fault) 45%, transparent)}
+  .out{padding:14px 16px; display:flex; flex-direction:column; gap:9px}
+  .sat{display:flex; flex-direction:column; gap:4px}
+  .sat .row{display:flex; justify-content:space-between; font-size:10.5px}
+  .sat .row span:first-child{
+    font-family:"IBM Plex Mono", monospace; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); font-size:9.5px;
+  }
+  .sat .row span:last-child{font-variant-numeric:tabular-nums; font-weight:600}
+  .track{height:5px; border-radius:3px; background:var(--line-soft); overflow:hidden}
+  .track i{display:block; height:5px; border-radius:3px}
+  .facts{display:flex; gap:12px; padding-top:2px}
+  .facts div{display:flex; flex-direction:column}
+  .facts dt{
+    font-family:"IBM Plex Mono", monospace; font-size:9px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--muted);
+  }
+  .facts dd{margin:0; font-family:Archivo, sans-serif; font-weight:600; font-size:15px; font-variant-numeric:tabular-nums}
+  .lost{
+    margin:0; font-size:12px; color:var(--fault); border-top:1px solid var(--line-soft); padding-top:8px;
+  }
+  .lost.clean{color:var(--signal)}
+  .lost b{
+    display:block; font-family:"IBM Plex Mono", monospace; font-size:9px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--muted); font-weight:500; margin-bottom:3px;
+  }
+
+  /* ---------- reading ---------- */
+  .reading{
+    margin-top:30px; border-top:1px solid var(--line); padding-top:22px;
+    display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,1fr); gap:26px;
+  }
+  .reading h2{font-size:15px; font-weight:600; margin-bottom:10px}
+  .reading p{margin:0 0 10px; max-width:64ch}
+  .reading .note{font-size:12.5px; color:var(--muted)}
+  .assump{border:1px solid var(--line); border-radius:12px; padding:14px 16px; background:var(--surface)}
+  .assump ul{margin:0; padding-left:18px; font-size:12.5px; color:var(--muted)}
+  .assump li{margin-bottom:6px}
+  .assump li b{color:var(--ink); font-weight:600}
+
+  @media (max-width:940px){
+    .plate{grid-template-columns:1fr}
+    .rule{border-right:none; border-bottom:1px solid var(--line-soft)}
+    .draw{border-right:none; border-bottom:1px solid var(--line-soft); min-height:170px}
+    .cols{grid-template-columns:1fr}
+    .reading{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion:reduce){ *{transition:none !important} }
+</style>
+
+<div class="wrap">
+
+  <header class="mast">
+    <p class="kicker">Two Worlds, One Bridge · plate II</p>
+    <h1>Five Fairnesses</h1>
+    <p class="thesis">Two parties describe the same gap incompatibly, and an AI resolves it. The resolution looks like engineering, but <b>the arbitration rule is a political choice made before any of it</b> — and it is the one part nobody is shown. Here the same brief is solved five times under five definitions of fairness. Everything else is held constant.</p>
+    <p class="site-line" id="siteLine"></p>
+  </header>
+
+  <section class="brief">
+    <div class="brief-head">
+      <h2>The shared brief</h2>
+      <p>Toggle any statement off and all five rules re-solve. Chips are what the parser extracted.</p>
+    </div>
+    <div class="cols">
+      <div class="col a"><span class="col-label">Role 1 · the ask · wants (a)</span><div class="stmts" id="stmtsA"></div></div>
+      <div class="col b"><span class="col-label">Role 2 · the limit · limits held (b)</span><div class="stmts" id="stmtsB"></div></div>
+    </div>
+    <div class="brief-foot">
+      <p id="briefFoot"></p>
+      <button class="reset" id="resetBtn" type="button">Restore the full brief</button>
+    </div>
+  </section>
+
+  <section class="plates" id="plates"></section>
+
+  <section class="reading">
+    <div>
+      <h2>What this plate shows</h2>
+      <div id="readOut"></div>
+    </div>
+    <div class="assump">
+      <h2>Held constant / assumed</h2>
+      <ul>
+        <li><b>The design space.</b> Six structure types × pier counts × cut-or-don't-cut, plus the null option — the same enumeration for every rule.</li>
+        <li><b>a and b.</b> Weighted share of Role 1's stated wants met, and of Role 2's stated limits held. A party that has said nothing scores 1: nothing asked, nothing unmet.</li>
+        <li><b>Cost and time are consequences, not inputs.</b> They enter the score only where a party said them out loud, so the rules are compared on fairness alone.</li>
+        <li><b>Every rule chooses from the Pareto frontier</b> — designs that another design beats on both a and b are struck out first, so no rule can be blamed for an outcome that was simply worse for everyone.</li>
+        <li><b>Ties</b> break to lower cost, then fewer months — itself a value judgement, stated here rather than buried.</li>
+        <li><b>The null option</b> — build nothing — is always on the table. It holds every limit and meets no want.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+"use strict";
+
+/* ═══════════════════════════════════════════════════════════
+   SITE — identical geometry to plate I
+   ═══════════════════════════════════════════════════════════ */
+const W = 1200, H = 720;
+const GAP_L = 268, GAP_R = 932, SPAN_PX = GAP_R - GAP_L;
+const M_PER_PX = 0.5, SPAN_M = Math.round(SPAN_PX * M_PER_PX);
+const BANK_Y = 330, WATER_Y = 402, VAL_Y = 474, RIDGE_L = 352, RIDGE_R = 848;
+
+function groundA(x){                                   // Role 1: a river between high banks
+  if (x <= GAP_L || x >= GAP_R) return BANK_Y + 3*Math.sin(x*0.021) + 2*Math.sin(x*0.007);
+  const t = (x - GAP_L) / SPAN_PX;
+  return BANK_Y + 252 * Math.pow(Math.sin(Math.PI*t), 0.72);
+}
+function groundB(x){                                   // Role 2: a rock ridge between valleys
+  const base = VAL_Y + 4*Math.sin(x*0.017);
+  if (x <= RIDGE_L || x >= RIDGE_R) return base;
+  const t = (x - RIDGE_L) / (RIDGE_R - RIDGE_L);
+  return base - 236 * Math.pow(Math.sin(Math.PI*t), 1.35);
+}
+function groundFlat(x){                                // nobody has described the ground
+  if (x <= GAP_L || x >= GAP_R) return BANK_Y + 3*Math.sin(x*0.021);
+  const t = (x - GAP_L) / SPAN_PX;
+  return BANK_Y + 92 * Math.pow(Math.sin(Math.PI*t), 0.8);
+}
+const groundM = x => Math.min(groundA(x), groundB(x));  // both claims at once
+
+// Terrain is claimed, not given: only the descriptions that are switched on exist.
+function site(model){
+  const w = model.hasWater, r = model.hasRock;
+  const ground = w && r ? groundM : w ? groundA : r ? groundB : groundFlat;
+  return {ground, hasWater:w, hasRock:r,
+          inWater: x => w && ground(x) > WATER_Y + 6,
+          inRock:  x => r && groundB(x) < VAL_Y - 40};
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LANGUAGE — same lexicon as plate I
+   ═══════════════════════════════════════════════════════════ */
+const GOALS = [
+  {id:"freight", w:3, label:"carries trucks",     re:/\b(truck|freight|lorry|cargo|heavy|bus|rail|train|highway|traffic)/i},
+  {id:"people",  w:2, label:"people on foot",     re:/\b(walk|pedestrian|foot|bike|bicycle|cycl)/i},
+  {id:"fast",    w:3, label:"opens quickly",      re:/\b(fast|quick|soon|urgent|hurry|losing money|immediate|rapid)/i},
+  {id:"cheap",   w:3, label:"stays affordable",   re:/\b(cheap|afford|budget|low.cost|inexpensive|save money)/i},
+  {id:"iconic",  w:2, label:"reads as landmark",  re:/\b(landmark|iconic|beautiful|elegant|photograph|monument|striking|symbol)/i},
+  {id:"tough",   w:3, label:"survives storms",    re:/\b(safe|strong|durable|storm|wind|earthquake|resilien|stiff)/i},
+  {id:"boats",   w:2, label:"boats keep passing", re:/\b(boat|ship|barge|sail|ferr|navigat|vessel|tug)/i},
+  {id:"piers",   w:3, label:"founded in the channel", re:/\b(pier 1|piers|foundation|footing|pile|dive|water depth|bedrock)/i},
+];
+const LIMITS = [
+  {id:"noWaterPier", w:4, label:"nothing in the water",   re:/\b(pier|column|pile|piling|foundation|footing|fishing|channel)/i},
+  {id:"noCut",       w:4, label:"the rock stays whole",   re:/\b(cut|blast|excavat|carve|dig|dynamite|quarry|tunnel)/i},
+  {id:"noTall",      w:3, label:"nothing towering",       re:/\b(tall|tower|skyline|height|loom|shadow|obstruct|view)/i},
+  {id:"noMoney",     w:3, label:"no runaway cost",        re:/\b(expensive|costly|cost|money|budget|pay|afford|monument)/i},
+  {id:"noHabitat",   w:3, label:"habitat left alone",     re:/\b(fish|bird|tree|forest|wildlife|habitat|ecolog|spawn|nature|riverbed)/i},
+  {id:"noNoise",     w:2, label:"the valley stays quiet", re:/\b(noise|noisy|quiet|loud|hammer|rivet)/i},
+  {id:"noSlow",      w:2, label:"no decade of works",     re:/\b(year|decade|slow|drag|forever|delay|disrupt)/i},
+];
+const TERRAIN = [
+  {kind:"water", re:/\b(river|water|hudson|strait|channel|canal|bay|sea|lake|estuary)/i, word:"river"},
+  {kind:"rock",  re:/\b(mountain|ridge|rock|cliff|canyon|gorge|peak|hill|summit|granite)/i, word:"mountain"},
+];
+function parse(text, role){
+  const facts = [];
+  for (const t of TERRAIN) if (t.re.test(text)) facts.push({type:"terrain", kind:t.kind, label:"terrain: "+t.word});
+  if (role === "A") for (const g of GOALS) if (g.re.test(text)) facts.push({type:"goal", id:g.id, w:g.w, label:g.label});
+  if (role === "B") for (const l of LIMITS) if (l.re.test(text)) facts.push({type:"limit", id:l.id, w:l.w, label:l.label});
+  return facts;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   THE BRIEF — the Figma dialogue, statement by statement
+   ═══════════════════════════════════════════════════════════ */
+const BRIEF = {
+  A:[ "Build a bridge between the two cities, across the Hudson river.",
+      "It has to carry loaded trucks and buses.",
+      "Open it fast — every month it is closed we lose money.",
+      "Barges still have to pass underneath.",
+      "Start the foundations from pier 1 and dive down to the water depth.",
+      "Make it something people photograph." ],
+  B:[ "It is a bridge between two villages, across the mountain.",
+      "No piers in the water. The fishing lanes stay open.",
+      "Don't cut or blast the ridge.",
+      "Keep the towers low — we are not giving up our skyline.",
+      "We can't pay for a monument, and we can't live with years of hammering." ],
+};
+const on = {A: BRIEF.A.map(() => true), B: BRIEF.B.map(() => true)};
+
+function buildModel(){
+  const model = {goals:new Map(), limits:new Map(), hasWater:false, hasRock:false, boats:false};
+  ["A","B"].forEach(role => BRIEF[role].forEach((text, i) => {
+    if (!on[role][i]) return;
+    for (const f of parse(text, role)){
+      if (f.type === "terrain") f.kind === "water" ? model.hasWater = true : model.hasRock = true;
+      if (f.type === "goal"){ model.goals.set(f.id, f.w); if (f.id === "boats") model.boats = true; }
+      if (f.type === "limit") model.limits.set(f.id, f.w);
+    }
+  }));
+  return model;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DESIGN SPACE — identical for every rule
+   ═══════════════════════════════════════════════════════════ */
+const STRUCTURES = [
+  {id:"beam",    name:"Girder beam",  maxSeg:46,  piers:[3,5,7,9,11,13], mPerM:.055, tower:0,  cap:4, quiet:2, months:14, clear:0},
+  {id:"truss",   name:"Steel truss",  maxSeg:118, piers:[1,2,3,4,5],     mPerM:.072, tower:0,  cap:5, quiet:0, months:20, clear:0},
+  {id:"arch",    name:"Tied arch",    maxSeg:260, piers:[0,1],           mPerM:.108, tower:0,  cap:4, quiet:2, months:26, clear:1},
+  {id:"stay",    name:"Cable-stayed", maxSeg:360, piers:[0,1],           mPerM:.138, tower:62, cap:4, quiet:2, months:30, clear:1},
+  {id:"susp",    name:"Suspension",   maxSeg:900, piers:[0],             mPerM:.198, tower:96, cap:4, quiet:3, months:38, clear:1},
+  {id:"pontoon", name:"Floating deck",maxSeg:999, piers:[0],             mPerM:.041, tower:0,  cap:2, quiet:3, months:9,  clear:-1, waterOnly:true},
+  {id:"fill",    name:"Embankment",     maxSeg:999, piers:[0],             mPerM:.030, tower:0,  cap:5, quiet:1, months:10, clear:-1, fill:true},
+];
+const CLEAR_MARGIN = 26, NAV_CLEAR = 64;
+
+function obstacleTop(model, st, cut){
+  let top = Infinity;
+  for (let x = GAP_L; x <= GAP_R; x += 4){
+    let g = st.ground(x);
+    if (cut && st.inRock(x)) g = Math.max(g, BANK_Y - 6);
+    top = Math.min(top, g);
+    if (model.boats && st.inWater(x)) top = Math.min(top, WATER_Y - NAV_CLEAR);
+  }
+  return top;
+}
+
+function evaluate(model, st, s, nPiers, cut){
+  if (SPAN_M / (nPiers + 1) > s.maxSeg) return null;
+  if (s.waterOnly && !st.hasWater) return null;
+  if (s.id === "pontoon" && st.hasRock) return null;
+
+  const deckY = s.fill ? BANK_Y - 18 : Math.min(obstacleTop(model, st, cut) - CLEAR_MARGIN, BANK_Y - 18);
+  const rise = Math.max(0, BANK_Y - deckY);
+  const piers = [];
+  if (!s.fill) for (let i = 1; i <= nPiers; i++){
+    const x = GAP_L + (SPAN_PX * i) / (nPiers + 1);
+    piers.push({x, water:st.inWater(x), rock:st.inRock(x), depth:(st.ground(x) - deckY) * M_PER_PX});
+  }
+  const towerTop = s.tower ? deckY - s.tower / M_PER_PX * 0.55 : deckY;
+
+  // an embankment has to cut through the ridge and bury the channel — that is its whole method
+  const buriesWater = !!s.fill && st.hasWater;
+  const cutsRock = cut || (!!s.fill && st.hasRock);
+
+  let cost = SPAN_M * s.mPerM;
+  piers.forEach(p => cost += 2.6 + Math.max(0, p.depth) * .045 + (p.water ? 4.2 : 0));
+  if (s.tower) cost += 11 + s.tower * .13;
+  if (cut) cost += 21;
+  if (s.fill) cost += (st.hasRock ? 19 : 0) + (st.hasWater ? 8 : 0);
+  cost += rise * M_PER_PX * 0.30;
+  const months = s.months + (s.fill ? 0 : nPiers * 2) + (cut ? 7 : 0)
+               + (s.fill && st.hasRock ? 4 : 0) + Math.round(rise * M_PER_PX / 18);
+
+  const keeps = [], breaks = [];
+  const put = (ok, kind, w, yes, no) => (ok ? keeps : breaks).push({t: ok ? yes : no, w, kind});
+  const goal  = (ok, w, yes, no) => put(ok, "goal",  w, yes, no);
+  const limit = (ok, w, yes, no) => put(ok, "limit", w, yes, no);
+  const has = id => model.goals.has(id), lim = id => model.limits.get(id);
+  const wp = piers.filter(p => p.water).length, rp = piers.filter(p => p.rock).length;
+  const inChannel = wp > 0 || buriesWater;
+
+  if (has("freight")) goal(s.cap >= 4, 3, "carries loaded trucks", "too light for trucks");
+  if (has("people"))  goal(true, 2, "walkable deck", "");
+  if (has("fast"))    goal(months <= 24, 3, `opens in ${months} months`, `${months} months before it opens`);
+  if (has("cheap"))   goal(cost <= 42, 3, `$${cost.toFixed(0)}M, within reach`, `$${cost.toFixed(0)}M is beyond the ask`);
+  if (has("iconic"))  goal(s.clear > 0 || s.tower > 0, 2, "a shape worth photographing", "reads as infrastructure, not landmark");
+  if (has("tough"))   goal(s.id !== "pontoon", 3, "stiff enough for storms", "a floating deck will not hold in storms");
+  if (has("boats"))   goal(s.clear >= 0 && !inChannel, 2, "the channel stays open", "river traffic is blocked");
+  if (has("piers"))   goal(inChannel, 3, "founded in the channel, as asked", "no foundation in the channel — it spans clear instead");
+
+  if (lim("noWaterPier")) limit(!inChannel, lim("noWaterPier"), "nothing stands in the water",
+                                buriesWater ? "the channel is buried under fill" : `${wp} pier${wp>1?"s":""} in the fishing lane`);
+  if (lim("noCut"))       limit(!cutsRock && rp === 0, lim("noCut"), "the ridge is left whole",
+                                cutsRock ? "the ridge is cut open" : `${rp} footing${rp>1?"s":""} drilled into the rock`);
+  if (lim("noTall"))      limit(s.tower <= 70, lim("noTall"), "no tower breaks the skyline", `${s.tower} m towers over the valley`);
+  if (lim("noMoney"))     limit(cost <= 46, lim("noMoney"), `$${cost.toFixed(0)}M, no monument`, `$${cost.toFixed(0)}M is a monument's budget`);
+  if (lim("noHabitat"))   limit(!inChannel && !cutsRock, lim("noHabitat"), "riverbed and slope untouched",
+                                buriesWater ? "the riverbed is gone, not damaged" : "foundations tear into habitat");
+  if (lim("noNoise"))     limit(s.quiet > 1 && nPiers <= 3, lim("noNoise"), "a quiet site", "months of hammering in the valley");
+  if (lim("noSlow"))      limit(months <= 28, lim("noSlow"), `${months} months, then done`, `${months} months of works`);
+
+  return {s, nPiers, cut: cutsRock, fill:!!s.fill, deckY, towerTop, piers, cost, months, rise, keeps, breaks,
+          label: s.fill ? "Embankment · the gap is filled"
+               : s.name + (nPiers ? ` · ${nPiers} pier${nPiers>1?"s":""}` : " · clear span") + (cut ? " · cut" : "")};
+}
+
+// Build nothing: every limit held, no want met.
+function nullDesign(){
+  return {s:{id:"none", name:"No crossing"}, nPiers:0, cut:false, piers:[], cost:0, months:0,
+          keeps:[], breaks:[], label:"No crossing", isNull:true};
+}
+
+function satisfaction(model, d){
+  const gW = [...model.goals.values()].reduce((a,b) => a+b, 0);
+  const lW = [...model.limits.values()].reduce((a,b) => a+b, 0);
+  if (d.isNull) return {a: gW ? 0 : 1, b: 1};
+  let gK = 0, lK = 0;
+  d.keeps.forEach(k => k.kind === "limit" ? lK += k.w : gK += k.w);
+  return {a: gW ? gK/gW : 1, b: lW ? lK/lW : 1};
+}
+
+function candidates(model){
+  const st = site(model), out = [];
+  for (const s of STRUCTURES)
+    for (const p of s.piers)
+      for (const cut of [false, true]){
+        if (cut && !st.hasRock) continue;
+        const c = evaluate(model, st, s, p, cut);
+        if (c) out.push(c);
+      }
+  out.push(nullDesign());
+  out.forEach(c => Object.assign(c, satisfaction(model, c)));
+
+  // No rule should be able to choose a design that another design beats on both axes.
+  const E = 1e-9;
+  const frontier = out.filter(c => !out.some(o => o !== c &&
+    o.a >= c.a - E && o.b >= c.b - E &&
+    (o.a > c.a + E || o.b > c.b + E ||
+     (Math.abs(o.a-c.a) <= E && Math.abs(o.b-c.b) <= E && o.cost < c.cost - E))));
+  return {st, out, frontier};
+}
+
+/* ═══════════════════════════════════════════════════════════
+   THE FIVE RULES — the only thing that differs
+   ═══════════════════════════════════════════════════════════ */
+const RULES = [
+  {id:"util", name:"Utilitarian", formula:"max  a + b",
+   lineage:"Cost–benefit analysis · Kaldor–Hicks",
+   risk:"Sides are interchangeable, so a large gain for one buys an unlimited loss for the other.",
+   score:(a,b) => a + b},
+  {id:"rawls", name:"Rawlsian", formula:"max  min(a, b)",
+   lineage:"Rawls · difference principle · leximin",
+   risk:"Protects the worse-off party first and settles everything above them only as a tiebreak.",
+   score:(a,b) => Math.min(a,b) * 1000 + Math.max(a,b)},
+  {id:"nash", name:"Nash bargaining", formula:"max  a × b",
+   lineage:"Nash 1950 · axiomatic bargaining",
+   risk:"Any party left at zero vetoes the outcome, so it buys peace by paying everyone a little.",
+   score:(a,b) => a * b},
+  {id:"precaution", name:"Precautionary", formula:"max b,  then max a",
+   lineage:"Precautionary principle · first, do no harm",
+   risk:"Limits come first absolutely — and building nothing always holds every limit.",
+   score:(a,b) => b * 1000 + a},
+  {id:"client", name:"Whoever pays", formula:"max  0.8a + 0.2b",
+   lineage:"Standard procurement · the client sets the brief",
+   risk:"The other party's world stops being a claim and becomes a cost to price in.",
+   score:(a,b) => 0.8*a + 0.2*b},
+];
+
+function winnerFor(rule, cands){
+  let best = null, bestScore = -Infinity;
+  for (const c of cands){
+    const s = rule.score(c.a, c.b);
+    if (s > bestScore + 1e-9 ||
+       (Math.abs(s - bestScore) <= 1e-9 && best &&
+        (c.cost < best.cost - 1e-9 || (Math.abs(c.cost - best.cost) <= 1e-9 && c.months < best.months)))){
+      best = c; bestScore = s;
+    }
+  }
+  return best;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DRAWING — one static plate per rule
+   ═══════════════════════════════════════════════════════════ */
+const SRC = {x:24, y:126, w:1152, h:452};   // the band of the world worth showing
+let C = {};
+function readPalette(){
+  const cs = getComputedStyle(document.documentElement), g = n => cs.getPropertyValue(n).trim();
+  C = {ink:g("--ink"), muted:g("--muted"), line:g("--line"), lineSoft:g("--line-soft"),
+       a:g("--roleA"), b:g("--roleB"), signal:g("--signal"), fault:g("--fault"),
+       sky1:g("--sky-1"), sky2:g("--sky-2"), terra:g("--terra"), terraDeep:g("--terra-deep"),
+       water:g("--water"), deck:g("--deck"), panel:g("--panel")};
+}
+
+function drawPlate(cv, model, st, d){
+  const r = cv.getBoundingClientRect(); if (!r.width) return;
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  cv.width = Math.round(r.width*dpr); cv.height = Math.round(r.height*dpr);
+  const ctx = cv.getContext("2d");
+  const k = Math.max(r.width/SRC.w, r.height/SRC.h) * dpr;
+  ctx.setTransform(1,0,0,1,0,0);
+  const sky = ctx.createLinearGradient(0,0,0,cv.height);
+  sky.addColorStop(0, C.sky2); sky.addColorStop(1, C.sky1);
+  ctx.fillStyle = sky; ctx.fillRect(0,0,cv.width,cv.height);
+  ctx.setTransform(k, 0, 0, k,
+    (cv.width - SRC.w*k)/2 - SRC.x*k, (cv.height - SRC.h*k)/2 - SRC.y*k);
+
+  const ground = x => {
+    let g = st.ground(x);
+    if (d && d.cut && st.inRock(x) && x > GAP_L && x < GAP_R) g = Math.max(g, d.deckY + 16);
+    return g;
+  };
+
+  // water
+  if (st.hasWater){
+    ctx.save(); ctx.fillStyle = C.water; ctx.globalAlpha = .9;
+    ctx.fillRect(0, WATER_Y, W, H - WATER_Y); ctx.restore();
+  }
+  // ground
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(-2, H+2);
+  for (let x = -2; x <= W+2; x += 3) ctx.lineTo(x, ground(x));
+  ctx.lineTo(W+2, H+2); ctx.closePath();
+  const gg = ctx.createLinearGradient(0,140,0,H);
+  gg.addColorStop(0, C.terra); gg.addColorStop(1, C.terraDeep);
+  ctx.fillStyle = gg; ctx.fill();
+  ctx.strokeStyle = C.ink; ctx.globalAlpha = .45; ctx.lineWidth = 1.6; ctx.stroke();
+  ctx.globalAlpha = 1; ctx.clip();
+  ctx.strokeStyle = C.ink; ctx.globalAlpha = .08;
+  for (let i = -H; i < W+H; i += 18){ ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i+H,H); ctx.stroke(); }
+  ctx.restore();
+  // the claim each party made, over the built ground
+  if (st.hasWater && st.hasRock){ ghost(ctx, groundA, C.a); ghost(ctx, groundB, C.b); }
+  if (d && d.cut){
+    ctx.save(); ctx.strokeStyle = C.fault; ctx.setLineDash([5,5]); ctx.lineWidth = 2; ctx.globalAlpha = .9;
+    ctx.beginPath();
+    for (let x = GAP_L; x <= GAP_R; x += 3) if (st.inRock(x)) ctx.lineTo(x, groundB(x));
+    ctx.stroke(); ctx.restore();
+  }
+
+  if (!d || d.isNull){ noCrossing(ctx, st); return; }
+  drawStructure(ctx, model, st, d, ground);
+}
+
+function ghost(ctx, fn, color){
+  ctx.save(); ctx.strokeStyle = color; ctx.globalAlpha = .55; ctx.lineWidth = 2; ctx.setLineDash([6,6]);
+  ctx.beginPath();
+  for (let x = 0; x <= W; x += 4){ const y = fn(x); x ? ctx.lineTo(x,y) : ctx.moveTo(x,y); }
+  ctx.stroke(); ctx.restore();
+}
+
+function noCrossing(ctx, st){
+  ctx.save();
+  ctx.strokeStyle = C.fault; ctx.globalAlpha = .8; ctx.lineWidth = 2.4; ctx.setLineDash([10,10]);
+  ctx.beginPath(); ctx.moveTo(GAP_L - 40, BANK_Y - 60); ctx.lineTo(GAP_R + 40, BANK_Y - 60); ctx.stroke();
+  ctx.setLineDash([]); ctx.globalAlpha = 1;
+  ctx.fillStyle = C.fault; ctx.font = '600 26px Archivo, sans-serif'; ctx.textAlign = "center";
+  ctx.fillText("nothing is built", W/2, BANK_Y - 86);
+  ctx.restore();
+}
+
+function drawStructure(ctx, model, st, d, ground){
+  ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round";
+
+  // an embankment is mass, not structure: a wedge of fill from bank to bank
+  if (d.fill){
+    ctx.beginPath();
+    ctx.moveTo(GAP_L - 150, ground(GAP_L - 150));
+    ctx.lineTo(GAP_L - 26, d.deckY); ctx.lineTo(GAP_R + 26, d.deckY);
+    ctx.lineTo(GAP_R + 150, ground(GAP_R + 150));
+    for (let x = GAP_R + 150; x >= GAP_L - 150; x -= 4) ctx.lineTo(x, Math.max(ground(x), d.deckY));
+    ctx.closePath();
+    const fg = ctx.createLinearGradient(0, d.deckY, 0, H);
+    fg.addColorStop(0, C.terra); fg.addColorStop(1, C.terraDeep);
+    ctx.fillStyle = fg; ctx.fill();
+    ctx.strokeStyle = C.ink; ctx.globalAlpha = .45; ctx.lineWidth = 1.6; ctx.stroke();
+    ctx.globalAlpha = .16; ctx.lineWidth = 1;                 // riprap face
+    for (let x = GAP_L - 148; x < GAP_R + 150; x += 13){
+      ctx.beginPath(); ctx.moveTo(x, Math.max(ground(x), d.deckY)); ctx.lineTo(x + 7, d.deckY + 10); ctx.stroke();
+    }
+    ctx.globalAlpha = 1; ctx.strokeStyle = C.deck; ctx.fillStyle = C.deck;
+    ctx.lineWidth = 11;
+    ctx.beginPath(); ctx.moveTo(GAP_L - 150, d.deckY); ctx.lineTo(GAP_R + 150, d.deckY); ctx.stroke();
+    ctx.restore();
+    return;
+  }
+
+  ctx.fillStyle = C.deck; ctx.strokeStyle = C.deck;
+
+  // abutments + approach viaducts
+  [[GAP_L,-1],[GAP_R,1]].forEach(([x,dir]) => {
+    const gy = ground(x);
+    ctx.globalAlpha = .95; ctx.fillRect(x - (dir < 0 ? 20 : 0), d.deckY, 20, gy - d.deckY);
+    const len = Math.min(d.rise * 2.4 + 50, dir < 0 ? GAP_L - 30 : W - GAP_R - 30);
+    const x2 = x + dir*len, y2 = ground(x2) - 6;
+    ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(x + dir*10, d.deckY); ctx.lineTo(x2, y2); ctx.stroke();
+    ctx.lineWidth = 5;
+    for (let t = .2; t < 1; t += .2){
+      const cx = x + dir*(10 + (len-10)*t), cy = d.deckY + (y2 - d.deckY)*t, g2 = ground(cx);
+      if (g2 - cy < 8) continue;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, g2); ctx.stroke();
+    }
+  });
+
+  // piers and towers
+  d.piers.forEach(p => {
+    ctx.fillRect(p.x - 9, d.deckY, 18, ground(p.x) - d.deckY);
+    if (p.water){ ctx.globalAlpha = .35; ctx.fillRect(p.x - 18, WATER_Y - 3, 36, 6); ctx.globalAlpha = .95; }
+  });
+  if (d.s.tower) [GAP_L, GAP_R].forEach(x => {
+    ctx.fillRect(x - 7, d.towerTop, 14, d.deckY - d.towerTop + 16);
+    ctx.fillRect(x - 16, d.towerTop + (d.deckY - d.towerTop)*.42, 32, 6);
+  });
+
+  // superstructure
+  if (d.s.id === "arch"){
+    const rise = 118; ctx.lineWidth = 8; ctx.beginPath();
+    for (let x = GAP_L; x <= GAP_R; x += 4){
+      const t = (x - GAP_L)/SPAN_PX, y = d.deckY + rise*4*t*(1-t) + 6;
+      x === GAP_L ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    }
+    ctx.stroke(); ctx.lineWidth = 2.6;
+    for (let x = GAP_L + 44; x < GAP_R - 20; x += 66){
+      const t = (x - GAP_L)/SPAN_PX;
+      ctx.beginPath(); ctx.moveTo(x, d.deckY + rise*4*t*(1-t) + 6); ctx.lineTo(x, d.deckY); ctx.stroke();
+    }
+  }
+  if (d.s.id === "truss"){
+    const top = d.deckY - 46; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(GAP_L, top); ctx.lineTo(GAP_R, top); ctx.stroke();
+    ctx.beginPath();
+    for (let x = GAP_L; x <= GAP_R - 32; x += 32){
+      ctx.moveTo(x, d.deckY); ctx.lineTo(x+32, top);
+      ctx.moveTo(x, top);     ctx.lineTo(x+32, d.deckY);
+      ctx.moveTo(x, top);     ctx.lineTo(x, d.deckY);
+    }
+    ctx.stroke();
+  }
+  if (d.s.id === "stay"){
+    ctx.lineWidth = 2;
+    [[GAP_L,1],[GAP_R,-1]].forEach(([tx,dir]) => {
+      for (let k = 1; k <= 7; k++){
+        ctx.beginPath(); ctx.moveTo(tx, d.towerTop + 10);
+        ctx.lineTo(tx + dir*(SPAN_PX/2)*(k/7), d.deckY); ctx.stroke();
+      }
+    });
+  }
+  if (d.s.id === "susp"){
+    const sag = 96; ctx.lineWidth = 4; ctx.beginPath();
+    for (let x = GAP_L; x <= GAP_R; x += 4){
+      const t = (x - GAP_L)/SPAN_PX, y = d.towerTop + 10 + sag*4*t*(1-t);
+      x === GAP_L ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    }
+    ctx.stroke(); ctx.lineWidth = 1.6;
+    for (let x = GAP_L + 30; x < GAP_R - 10; x += 38){
+      const t = (x - GAP_L)/SPAN_PX;
+      ctx.beginPath(); ctx.moveTo(x, d.towerTop + 10 + sag*4*t*(1-t)); ctx.lineTo(x, d.deckY); ctx.stroke();
+    }
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(GAP_L, d.towerTop+10); ctx.lineTo(GAP_L-92, ground(GAP_L-92)-6);
+    ctx.moveTo(GAP_R, d.towerTop+10); ctx.lineTo(GAP_R+92, ground(GAP_R+92)-6); ctx.stroke();
+  }
+  if (d.s.id === "pontoon"){
+    ctx.globalAlpha = .9;
+    for (let x = GAP_L + 24; x < GAP_R; x += 62) ctx.fillRect(x-24, WATER_Y-11, 48, 22);
+  }
+
+  ctx.globalAlpha = 1; ctx.lineWidth = 11;
+  ctx.beginPath(); ctx.moveTo(GAP_L, d.deckY); ctx.lineTo(GAP_R, d.deckY); ctx.stroke();
+
+  // what this design breaks, marked where it happens
+  d.piers.forEach(p => {
+    const bad = (model.limits.has("noWaterPier") && p.water) || (model.limits.has("noCut") && p.rock);
+    if (!bad) return;
+    ctx.strokeStyle = C.fault; ctx.setLineDash([4,4]); ctx.lineWidth = 2.2;
+    ctx.beginPath(); ctx.arc(p.x, ground(p.x) - 10, 26, 0, Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]); ctx.strokeStyle = C.deck;
+  });
+  ctx.restore();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PAGE
+   ═══════════════════════════════════════════════════════════ */
+const platesEl = document.getElementById("plates");
+let lastWinners = {}, canvases = {}, current = null;
+
+function stmtButtons(){
+  ["A","B"].forEach(role => {
+    const host = document.getElementById("stmts" + role);
+    host.innerHTML = "";
+    BRIEF[role].forEach((text, i) => {
+      const facts = parse(text, role);
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "stmt"; b.setAttribute("aria-pressed", String(on[role][i]));
+      b.innerHTML = `<span class="said"></span><span class="chips">${
+        facts.length ? facts.map(f => `<span class="chip">${f.label}</span>`).join("")
+                     : `<span class="chip">nothing parsed</span>`}</span>`;
+      b.querySelector(".said").textContent = text;
+      b.onclick = () => { on[role][i] = !on[role][i]; b.setAttribute("aria-pressed", String(on[role][i])); solveAll(); };
+      host.appendChild(b);
+    });
+  });
+}
+
+function plateShell(rule){
+  const el = document.createElement("section");
+  el.className = "plate"; el.id = "plate-" + rule.id;
+  el.innerHTML = `
+    <div class="rule">
+      <h3>${rule.name}</h3>
+      <span class="formula">${rule.formula}</span>
+      <p class="lineage">${rule.lineage}</p>
+      <p class="risk">${rule.risk}</p>
+      <span class="flip"></span>
+    </div>
+    <div class="draw"><canvas></canvas><span class="built"></span></div>
+    <div class="out">
+      <div class="sat">
+        <div class="row"><span>Role 1 · wants met (a)</span><span data-a></span></div>
+        <div class="track"><i data-abar style="background:var(--roleA)"></i></div>
+        <div class="row"><span>Role 2 · limits held (b)</span><span data-b></span></div>
+        <div class="track"><i data-bbar style="background:var(--roleB)"></i></div>
+      </div>
+      <dl class="facts">
+        <div><dt>Cost</dt><dd data-cost></dd></div>
+        <div><dt>Opens in</dt><dd data-months></dd></div>
+        <div><dt>Piers</dt><dd data-piers></dd></div>
+      </dl>
+      <p class="lost"></p>
+    </div>`;
+  canvases[rule.id] = el.querySelector("canvas");
+  return el;
+}
+
+function solveAll(){
+  const model = buildModel();
+  const {st, out, frontier} = candidates(model);
+  current = {model, st, out, frontier, winners:{}};
+
+  RULES.forEach(rule => {
+    const d = winnerFor(rule, frontier);
+    current.winners[rule.id] = d;
+    const el = document.getElementById("plate-" + rule.id);
+    const flipped = lastWinners[rule.id] && lastWinners[rule.id] !== d.label;
+    el.classList.toggle("flipped", !!flipped);
+    el.querySelector(".flip").textContent = flipped ? "↳ flipped on that change" : "";
+
+    const built = el.querySelector(".built");
+    built.textContent = d.label; built.classList.toggle("none", !!d.isNull);
+    el.querySelector("[data-a]").textContent = Math.round(d.a*100) + "%";
+    el.querySelector("[data-b]").textContent = Math.round(d.b*100) + "%";
+    el.querySelector("[data-abar]").style.width = Math.round(d.a*100) + "%";
+    el.querySelector("[data-bbar]").style.width = Math.round(d.b*100) + "%";
+    el.querySelector("[data-cost]").textContent  = d.isNull ? "$0" : "$" + d.cost.toFixed(0) + "M";
+    el.querySelector("[data-months]").textContent = d.isNull ? "never" : d.months + " mo";
+    el.querySelector("[data-piers]").textContent  = d.isNull ? "—" : d.piers.length;
+
+    const lost = el.querySelector(".lost");
+    const model2 = model;
+    const brokenList = d.isNull
+      ? [...model2.goals.keys()].map(id => (GOALS.find(g => g.id === id) || {}).label).filter(Boolean)
+      : d.breaks.map(b => b.t);
+    if (brokenList.length){
+      lost.classList.remove("clean");
+      lost.innerHTML = `<b>What this rule gives up</b>${brokenList.join(" · ")}`;
+    } else {
+      lost.classList.add("clean");
+      lost.innerHTML = `<b>What this rule gives up</b>nothing either party said out loud`;
+    }
+    drawPlate(canvases[rule.id], model, st, d);
+    lastWinners[rule.id] = d.label;
+  });
+
+  document.getElementById("siteLine").textContent =
+    `${SPAN_M} m gap · ${st.hasWater && st.hasRock ? "river and ridge, both claimed"
+      : st.hasWater ? "river only" : st.hasRock ? "ridge only" : "no terrain claimed"} · ${out.length} designs enumerated · ${frontier.length} on the Pareto frontier`;
+
+  const off = ["A","B"].reduce((n,r) => n + on[r].filter(v => !v).length, 0);
+  document.getElementById("briefFoot").textContent = off
+    ? `${off} statement${off>1?"s":""} switched off — the rules below are solving a different brief than the parties gave.`
+    : "Every statement is live. This is the full brief from the negotiation.";
+
+  writeReading();
+}
+
+function writeReading(){
+  const {winners, model} = current;
+  const labels = RULES.map(r => winners[r.id].label);
+  const distinct = [...new Set(labels)];
+  const nullRules = RULES.filter(r => winners[r.id].isNull);
+  const bestForA = RULES.reduce((m,r) => winners[r.id].a > winners[m.id].a ? r : m, RULES[0]);
+  const bestForB = RULES.reduce((m,r) => winners[r.id].b > winners[m.id].b ? r : m, RULES[0]);
+  const spreadA = Math.max(...RULES.map(r => winners[r.id].a)) - Math.min(...RULES.map(r => winners[r.id].a));
+
+  const host = document.getElementById("readOut");
+  const bits = [];
+  bits.push(`<p><b>${distinct.length} different structure${distinct.length>1?"s":""}</b> came out of ${RULES.length} rules applied to one identical brief${
+    distinct.length > 1 ? " — the engineering did not decide this, the arbitration rule did." : "."}</p>`);
+  if (distinct.length > 1)
+    bits.push(`<p><b>${bestForA.name}</b> serves Role 1 best (${Math.round(winners[bestForA.id].a*100)}% of its wants); <b>${bestForB.name}</b> serves Role 2 best (${Math.round(winners[bestForB.id].b*100)}% of its limits). The gap between the best and worst outcome for Role 1 across these rules is ${Math.round(spreadA*100)} percentage points — that spread is the value of choosing the rule.</p>`);
+  if (nullRules.length)
+    bits.push(`<p class="note">${nullRules.map(r => r.name).join(" and ")} build${nullRules.length>1?"":"s"} nothing: with these statements live, no structure holds every limit, and the empty site does. That is not a bug in the rule — it is what "limits come first, absolutely" means when the limits are unsatisfiable. Switch off Role 2's cost statement and it builds.</p>`);
+  if (distinct.length === 1)
+    bits.push(`<p class="note">Convergence is also a result: on this brief the rules cannot be told apart, which means nothing here is contested enough for the choice of rule to bite. Turn statements off until they separate — the point at which they disagree is the real fault line.</p>`);
+  host.innerHTML = bits.join("");
+}
+
+/* ---- boot ---- */
+readPalette();
+stmtButtons();
+RULES.forEach(r => platesEl.appendChild(plateShell(r)));
+solveAll();
+lastWinners = {}; RULES.forEach(r => lastWinners[r.id] = current.winners[r.id].label);
+document.querySelectorAll(".plate").forEach(p => { p.classList.remove("flipped"); p.querySelector(".flip").textContent = ""; });
+
+document.getElementById("resetBtn").onclick = () => {
+  ["A","B"].forEach(r => on[r] = on[r].map(() => true));
+  stmtButtons(); solveAll();
+};
+
+const redraw = () => { readPalette();
+  RULES.forEach(r => drawPlate(canvases[r.id], current.model, current.st, current.winners[r.id])); };
+addEventListener("resize", redraw);
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", redraw);
+new MutationObserver(redraw).observe(document.documentElement, {attributes:true, attributeFilter:["data-theme"]});
+document.fonts && document.fonts.ready.then(redraw);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1021 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Toolmakers Protocol</title>
+<meta name="description" content="A session runner for the two-participant study: private briefs, operator console, separate debriefs.">
+<link rel="icon" href="data:,">
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  :root{
+    --ground:#E3EAEA; --surface:#F4F8F8; --panel:#FBFDFD;
+    --ink:#0E1B1B; --muted:#5D7171; --line:#C6D2D2; --line-soft:#DCE5E5;
+    --roleA:#B26320; --roleA-tint:#F2E3D2; --roleA-ink:#7C4413;
+    --roleB:#2F6288; --roleB-tint:#D6E3EE; --roleB-ink:#204863;
+    --signal:#0C8478; --fault:#B03F35;
+    --sky-1:#DDE7E8; --sky-2:#EEF3F3;
+    --terra:#B9C2BF; --terra-deep:#9EA9A6; --water:#9DBEC6; --deck:#2C3A3A;
+    --shadow:0 1px 2px rgba(14,27,27,.06), 0 8px 24px rgba(14,27,27,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#080F10; --surface:#101B1C; --panel:#152122;
+      --ink:#E5EDEC; --muted:#8CA3A2; --line:#26393A; --line-soft:#1C2B2C;
+      --roleA:#DE9744; --roleA-tint:#2A1E1092; --roleA-ink:#EBB673;
+      --roleB:#6FA6D4; --roleB-tint:#12222E92; --roleB-ink:#9CC4E5;
+      --signal:#3CBCAE; --fault:#DF6C5E;
+      --sky-1:#0C1719; --sky-2:#121F21;
+      --terra:#26312F; --terra-deep:#1B2423; --water:#153741; --deck:#C9D6D5;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#080F10; --surface:#101B1C; --panel:#152122;
+    --ink:#E5EDEC; --muted:#8CA3A2; --line:#26393A; --line-soft:#1C2B2C;
+    --roleA:#DE9744; --roleA-tint:#2A1E1092; --roleA-ink:#EBB673;
+    --roleB:#6FA6D4; --roleB-tint:#12222E92; --roleB-ink:#9CC4E5;
+    --signal:#3CBCAE; --fault:#DF6C5E;
+    --sky-1:#0C1719; --sky-2:#121F21;
+    --terra:#26312F; --terra-deep:#1B2423; --water:#153741; --deck:#C9D6D5;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--ground); color:var(--ink);
+    font-family:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size:14px; line-height:1.55; -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:Archivo, ui-sans-serif, system-ui, sans-serif; margin:0; text-wrap:balance; letter-spacing:-.015em}
+  button, input, textarea{font:inherit; color:inherit}
+  :focus-visible{outline:2px solid var(--signal); outline-offset:2px}
+  .mono{font-family:"IBM Plex Mono", ui-monospace, monospace}
+
+  /* ---------- chrome ---------- */
+  .bar{
+    display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+    padding:10px 20px; border-bottom:1px solid var(--line); background:var(--surface);
+    position:sticky; top:0; z-index:5;
+  }
+  .bar h1{font-size:15px; font-weight:700}
+  .bar .meta{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted); letter-spacing:.05em}
+  .steps{display:flex; gap:4px; flex-wrap:wrap}
+  .step{
+    font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+    padding:4px 9px; border-radius:999px; border:1px solid var(--line); color:var(--muted); background:transparent;
+  }
+  .step[data-on="true"]{border-color:var(--ink); color:var(--ink); background:var(--panel)}
+  .step[data-done="true"]{border-color:color-mix(in srgb,var(--signal) 50%,transparent); color:var(--signal)}
+
+  .wrap{max-width:1120px; margin:0 auto; padding:24px 22px 64px}
+  .panel{display:none}
+  .panel.on{display:block}
+
+  .card{
+    border:1px solid var(--line); border-radius:12px; background:var(--panel);
+    padding:18px 20px; box-shadow:var(--shadow); margin-bottom:16px;
+  }
+  .card > h2{font-size:16px; font-weight:600; margin-bottom:4px}
+  .card > .sub{margin:0 0 14px; color:var(--muted); font-size:13px; max-width:70ch}
+  .eyebrow{
+    font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--muted); margin:0 0 8px;
+  }
+
+  label.f{display:flex; flex-direction:column; gap:5px; font-size:12.5px; color:var(--muted)}
+  input[type=text], textarea, select{
+    border:1px solid var(--line); border-radius:8px; background:var(--surface);
+    padding:8px 10px; font-size:13.5px; width:100%;
+  }
+  input:focus, textarea:focus, select:focus{border-color:var(--ink); outline:none}
+  textarea{resize:vertical}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:12px}
+
+  .btn{
+    border:none; border-radius:9px; padding:10px 16px; cursor:pointer; font-weight:600; font-size:13.5px;
+    background:var(--ink); color:var(--ground);
+  }
+  .btn:hover{opacity:.86}
+  .btn.ghost{background:transparent; border:1px solid var(--line); color:var(--muted); font-weight:500}
+  .btn.ghost:hover{border-color:var(--ink); color:var(--ink); opacity:1}
+  .btn.a{background:var(--roleA); color:#fff}
+  .btn.b{background:var(--roleB); color:#fff}
+  .btn:disabled{opacity:.4; cursor:not-allowed}
+  .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+  .spread{justify-content:space-between}
+
+  /* ---------- participant cards ---------- */
+  .brief{border-radius:12px; padding:22px 24px; border:1px solid var(--line); min-height:330px}
+  .brief.a{background:var(--roleA-tint); border-color:color-mix(in srgb,var(--roleA) 55%,transparent)}
+  .brief.b{background:var(--roleB-tint); border-color:color-mix(in srgb,var(--roleB) 55%,transparent)}
+  .brief h3{font-size:19px; margin-bottom:10px}
+  .brief.a h3, .brief.a .eyebrow{color:var(--roleA-ink)}
+  .brief.b h3, .brief.b .eyebrow{color:var(--roleB-ink)}
+  .brief p{margin:0 0 11px; font-size:14px; max-width:52ch}
+  .brief p:last-child{margin-bottom:0}
+  .brief b{font-weight:600}
+  .brief .rule{
+    margin-top:14px; padding-top:12px; border-top:1px solid color-mix(in srgb,var(--ink) 14%,transparent);
+    font-size:12.5px; color:var(--muted);
+  }
+
+  /* ---------- console ---------- */
+  .console{display:grid; grid-template-columns:minmax(0,1.1fr) minmax(340px,.9fr); gap:16px; align-items:start}
+  .view{
+    border:1px solid var(--line); border-radius:12px; background:var(--panel); overflow:hidden;
+    box-shadow:var(--shadow); position:relative;
+  }
+  .view canvas{display:block; width:100%; height:300px}
+  .view .cap{
+    padding:8px 12px; border-top:1px solid var(--line-soft); font-family:"IBM Plex Mono",monospace;
+    font-size:10.5px; letter-spacing:.04em; color:var(--muted); display:flex; justify-content:space-between; gap:10px;
+  }
+  .transcript{
+    border:1px solid var(--line); border-radius:12px; background:var(--panel); padding:12px;
+    max-height:330px; overflow-y:auto; display:flex; flex-direction:column; gap:9px; box-shadow:var(--shadow);
+  }
+  .t-empty{color:var(--muted); font-size:12.5px; text-align:center; padding:26px 10px}
+  .msg{max-width:92%; padding:8px 11px; border-radius:11px; font-size:13px}
+  .msg .who{
+    display:block; font-family:"IBM Plex Mono",monospace; font-size:9px; letter-spacing:.1em;
+    text-transform:uppercase; margin-bottom:3px; opacity:.85;
+  }
+  .msg.a{align-self:flex-start; background:var(--roleA-tint); color:var(--roleA-ink); border-bottom-left-radius:3px}
+  .msg.b{align-self:flex-end; background:var(--roleB-tint); color:var(--roleB-ink); border-bottom-right-radius:3px}
+  .msg.ai{align-self:stretch; max-width:100%; background:var(--surface); border:1px solid var(--line); color:var(--ink)}
+  .entry{display:flex; flex-direction:column; gap:8px}
+  .whobtns{display:flex; gap:8px}
+  .whobtns button{flex:1}
+  .whobtns button[aria-pressed="false"]{opacity:.45}
+
+  /* ---------- debrief ---------- */
+  .sheet{max-width:760px; margin:0 auto}
+  .q{margin-bottom:18px}
+  .q > .qn{
+    font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--muted); margin-bottom:6px;
+  }
+  .q > .qt{font-size:15px; font-weight:600; margin-bottom:8px; font-family:Archivo,sans-serif}
+  .draw-wrap{border:1px solid var(--line); border-radius:10px; overflow:hidden; background:var(--surface)}
+  .draw-wrap canvas{display:block; width:100%; height:270px; cursor:crosshair; touch-action:none}
+  .quiz{display:flex; flex-direction:column; gap:7px}
+  .qitem{border:1px solid var(--line); border-radius:9px; padding:9px 11px; background:var(--surface)}
+  .qitem p{margin:0 0 7px; font-size:13.5px}
+  .qopts{display:flex; gap:6px; flex-wrap:wrap}
+  .qopt{
+    border:1px solid var(--line); background:transparent; border-radius:999px; padding:4px 12px;
+    font-size:12px; cursor:pointer; color:var(--muted);
+  }
+  .qopt[aria-pressed="true"]{background:var(--ink); color:var(--ground); border-color:var(--ink)}
+  .lock{
+    background:var(--fault); color:#fff; border-radius:9px; padding:10px 14px; font-size:13px; margin-bottom:16px;
+  }
+
+  /* ---------- compare ---------- */
+  .metric{border:1px solid var(--line); border-radius:10px; padding:12px 14px; background:var(--panel)}
+  .metric dt{
+    font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--muted); margin-bottom:4px;
+  }
+  .metric dd{margin:0; font-family:Archivo,sans-serif; font-weight:600; font-size:24px; font-variant-numeric:tabular-nums}
+  .metric dd small{font-size:12px; font-weight:500; color:var(--muted); display:block; letter-spacing:0}
+  .metric.flag dd{color:var(--fault)}
+  .answers{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  .answers .box{border:1px solid var(--line); border-radius:10px; padding:12px 14px; background:var(--panel)}
+  .answers .box h4{
+    font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; margin:0 0 7px;
+  }
+  .answers .box.a h4{color:var(--roleA)}
+  .answers .box.b h4{color:var(--roleB)}
+  .answers .box p{margin:0 0 9px; font-size:13.5px}
+  .answers .box p:last-child{margin:0}
+  .answers .box .lbl{font-size:11px; color:var(--muted); display:block; margin-bottom:2px}
+  #exportBox{width:100%; height:150px; font-family:"IBM Plex Mono",monospace; font-size:10.5px}
+
+  @media (max-width:860px){
+    .console{grid-template-columns:1fr}
+    .grid2, .grid3, .answers{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion:reduce){ *{transition:none !important} }
+</style>
+
+<header class="bar">
+  <div>
+    <h1>Toolmakers Protocol</h1>
+    <div class="meta mono" id="barMeta">no session</div>
+  </div>
+  <div class="steps" id="steps"></div>
+</header>
+
+<div class="wrap">
+
+  <!-- ══════════ 1 · SETUP ══════════ -->
+  <section class="panel" id="p-setup">
+    <div class="card">
+      <p class="eyebrow">Before anyone sits down</p>
+      <h2>Set up the session</h2>
+      <p class="sub">Two participants, one screen, one operator. Each participant is given a private brief and never sees the other's. They write their messages down and hand them to you; you type them in. The separation is enforced by the room, not by software.</p>
+      <div class="grid3">
+        <label class="f">Pair number<input type="text" id="fPair" placeholder="P01"></label>
+        <label class="f">Date<input type="text" id="fDate" placeholder="2026-08-19"></label>
+        <label class="f">Operator<input type="text" id="fOp" placeholder="initials"></label>
+      </div>
+      <div class="grid2" style="margin-top:14px">
+        <label class="f">Condition
+          <select id="fCond">
+            <option value="ai">AI-mediated — they speak only to the machine</option>
+            <option value="direct">Direct — they speak to each other, you relay verbatim</option>
+          </select>
+        </label>
+        <label class="f">Participant names or codes<input type="text" id="fNames" placeholder="A: … / B: …"></label>
+      </div>
+      <div class="row" style="margin-top:16px">
+        <button class="btn" id="startBtn">Start session</button>
+        <button class="btn ghost" id="rehearseBtn">Rehearse alone</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="eyebrow">Operator script</p>
+      <h2>What you say out loud</h2>
+      <ol style="margin:0; padding-left:20px; font-size:13.5px; max-width:72ch">
+        <li>Seat them so neither can see the other's card or paper.</li>
+        <li>Hand each their brief. Say: <em>read it, keep it, don't show it to anyone.</em></li>
+        <li>Say: <em>you are both talking to the same system about the same place. Write what you want to say on paper and pass it to me. I'll type it in exactly as written.</em></li>
+        <li>Do not paraphrase, correct, or improve what they write. Type it verbatim, including the parts that don't seem relevant.</li>
+        <li>Run about eight to twelve exchanges, or until they stop.</li>
+        <li>End the session and take them into the debrief <b>one at a time</b>. The other must not be in the room.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ══════════ 2 · CARDS ══════════ -->
+  <section class="panel" id="p-cards">
+    <div class="card">
+      <p class="eyebrow">Hand these out privately</p>
+      <h2>The two briefs</h2>
+      <p class="sub">Neither brief mentions the other party's world, and neither tells anyone what to say. The wording of the conflict has to come from them, or you are measuring my writing instead of their reconstruction.</p>
+      <div class="grid2">
+        <div class="brief a">
+          <p class="eyebrow">Participant A · your brief</p>
+          <h3>You need the crossing</h3>
+          <p>In front of you is <b>a wide tidal river</b>. On both banks there is <b>a city</b> — yours on this side, another on the far side. Barges work the channel every day.</p>
+          <p>Your city has been waiting fifteen years for a crossing. To reach the hospital on the other bank, people drive an hour around. Two winters ago someone didn't make it.</p>
+          <p>You are speaking to a system that will design and build the crossing. Tell it what you need.</p>
+          <p class="rule">You are not speaking to the other participant, and you will not see anything they say. Use your own words — there is no correct way to put it.</p>
+        </div>
+        <div class="brief b">
+          <p class="eyebrow">Participant B · your brief</p>
+          <h3>You live with the crossing</h3>
+          <p>In front of you is <b>a rock ridge</b>, old forest on its slopes. On both sides of it sits <b>a village</b> — yours on this side, another beyond. The ridge is the reason the valley is quiet.</p>
+          <p>Your family has been in this valley for four generations. The forest on the slope is the last uncut stand in the county, and the quarry two valleys over is what everyone here points to when they say what they don't want.</p>
+          <p>You are speaking to a system that will design and build a crossing. Tell it what you need.</p>
+          <p class="rule">You are not speaking to the other participant, and you will not see anything they say. Use your own words — there is no correct way to put it.</p>
+        </div>
+      </div>
+      <div class="row spread" style="margin-top:16px">
+        <button class="btn ghost" onclick="window.print()">Print both briefs</button>
+        <button class="btn" id="toConsole">Both briefs handed out — open the console</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ 3 · SESSION ══════════ -->
+  <section class="panel" id="p-session">
+    <div class="console">
+      <div>
+        <div class="view">
+          <canvas id="worldCv"></canvas>
+          <div class="cap"><span id="capBuilt">nothing designed yet</span><span id="capWords">0 words · 0 picked up</span></div>
+        </div>
+        <div class="card" style="margin-top:14px">
+          <p class="eyebrow">Operator notes</p>
+          <textarea id="notes" rows="4" placeholder="What you observe: hesitations, questions they ask you, whether either of them asks about the other…"></textarea>
+        </div>
+      </div>
+
+      <div>
+        <div class="transcript" id="transcript"><div class="t-empty">Nothing said yet.</div></div>
+        <div class="card entry" style="margin-top:14px">
+          <div class="whobtns">
+            <button class="btn a" id="whoA" aria-pressed="true">A said…</button>
+            <button class="btn b" id="whoB" aria-pressed="false">B said…</button>
+          </div>
+          <textarea id="entry" rows="3" placeholder="Type it exactly as they wrote it."></textarea>
+          <div class="row spread">
+            <button class="btn" id="enterBtn">Enter</button>
+            <button class="btn ghost" id="endBtn">End session →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ 4 · DEBRIEF ══════════ -->
+  <section class="panel" id="p-debrief">
+    <div class="sheet">
+      <div class="lock" id="lockNote"></div>
+      <div class="card">
+        <p class="eyebrow" id="dWho"></p>
+        <h2>Debrief</h2>
+        <p class="sub">Answer from memory. The session is not visible from here, and there are no right answers.</p>
+
+        <div class="q">
+          <div class="qn">Question 1</div>
+          <div class="qt">Draw what was built.</div>
+          <div class="draw-wrap"><canvas id="drawCv"></canvas></div>
+          <div class="row" style="margin-top:8px">
+            <button class="btn ghost" id="clearDraw">Clear</button>
+            <span class="meta mono" style="color:var(--muted)">Draw across the gap. Rough is fine.</span>
+          </div>
+        </div>
+
+        <div class="q">
+          <div class="qn">Question 2</div>
+          <div class="qt">What was the other person most trying to protect?</div>
+          <textarea id="dProtect" rows="3" placeholder="In a sentence or two."></textarea>
+        </div>
+
+        <div class="q">
+          <div class="qn">Question 3</div>
+          <div class="qt">Who said each of these?</div>
+          <div class="quiz" id="quiz"></div>
+        </div>
+
+        <button class="btn" id="dDone">Finish this debrief</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ 5 · COMPARE ══════════ -->
+  <section class="panel" id="p-compare">
+    <div class="card">
+      <p class="eyebrow">Both debriefs complete</p>
+      <h2>What each of them left with</h2>
+      <p class="sub">Ochre is A's drawing, blue is B's, and the faint dark line is what the system actually built. The distance between the two coloured lines is the reconstruction gap.</p>
+      <div class="view"><canvas id="cmpCv"></canvas></div>
+      <dl class="grid3" style="margin-top:14px" id="metrics"></dl>
+    </div>
+    <div class="card">
+      <p class="eyebrow">Answers side by side</p>
+      <h2>What each thought the other was protecting</h2>
+      <div class="answers" id="answers"></div>
+    </div>
+    <div class="card">
+      <p class="eyebrow">Take the data with you</p>
+      <h2>Session record</h2>
+      <p class="sub">Everything: transcript, parsed facts, words picked up and left in the air, the design, both debriefs, both drawings as stroke data.</p>
+      <div class="row" style="margin-bottom:10px">
+        <button class="btn" id="saveBtn">Save session file</button>
+        <button class="btn ghost" id="copyBtn">Copy to clipboard</button>
+        <button class="btn ghost" id="newBtn">New pair</button>
+      </div>
+      <textarea id="exportBox" readonly></textarea>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+"use strict";
+
+/* ═══════════════════════════════════════════════════════════
+   SITE + ENGINE — carried over unchanged from the simulation,
+   with the live world switched off: every pair gets the same site.
+   ═══════════════════════════════════════════════════════════ */
+const W = 1200, H = 720;
+const GAP_L = 268, GAP_R = 932, SPAN_PX = GAP_R - GAP_L;
+const M_PER_PX = .5, SPAN_M = Math.round(SPAN_PX * M_PER_PX);
+const BANK_Y = 330, WATER_Y = 402, VAL_Y = 474, RIDGE_L = 352, RIDGE_R = 848;
+
+const groundA = x => (x <= GAP_L || x >= GAP_R)
+  ? BANK_Y + 3*Math.sin(x*.021) + 2*Math.sin(x*.007)
+  : BANK_Y + 252 * Math.pow(Math.sin(Math.PI*(x-GAP_L)/SPAN_PX), .72);
+function groundB(x){
+  const base = VAL_Y + 4*Math.sin(x*.017);
+  if (x <= RIDGE_L || x >= RIDGE_R) return base;
+  return base - 236 * Math.pow(Math.sin(Math.PI*(x-RIDGE_L)/(RIDGE_R-RIDGE_L)), 1.35);
+}
+const groundFlat = x => (x <= GAP_L || x >= GAP_R) ? BANK_Y + 3*Math.sin(x*.021)
+  : BANK_Y + 92 * Math.pow(Math.sin(Math.PI*(x-GAP_L)/SPAN_PX), .8);
+const groundM = x => Math.min(groundA(x), groundB(x));
+
+function site(m){
+  const w = m.hasWater, r = m.hasRock;
+  const ground = w && r ? groundM : w ? groundA : r ? groundB : groundFlat;
+  return {ground, hasWater:w, hasRock:r,
+          inWater: x => w && ground(x) > WATER_Y + 6,
+          inRock:  x => r && groundB(x) < VAL_Y - 40};
+}
+
+const GOALS = [
+  {id:"freight", w:3, label:"carries trucks",     re:/\b(truck|freight|lorry|cargo|heavy|bus|rail|train|highway|traffic|ambulance)/i},
+  {id:"people",  w:2, label:"people on foot",     re:/\b(walk|pedestrian|foot|bike|bicycle|cycl)/i},
+  {id:"fast",    w:3, label:"opens quickly",      re:/\b(fast|quick|soon|urgent|hurry|waited|waiting|years|immediate|rapid)/i},
+  {id:"cheap",   w:3, label:"stays affordable",   re:/\b(cheap|afford|budget|low.cost|inexpensive)/i},
+  {id:"iconic",  w:2, label:"reads as landmark",  re:/\b(landmark|iconic|beautiful|elegant|photograph|monument|striking|symbol)/i},
+  {id:"tough",   w:3, label:"survives storms",    re:/\b(safe|strong|durable|storm|wind|earthquake|resilien|stiff)/i},
+  {id:"boats",   w:2, label:"boats keep passing", re:/\b(boat|ship|barge|sail|ferr|navigat|vessel|tug)/i},
+  {id:"piers",   w:3, label:"founded in the channel", re:/\b(pier|foundation|footing|pile|dive|water depth|bedrock)/i},
+];
+const LIMITS = [
+  {id:"noWaterPier", w:4, label:"nothing in the water",   re:/\b(pier|column|pile|piling|foundation|footing|fishing|channel)/i},
+  {id:"noCut",       w:4, label:"the rock stays whole",   re:/\b(cut|blast|excavat|carve|dig|dynamite|quarry|tunnel)/i},
+  {id:"noTall",      w:3, label:"nothing towering",       re:/\b(tall|tower|skyline|height|loom|shadow|obstruct|view)/i},
+  {id:"noMoney",     w:3, label:"no runaway cost",        re:/\b(expensive|costly|cost|money|budget|pay|afford|monument)/i},
+  {id:"noHabitat",   w:3, label:"habitat left alone",     re:/\b(fish|bird|tree|forest|wildlife|habitat|spawn|nature|slope|ecolog)/i},
+  {id:"noNoise",     w:2, label:"the valley stays quiet", re:/\b(noise|noisy|quiet|loud|hammer|rivet)/i},
+  {id:"noSlow",      w:2, label:"no decade of works",     re:/\b(year|decade|slow|drag|forever|delay|disrupt)/i},
+];
+const TERRAIN = [
+  {kind:"water", re:/\b(river|water|tidal|strait|channel|canal|bay|sea|lake|estuary)/i, word:"river"},
+  {kind:"rock",  re:/\b(mountain|ridge|rock|cliff|canyon|gorge|peak|hill|summit|granite|forest|slope|valley)/i, word:"ridge"},
+];
+const PLACES = [
+  {re:/\bcit(y|ies)/i, name:"City"}, {re:/\bvillages?/i, name:"Village"},
+  {re:/\btowns?/i, name:"Town"},     {re:/\bhospital/i, name:"Hospital"},
+];
+const NEG = /\b(no|not|don'?t|never|without|avoid|stop|can'?t|cannot|minimi[sz]e|protect|preserve|leave)\b/i;
+
+function parse(text, role){
+  const facts = [];
+  for (const t of TERRAIN) if (t.re.test(text)) facts.push({type:"terrain", kind:t.kind, label:"terrain: "+t.word});
+  for (const p of PLACES)  if (p.re.test(text)) facts.push({type:"place", name:p.name, label:"place: "+p.name});
+  const negated = NEG.test(text);
+  if (role === "A" && !negated)
+    for (const g of GOALS) if (g.re.test(text)) facts.push({type:"goal", id:g.id, w:g.w, label:g.label});
+  if (role === "B" || negated)
+    for (const l of LIMITS) if (l.re.test(text)) facts.push({type:"limit", id:l.id, w:l.w, label:l.label});
+  return facts;
+}
+
+const STRUCTURES = [
+  {id:"beam",   name:"Girder beam",  maxSeg:46,  piers:[3,5,7,9,11,13], mPerM:.055, tower:0,  cap:4, quiet:2, months:14, clear:0},
+  {id:"truss",  name:"Steel truss",  maxSeg:118, piers:[1,2,3,4,5],     mPerM:.072, tower:0,  cap:5, quiet:0, months:20, clear:0},
+  {id:"arch",   name:"Tied arch",    maxSeg:260, piers:[0,1],           mPerM:.108, tower:0,  cap:4, quiet:2, months:26, clear:1},
+  {id:"stay",   name:"Cable-stayed", maxSeg:360, piers:[0,1],           mPerM:.138, tower:62, cap:4, quiet:2, months:30, clear:1},
+  {id:"susp",   name:"Suspension",   maxSeg:900, piers:[0],             mPerM:.198, tower:96, cap:4, quiet:3, months:38, clear:1},
+  {id:"fill",   name:"Embankment",   maxSeg:999, piers:[0],             mPerM:.030, tower:0,  cap:5, quiet:1, months:10, clear:-1, fill:true},
+];
+const CLEAR_MARGIN = 26, NAV_CLEAR = 64;
+
+function obstacleTop(m, st, cut){
+  let top = Infinity;
+  for (let x = GAP_L; x <= GAP_R; x += 4){
+    let g = st.ground(x);
+    if (cut && st.inRock(x)) g = Math.max(g, BANK_Y - 6);
+    top = Math.min(top, g);
+    if (m.boats && st.inWater(x)) top = Math.min(top, WATER_Y - NAV_CLEAR);
+  }
+  return top;
+}
+function evaluate(m, st, s, nPiers, cut){
+  if (SPAN_M / (nPiers + 1) > s.maxSeg) return null;
+  const deckY = s.fill ? BANK_Y - 18 : Math.min(obstacleTop(m, st, cut) - CLEAR_MARGIN, BANK_Y - 18);
+  const rise = Math.max(0, BANK_Y - deckY);
+  const piers = [];
+  if (!s.fill) for (let i = 1; i <= nPiers; i++){
+    const x = GAP_L + SPAN_PX*i/(nPiers+1);
+    piers.push({x, water:st.inWater(x), rock:st.inRock(x), depth:(st.ground(x)-deckY)*M_PER_PX});
+  }
+  const buriesWater = !!s.fill && st.hasWater, cutsRock = cut || (!!s.fill && st.hasRock);
+  let cost = SPAN_M * s.mPerM;
+  piers.forEach(p => cost += 2.6 + Math.max(0,p.depth)*.045 + (p.water ? 4.2 : 0));
+  if (s.tower) cost += 11 + s.tower*.13;
+  if (cut) cost += 21;
+  if (s.fill) cost += (st.hasRock ? 19 : 0) + (st.hasWater ? 8 : 0);
+  cost += rise * M_PER_PX * .30;
+  const months = s.months + (s.fill ? 0 : nPiers*2) + (cut ? 7 : 0) + (s.fill && st.hasRock ? 4 : 0)
+               + Math.round(rise * M_PER_PX / 18);
+
+  const keeps = [], breaks = [];
+  const put = (ok,kind,w,yes,no) => (ok?keeps:breaks).push({t: ok?yes:no, w, kind});
+  const goal = (ok,w,y,n) => put(ok,"goal",w,y,n), limit = (ok,w,y,n) => put(ok,"limit",w,y,n);
+  const has = id => m.goals.has(id), lim = id => m.limits.get(id);
+  const wp = piers.filter(p=>p.water).length, rp = piers.filter(p=>p.rock).length;
+  const inChannel = wp > 0 || buriesWater;
+
+  if (has("freight")) goal(s.cap >= 4, 3, "carries loaded traffic", "too light for heavy traffic");
+  if (has("people"))  goal(true, 2, "walkable deck", "");
+  if (has("fast"))    goal(months <= 24, 3, `opens in ${months} months`, `${months} months before it opens`);
+  if (has("cheap"))   goal(cost <= 42, 3, `$${cost.toFixed(0)}M, within reach`, `$${cost.toFixed(0)}M is beyond the ask`);
+  if (has("iconic"))  goal(s.clear > 0 || s.tower > 0, 2, "a shape worth photographing", "reads as infrastructure");
+  if (has("tough"))   goal(true, 3, "stiff enough for storms", "");
+  if (has("boats"))   goal(s.clear >= 0 && !inChannel, 2, "the channel stays open", "river traffic is blocked");
+  if (has("piers"))   goal(inChannel, 3, "founded in the channel, as asked", "no foundation in the channel");
+
+  if (lim("noWaterPier")) limit(!inChannel, lim("noWaterPier"), "nothing stands in the water",
+      buriesWater ? "the channel is buried under fill" : `${wp} pier${wp>1?"s":""} in the water`);
+  if (lim("noCut")) limit(!cutsRock && rp === 0, lim("noCut"), "the ridge is left whole",
+      cutsRock ? "the ridge is cut open" : `${rp} footing${rp>1?"s":""} drilled into rock`);
+  if (lim("noTall")) limit(s.tower <= 70, lim("noTall"), "no tower breaks the skyline", `${s.tower} m towers`);
+  if (lim("noMoney")) limit(cost <= 46, lim("noMoney"), `$${cost.toFixed(0)}M, no monument`, `$${cost.toFixed(0)}M is a monument's budget`);
+  if (lim("noHabitat")) limit(!inChannel && !cutsRock, lim("noHabitat"), "riverbed and slope untouched", "foundations tear into habitat");
+  if (lim("noNoise")) limit(s.quiet > 1 && nPiers <= 3, lim("noNoise"), "a quiet site", "months of hammering");
+  if (lim("noSlow")) limit(months <= 28, lim("noSlow"), `${months} months, then done`, `${months} months of works`);
+
+  const gW = [...m.goals.values()].reduce((a,b)=>a+b,0), lW = [...m.limits.values()].reduce((a,b)=>a+b,0);
+  let gK = 0, lK = 0;
+  keeps.forEach(k => k.kind === "limit" ? lK += k.w : gK += k.w);
+  return {s, nPiers, cut:cutsRock, fill:!!s.fill, deckY, rise, piers, cost, months, keeps, breaks,
+          towerTop: s.tower ? deckY - s.tower/M_PER_PX*.55 : deckY,
+          a: gW ? gK/gW : 1, b: lW ? lK/lW : 1,
+          label: s.fill ? "Embankment · the gap is filled"
+               : s.name + (nPiers ? ` · ${nPiers} pier${nPiers>1?"s":""}` : " · clear span") + (cut ? " · cut" : "")};
+}
+// One fixed arbitration rule for every pair, so the rule is not a variable in this study.
+function solve(m){
+  const st = site(m), all = [];
+  for (const s of STRUCTURES) for (const p of s.piers) for (const cut of [false,true]){
+    if (cut && !st.hasRock) continue;
+    const c = evaluate(m, st, s, p, cut); if (c) all.push(c);
+  }
+  if (!all.length) return {st, d:null};
+  all.sort((x,y) => (y.a*y.b) - (x.a*x.b) || x.cost - y.cost);
+  return {st, d: all[0]};
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SESSION STATE
+   ═══════════════════════════════════════════════════════════ */
+const S = {
+  phase:"setup", meta:{}, who:"A", started:null,
+  msgs:[], model:null, st:null, design:null,
+  words:{spoken:0, taken:0, floating:[]},
+  debriefs:{}, current:null, quiz:[],
+};
+const freshModel = () => ({goals:new Map(), limits:new Map(), hasWater:false, hasRock:false, boats:false});
+
+function ingest(text, role){
+  const facts = parse(text, role);
+  for (const f of facts){
+    if (f.type === "terrain") f.kind === "water" ? S.model.hasWater = true : S.model.hasRock = true;
+    if (f.type === "goal"){ S.model.goals.set(f.id, f.w); if (f.id === "boats") S.model.boats = true; }
+    if (f.type === "limit") S.model.limits.set(f.id, f.w);
+  }
+  // Reddy's ledger: how much of what was said the world had any use for.
+  const words = text.split(/\s+/).filter(Boolean);
+  S.words.spoken += words.length;
+  const pools = role === "A" ? [GOALS, TERRAIN, PLACES] : [LIMITS, TERRAIN, PLACES];
+  words.forEach(tok => {
+    const w = tok.replace(/[^A-Za-z0-9'-]/g, ""); if (!w) return;
+    let took = false;
+    for (const pool of pools) for (const e of pool) if (e.re.test(w) && e.re.test(text)) took = true;
+    took ? S.words.taken++ : S.words.floating.push(w);
+  });
+  return facts;
+}
+
+function aiReply(){
+  const m = S.model, {st, d} = solve(m);
+  S.st = st; S.design = d;
+  if (!d) return "I have nothing in my catalogue that spans this gap under what you have both told me so far. Say more about what the ground is like.";
+  const bits = [];
+  if (m.hasWater && m.hasRock)
+    bits.push(`You are describing the same ${SPAN_M} metre gap in two different ways — one of you sees water, the other sees rock. I am building through both at once.`);
+  else if (m.hasWater) bits.push(`A ${SPAN_M} metre water crossing, as described so far.`);
+  else if (m.hasRock)  bits.push(`A ${SPAN_M} metre crossing over rock, as described so far.`);
+  else bits.push(`A ${SPAN_M} metre gap. Neither of you has told me what the ground is yet.`);
+  bits.push(`I am building a ${d.s.name.toLowerCase()}${d.piers.length ? ` on ${d.piers.length} pier${d.piers.length>1?"s":""}` : ", clear span"} — $${d.cost.toFixed(0)} million, ${d.months} months.`);
+  if (d.keeps.length) bits.push(`It holds: ${d.keeps.slice(0,3).map(k=>k.t).join("; ")}.`);
+  if (d.breaks.length) bits.push(`It does not hold: ${d.breaks.slice(0,2).map(b=>b.t).join("; ")}.`);
+  return bits.join(" ");
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDERING
+   ═══════════════════════════════════════════════════════════ */
+let C = {};
+const readPalette = () => {
+  const cs = getComputedStyle(document.documentElement), g = n => cs.getPropertyValue(n).trim();
+  C = {ink:g("--ink"), muted:g("--muted"), line:g("--line"), lineSoft:g("--line-soft"),
+       a:g("--roleA"), b:g("--roleB"), signal:g("--signal"), fault:g("--fault"),
+       sky1:g("--sky-1"), sky2:g("--sky-2"), terra:g("--terra"), terraDeep:g("--terra-deep"),
+       water:g("--water"), deck:g("--deck"), panel:g("--panel")};
+};
+const SRC = {x:24, y:126, w:1152, h:452};
+function fit(cv){
+  const r = cv.getBoundingClientRect(), dpr = Math.min(devicePixelRatio||1, 2);
+  cv.width = Math.round(r.width*dpr); cv.height = Math.round(r.height*dpr);
+  // contain, never cover: on a narrow canvas cover crops the banks off-screen entirely
+  const ctx = cv.getContext("2d"), k = Math.min(r.width/SRC.w, r.height/SRC.h)*dpr;
+  ctx.setTransform(1,0,0,1,0,0);
+  const sky = ctx.createLinearGradient(0,0,0,cv.height);
+  sky.addColorStop(0, C.sky2); sky.addColorStop(1, C.sky1);
+  ctx.fillStyle = sky; ctx.fillRect(0,0,cv.width,cv.height);
+  ctx.setTransform(k,0,0,k, (cv.width - SRC.w*k)/2 - SRC.x*k, (cv.height - SRC.h*k)/2 - SRC.y*k);
+  return ctx;
+}
+function drawSite(ctx, st, d){
+  const ground = x => {
+    let g = st ? st.ground(x) : groundFlat(x);
+    if (d && d.cut && st && st.inRock(x) && x > GAP_L && x < GAP_R) g = Math.max(g, d.deckY + 16);
+    return g;
+  };
+  if (st && st.hasWater){ ctx.save(); ctx.fillStyle = C.water; ctx.globalAlpha = .9;
+    ctx.fillRect(0, WATER_Y, W, H - WATER_Y); ctx.restore(); }
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(-2, H+2);
+  for (let x = -2; x <= W+2; x += 3) ctx.lineTo(x, ground(x));
+  ctx.lineTo(W+2, H+2); ctx.closePath();
+  const gg = ctx.createLinearGradient(0,140,0,H);
+  gg.addColorStop(0, C.terra); gg.addColorStop(1, C.terraDeep);
+  ctx.fillStyle = gg; ctx.fill();
+  ctx.strokeStyle = C.ink; ctx.globalAlpha = .45; ctx.lineWidth = 1.6; ctx.stroke();
+  ctx.globalAlpha = 1; ctx.clip();
+  ctx.strokeStyle = C.ink; ctx.globalAlpha = .08;
+  for (let i = -H; i < W+H; i += 18){ ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i+H,H); ctx.stroke(); }
+  ctx.restore();
+  return ground;
+}
+function drawDesign(ctx, st, d, ground){
+  if (!d) return;
+  ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round";
+  ctx.fillStyle = C.deck; ctx.strokeStyle = C.deck;
+  if (d.fill){
+    ctx.beginPath();
+    ctx.moveTo(GAP_L-150, ground(GAP_L-150)); ctx.lineTo(GAP_L-26, d.deckY);
+    ctx.lineTo(GAP_R+26, d.deckY); ctx.lineTo(GAP_R+150, ground(GAP_R+150));
+    for (let x = GAP_R+150; x >= GAP_L-150; x -= 4) ctx.lineTo(x, Math.max(ground(x), d.deckY));
+    ctx.closePath(); ctx.fillStyle = C.terraDeep; ctx.fill();
+    ctx.strokeStyle = C.ink; ctx.globalAlpha = .4; ctx.lineWidth = 1.5; ctx.stroke(); ctx.globalAlpha = 1;
+    ctx.strokeStyle = C.deck; ctx.lineWidth = 10;
+    ctx.beginPath(); ctx.moveTo(GAP_L-150, d.deckY); ctx.lineTo(GAP_R+150, d.deckY); ctx.stroke();
+    ctx.restore(); return;
+  }
+  [[GAP_L,-1],[GAP_R,1]].forEach(([x,dir]) => {
+    ctx.fillRect(x - (dir<0?18:0), d.deckY, 18, ground(x) - d.deckY);
+    const len = Math.min(d.rise*2.4 + 50, dir<0 ? GAP_L-30 : W-GAP_R-30);
+    const x2 = x + dir*len, y2 = ground(x2) - 6;
+    ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(x + dir*10, d.deckY); ctx.lineTo(x2, y2); ctx.stroke();
+    ctx.lineWidth = 4;
+    for (let t = .25; t < 1; t += .25){
+      const cx = x + dir*(10 + (len-10)*t), cy = d.deckY + (y2-d.deckY)*t, g2 = ground(cx);
+      if (g2 - cy < 8) continue;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, g2); ctx.stroke();
+    }
+  });
+  d.piers.forEach(p => ctx.fillRect(p.x - 8, d.deckY, 16, ground(p.x) - d.deckY));
+  if (d.s.tower) [GAP_L, GAP_R].forEach(x => {
+    ctx.fillRect(x-6, d.towerTop, 12, d.deckY - d.towerTop + 14);
+    ctx.fillRect(x-14, d.towerTop + (d.deckY-d.towerTop)*.42, 28, 5);
+  });
+  if (d.s.id === "arch"){
+    ctx.lineWidth = 7; ctx.beginPath();
+    for (let x = GAP_L; x <= GAP_R; x += 4){ const t=(x-GAP_L)/SPAN_PX; const y=d.deckY+118*4*t*(1-t)+6;
+      x===GAP_L?ctx.moveTo(x,y):ctx.lineTo(x,y); }
+    ctx.stroke();
+  }
+  if (d.s.id === "truss"){
+    const top = d.deckY - 44; ctx.lineWidth = 2.6;
+    ctx.beginPath(); ctx.moveTo(GAP_L, top); ctx.lineTo(GAP_R, top); ctx.stroke();
+    ctx.beginPath();
+    for (let x = GAP_L; x <= GAP_R-32; x += 32){
+      ctx.moveTo(x, d.deckY); ctx.lineTo(x+32, top); ctx.moveTo(x, top); ctx.lineTo(x+32, d.deckY);
+      ctx.moveTo(x, top); ctx.lineTo(x, d.deckY);
+    }
+    ctx.stroke();
+  }
+  if (d.s.id === "stay"){
+    ctx.lineWidth = 1.8;
+    [[GAP_L,1],[GAP_R,-1]].forEach(([tx,dir]) => { for (let k = 1; k <= 7; k++){
+      ctx.beginPath(); ctx.moveTo(tx, d.towerTop+10); ctx.lineTo(tx + dir*(SPAN_PX/2)*(k/7), d.deckY); ctx.stroke(); } });
+  }
+  if (d.s.id === "susp"){
+    ctx.lineWidth = 3.4; ctx.beginPath();
+    for (let x = GAP_L; x <= GAP_R; x += 4){ const t=(x-GAP_L)/SPAN_PX; const y=d.towerTop+10+96*4*t*(1-t);
+      x===GAP_L?ctx.moveTo(x,y):ctx.lineTo(x,y); }
+    ctx.stroke(); ctx.lineWidth = 1.4;
+    for (let x = GAP_L+30; x < GAP_R-10; x += 38){ const t=(x-GAP_L)/SPAN_PX;
+      ctx.beginPath(); ctx.moveTo(x, d.towerTop+10+96*4*t*(1-t)); ctx.lineTo(x, d.deckY); ctx.stroke(); }
+  }
+  ctx.lineWidth = 10;
+  ctx.beginPath(); ctx.moveTo(GAP_L, d.deckY); ctx.lineTo(GAP_R, d.deckY); ctx.stroke();
+  ctx.restore();
+}
+function paintWorld(){
+  const cv = document.getElementById("worldCv"); if (!cv.getBoundingClientRect().width) return;
+  const ctx = fit(cv), ground = drawSite(ctx, S.st, S.design);
+  drawDesign(ctx, S.st, S.design, ground);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PHASES
+   ═══════════════════════════════════════════════════════════ */
+const STEPS = [["setup","Setup"],["cards","Briefs"],["session","Session"],["debrief","Debrief"],["compare","Compare"]];
+const order = STEPS.map(s => s[0]);
+function setPhase(p){
+  S.phase = p;
+  document.querySelectorAll(".panel").forEach(el => el.classList.remove("on"));
+  document.getElementById("p-" + p).classList.add("on");
+  document.getElementById("steps").innerHTML = STEPS.map(([k,label]) =>
+    `<span class="step" data-on="${k===p}" data-done="${order.indexOf(k) < order.indexOf(p)}">${label}</span>`).join("");
+  scrollTo({top:0, behavior:"instant"});
+  if (p === "session") requestAnimationFrame(paintWorld);
+}
+function barMeta(){
+  const m = S.meta;
+  document.getElementById("barMeta").textContent = m.pair
+    ? `${m.pair} · ${m.cond === "direct" ? "direct" : "AI-mediated"} · ${S.msgs.filter(x=>x.who!=="AI").length} exchanges`
+    : "no session";
+}
+
+document.getElementById("startBtn").onclick = () => {
+  S.meta = {pair: val("fPair") || "P–", date: val("fDate") || new Date().toISOString().slice(0,10),
+            operator: val("fOp"), cond: val("fCond"), names: val("fNames"), rehearsal:false};
+  beginSession();
+};
+document.getElementById("rehearseBtn").onclick = () => {
+  S.meta = {pair:"REHEARSAL", date:new Date().toISOString().slice(0,10), operator:"—",
+            cond:val("fCond"), names:"solo dry run", rehearsal:true};
+  beginSession();
+};
+function beginSession(){
+  S.msgs = []; S.model = freshModel(); S.design = null; S.st = null;
+  S.words = {spoken:0, taken:0, floating:[]}; S.debriefs = {}; S.started = Date.now();
+  renderTranscript(); barMeta(); setPhase("cards");
+}
+const val = id => document.getElementById(id).value.trim();
+document.getElementById("toConsole").onclick = () => setPhase("session");
+
+/* ---- session console ---- */
+const whoA = document.getElementById("whoA"), whoB = document.getElementById("whoB");
+const setWho = w => { S.who = w; whoA.setAttribute("aria-pressed", String(w==="A")); whoB.setAttribute("aria-pressed", String(w==="B")); };
+whoA.onclick = () => setWho("A"); whoB.onclick = () => setWho("B");
+
+document.getElementById("enterBtn").onclick = enter;
+document.getElementById("entry").addEventListener("keydown", e => {
+  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) enter();
+});
+function enter(){
+  const box = document.getElementById("entry"), text = box.value.trim();
+  if (!text) return;
+  const facts = ingest(text, S.who);
+  S.msgs.push({who:S.who, text, facts:facts.map(f=>f.label), t:Date.now()-S.started});
+  box.value = "";
+  const reply = aiReply();
+  S.msgs.push({who:"AI", text:reply, t:Date.now()-S.started});
+  setWho(S.who === "A" ? "B" : "A");            // hand the turn over by default
+  renderTranscript(); paintWorld(); barMeta();
+}
+function renderTranscript(){
+  const el = document.getElementById("transcript");
+  if (!S.msgs.length){ el.innerHTML = `<div class="t-empty">Nothing said yet.</div>`; return; }
+  el.innerHTML = S.msgs.map(m => {
+    const cls = m.who === "AI" ? "ai" : m.who.toLowerCase();
+    const who = m.who === "AI" ? "the system" : "participant " + m.who;
+    return `<div class="msg ${cls}"><span class="who">${who}</span>${esc(m.text)}</div>`;
+  }).join("");
+  el.scrollTop = el.scrollHeight;
+  document.getElementById("capBuilt").textContent = S.design ? S.design.label : "nothing designed yet";
+  document.getElementById("capWords").textContent =
+    `${S.words.spoken} words · ${S.words.taken} picked up`;
+}
+const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+document.getElementById("endBtn").onclick = () => {
+  if (!S.msgs.length){ alert("Nothing has been said yet."); return; }
+  S.meta.notes = document.getElementById("notes").value;
+  S.meta.minutes = Math.round((Date.now() - S.started)/60000);
+  buildQuiz(); startDebrief("A");
+};
+
+/* ---- the attribution quiz, sampled from what was actually said ---- */
+function clauses(who){
+  const out = [];
+  S.msgs.filter(m => m.who === who).forEach(m =>
+    m.text.split(/[.;—]|,\s(?=and|but|so)/).forEach(c => {
+      const t = c.trim().replace(/^[-–—\s]+/, "");
+      const n = t.split(/\s+/).length;
+      if (n >= 4 && n <= 16) out.push(t);
+    }));
+  return out;
+}
+function pick(arr, n){
+  if (arr.length <= n) return arr.slice();
+  const step = arr.length / n, out = [];
+  for (let i = 0; i < n; i++) out.push(arr[Math.floor(i*step)]);
+  return out;
+}
+function buildQuiz(){
+  const items = [
+    ...pick(clauses("A"), 4).map(t => ({t, src:"A"})),
+    ...pick(clauses("B"), 4).map(t => ({t, src:"B"})),
+    ...pick(clauses("AI"), 4).map(t => ({t, src:"AI"})),
+  ];
+  for (let i = items.length - 1; i > 0; i--){          // shuffle
+    const j = Math.floor(Math.random()*(i+1));
+    [items[i], items[j]] = [items[j], items[i]];
+  }
+  S.quiz = items;
+}
+
+/* ---- debrief ---- */
+let strokes = [], drawing = false;
+function startDebrief(who){
+  S.current = who;
+  document.getElementById("dWho").textContent = "Participant " + who + " · alone in the room";
+  document.getElementById("lockNote").textContent =
+    `Participant ${who === "A" ? "B" : "A"} must not be able to see this screen.`;
+  document.getElementById("dProtect").value = "";
+  strokes = [];
+  document.getElementById("quiz").innerHTML = S.quiz.map((q,i) => `
+    <div class="qitem"><p>“${esc(q.t)}”</p>
+      <div class="qopts" data-i="${i}">
+        <button class="qopt" type="button" data-v="A" aria-pressed="false">Participant A</button>
+        <button class="qopt" type="button" data-v="B" aria-pressed="false">Participant B</button>
+        <button class="qopt" type="button" data-v="AI" aria-pressed="false">The system</button>
+      </div></div>`).join("");
+  document.querySelectorAll("#quiz .qopts").forEach(row => row.onclick = e => {
+    const btn = e.target.closest(".qopt"); if (!btn) return;
+    row.querySelectorAll(".qopt").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
+  });
+  setPhase("debrief");
+  requestAnimationFrame(paintDrawCanvas);
+}
+// The empty site: two banks and the gap between them. Never the structure —
+// showing what was built would be prompting the answer we are trying to measure.
+function drawBanks(ctx){
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(-2, H+2);
+  for (let x = -2; x <= W+2; x += 4) ctx.lineTo(x, x <= GAP_L || x >= GAP_R ? BANK_Y : H + 60);
+  ctx.lineTo(W+2, H+2); ctx.closePath();
+  ctx.fillStyle = C.terra; ctx.fill();
+  ctx.strokeStyle = C.ink; ctx.globalAlpha = .4; ctx.lineWidth = 2; ctx.stroke();
+  ctx.globalAlpha = .09; ctx.lineWidth = 1; ctx.save(); ctx.clip();
+  for (let i = -H; i < W+H; i += 18){ ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i+H,H); ctx.stroke(); }
+  ctx.restore();
+  ctx.globalAlpha = .5; ctx.setLineDash([4,7]); ctx.strokeStyle = C.muted; ctx.lineWidth = 1.4;
+  [GAP_L, GAP_R].forEach(x => { ctx.beginPath(); ctx.moveTo(x, 150); ctx.lineTo(x, BANK_Y); ctx.stroke(); });
+  ctx.setLineDash([]); ctx.globalAlpha = .85;
+  ctx.fillStyle = C.muted; ctx.font = '500 15px "IBM Plex Mono", monospace';
+  ctx.textAlign = "right"; ctx.fillText("west bank", GAP_L - 16, BANK_Y - 16);
+  ctx.textAlign = "left";  ctx.fillText("east bank", GAP_R + 16, BANK_Y - 16);
+  ctx.textAlign = "center"; ctx.globalAlpha = .6;
+  ctx.fillText(SPAN_M + " m", (GAP_L+GAP_R)/2, BANK_Y + 74);
+  ctx.restore();
+}
+
+function paintDrawCanvas(){
+  const cv = document.getElementById("drawCv");
+  const ctx = fit(cv);
+  drawBanks(ctx);
+  ctx.save(); ctx.strokeStyle = S.current === "A" ? C.a : C.b; ctx.lineWidth = 5;
+  ctx.lineCap = "round"; ctx.lineJoin = "round";
+  strokes.forEach(st => { if (st.length < 2) return;
+    ctx.beginPath(); st.forEach((p,i) => i ? ctx.lineTo(p.x,p.y) : ctx.moveTo(p.x,p.y)); ctx.stroke(); });
+  ctx.restore();
+}
+function cvPoint(cv, e){
+  const r = cv.getBoundingClientRect();
+  const k = Math.min(r.width/SRC.w, r.height/SRC.h);
+  return {x: SRC.x + (e.clientX - r.left - (r.width - SRC.w*k)/2)/k,
+          y: SRC.y + (e.clientY - r.top  - (r.height - SRC.h*k)/2)/k};
+}
+{
+  const cv = document.getElementById("drawCv");
+  const down = e => { drawing = true; strokes.push([cvPoint(cv,e)]); cv.setPointerCapture(e.pointerId); paintDrawCanvas(); };
+  const move = e => { if (!drawing) return; strokes[strokes.length-1].push(cvPoint(cv,e)); paintDrawCanvas(); };
+  const up = () => { drawing = false; };
+  cv.addEventListener("pointerdown", down); cv.addEventListener("pointermove", move);
+  cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
+  addEventListener("pointerup", up);            // released off-canvas still ends the stroke
+  const stray = () => { strokes = strokes.filter(s => s.length > 1); };
+  cv.addEventListener("pointerup", stray);      // a click that drew nothing leaves nothing
+  document.getElementById("clearDraw").onclick = () => { strokes = []; paintDrawCanvas(); };
+}
+document.getElementById("dDone").onclick = () => {
+  const answers = [...document.querySelectorAll("#quiz .qopts")].map(row => {
+    const on = row.querySelector('.qopt[aria-pressed="true"]');
+    return on ? on.dataset.v : null;
+  });
+  S.debriefs[S.current] = {
+    protect: document.getElementById("dProtect").value.trim(),
+    strokes: strokes.map(s => s.map(p => [Math.round(p.x), Math.round(p.y)])),
+    answers,
+  };
+  if (!S.debriefs.B) startDebrief("B");
+  else { setPhase("compare"); requestAnimationFrame(renderCompare); }
+};
+
+/* ---- compare ---- */
+function renderCompare(){
+  const cv = document.getElementById("cmpCv");
+  cv.style.height = "320px";
+  const ctx = fit(cv);
+  drawBanks(ctx);
+  if (S.design){                                  // what was actually built
+    ctx.save(); ctx.strokeStyle = C.ink; ctx.globalAlpha = .32; ctx.lineWidth = 8; ctx.setLineDash([2,10]);
+    ctx.beginPath(); ctx.moveTo(GAP_L, S.design.deckY); ctx.lineTo(GAP_R, S.design.deckY); ctx.stroke();
+    ctx.restore();
+  }
+  {                                               // key, so the image reads on its own
+    const x = 60; let y = 172;
+    ctx.save(); ctx.font = '500 15px "IBM Plex Mono", monospace'; ctx.textAlign = "left";
+    [[C.a, "participant A drew", false], [C.b, "participant B drew", false], [C.ink, "what was built", true]]
+      .forEach(([col, label, dashed]) => {
+        ctx.strokeStyle = col; ctx.lineWidth = 4;
+        ctx.globalAlpha = dashed ? .34 : .85;
+        ctx.setLineDash(dashed ? [2,7] : []);
+        ctx.beginPath(); ctx.moveTo(x, y - 5); ctx.lineTo(x + 34, y - 5); ctx.stroke();
+        ctx.setLineDash([]); ctx.globalAlpha = dashed ? .5 : .85;
+        ctx.fillStyle = col; ctx.fillText(label, x + 44, y);
+        y += 26;
+      });
+    ctx.restore();
+  }
+  ["A","B"].forEach(k => {
+    const d = S.debriefs[k]; if (!d) return;
+    ctx.save(); ctx.strokeStyle = k === "A" ? C.a : C.b; ctx.lineWidth = 5; ctx.globalAlpha = .85;
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    d.strokes.forEach(s => { if (s.length < 2) return;
+      ctx.beginPath(); s.forEach((p,i) => i ? ctx.lineTo(p[0],p[1]) : ctx.moveTo(p[0],p[1])); ctx.stroke(); });
+    ctx.restore();
+  });
+
+  const score = k => {
+    const d = S.debriefs[k]; if (!d) return {correct:0, total:0, aiToPartner:0, aiTotal:0};
+    let correct = 0, aiToPartner = 0, aiTotal = 0;
+    S.quiz.forEach((q,i) => {
+      const ans = d.answers[i];
+      if (ans === q.src) correct++;
+      if (q.src === "AI"){ aiTotal++; if (ans === (k === "A" ? "B" : "A")) aiToPartner++; }
+    });
+    return {correct, total:S.quiz.length, aiToPartner, aiTotal};
+  };
+  const sa = score("A"), sb = score("B");
+  const aiMis = sa.aiToPartner + sb.aiToPartner, aiTot = sa.aiTotal + sb.aiTotal;
+  document.getElementById("metrics").innerHTML = `
+    <div class="metric"><dt>Attribution correct</dt><dd>${sa.correct}/${sa.total} · ${sb.correct}/${sb.total}
+      <small>participant A · participant B</small></dd></div>
+    <div class="metric ${aiMis ? "flag" : ""}"><dt>System's words credited to the other person</dt>
+      <dd>${aiMis}/${aiTot}<small>across both debriefs, the conduit illusion counted</small></dd></div>
+    <div class="metric"><dt>Words spoken · picked up</dt><dd>${S.words.spoken} · ${S.words.taken}
+      <small>${S.words.spoken ? Math.round(100*S.words.taken/S.words.spoken) : 0}% of what was said reached the world</small></dd></div>`;
+
+  document.getElementById("answers").innerHTML = ["A","B"].map(k => {
+    const d = S.debriefs[k] || {};
+    return `<div class="box ${k.toLowerCase()}"><h4>Participant ${k} said the other was protecting</h4>
+      <p>${d.protect ? esc(d.protect) : "<em style='color:var(--muted)'>left blank</em>"}</p></div>`;
+  }).join("");
+
+  const record = {
+    meta:S.meta, site:{spanMetres:SPAN_M, arbitration:"Nash product (a×b), Pareto-first"},
+    transcript:S.msgs,
+    model:{goals:[...S.model.goals.keys()], limits:[...S.model.limits.keys()],
+           hasWater:S.model.hasWater, hasRock:S.model.hasRock},
+    design:S.design ? {label:S.design.label, cost:+S.design.cost.toFixed(1), months:S.design.months,
+                       a:+S.design.a.toFixed(3), b:+S.design.b.toFixed(3),
+                       keeps:S.design.keeps.map(k=>k.t), breaks:S.design.breaks.map(b=>b.t)} : null,
+    words:{spoken:S.words.spoken, pickedUp:S.words.taken, floating:S.words.floating},
+    quiz:S.quiz, debriefs:S.debriefs,
+    scores:{A:sa, B:sb, systemWordsCreditedToPartner:{count:aiMis, of:aiTot}},
+  };
+  document.getElementById("exportBox").value = JSON.stringify(record, null, 2);
+  S.record = record;
+}
+
+document.getElementById("saveBtn").onclick = async () => {
+  const name = `toolmakers-${(S.meta.pair||"pair").replace(/\s+/g,"")}-${S.meta.date||""}.json`;
+  const downloads = window.claude && claude.use ? await claude.use("downloads") : null;
+  if (!downloads){
+    document.getElementById("exportBox").select();
+    alert("Saving files isn't available here — the record is selected below, copy it out.");
+    return;
+  }
+  try { await downloads.save({filename:name, data:JSON.stringify(S.record, null, 2)}); }
+  catch(e){ alert("The save was declined or failed. The record is in the box below."); }
+};
+document.getElementById("copyBtn").onclick = async () => {
+  const box = document.getElementById("exportBox");
+  try { await navigator.clipboard.writeText(box.value); document.getElementById("copyBtn").textContent = "Copied"; }
+  catch(e){ box.select(); }
+};
+document.getElementById("newBtn").onclick = () => {
+  document.getElementById("notes").value = "";
+  setPhase("setup");
+};
+
+/* ---- boot ---- */
+readPalette();
+document.getElementById("fDate").value = new Date().toISOString().slice(0,10);
+setPhase("setup");
+const repaint = () => { readPalette();
+  if (S.phase === "session") paintWorld();
+  if (S.phase === "debrief") paintDrawCanvas();
+  if (S.phase === "compare") renderCompare();
+};
+addEventListener("resize", repaint);
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", repaint);
+new MutationObserver(repaint).observe(document.documentElement, {attributes:true, attributeFilter:["data-theme"]});
+})();
+</script>
+</body>
+</html>

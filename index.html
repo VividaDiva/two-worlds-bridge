@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Two Worlds, One Bridge</title>
+<meta name="description" content="Four simulations on what happens to people when an AI mediates between them — a design engineering research prototype.">
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --ground:#E4EAEA; --surface:#F4F8F8; --panel:#FBFDFD;
+    --ink:#0E1B1B; --muted:#5D7171; --line:#C6D2D2; --line-soft:#DCE5E5;
+    --roleA:#B26320; --roleB:#2F6288; --signal:#0C8478;
+    --shadow:0 1px 2px rgba(14,27,27,.06), 0 8px 24px rgba(14,27,27,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#080F10; --surface:#101B1C; --panel:#152122;
+      --ink:#E5EDEC; --muted:#8CA3A2; --line:#26393A; --line-soft:#1C2B2C;
+      --roleA:#DE9744; --roleB:#6FA6D4; --signal:#3CBCAE;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#080F10; --surface:#101B1C; --panel:#152122;
+    --ink:#E5EDEC; --muted:#8CA3A2; --line:#26393A; --line-soft:#1C2B2C;
+    --roleA:#DE9744; --roleB:#6FA6D4; --signal:#3CBCAE;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--ground); color:var(--ink);
+    font-family:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size:15px; line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:Archivo, ui-sans-serif, system-ui, sans-serif; margin:0; text-wrap:balance; letter-spacing:-.018em}
+  a{color:inherit}
+  :focus-visible{outline:2px solid var(--signal); outline-offset:3px}
+  .wrap{max-width:920px; margin:0 auto; padding:56px 26px 80px}
+
+  .kicker{
+    font-family:"IBM Plex Mono", monospace; font-size:10.5px; letter-spacing:.17em;
+    text-transform:uppercase; color:var(--muted); margin:0 0 14px;
+  }
+  h1{font-size:clamp(34px,6vw,58px); font-weight:700; line-height:1.02; max-width:14ch}
+  .lede{margin:20px 0 0; font-size:17px; max-width:62ch; color:var(--ink)}
+  .lede b{font-weight:600; box-shadow:inset 0 -.5em 0 color-mix(in srgb, var(--signal) 17%, transparent)}
+  .note{margin:14px 0 0; font-size:13.5px; color:var(--muted); max-width:62ch}
+
+  .rule{height:1px; background:var(--line); margin:40px 0 30px; border:0}
+
+  .grid{display:grid; gap:14px}
+  .card{
+    display:block; text-decoration:none; border:1px solid var(--line); border-radius:13px;
+    background:var(--panel); padding:20px 22px; box-shadow:var(--shadow);
+    transition:border-color .16s, transform .16s;
+  }
+  .card:hover{border-color:var(--ink); transform:translateY(-2px)}
+  .card .n{
+    font-family:"IBM Plex Mono", monospace; font-size:10px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--muted);
+  }
+  .card h2{font-size:22px; font-weight:600; margin:5px 0 7px}
+  .card p{margin:0; color:var(--muted); font-size:14.5px; max-width:60ch}
+  .card .go{
+    display:inline-block; margin-top:11px; font-family:"IBM Plex Mono", monospace;
+    font-size:11px; letter-spacing:.08em; color:var(--signal);
+  }
+
+  footer{margin-top:46px; padding-top:22px; border-top:1px solid var(--line); color:var(--muted); font-size:13px}
+  footer p{margin:0 0 7px; max-width:62ch}
+  @media (prefers-reduced-motion:reduce){ .card{transition:none} .card:hover{transform:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="kicker">Design engineering research · working prototypes</p>
+  <h1>Two Worlds,<br>One Bridge</h1>
+  <p class="lede">Two people describe the same place in ways that cannot both be true. An AI in the middle has to build something anyway. These four simulations ask <b>what that machine does to the people talking through it</b> — and each one is a working instrument, not a mockup.</p>
+  <p class="note">Everything runs in the browser. Nothing is sent anywhere, and no account is needed.</p>
+
+  <hr class="rule">
+
+  <div class="grid">
+    <a class="card" href="two-worlds-bridge.html">
+      <span class="n">01 · the simulation</span>
+      <h2>Two Worlds, One Bridge</h2>
+      <p>One role sees a river between two cities. The other sees a mountain between two villages. The same gap, described incompatibly — and one structure that has to stand in both. Includes the idea-space view, which shows every word said and the few the world ever picked up.</p>
+      <span class="go">open →</span>
+    </a>
+
+    <a class="card" href="i-want-i-do-not-want.html">
+      <span class="n">02 · the experiment</span>
+      <h2>I Want, I Do Not Want</h2>
+      <p>Both people are simulated. One may only say “I want…”, the other only “I do not want…”, and the machine builds what it hears out of matchsticks. Three cases: as given, voices swapped, and each of them alone in a room with the machine.</p>
+      <span class="go">open →</span>
+    </a>
+
+    <a class="card" href="five-fairnesses.html">
+      <span class="n">03 · the plate</span>
+      <h2>Five Fairnesses</h2>
+      <p>The same brief, solved five times under five different definitions of fairness — utilitarian, Rawlsian, Nash, precautionary, and whoever-pays. Each rule builds a different bridge. One of them builds nothing at all.</p>
+      <span class="go">open →</span>
+    </a>
+
+    <a class="card" href="toolmakers-protocol.html">
+      <span class="n">04 · the instrument</span>
+      <h2>Toolmakers Protocol</h2>
+      <p>A session runner for studying this with real people: printable private briefs, an operator console, separate debriefs, and a comparison of what each participant left the room believing had been built.</p>
+      <span class="go">open →</span>
+    </a>
+  </div>
+
+  <footer>
+    <p>The premise comes from Michael Reddy’s 1979 argument that we wrongly imagine communication as transfer through a conduit, when meaning is always rebuilt by the receiver out of their own materials.</p>
+    <p>Built with Claude Code.</p>
+  </footer>
+</div>
+</body>
+</html>

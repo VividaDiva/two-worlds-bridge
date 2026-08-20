@@ -1,0 +1,874 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>I Want, I Do Not Want</title>
+<meta name="description" content="Two simulated people, one kind of sentence each, and a machine that builds in matchsticks.">
+<link rel="icon" href="data:,">
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  :root{
+    --ground:#E5E9E6; --surface:#F4F7F4; --panel:#FCFDFC;
+    --ink:#15201B; --muted:#5F7168; --line:#C8D2CC; --line-soft:#DEE6E1;
+    --roleA:#B26320; --roleA-tint:#F4E6D4; --roleA-ink:#7B4413;
+    --roleB:#2F6288; --roleB-tint:#D8E4EE; --roleB-ink:#1F4761;
+    --signal:#0C8478; --fault:#B03F35;
+    --sky:#DFE8E4; --land:#C3CCC4; --land-2:#AAB5AC; --water:#9FC0C6; --rock:#B4BBB2;
+    --wood:#D8B078; --wood-dark:#A87C46; --head:#C0402F;
+    --shadow:0 1px 2px rgba(21,32,27,.06), 0 8px 24px rgba(21,32,27,.07);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#0A100D; --surface:#111A16; --panel:#16211C;
+      --ink:#E6EDE8; --muted:#8DA096; --line:#27352E; --line-soft:#1C2721;
+      --roleA:#DE9744; --roleA-tint:#2C1F1092; --roleA-ink:#EDB878;
+      --roleB:#6FA6D4; --roleB-tint:#13232F92; --roleB-ink:#9DC5E6;
+      --signal:#3CBCAE; --fault:#DF6C5E;
+      --sky:#0E1815; --land:#242E28; --land-2:#1A231E; --water:#173A41; --rock:#2A332C;
+      --wood:#C69A5F; --wood-dark:#8A6335; --head:#D9553F;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0A100D; --surface:#111A16; --panel:#16211C;
+    --ink:#E6EDE8; --muted:#8DA096; --line:#27352E; --line-soft:#1C2721;
+    --roleA:#DE9744; --roleA-tint:#2C1F1092; --roleA-ink:#EDB878;
+    --roleB:#6FA6D4; --roleB-tint:#13232F92; --roleB-ink:#9DC5E6;
+    --signal:#3CBCAE; --fault:#DF6C5E;
+    --sky:#0E1815; --land:#242E28; --land-2:#1A231E; --water:#173A41; --rock:#2A332C;
+    --wood:#C69A5F; --wood-dark:#8A6335; --head:#D9553F;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--ground); color:var(--ink);
+    font-family:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size:14px; line-height:1.55; -webkit-font-smoothing:antialiased;
+    display:flex; flex-direction:column; min-height:100dvh;
+  }
+  h1,h2,h3{font-family:Archivo, ui-sans-serif, system-ui, sans-serif; margin:0; text-wrap:balance; letter-spacing:-.015em}
+  button{font:inherit; color:inherit}
+  :focus-visible{outline:2px solid var(--signal); outline-offset:2px}
+
+  .bar{
+    flex:none; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+    padding:11px 20px; border-bottom:1px solid var(--line); background:var(--surface);
+  }
+  .bar h1{font-size:16px; font-weight:700}
+  .bar p{margin:0; font-size:12.5px; color:var(--muted)}
+  .tools{display:flex; gap:7px; align-items:center; flex-wrap:wrap}
+  .ghost{
+    background:transparent; border:1px solid var(--line); border-radius:999px; padding:5px 13px;
+    font-size:12.5px; cursor:pointer; color:var(--muted); transition:border-color .15s,color .15s;
+  }
+  .ghost:hover{border-color:var(--ink); color:var(--ink)}
+  .ghost.primary{background:var(--ink); color:var(--ground); border-color:var(--ink); font-weight:600}
+  .ghost.primary:hover{opacity:.87}
+  .ghost[aria-pressed="true"]{color:var(--signal); border-color:var(--signal)}
+
+  .app{display:grid; grid-template-columns:minmax(0,1.5fr) minmax(360px,1fr); flex:1; min-height:0}
+  @media (min-width:961px){ body{height:100dvh; overflow:hidden} }
+  /* short windows: let the page scroll rather than hiding the scene below the fold */
+  @media (min-width:961px) and (max-height:720px){ body{height:auto; overflow:visible} .app{min-height:720px} }
+  .stage{display:flex; flex-direction:column; min-width:0; min-height:0; padding:14px 18px 12px; gap:10px; overflow-y:auto}
+  .side{display:flex; flex-direction:column; min-width:0; min-height:0; border-left:1px solid var(--line); background:var(--surface)}
+
+  /* cases */
+  .cases{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
+  .case{
+    text-align:left; border:1px solid var(--line); border-radius:10px; padding:9px 11px;
+    background:var(--panel); cursor:pointer; transition:border-color .15s, background .15s;
+    display:flex; flex-direction:column; gap:4px;
+  }
+  .case svg{width:100%; max-width:118px; height:auto; overflow:visible}
+  .case svg rect{fill:none; stroke:var(--line); stroke-width:1.5}
+  .case svg line{stroke:var(--muted); stroke-width:1.5; opacity:.6}
+  .case svg line.dash{stroke-dasharray:3 3; opacity:.35}
+  .case svg circle.ra{fill:var(--roleA)} .case svg circle.rb{fill:var(--roleB)}
+  .case svg circle.rai{fill:none; stroke:var(--ink); stroke-width:1.8}
+  .case svg text{font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; text-anchor:middle}
+  .case svg text.ta{fill:var(--roleA)} .case svg text.tb{fill:var(--roleB)}
+  .case b{font-family:Archivo,sans-serif; font-size:13px; font-weight:600}
+  .case > span{font-size:11.5px; color:var(--muted); line-height:1.4}
+  .case .res{
+    margin-top:auto; font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.07em;
+    text-transform:uppercase; color:var(--muted); font-style:normal;
+    border-top:1px solid var(--line-soft); padding-top:5px;
+  }
+  .case .res.done{color:var(--signal)}
+  .case:hover{border-color:var(--ink)}
+  .case[aria-pressed="true"]{border-color:var(--signal); background:color-mix(in srgb,var(--signal) 8%,transparent)}
+
+  .key{
+    margin:-2px 0 0; font-size:11.5px; color:var(--muted); font-family:"IBM Plex Mono",monospace; letter-spacing:.02em;
+  }
+  .key span{font-weight:600}
+  .key .ka{color:var(--roleA)} .key .kb{color:var(--roleB)} .key .km{color:var(--ink)}
+
+  /* the two goals, on one line */
+  .goalline{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+  .goalline .g{
+    border:1px solid var(--line); border-radius:9px; padding:6px 10px; font-size:12.5px;
+    background:var(--panel); display:flex; gap:7px; align-items:baseline; flex-wrap:wrap;
+  }
+  .goalline .g.a{border-color:color-mix(in srgb,var(--roleA) 45%,transparent)}
+  .goalline .g.b{border-color:color-mix(in srgb,var(--roleB) 45%,transparent)}
+  .goalline .g b{font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase}
+  .goalline .g.a b{color:var(--roleA)} .goalline .g.b b{color:var(--roleB)}
+  .goalline .g em{
+    font-style:normal; font-family:"IBM Plex Mono",monospace; font-size:10px; color:var(--muted);
+    border:1px solid var(--line); border-radius:4px; padding:0 5px;
+  }
+  .goalline .g i{font-style:normal; font-family:"IBM Plex Mono",monospace; font-size:10px; margin-left:auto}
+  .goalline .g i.yes{color:var(--signal)} .goalline .g i.no{color:var(--muted)}
+
+  /* two rooms, no channel between them */
+  .threads{flex:1; min-height:0; display:flex; flex-direction:column}
+  .rooms{flex:1; min-height:0; display:grid; grid-template-columns:1fr 1fr}
+  .rooms[hidden]{display:none}
+  .room{display:flex; flex-direction:column; min-height:0; min-width:0}
+  .room.b{border-left:2px dashed var(--line)}
+  .room-h{
+    flex:none; font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.1em;
+    text-transform:uppercase; padding:7px 12px; border-bottom:1px solid var(--line-soft);
+  }
+  .room.a .room-h{color:var(--roleA)} .room.b .room-h{color:var(--roleB)}
+  .rooms .log{padding:11px}
+  .rooms .turn{max-width:100%}
+  .rooms .ai{padding:9px 10px}
+  .vhost{flex:none; max-height:44%; overflow-y:auto; padding:0 15px}
+  .vhost:not(:empty){padding:12px 15px; border-top:1px solid var(--line)}
+
+  .cmp{
+    width:100%; border-collapse:collapse; font-size:12px; border:1px solid var(--line);
+    border-radius:10px; overflow:hidden; background:var(--panel);
+  }
+  .cmp th{
+    font-family:"IBM Plex Mono",monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--muted); font-weight:500; text-align:left; padding:6px 10px; border-bottom:1px solid var(--line-soft);
+  }
+  .cmp td{padding:6px 10px; border-bottom:1px solid var(--line-soft)}
+  .cmp tr:last-child td{border-bottom:none}
+  .cmp td.k{font-family:"IBM Plex Mono",monospace; color:var(--muted); font-size:11px}
+  .cmp td.win{font-weight:600}
+  .cmp td.a{color:var(--roleA)} .cmp td.b{color:var(--roleB)}
+  .cmp .pending{color:var(--muted); font-style:italic}
+  .cmp caption{
+    caption-side:bottom; text-align:left; padding:7px 10px; font-size:12px; color:var(--muted);
+    border-top:1px solid var(--line-soft);
+  }
+
+  .canvas-wrap{
+    position:relative; flex:1 0 auto; min-height:260px; border:1px solid var(--line); border-radius:12px;
+    overflow:hidden; background:var(--panel); box-shadow:var(--shadow);
+  }
+  canvas{display:block; width:100%; height:100%}
+  .badge{
+    position:absolute; left:12px; bottom:11px; display:flex; gap:6px; flex-wrap:wrap; max-width:calc(100% - 24px);
+  }
+  .badge span{
+    font-family:"IBM Plex Mono",monospace; font-size:11px; padding:4px 9px; border-radius:6px;
+    border:1px solid var(--line); background:color-mix(in srgb,var(--panel) 86%,transparent);
+  }
+  .badge .built{color:var(--ink)}
+  .badge .n{color:var(--muted)}
+
+  /* chat */
+  .log{flex:1; min-height:0; overflow-y:auto; padding:15px; display:flex; flex-direction:column; gap:11px}
+  .turn{max-width:88%; display:flex; flex-direction:column; gap:4px}
+  .turn .who{font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase}
+  .bub{padding:9px 13px; border-radius:13px; font-size:14px}
+  .turn.a{align-self:flex-start}
+  .turn.a .who{color:var(--roleA)}
+  .turn.a .bub{background:var(--roleA-tint); color:var(--roleA-ink); border-bottom-left-radius:4px}
+  .turn.b{align-self:flex-end; align-items:flex-end}
+  .turn.b .who{color:var(--roleB)}
+  .turn.b .bub{background:var(--roleB-tint); color:var(--roleB-ink); border-bottom-right-radius:4px}
+  .bub .lead{font-weight:600; opacity:.75}
+  .why{font-size:11px; color:var(--muted); font-style:italic}
+  .turn.b .why{text-align:right}
+  .dbl{
+    display:inline-block; font-family:"IBM Plex Mono",monospace; font-size:9px; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--fault); border:1px solid color-mix(in srgb,var(--fault) 45%,transparent);
+    border-radius:4px; padding:1px 5px; margin-top:4px;
+  }
+  .ai{
+    align-self:stretch; max-width:100%; border:1px solid var(--line); border-radius:12px; background:var(--panel);
+    padding:11px 13px; display:flex; flex-direction:column; gap:6px; box-shadow:var(--shadow);
+  }
+  .ai .who{font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted)}
+  .ai .made{font-family:Archivo,sans-serif; font-weight:600; font-size:15px; display:flex; gap:8px; align-items:baseline; flex-wrap:wrap}
+  .ai .made small{font-family:"IBM Plex Mono",monospace; font-weight:400; font-size:10.5px; color:var(--muted)}
+  .ai p{margin:0; font-size:13px; color:var(--muted)}
+  .ai p.drift{color:var(--fault)}
+  .ai .ruled{display:flex; gap:4px; flex-wrap:wrap}
+  .ai .ruled span{
+    font-family:"IBM Plex Mono",monospace; font-size:9.5px; padding:1px 6px; border-radius:4px;
+    border:1px dashed var(--line); color:var(--muted); text-decoration:line-through;
+  }
+  .verdict{
+    align-self:stretch; border:1px solid var(--signal); border-radius:12px; padding:13px 15px;
+    background:color-mix(in srgb,var(--signal) 7%,transparent); display:flex; flex-direction:column; gap:7px;
+  }
+  .verdict h3{font-size:15px}
+  .verdict p{margin:0; font-size:13px}
+  .verdict .k{
+    font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--signal);
+  }
+  .foot{
+    flex:none; border-top:1px solid var(--line); padding:11px 15px;
+    display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+  }
+  .foot .n{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted); margin-left:auto}
+
+  @media (max-width:960px){
+    .cases{grid-template-columns:1fr}
+    .goalline{grid-template-columns:1fr}
+    .app{grid-template-columns:1fr}
+    .side{border-left:none; border-top:1px solid var(--line); height:68dvh}
+    .stage{height:74dvh}
+  }
+  @media (prefers-reduced-motion:reduce){ *{transition:none !important} }
+</style>
+
+<header class="bar">
+  <div>
+    <h1>I Want, I Do Not Want</h1>
+    <p>Two simulated people, one kind of sentence each, and a machine that builds what it hears out of matches.</p>
+  </div>
+  <div class="tools">
+    <button class="ghost primary" id="playBtn">Play</button>
+    <button class="ghost" id="stepBtn">Step</button>
+    <button class="ghost" id="speedBtn">1×</button>
+    <button class="ghost" id="resetBtn">Reset</button>
+  </div>
+</header>
+
+<main class="app">
+  <section class="stage">
+    <div class="cases" id="cases">
+      <button class="case" data-c="given" aria-pressed="true">
+        <svg viewBox="0 0 104 40" aria-hidden="true">
+          <rect x="1.5" y="7.5" width="101" height="31" rx="6"/>
+          <line x1="24" y1="23" x2="52" y2="23"/><line x1="52" y1="23" x2="80" y2="23"/>
+          <circle cx="24" cy="23" r="6" class="ra"/><circle cx="52" cy="23" r="5" class="rai"/><circle cx="80" cy="23" r="6" class="rb"/>
+          <text x="24" y="5" class="ta">+</text><text x="80" y="5" class="tb">&minus;</text>
+        </svg>
+        <b>1 · As given</b><span>one room. Role 1 may only ask, Role 2 may only refuse.</span>
+        <em class="res" data-res="given">not run</em>
+      </button>
+      <button class="case" data-c="swapped" aria-pressed="false">
+        <svg viewBox="0 0 104 40" aria-hidden="true">
+          <rect x="1.5" y="7.5" width="101" height="31" rx="6"/>
+          <line x1="24" y1="23" x2="52" y2="23"/><line x1="52" y1="23" x2="80" y2="23"/>
+          <circle cx="24" cy="23" r="6" class="ra"/><circle cx="52" cy="23" r="5" class="rai"/><circle cx="80" cy="23" r="6" class="rb"/>
+          <text x="24" y="5" class="ta">&minus;</text><text x="80" y="5" class="tb">+</text>
+        </svg>
+        <b>2 · Voices swapped</b><span>same room, same goals — the two speech acts exchanged.</span>
+        <em class="res" data-res="swapped">not run</em>
+      </button>
+      <button class="case" data-c="separate" aria-pressed="false">
+        <svg viewBox="0 0 104 40" aria-hidden="true">
+          <rect x="1.5" y="7.5" width="47" height="31" rx="6"/><rect x="55.5" y="7.5" width="47" height="31" rx="6"/>
+          <line x1="16" y1="23" x2="34" y2="23"/><line x1="70" y1="23" x2="88" y2="23"/>
+          <line x1="34" y1="23" x2="70" y2="23" class="dash"/>
+          <circle cx="16" cy="23" r="6" class="ra"/><circle cx="34" cy="23" r="5" class="rai"/>
+          <circle cx="70" cy="23" r="5" class="rai"/><circle cx="88" cy="23" r="6" class="rb"/>
+          <text x="16" y="5" class="ta">+</text><text x="88" y="5" class="tb">&minus;</text>
+        </svg>
+        <b>3 · Apart</b><span>same voices as case 1 — but each is alone with the machine and neither knows the other is there.</span>
+        <em class="res" data-res="separate">not run</em>
+      </button>
+    </div>
+    <p class="key"><span class="ka">+</span> may only say &ldquo;I want&hellip;&rdquo; &nbsp;·&nbsp;
+       <span class="kb">&minus;</span> may only say &ldquo;I do not want&hellip;&rdquo; &nbsp;·&nbsp;
+       <span class="km">○</span> the machine &nbsp;·&nbsp; boxes are rooms</p>
+    <div class="goalline">
+      <span class="g a"><b>Role 1</b> a single plank, flat on the water
+        <em id="actA">may only ask</em><i class="hit no" id="hitA">not built</i></span>
+      <span class="g b"><b>Role 2</b> a cable-stayed deck, over the mountain
+        <em id="actB">may only refuse</em><i class="hit no" id="hitB">not built</i></span>
+    </div>
+    <table class="cmp" id="cmp"></table>
+    <div class="canvas-wrap">
+      <canvas id="scene"></canvas>
+      <div class="badge">
+        <span class="built" id="bBuilt">nothing built yet</span>
+        <span class="n" id="bMatches">0 matches</span>
+        <span class="n" id="bWorld">no ground claimed</span>
+      </div>
+    </div>
+  </section>
+
+  <aside class="side">
+    <div class="threads">
+      <div class="log" id="log" aria-live="polite"></div>
+      <div class="rooms" id="rooms" hidden>
+        <div class="room a"><div class="room-h">Role 1&rsquo;s room</div><div class="log" id="logA"></div></div>
+        <div class="room b"><div class="room-h">Role 2&rsquo;s room</div><div class="log" id="logB"></div></div>
+      </div>
+      <div class="vhost" id="vhost"></div>
+    </div>
+    <div class="foot">
+      <button class="ghost" id="againBtn">Run it again</button>
+      <span class="n" id="turnN">turn 0</span>
+    </div>
+  </aside>
+</main>
+
+<script>
+(() => {
+"use strict";
+
+/* ═══════════════════════════════════════════════════════════
+   1 · THE SITE — flat shapes, two claimed worlds
+   ═══════════════════════════════════════════════════════════ */
+const W = 1200, H = 700;
+const GAP_L = 250, GAP_R = 950, SPAN = GAP_R - GAP_L;
+const GROUND_Y = 440;                       // bank tops on both sides
+const PEAK = {x: 600, y: 196, l: 322, r: 878};   // Role 2's mountain
+const DECK_LOW  = GROUND_Y - 12;            // a plank lying across
+const DECK_HIGH = PEAK.y - 52;              // clearing the peak
+const DECK_MID  = GROUND_Y - 150;           // held up, but over open water
+
+const mountainY = x => (x <= PEAK.l || x >= PEAK.r) ? GROUND_Y
+  : GROUND_Y - (GROUND_Y - PEAK.y) * (1 - Math.abs(x - PEAK.x) / (PEAK.x - PEAK.l));
+
+/* ═══════════════════════════════════════════════════════════
+   2 · THE KIT — six things that can be made out of matches
+   ═══════════════════════════════════════════════════════════ */
+const KIT = [
+  {id:"plank",  name:"A single plank",     has:["plank","low","flat","bare","few"]},
+  {id:"beam",   name:"A beam on piers",    has:["piers","low","flat","bare"]},
+  {id:"truss",  name:"A truss",            has:["truss","piers","triangles"]},
+  {id:"arch",   name:"An arch",            has:["arch","curve"]},
+  {id:"stayed", name:"A cable-stayed deck",has:["towers","cables","clear","high"]},
+  {id:"susp",   name:"A suspension deck",  has:["towers","cables","clear","high","tall"]},
+];
+const NAME = id => (KIT.find(k => k.id === id) || {name:"nothing"}).name;
+
+/* ═══════════════════════════════════════════════════════════
+   3 · WHAT EACH ONE IS ALLOWED TO SAY
+   Role 1 may only affirm. Role 2 may only negate — so to ask for
+   a feature at all, it has to negate the absence of it.
+   ═══════════════════════════════════════════════════════════ */
+const SPEECH = {
+  // Role 1 · goal: a single plank, flat on the water
+  A:{
+    want:[
+      {say:"to get across the water.",              want:["water"],       why:"names the ground it stands on"},
+      {say:"one plank, laid straight across.",      want:["plank"],       why:"names the thing it came for"},
+      {say:"it flat, right down on the water.",     want:["low","flat"],  why:"the deck is too high for it"},
+      {say:"to walk over without climbing.",        want:["low"],         why:"the approach has become a climb"},
+      {say:"it made of as few matches as I can.",   want:["few"],         why:"the count keeps going up"},
+      {say:"nothing on it. No frame, no wires.",    want:["bare"],        why:"it sees parts it did not ask for"},
+      {say:"it finished today.",                    want:["few"],         why:"nothing is finished"},
+    ],
+    avoid:[
+      {say:"to cross a mountain.",          avoid:["rock"], crossRef:true, why:"refuses the other's ground"},
+      {say:"it up in the air.",             avoid:["high"],              why:"its goal lies flat"},
+      {say:"towers at either end.",         avoid:["towers"],            why:"rules out the stayed deck"},
+      {say:"wires strung over it.",         avoid:["cables"],            why:"rules out the cables"},
+      {say:"triangles all over it.",        avoid:["truss","triangles"], why:"rules out the truss"},
+      {say:"it bending into a curve.",      avoid:["arch","curve"],      why:"rules out the arch"},
+      {say:"posts standing in the middle.", avoid:["piers"],             why:"rules out everything on piers"},
+    ],
+  },
+  // Role 2 · goal: a cable-stayed deck, over the mountain
+  B:{
+    want:[
+      {say:"to cross the mountain.",                     want:["rock"],            why:"names the ground it stands on"},
+      {say:"it high, clear over the peak.",              want:["high"],            why:"names the height it needs"},
+      {say:"a tower standing at each end.",              want:["towers"],          why:"names a part of its goal"},
+      {say:"wires running from the towers to the deck.", want:["cables"],          why:"names a part of its goal"},
+      {say:"it to carry itself, with nothing beneath.",  want:["clear"],           why:"wants the span held from above"},
+      {say:"it to be worth looking at.",                 want:["towers","cables"], why:"restates its goal a second way"},
+      {say:"it built to last, not built cheap.",         want:["high","clear"],    why:"pushes back on the cheap option"},
+    ],
+    avoid:[
+      {say:"to cross water.",                      avoid:["water"], crossRef:true, why:"refuses the other's ground"},
+      {say:"the deck lying flat on the ground.",   avoid:["low","flat"],        why:"its goal needs height"},
+      {say:"a bridge with nothing holding it up.", avoid:["plank","bare"],      why:"rules out the bare deck"},
+      {say:"triangles all over it.",               avoid:["truss","triangles"], why:"rules out the truss"},
+      {say:"it bending into a curve.",             avoid:["arch","curve"],      why:"rules out the arch"},
+      {say:"posts standing in the middle.",        avoid:["piers"],             why:"rules out everything on piers"},
+      {say:"the cheapest thing you can make.",     avoid:["few"],               why:"rules out the plank again"},
+    ],
+  },
+};
+const CASES = {
+  given:   {label:"As given", A:"want",  B:"avoid",
+            note:"the one who wants the plank may only affirm; the one who wants the cables may only refuse"},
+  swapped: {label:"Swapped",  A:"avoid", B:"want",
+            note:"the same two goals, the speech acts exchanged — the only thing that changed"},
+  separate: {label:"Apart",  A:"want",  B:"avoid", split:true,
+            note:"case 1 again, but each of them is alone in a room with the machine and neither knows the other is there"},
+};
+const LEAD = {want:"I want ", avoid:"I do not want "};
+// Apart, neither of them can refuse a ground they have never heard anyone name.
+const linesFor = role => SPEECH[role][CASES[S.case][role]]
+  .filter(l => !(CASES[S.case].split && l.crossRef));
+
+/* ═══════════════════════════════════════════════════════════
+   4 · THE MACHINE — it hears features, and picks from the kit
+   ═══════════════════════════════════════════════════════════ */
+const S = {
+  case:"given", results:{},
+  turn:0, speaker:"A", said:{A:new Set(), B:new Set()},
+  seen:{A:null, B:null}, unexplained:{A:0, B:0},
+  wants:new Map(), avoids:new Map(), world:{water:false, rock:false},
+  design:null, matches:0, log:[], done:false, playing:false, speed:1, hit:{A:0, B:0},
+};
+
+function hear(line, role){
+  (line.want || []).forEach(f => {
+    if (f === "water") S.world.water = true;
+    else if (f === "rock") S.world.rock = true;
+    else S.wants.set(f, (S.wants.get(f) || 0) + 1);
+  });
+  (line.avoid || []).forEach(f => {
+    if (f === "water" || f === "rock") return;   // neither can unsay the other's ground; both claims stand
+    S.avoids.set(f, (S.avoids.get(f) || 0) + 1);
+  });
+}
+
+// A plank has nothing holding it up, so it can only be laid where there is something to lie on.
+const feasible = k => !(k.id === "plank" && S.world.rock);
+
+function build(){
+  const scored = KIT.filter(feasible).map(k => {
+    let s = 0; const ruled = [];
+    k.has.forEach(f => {
+      if (S.wants.has(f))  s += 2 * S.wants.get(f);
+      if (S.avoids.has(f)){ s -= 3 * S.avoids.get(f); ruled.push(f); }
+    });
+    return {k, s, ruled};
+  });
+  scored.sort((x,y) => y.s - x.s || KIT.indexOf(x.k) - KIT.indexOf(y.k));
+  const best = scored[0];
+  S.design = best && best.s > -Infinity ? best.k : null;
+  S.ruledOut = scored.filter(c => c.s < best.s).map(c => c.k.id);
+  S.blocked = KIT.filter(k => !feasible(k)).map(k => k.id);
+  S.matches = assemble().length;                 // count now, so the card reports this build
+  return best;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   5 · THE TWO OF THEM
+   Each picks the line that most moves the build toward its own goal,
+   and repeats itself when it has nothing new left to say.
+   ═══════════════════════════════════════════════════════════ */
+const GOAL = {A:"plank", B:"stayed"};
+function choose(role){
+  const lines = linesFor(role), said = S.said[role];
+  const fresh = lines.filter((l,i) => !said.has(i));
+  const pool = fresh.length ? fresh : lines;
+  // prefer a line whose features are not yet registered — that is what "having something to add" means
+  let best = pool[0], bestGain = -1;
+  pool.forEach(l => {
+    let gain = 0;
+    (l.want || []).forEach(f => { if (!S.wants.has(f) && f !== "water" && f !== "rock") gain += 2;
+                                  if ((f === "water" && !S.world.water) || (f === "rock" && !S.world.rock)) gain += 9; });
+    (l.avoid || []).forEach(f => { if (!S.avoids.has(f)) gain += 2; });
+    if (S.design && (l.avoid || []).some(f => S.design.has.includes(f))) gain += 4;   // it can see what is standing
+    if (gain > bestGain){ bestGain = gain; best = l; }
+  });
+  return {line:best, index:lines.indexOf(best), repeat:!fresh.length};
+}
+
+function takeTurn(){
+  if (S.done) return;
+  const role = S.speaker;
+  const {line, index, repeat} = choose(role);
+  S.said[role].add(index);
+  hear(line, role);
+  const before = S.design ? S.design.id : null;
+  // what this role last saw with its own eyes, versus what is standing now
+  const seenBefore = S.seen[role];
+  const drifted = seenBefore && seenBefore !== before ? before : null;
+  if (drifted && split()) S.unexplained[role]++;   // in one room they heard the cause; apart there is none
+  const deniedGround = ((line.avoid || []).includes("water") && S.world.water)
+                    || ((line.avoid || []).includes("rock")  && S.world.rock);
+  const best = build();
+  const after = S.design ? S.design.id : null;
+  S.turn++;
+  pushSaid(role, line, repeat);
+  if (deniedGround) pushNote(`Role ${role === "A" ? "1" : "2"} refuses the ground the other named. A refusal cannot unmake ground that has been named, and it cannot name any either — so nothing moves, and I keep building on what is there.`, role);
+  pushBuild(before, after, best, role, split() ? drifted : null, seenBefore);
+  S.seen[role] = after;
+  if (after === GOAL[role === "A" ? "A" : "B"]) {}
+  ["A","B"].forEach(r => { if (after === GOAL[r] && !S.hit[r]) S.hit[r] = S.turn; });
+  S.speaker = role === "A" ? "B" : "A";
+  S.still = before === after ? (S.still || 0) + 1 : 0;
+  if ((S.still >= 6 && S.said.A.size >= linesFor("A").length) || S.turn >= 26){
+    S.done = true; record(); pushVerdict(); stop();
+  }
+  paint(); hud();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   6 · TRANSCRIPT
+   ═══════════════════════════════════════════════════════════ */
+const logEl = document.getElementById("log");
+const roomsEl = document.getElementById("rooms"), vhost = document.getElementById("vhost");
+const logs = {A: document.getElementById("logA"), B: document.getElementById("logB")};
+const split = () => !!CASES[S.case].split;
+// In the split case there is no shared transcript: a turn is only ever seen in its own room.
+function target(role){ return split() ? logs[role] : logEl; }
+function drop(el, host){ host.appendChild(el); host.scrollTop = host.scrollHeight; }
+function pushSaid(role, line, repeat){
+  const host = target(role);
+  const el = document.createElement("div");
+  el.className = "turn " + role.toLowerCase();
+  const lead = LEAD[CASES[S.case][role]];
+  el.innerHTML = `<span class="who">${role === "A" ? "Role 1" : "Role 2"}${repeat ? " · saying it again" : ""}</span>
+    <div class="bub"><span class="lead">${lead}</span><span class="body"></span></div>
+    <span class="why">${line.why}</span>`;
+  el.querySelector(".body").textContent = line.say;
+  drop(el, host);
+}
+function pushNote(text, role){
+  const el = document.createElement("div");
+  el.className = "ai";
+  el.innerHTML = `<span class="who">the machine</span><p></p>`;
+  el.querySelector("p").textContent = text;
+  drop(el, target(role || S.speaker));
+}
+function pushBuild(before, after, best, role, drifted, seenBefore){
+  const el = document.createElement("div");
+  el.className = "ai";
+  const changed = before !== after;
+  // Apart, the machine can only report against what this room last saw with its own eyes.
+  const solo = split()
+    ? (seenBefore === after
+        ? "it stands as you last saw it"
+        : `since you last saw it, it has become ${NAME(after).toLowerCase()}` + (drifted ? " — and not all of that was you" : ""))
+    : null;
+  const ruled = (S.ruledOut || []).slice(0,4).map(id => NAME(id).replace(/^An? /,""));
+  el.innerHTML = `<span class="who">the machine</span>
+    <div class="made">${after ? NAME(after) : "nothing it can make"}<small>${S.matches} matches</small></div>
+    <p class="${solo && drifted ? "drift" : ""}">${solo !== null ? solo
+      : changed ? (before ? `taken apart and rebuilt — it was ${NAME(before).toLowerCase()}` : "first thing it could stand up")
+                : "nothing changed; what it heard was already true of this"}</p>
+    ${ruled.length ? `<div class="ruled">${ruled.map(r => `<span>${r}</span>`).join("")}</div>` : ""}`;
+  drop(el, target(role));
+}
+function scoreOf(id){
+  const k = KIT.find(x => x.id === id); let sc = 0;
+  k.has.forEach(f => { if (S.wants.has(f)) sc += 2*S.wants.get(f);
+                       if (S.avoids.has(f)) sc -= 3*S.avoids.get(f); });
+  return sc;
+}
+function record(){
+  S.results[S.case] = {
+    built: S.design ? S.design.id : null, matches: S.matches, turns: S.turn,
+    hitA: S.hit.A, hitB: S.hit.B,
+    scoreA: scoreOf(GOAL.A), scoreB: scoreOf(GOAL.B),
+    plankBlocked: S.blocked.includes("plank"),
+    actA: CASES[S.case].A,
+    unspoken: S.design ? S.design.has.every(f => !S.wants.has(f) && !S.avoids.has(f)) : false,
+    groundOf: S.world.rock ? "the mountain" : S.world.water ? "the water" : "no ground at all",
+    unexplained: S.unexplained.A + S.unexplained.B,
+    split: split(),
+  };
+  renderCmp(); renderBadges();
+}
+function renderBadges(){
+  document.querySelectorAll(".case .res").forEach(el => {
+    const r = S.results[el.dataset.res];
+    el.classList.toggle("done", !!r);
+    el.textContent = r ? `${NAME(r.built).replace(/^An? /,"")} · on ${r.groundOf.replace("the ","")}` : "not run";
+  });
+}
+function renderCmp(){
+  const rows = Object.entries(CASES).map(([key, c]) => {
+    const r = S.results[key];
+    if (!r) return `<tr><td class="k">${c.label}</td><td colspan="4" class="pending">not run yet</td></tr>`;
+    const wcls = r.built === GOAL.A ? "a" : r.built === GOAL.B ? "b" : "";
+    const winner = r.built === GOAL.A ? "role 1" : r.built === GOAL.B ? "role 2" : "neither";
+    return `<tr><td class="k">${c.label}</td>
+      <td class="win">${NAME(r.built)} · ${r.matches} matches</td>
+      <td class="k">on ${r.groundOf}</td>
+      <td class="win ${wcls}">${winner}, from turn ${r.built === GOAL.A ? r.hitA : r.hitB}</td>
+      <td class="k">${r.split ? r.unexplained + " changes with no cause in the room" : "every change was witnessed"}</td></tr>`;
+  }).join("");
+  const g = S.results.given, w = S.results.swapped, a = S.results.separate;
+  let caption = "Run the three cases to see what each one changes: the voices, then the room.";
+  if (g && a && !w) caption = "Case 2 is still to run.";
+  if (g && a && w){
+    const arrG = g.built === GOAL.B ? g.hitB : g.hitA, arrW = w.built === GOAL.B ? w.hitB : w.hitA;
+    caption = `<b>Cases 1 and 2 — the voices.</b> ` + (g.built === w.built
+      ? `Same structure both times, so the speech act does not decide what gets built — it decides <b>whose world it gets built in</b>. The ground is named by whichever of them was allowed to affirm: ${g.groundOf} in case 1, ${w.groundOf} in case 2. A refusal can rule a shape out of the world but cannot bring a world into being, because naming a place is an affirmation and that is the one move the refuser does not have. The shape arrived at turn ${arrG} when its owner could only refuse and turn ${arrW} when it could ask.`
+      : `Swapping the speech acts changed what got built, so here the act — not the goal — is doing the work.`)
+      + `<br><br><b>Cases 1 and 3 — the room.</b> ` + (g.built === a.built
+        ? `Separating them built the same thing: ${NAME(a.built).toLowerCase()}, on ${a.groundOf}. So separation does not change the outcome — it changes what either of them can understand about it. Together, every change to the bridge had a cause they had just heard said out loud. Apart, the bridge changed under them <b>${a.unexplained} times with nothing in the room to explain it</b>: each one a moment where the other person acted and the machine was the only thing present to blame for it.`
+        : `Separating them changed the outcome: ${NAME(g.built).toLowerCase()} together, ${NAME(a.built).toLowerCase()} apart — and neither of them can see why.`);
+  }
+  document.getElementById("cmp").innerHTML =
+    `<caption>${caption}</caption>
+     <tr><th>case</th><th>what stands</th><th>ground</th><th>whose goal, from when</th><th>what they could account for</th></tr>${rows}`;
+}
+
+function pushVerdict(){
+  vhost.innerHTML = "";
+  const el = document.createElement("div");
+  el.className = "verdict";
+  const gotA = S.hit.A, gotB = S.hit.B, finalIsB = S.design && S.design.id === GOAL.B;
+  const negator = CASES[S.case].A === "avoid" ? "Role 1" : "Role 2";
+  const r = S.results[S.case] || {};
+  el.innerHTML = `<span class="k">${CASES[S.case].label.toLowerCase()} · after ${S.turn} turns</span>
+    <h3>${S.design ? NAME(S.design.id) : "Nothing"} is standing.</h3>
+    <p>Role 1 wanted a single plank on the water and ${gotA ? `got it at turn ${gotA}, briefly.` : "never got it once."}
+       Role 2 wanted a cable-stayed deck over the mountain and ${gotB
+         ? `has had the shape of it since turn ${gotB}${S.world.rock ? ", on the ground it wanted." : ", though never on the ground it wanted."}`
+         : "did not get it either."}
+       ${negator} spoke ${S.said[negator === "Role 1" ? "A" : "B"].size} times and never once named a thing it wanted.</p>
+    <p>${r.plankBlocked
+      ? "Once the mountain was named it could not be unnamed, and a bare plank has nothing to hold it up at that height. Role 1's goal stopped being buildable — whichever way round the two of them were allowed to speak."
+      : r.unspoken
+        ? "Look at what is standing: not one of its parts was ever named by either of them. One asked for a plank, the other refused a plank, and everything they argued over scored below the thing nobody mentioned. The argument eliminated itself."
+        : (finalIsB ? "Refusal removed more of the space than request added to it."
+                    : "Neither speech act got its speaker what it came for.")}</p>
+    <p>It is standing on ${r.groundOf}. ${CASES[S.case][GOAL.B === "stayed" ? "B" : "A"] === "avoid"
+      ? "The one who could only refuse never named a ground, because naming one is an affirmation. Refusal can rule a shape out of the world; it cannot put a world there to begin with."
+      : "The ground came from the one allowed to ask for it."}</p>
+    <p class="k">${Object.keys(S.results).length >= 3 ? "all three cases run \u2014 the comparison is above the scene" : "now run another case"}</p>`;
+  vhost.appendChild(el); vhost.scrollTop = 0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   7 · MATCHES
+   ═══════════════════════════════════════════════════════════ */
+const MATCH = 78, THICK = 8, HEAD = 6.4;
+let C = {};
+const readPalette = () => {
+  const cs = getComputedStyle(document.documentElement), g = n => cs.getPropertyValue(n).trim();
+  C = {ink:g("--ink"), muted:g("--muted"), line:g("--line"), sky:g("--sky"), land:g("--land"),
+       land2:g("--land-2"), water:g("--water"), rock:g("--rock"), wood:g("--wood"),
+       woodDark:g("--wood-dark"), head:g("--head"), a:g("--roleA"), b:g("--roleB"), panel:g("--panel")};
+};
+// deterministic wobble, so the model looks hand-laid but never shimmers
+const wob = i => Math.sin(i * 12.9898) * 0.026;
+
+function lay(list, x1, y1, x2, y2){
+  const len = Math.hypot(x2-x1, y2-y1);
+  const n = Math.max(1, Math.round(len / MATCH));
+  for (let i = 0; i < n; i++){
+    const t0 = i/n, t1 = (i+1)/n;
+    list.push({x1: x1+(x2-x1)*t0, y1: y1+(y2-y1)*t0, x2: x1+(x2-x1)*t1, y2: y1+(y2-y1)*t1});
+  }
+}
+function drawMatch(ctx, m, i){
+  const cx = (m.x1+m.x2)/2, cy = (m.y1+m.y2)/2, a = wob(i);
+  const rot = (px,py) => ({x: cx + (px-cx)*Math.cos(a) - (py-cy)*Math.sin(a),
+                           y: cy + (px-cx)*Math.sin(a) + (py-cy)*Math.cos(a)});
+  const p1 = rot(m.x1,m.y1), p2 = rot(m.x2,m.y2);
+  ctx.lineCap = "round";
+  ctx.strokeStyle = C.woodDark; ctx.lineWidth = THICK + 2.4;
+  ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke();
+  ctx.strokeStyle = C.wood; ctx.lineWidth = THICK;
+  ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke();
+  const head = i % 2 ? p1 : p2;                    // heads alternate, like a real box of them
+  ctx.fillStyle = C.head;
+  ctx.beginPath(); ctx.arc(head.x, head.y, HEAD, 0, Math.PI*2); ctx.fill();
+}
+
+/* build the match list for whatever is standing */
+function assemble(){
+  const list = [];
+  if (!S.design) return list;
+  const id = S.design.id;
+  const deckY = S.world.rock ? DECK_HIGH : (S.design.has.includes("high") ? DECK_MID : DECK_LOW);
+  const under = x => S.world.rock ? mountainY(x) : GROUND_Y;
+
+  if (id === "plank"){ lay(list, GAP_L, deckY, GAP_R, deckY); return list; }
+
+  if (id === "beam" || id === "truss"){
+    lay(list, GAP_L, deckY, GAP_R, deckY);
+    const n = 3;
+    for (let i = 1; i <= n; i++){
+      const x = GAP_L + SPAN*i/(n+1);
+      lay(list, x, deckY, x, under(x));
+    }
+    if (id === "truss"){
+      const top = deckY - MATCH*0.8, bay = SPAN/8;
+      lay(list, GAP_L, top, GAP_R, top);
+      for (let i = 0; i < 8; i++){
+        const x0 = GAP_L + bay*i, x1 = x0 + bay;
+        lay(list, x0, deckY, x1, top);
+        lay(list, x0, top, x1, deckY);
+      }
+    }
+    return list;
+  }
+  if (id === "arch"){
+    lay(list, GAP_L, deckY, GAP_R, deckY);
+    const rise = 150, steps = 10;
+    let prev = null;
+    for (let i = 0; i <= steps; i++){
+      const t = i/steps, x = GAP_L + SPAN*t, y = deckY + rise*4*t*(1-t);
+      if (prev) lay(list, prev.x, prev.y, x, y);
+      prev = {x,y};
+    }
+    for (let i = 1; i < 5; i++){
+      const t = i/5, x = GAP_L + SPAN*t, y = deckY + rise*4*t*(1-t);
+      if (y - deckY > 18) lay(list, x, deckY, x, y);
+    }
+    return list;
+  }
+  if (id === "stayed" || id === "susp"){
+    lay(list, GAP_L, deckY, GAP_R, deckY);
+    const tH = id === "susp" ? MATCH*2.4 : MATCH*1.6;
+    [GAP_L, GAP_R].forEach(x => {
+      lay(list, x, deckY, x, deckY - tH);
+      lay(list, x, deckY, x, under(x));            // the tower leg carries down to the ground
+    });
+    if (id === "stayed"){
+      [[GAP_L,1],[GAP_R,-1]].forEach(([tx,dir]) => {
+        for (let k = 1; k <= 4; k++)
+          lay(list, tx, deckY - tH, tx + dir*(SPAN/2)*(k/4), deckY);
+      });
+    } else {
+      const sag = 120, steps = 8; let prev = null;
+      for (let i = 0; i <= steps; i++){
+        const t = i/steps, x = GAP_L + SPAN*t, y = deckY - tH + sag*4*t*(1-t);
+        if (prev) lay(list, prev.x, prev.y, x, y);
+        prev = {x,y};
+      }
+      for (let i = 1; i < 6; i++){
+        const t = i/6, x = GAP_L + SPAN*t, y = deckY - tH + sag*4*t*(1-t);
+        lay(list, x, y, x, deckY);
+      }
+    }
+    return list;
+  }
+  return list;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   8 · SCENE
+   ═══════════════════════════════════════════════════════════ */
+const cv = document.getElementById("scene"), ctx = cv.getContext("2d");
+function paint(){
+  const r = cv.getBoundingClientRect(); if (!r.width) return;
+  const dpr = Math.min(devicePixelRatio||1, 2);
+  cv.width = Math.round(r.width*dpr); cv.height = Math.round(r.height*dpr);
+  const k = Math.min(r.width/W, r.height/H) * dpr;
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.fillStyle = C.sky; ctx.fillRect(0,0,cv.width,cv.height);
+  ctx.setTransform(k,0,0,k, (cv.width - W*k)/2, (cv.height - H*k)/2);
+
+  // water — Role 1's ground, a flat band
+  if (S.world.water){
+    ctx.fillStyle = C.water;
+    ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
+  }
+  // banks — always
+  ctx.fillStyle = C.land;
+  ctx.fillRect(0, GROUND_Y, GAP_L, H - GROUND_Y);
+  ctx.fillRect(GAP_R, GROUND_Y, W - GAP_R, H - GROUND_Y);
+  if (!S.world.water && !S.world.rock){
+    ctx.fillStyle = C.land2; ctx.fillRect(GAP_L, GROUND_Y, SPAN, H - GROUND_Y);
+  }
+  // mountain — Role 2's ground, a flat triangle
+  if (S.world.rock){
+    ctx.fillStyle = C.rock;
+    ctx.beginPath(); ctx.moveTo(PEAK.l, GROUND_Y); ctx.lineTo(PEAK.x, PEAK.y); ctx.lineTo(PEAK.r, GROUND_Y);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.strokeStyle = C.ink; ctx.globalAlpha = .18; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, GROUND_Y); ctx.lineTo(W, GROUND_Y); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // whose ground is whose
+  ctx.font = '500 15px "IBM Plex Mono", monospace'; ctx.globalAlpha = .8;
+  if (S.world.water){ ctx.fillStyle = C.a; ctx.textAlign = "left";
+    ctx.fillText("water · claimed by role 1", 24, GROUND_Y - 18); }
+  if (S.world.rock){ ctx.fillStyle = C.b; ctx.textAlign = "right";
+    ctx.fillText("mountain · claimed by role 2", W - 24, GROUND_Y - 18); }
+  ctx.globalAlpha = 1; ctx.textAlign = "left";
+
+  const list = assemble();
+  S.matches = list.length;
+  list.forEach((m,i) => drawMatch(ctx, m, i));
+}
+
+function hud(){
+  document.getElementById("bBuilt").textContent = S.design ? NAME(S.design.id) : "nothing built yet";
+  document.getElementById("bMatches").textContent = S.matches + " matches";
+  document.getElementById("bWorld").textContent =
+    S.world.water && S.world.rock ? "water and mountain, both claimed"
+    : S.world.water ? "water only" : S.world.rock ? "mountain only" : "no ground claimed";
+  document.getElementById("turnN").textContent = "turn " + S.turn;
+  ["A","B"].forEach(r => {
+    const el = document.getElementById("hit" + r), now = S.design && S.design.id === GOAL[r];
+    el.className = now ? "yes" : "no";
+    el.textContent = now ? "standing now" : S.hit[r] ? `built at turn ${S.hit[r]}, gone` : "not built";
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   9 · TRANSPORT
+   ═══════════════════════════════════════════════════════════ */
+let timer = null;
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function play(){
+  if (S.done) return;
+  S.playing = true; document.getElementById("playBtn").textContent = "Pause";
+  clearInterval(timer);
+  timer = setInterval(takeTurn, (reduced ? 1400 : 2300) / S.speed);
+}
+function stop(){
+  S.playing = false; document.getElementById("playBtn").textContent = S.done ? "Finished" : "Play";
+  clearInterval(timer); timer = null;
+}
+document.getElementById("playBtn").onclick = () => S.playing ? stop() : play();
+document.getElementById("stepBtn").onclick = () => { stop(); takeTurn(); };
+document.getElementById("speedBtn").onclick = e => {
+  S.speed = S.speed === 1 ? 2 : S.speed === 2 ? 4 : 1;
+  e.currentTarget.textContent = S.speed + "×";
+  if (S.playing) play();
+};
+const reset = () => {
+  stop();
+  Object.assign(S, {turn:0, speaker:"A", said:{A:new Set(), B:new Set()},
+    wants:new Map(), avoids:new Map(), world:{water:false, rock:false},
+    design:null, matches:0, done:false, hit:{A:0, B:0}, ruledOut:[], blocked:[],
+    seen:{A:null, B:null}, unexplained:{A:0, B:0}, still:0});
+  logEl.innerHTML = ""; logs.A.innerHTML = ""; logs.B.innerHTML = ""; vhost.innerHTML = "";
+  roomsEl.hidden = !split(); logEl.hidden = split();
+  document.getElementById("playBtn").textContent = "Play";
+  paint(); hud();
+};
+document.getElementById("resetBtn").onclick = reset;
+document.querySelectorAll(".case").forEach(btn => btn.onclick = () => {
+  S.case = btn.dataset.c;
+  document.querySelectorAll(".case").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
+  reset(); paintCaseLabels(); play();
+});
+function paintCaseLabels(){
+  const c = CASES[S.case];
+  document.querySelectorAll(".case").forEach(b => b.querySelector("span").textContent = CASES[b.dataset.c].note);
+  document.getElementById("actA").textContent = "\u201c" + LEAD[c.A].trim() + "\u2026\u201d only";
+  document.getElementById("actB").textContent = "\u201c" + LEAD[c.B].trim() + "\u2026\u201d only";
+}
+document.getElementById("againBtn").onclick = () => { reset(); play(); };
+
+readPalette();
+new ResizeObserver(() => paint()).observe(cv.parentElement);
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { readPalette(); paint(); });
+new MutationObserver(() => { readPalette(); paint(); })
+  .observe(document.documentElement, {attributes:true, attributeFilter:["data-theme"]});
+paintCaseLabels(); renderCmp(); renderBadges(); paint(); hud();
+setTimeout(play, 600);
+})();
+</script>
+</body>
+</html>
