@@ -47,6 +47,7 @@
   }
 
   *{box-sizing:border-box}
+  [hidden]{display:none !important}   /* author display rules otherwise beat the UA [hidden] rule */
   body{
     margin:0; background:var(--ground); color:var(--ink);
     font-family:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
@@ -142,7 +143,6 @@
   /* two rooms, no channel between them */
   .threads{flex:1; min-height:0; display:flex; flex-direction:column}
   .rooms{flex:1; min-height:0; display:grid; grid-template-columns:1fr 1fr}
-  .rooms[hidden]{display:none}
   .room{display:flex; flex-direction:column; min-height:0; min-width:0}
   .room.b{border-left:2px dashed var(--line)}
   .room-h{
