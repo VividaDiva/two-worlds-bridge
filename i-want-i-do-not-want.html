@@ -81,7 +81,8 @@
   .side{display:flex; flex-direction:column; min-width:0; min-height:0; border-left:1px solid var(--line); background:var(--surface)}
 
   /* cases */
-  .cases{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
+  .cases{display:grid; grid-template-columns:repeat(4,1fr); gap:8px}
+  @media (max-width:1180px){ .cases{grid-template-columns:repeat(2,1fr)} }
   .case{
     text-align:left; border:1px solid var(--line); border-radius:10px; padding:9px 11px;
     background:var(--panel); cursor:pointer; transition:border-color .15s, background .15s;
@@ -295,6 +296,17 @@
         <b>3 · Apart</b><span>same voices as case 1 — but each is alone with the machine and neither knows the other is there.</span>
         <em class="res" data-res="separate">not run</em>
       </button>
+      <button class="case" data-c="alone" aria-pressed="false">
+        <svg viewBox="0 0 104 40" aria-hidden="true">
+          <rect x="1.5" y="7.5" width="47" height="31" rx="6"/><rect x="55.5" y="7.5" width="47" height="31" rx="6"/>
+          <line x1="16" y1="23" x2="34" y2="23"/><line x1="70" y1="23" x2="88" y2="23"/>
+          <circle cx="16" cy="23" r="6" class="ra"/><circle cx="34" cy="23" r="5" class="rai"/>
+          <circle cx="70" cy="23" r="5" class="rai"/><circle cx="88" cy="23" r="6" class="rb"/>
+          <text x="16" y="5" class="ta">+</text><text x="88" y="5" class="tb">&minus;</text>
+        </svg>
+        <b>4 · Each alone</b><span>separate rooms and a bridge each. Nobody is negotiating — this is what each would get if the other did not exist.</span>
+        <em class="res" data-res="alone">not run</em>
+      </button>
     </div>
     <p class="key"><span class="ka">+</span> may only say &ldquo;I want&hellip;&rdquo; &nbsp;·&nbsp;
        <span class="kb">&minus;</span> may only say &ldquo;I do not want&hellip;&rdquo; &nbsp;·&nbsp;
@@ -424,6 +436,8 @@ const CASES = {
             note:"the same two goals, the speech acts exchanged — the only thing that changed"},
   separate: {label:"Apart",  A:"want",  B:"avoid", split:true,
             note:"case 1 again, but each of them is alone in a room with the machine and neither knows the other is there"},
+  alone:    {label:"Each alone", A:"want", B:"avoid", split:true, solo:true,
+            note:"separate rooms and a bridge each — nobody is negotiating, so this is what each of them would get if the other did not exist"},
 };
 const LEAD = {want:"I want ", avoid:"I do not want "};
 
@@ -450,40 +464,50 @@ const S = {
   turn:0, speaker:"A", said:{A:new Set(), B:new Set()},
   seen:{A:null, B:null}, unexplained:{A:0, B:0},
   view:"scene", words:[], spoken:0, taken:0,
-  wants:new Map(), avoids:new Map(), world:{water:false, rock:false},
-  design:null, matches:0, log:[], done:false, playing:false, speed:1, hit:{A:0, B:0},
+  log:[], done:false, playing:false, speed:1, hit:{A:0, B:0},
 };
 
+// One site, one model, one bridge — unless the case gives each of them their own.
+function mkCtx(){
+  return {wants:new Map(), avoids:new Map(), world:{water:false, rock:false},
+          design:null, matches:0, ruledOut:[], blocked:[]};
+}
+S.shared = mkCtx();
+S.side = {A: mkCtx(), B: mkCtx()};
+const CX = role => CASES[S.case].solo ? S.side[role] : S.shared;
+const CTXS = () => CASES[S.case].solo ? [S.side.A, S.side.B] : [S.shared];
+
 function hear(line, role){
+  const c = CX(role);
   (line.want || []).forEach(f => {
-    if (f === "water") S.world.water = true;
-    else if (f === "rock") S.world.rock = true;
-    else S.wants.set(f, (S.wants.get(f) || 0) + 1);
+    if (f === "water") c.world.water = true;
+    else if (f === "rock") c.world.rock = true;
+    else c.wants.set(f, (c.wants.get(f) || 0) + 1);
   });
   (line.avoid || []).forEach(f => {
     if (f === "water" || f === "rock") return;   // neither can unsay the other's ground; both claims stand
-    S.avoids.set(f, (S.avoids.get(f) || 0) + 1);
+    c.avoids.set(f, (c.avoids.get(f) || 0) + 1);
   });
 }
 
 // A plank has nothing holding it up, so it can only be laid where there is something to lie on.
-const feasible = k => !(k.id === "plank" && S.world.rock);
+const feasible = (k, c) => !(k.id === "plank" && c.world.rock);
 
-function build(){
-  const scored = KIT.filter(feasible).map(k => {
+function build(c){
+  const scored = KIT.filter(k => feasible(k, c)).map(k => {
     let s = 0; const ruled = [];
     k.has.forEach(f => {
-      if (S.wants.has(f))  s += 2 * S.wants.get(f);
-      if (S.avoids.has(f)){ s -= 3 * S.avoids.get(f); ruled.push(f); }
+      if (c.wants.has(f))  s += 2 * c.wants.get(f);
+      if (c.avoids.has(f)){ s -= 3 * c.avoids.get(f); ruled.push(f); }
     });
     return {k, s, ruled};
   });
   scored.sort((x,y) => y.s - x.s || KIT.indexOf(x.k) - KIT.indexOf(y.k));
   const best = scored[0];
-  S.design = best && best.s > -Infinity ? best.k : null;
-  S.ruledOut = scored.filter(c => c.s < best.s).map(c => c.k.id);
-  S.blocked = KIT.filter(k => !feasible(k)).map(k => k.id);
-  S.matches = assemble().length;                 // count now, so the card reports this build
+  c.design = best && best.s > -Infinity ? best.k : null;
+  c.ruledOut = scored.filter(x => x.s < best.s).map(x => x.k.id);
+  c.blocked = KIT.filter(k => !feasible(k, c)).map(k => k.id);
+  c.matches = assemble(c).length;                // count now, so the card reports this build
   return best;
 }
 
@@ -494,6 +518,7 @@ function build(){
    ═══════════════════════════════════════════════════════════ */
 const GOAL = {A:"plank", B:"stayed"};
 function choose(role){
+  const c = CX(role);
   const lines = linesFor(role), said = S.said[role];
   const fresh = lines.filter((l,i) => !said.has(i));
   const pool = fresh.length ? fresh : lines;
@@ -501,10 +526,10 @@ function choose(role){
   let best = pool[0], bestGain = -1;
   pool.forEach(l => {
     let gain = 0;
-    (l.want || []).forEach(f => { if (!S.wants.has(f) && f !== "water" && f !== "rock") gain += 2;
-                                  if ((f === "water" && !S.world.water) || (f === "rock" && !S.world.rock)) gain += 9; });
-    (l.avoid || []).forEach(f => { if (!S.avoids.has(f)) gain += 2; });
-    if (S.design && (l.avoid || []).some(f => S.design.has.includes(f))) gain += 4;   // it can see what is standing
+    (l.want || []).forEach(f => { if (!c.wants.has(f) && f !== "water" && f !== "rock") gain += 2;
+                                  if ((f === "water" && !c.world.water) || (f === "rock" && !c.world.rock)) gain += 9; });
+    (l.avoid || []).forEach(f => { if (!c.avoids.has(f)) gain += 2; });
+    if (c.design && (l.avoid || []).some(f => c.design.has.includes(f))) gain += 4;   // it can see what is standing
     if (gain > bestGain){ bestGain = gain; best = l; }
   });
   return {line:best, index:lines.indexOf(best), repeat:!fresh.length};
@@ -533,24 +558,26 @@ function takeTurn(){
         [...(line.want || []), ...(line.avoid || []), "polarity"]);
   S.said[role].add(index);
   hear(line, role);
-  const before = S.design ? S.design.id : null;
+  const c = CX(role);
+  const before = c.design ? c.design.id : null;
   // what this role last saw with its own eyes, versus what is standing now
   const seenBefore = S.seen[role];
   const drifted = seenBefore && seenBefore !== before ? before : null;
   if (drifted && split()) S.unexplained[role]++;   // in one room they heard the cause; apart there is none
-  const deniedGround = ((line.avoid || []).includes("water") && S.world.water)
-                    || ((line.avoid || []).includes("rock")  && S.world.rock);
-  const best = build();
-  const after = S.design ? S.design.id : null;
+  const deniedGround = ((line.avoid || []).includes("water") && c.world.water)
+                    || ((line.avoid || []).includes("rock")  && c.world.rock);
+  const best = build(c);
+  const after = c.design ? c.design.id : null;
   S.turn++;
-  eject("AI", `${NAME(S.design ? S.design.id : null)} ${S.matches} matches ` +
+  eject("AI", `${NAME(after)} ${c.matches} matches ` +
         (before !== after ? "taken apart and rebuilt" : "nothing changed what it heard was already true of this"), []);
   pushSaid(role, line, repeat);
   if (deniedGround) pushNote(`Role ${role === "A" ? "1" : "2"} refuses the ground the other named. A refusal cannot unmake ground that has been named, and it cannot name any either — so nothing moves, and I keep building on what is there.`, role);
-  pushBuild(before, after, best, role, split() ? drifted : null, seenBefore);
+  pushBuild(before, after, best, role, split() ? drifted : null, seenBefore, c);
   S.seen[role] = after;
   if (after === GOAL[role === "A" ? "A" : "B"]) {}
-  ["A","B"].forEach(r => { if (after === GOAL[r] && !S.hit[r]) S.hit[r] = S.turn; });
+  if (CASES[S.case].solo){ if (after === GOAL[role] && !S.hit[role]) S.hit[role] = S.turn; }
+  else ["A","B"].forEach(r => { if (after === GOAL[r] && !S.hit[r]) S.hit[r] = S.turn; });
   S.speaker = role === "A" ? "B" : "A";
   S.still = before === after ? (S.still || 0) + 1 : 0;
   if ((S.still >= 6 && S.said.A.size >= linesFor("A").length) || S.turn >= 26){
@@ -587,7 +614,7 @@ function pushNote(text, role){
   el.querySelector("p").textContent = text;
   drop(el, target(role || S.speaker));
 }
-function pushBuild(before, after, best, role, drifted, seenBefore){
+function pushBuild(before, after, best, role, drifted, seenBefore, c){
   const el = document.createElement("div");
   el.className = "ai";
   const changed = before !== after;
@@ -597,30 +624,37 @@ function pushBuild(before, after, best, role, drifted, seenBefore){
         ? "it stands as you last saw it"
         : `since you last saw it, it has become ${NAME(after).toLowerCase()}` + (drifted ? " — and not all of that was you" : ""))
     : null;
-  const ruled = (S.ruledOut || []).slice(0,4).map(id => NAME(id).replace(/^An? /,""));
+  const ruled = (c.ruledOut || []).slice(0,4).map(id => NAME(id).replace(/^An? /,""));
   el.innerHTML = `<span class="who">the machine</span>
-    <div class="made">${after ? NAME(after) : "nothing it can make"}<small>${S.matches} matches</small></div>
+    <div class="made">${after ? NAME(after) : "nothing it can make"}<small>${c.matches} matches</small></div>
     <p class="${solo && drifted ? "drift" : ""}">${solo !== null ? solo
       : changed ? (before ? `taken apart and rebuilt — it was ${NAME(before).toLowerCase()}` : "first thing it could stand up")
                 : "nothing changed; what it heard was already true of this"}</p>
     ${ruled.length ? `<div class="ruled">${ruled.map(r => `<span>${r}</span>`).join("")}</div>` : ""}`;
   drop(el, target(role));
 }
-function scoreOf(id){
+function scoreOf(id, c){
   const k = KIT.find(x => x.id === id); let sc = 0;
-  k.has.forEach(f => { if (S.wants.has(f)) sc += 2*S.wants.get(f);
-                       if (S.avoids.has(f)) sc -= 3*S.avoids.get(f); });
+  k.has.forEach(f => { if (c.wants.has(f)) sc += 2*c.wants.get(f);
+                       if (c.avoids.has(f)) sc -= 3*c.avoids.get(f); });
   return sc;
 }
+const groundPhrase = c => c.world.rock && c.world.water ? "both grounds"
+  : c.world.rock ? "the mountain" : c.world.water ? "the water" : "no ground at all";
 function record(){
+  const solo = !!CASES[S.case].solo, c = solo ? S.side.A : S.shared;
   S.results[S.case] = {
-    built: S.design ? S.design.id : null, matches: S.matches, turns: S.turn,
+    solo,
+    built: c.design ? c.design.id : null, matches: c.matches, turns: S.turn,
+    builtB: solo ? (S.side.B.design ? S.side.B.design.id : null) : null,
+    matchesB: solo ? S.side.B.matches : 0,
+    groundOfB: solo ? groundPhrase(S.side.B) : null,
     hitA: S.hit.A, hitB: S.hit.B,
-    scoreA: scoreOf(GOAL.A), scoreB: scoreOf(GOAL.B),
-    plankBlocked: S.blocked.includes("plank"),
+    scoreA: scoreOf(GOAL.A, c), scoreB: scoreOf(GOAL.B, c),
+    plankBlocked: c.blocked.includes("plank"),
     actA: CASES[S.case].A,
-    unspoken: S.design ? S.design.has.every(f => !S.wants.has(f) && !S.avoids.has(f)) : false,
-    groundOf: S.world.rock ? "the mountain" : S.world.water ? "the water" : "no ground at all",
+    unspoken: c.design ? c.design.has.every(f => !c.wants.has(f) && !c.avoids.has(f)) : false,
+    groundOf: groundPhrase(c),
     unexplained: S.unexplained.A + S.unexplained.B,
     split: split(),
   };
@@ -630,7 +664,9 @@ function renderBadges(){
   document.querySelectorAll(".case .res").forEach(el => {
     const r = S.results[el.dataset.res];
     el.classList.toggle("done", !!r);
-    el.textContent = r ? `${NAME(r.built).replace(/^An? /,"")} · on ${r.groundOf.replace("the ","")}` : "not run";
+    el.textContent = !r ? "not run"
+      : r.solo ? `${NAME(r.built).replace(/^An? /,"")} + ${NAME(r.builtB).replace(/^An? /,"").toLowerCase()}`
+      : `${NAME(r.built).replace(/^An? /,"")} · on ${r.groundOf.replace("the ","")}`;
   });
 }
 function renderCmp(){
@@ -639,6 +675,11 @@ function renderCmp(){
     if (!r) return `<tr><td class="k">${c.label}</td><td colspan="4" class="pending">not run yet</td></tr>`;
     const wcls = r.built === GOAL.A ? "a" : r.built === GOAL.B ? "b" : "";
     const winner = r.built === GOAL.A ? "role 1" : r.built === GOAL.B ? "role 2" : "neither";
+    if (r.solo) return `<tr><td class="k">${c.label}</td>
+      <td class="win">${NAME(r.built)} · ${r.matches} · ${NAME(r.builtB).toLowerCase()} · ${r.matchesB}</td>
+      <td class="k">${r.groundOf} · ${r.groundOfB}</td>
+      <td class="win">each got its own</td>
+      <td class="k">nothing to account for</td></tr>`;
     return `<tr><td class="k">${c.label}</td>
       <td class="win">${NAME(r.built)} · ${r.matches} matches</td>
       <td class="k">on ${r.groundOf}</td>
@@ -646,7 +687,8 @@ function renderCmp(){
       <td class="k">${r.split ? r.unexplained + " changes with no cause in the room" : "every change was witnessed"}</td></tr>`;
   }).join("");
   const g = S.results.given, w = S.results.swapped, a = S.results.separate;
-  let caption = "Run the three cases to see what each one changes: the voices, then the room.";
+  const al = S.results.alone;
+  let caption = "Run the four cases to see what each one changes: the voices, then the room, then whether they share a bridge at all.";
   if (g && a && !w) caption = "Case 2 is still to run.";
   if (g && a && w){
     const arrG = g.built === GOAL.B ? g.hitB : g.hitA, arrW = w.built === GOAL.B ? w.hitB : w.hitA;
@@ -655,7 +697,8 @@ function renderCmp(){
       : `Swapping the speech acts changed what got built, so here the act — not the goal — is doing the work.`)
       + `<br><br><b>Cases 1 and 3 — the room.</b> ` + (g.built === a.built
         ? `Separating them built the same thing: ${NAME(a.built).toLowerCase()}, on ${a.groundOf}. So separation does not change the outcome — it changes what either of them can understand about it. Together, every change to the bridge had a cause they had just heard said out loud. Apart, the bridge changed under them <b>${a.unexplained} times with nothing in the room to explain it</b>: each one a moment where the other person acted and the machine was the only thing present to blame for it.`
-        : `Separating them changed the outcome: ${NAME(g.built).toLowerCase()} together, ${NAME(a.built).toLowerCase()} apart — and neither of them can see why.`);
+        : `Separating them changed the outcome: ${NAME(g.built).toLowerCase()} together, ${NAME(a.built).toLowerCase()} apart — and neither of them can see why.`)
+      + (al ? `<br><br><b>Case 4 — the baseline.</b> Give them a bridge each and Role 1 gets its plank and keeps it: the only run in the set where that happens. Role 2 gets the shape it wanted and nowhere to put it — its deck stands on ${al.groundOfB}, because a refuser can rule out shapes but can never name a place. Read against this, cases 1 to 3 show what the other person costs each of them: Role 1 loses its goal entirely, and Role 2 gains a world it could not have named alone.` : ``);
   }
   document.getElementById("cmp").innerHTML =
     `<caption>${caption}</caption>
@@ -666,14 +709,17 @@ function pushVerdict(){
   vhost.innerHTML = "";
   const el = document.createElement("div");
   el.className = "verdict";
-  const gotA = S.hit.A, gotB = S.hit.B, finalIsB = S.design && S.design.id === GOAL.B;
+  const solo = !!CASES[S.case].solo, cc = solo ? S.side.A : S.shared;
+  const gotA = S.hit.A, gotB = S.hit.B, finalIsB = cc.design && cc.design.id === GOAL.B;
   const negator = CASES[S.case].A === "avoid" ? "Role 1" : "Role 2";
   const r = S.results[S.case] || {};
   el.innerHTML = `<span class="k">${CASES[S.case].label.toLowerCase()} · after ${S.turn} turns</span>
-    <h3>${S.design ? NAME(S.design.id) : "Nothing"} is standing.</h3>
+    <h3>${solo
+      ? `${NAME(S.side.A.design && S.side.A.design.id)} in one room, ${NAME(S.side.B.design && S.side.B.design.id).toLowerCase()} in the other.`
+      : `${cc.design ? NAME(cc.design.id) : "Nothing"} is standing.`}</h3>
     <p>Role 1 wanted a single plank on the water and ${gotA ? `got it at turn ${gotA}, briefly.` : "never got it once."}
        Role 2 wanted a cable-stayed deck over the mountain and ${gotB
-         ? `has had the shape of it since turn ${gotB}${S.world.rock ? ", on the ground it wanted." : ", though never on the ground it wanted."}`
+         ? `has had the shape of it since turn ${gotB}${(solo ? S.side.B : cc).world.rock ? ", on the ground it wanted." : ", though never on the ground it wanted."}`
          : "did not get it either."}
        ${negator} spoke ${S.said[negator === "Role 1" ? "A" : "B"].size} times and never once named a thing it wanted.</p>
     <p>${r.plankBlocked
@@ -682,6 +728,7 @@ function pushVerdict(){
         ? "Look at what is standing: not one of its parts was ever named by either of them. One asked for a plank, the other refused a plank, and everything they argued over scored below the thing nobody mentioned. The argument eliminated itself."
         : (finalIsB ? "Refusal removed more of the space than request added to it."
                     : "Neither speech act got its speaker what it came for.")}</p>
+    ${solo ? `<p>With nobody to argue against, Role 1 named its water and got its plank and kept it. Role 2 ruled out everything that was not its cable-stayed deck and got the shape — but it could never <em>name</em> a place for it, because naming is an affirmation. Its bridge stands on ${groundPhrase(S.side.B)}.</p>` : ""}
     <p>It is standing on ${r.groundOf}. ${CASES[S.case][GOAL.B === "stayed" ? "B" : "A"] === "avoid"
       ? "The one who could only refuse never named a ground, because naming one is an affirmation. Refusal can rule a shape out of the world; it cannot put a world there to begin with."
       : "The ground came from the one allowed to ask for it."}</p>
@@ -727,12 +774,12 @@ function drawMatch(ctx, m, i){
 }
 
 /* build the match list for whatever is standing */
-function assemble(){
+function assemble(c){
   const list = [];
-  if (!S.design) return list;
-  const id = S.design.id;
-  const deckY = S.world.rock ? DECK_HIGH : (S.design.has.includes("high") ? DECK_MID : DECK_LOW);
-  const under = x => S.world.rock ? mountainY(x) : GROUND_Y;
+  if (!c.design) return list;
+  const id = c.design.id;
+  const deckY = c.world.rock ? DECK_HIGH : (c.design.has.includes("high") ? DECK_MID : DECK_LOW);
+  const under = x => c.world.rock ? mountainY(x) : GROUND_Y;
 
   if (id === "plank"){ lay(list, GAP_L, deckY, GAP_R, deckY); return list; }
 
@@ -805,11 +852,12 @@ const cv = document.getElementById("scene"), ctx = cv.getContext("2d");
 const AIR = {top:66, bottom:300};        // where unclaimed speech hangs
 const LANDED = GROUND_Y - 54;            // where the words that became matches sit
 function paintSaid(ctx){
-  const d = S.design, deck = d ? (S.world.rock ? DECK_HIGH : (d.has.includes("high") ? DECK_MID : DECK_LOW)) : GROUND_Y - 70;
+  const cc = CASES[S.case].solo ? S.side.A : S.shared;
+  const d = cc.design, deck = d ? (cc.world.rock ? DECK_HIGH : (d.has.includes("high") ? DECK_MID : DECK_LOW)) : GROUND_Y - 70;
   // the ground, kept faint — this view is about the air above it
   ctx.save(); ctx.globalAlpha = .3;
   ctx.fillStyle = C.land; ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
-  if (S.world.rock){
+  if (cc.world.rock){
     ctx.beginPath(); ctx.moveTo(PEAK.l, GROUND_Y); ctx.lineTo(PEAK.x, PEAK.y); ctx.lineTo(PEAK.r, GROUND_Y);
     ctx.closePath(); ctx.fillStyle = C.rock; ctx.fill();
   }
@@ -874,8 +922,37 @@ function paint(){
 
   if (S.view === "said"){ paintSaid(ctx); return; }
 
-  // water — Role 1's ground, a flat band
-  if (S.world.water){
+  if (CASES[S.case].solo){
+    // two sites, side by side: neither of them is building the same bridge as the other
+    // crop each half to the part of the world that carries the bridge, so both stay legible
+    const F = {x: GAP_L - 140, y: 96, w: SPAN + 280, h: 452};
+    ["A","B"].forEach((role, i) => {
+      const halfX = i ? W/2 : 0, halfW = W/2;
+      const k2 = Math.min(halfW / F.w, H / F.h);
+      ctx.save();
+      ctx.beginPath(); ctx.rect(halfX, 0, halfW, H); ctx.clip();
+      ctx.translate(halfX + (halfW - F.w*k2)/2, (H - F.h*k2)/2);
+      ctx.scale(k2, k2);
+      ctx.translate(-F.x, -F.y);
+      drawScene(ctx, S.side[role], role);
+      ctx.restore();
+    });
+    ctx.save();                                  // the wall between the two rooms
+    ctx.strokeStyle = C.line; ctx.lineWidth = 3; ctx.setLineDash([9,9]);
+    ctx.beginPath(); ctx.moveTo(W/2, 0); ctx.lineTo(W/2, H); ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha = .9;
+    ctx.font = '600 19px "IBM Plex Mono", monospace';
+    ctx.fillStyle = C.a; ctx.textAlign = "center"; ctx.fillText("role 1, alone", W*0.25, 40);
+    ctx.fillStyle = C.b; ctx.fillText("role 2, alone", W*0.75, 40);
+    ctx.textAlign = "left"; ctx.restore();
+    return;
+  }
+  drawScene(ctx, S.shared, null);
+}
+
+function drawScene(ctx, c, role){
+  // water — a flat band
+  if (c.world.water){
     ctx.fillStyle = C.water;
     ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
   }
@@ -883,11 +960,11 @@ function paint(){
   ctx.fillStyle = C.land;
   ctx.fillRect(0, GROUND_Y, GAP_L, H - GROUND_Y);
   ctx.fillRect(GAP_R, GROUND_Y, W - GAP_R, H - GROUND_Y);
-  if (!S.world.water && !S.world.rock){
+  if (!c.world.water && !c.world.rock){
     ctx.fillStyle = C.land2; ctx.fillRect(GAP_L, GROUND_Y, SPAN, H - GROUND_Y);
   }
-  // mountain — Role 2's ground, a flat triangle
-  if (S.world.rock){
+  // mountain — a flat triangle
+  if (c.world.rock){
     ctx.fillStyle = C.rock;
     ctx.beginPath(); ctx.moveTo(PEAK.l, GROUND_Y); ctx.lineTo(PEAK.x, PEAK.y); ctx.lineTo(PEAK.r, GROUND_Y);
     ctx.closePath(); ctx.fill();
@@ -896,28 +973,43 @@ function paint(){
   ctx.beginPath(); ctx.moveTo(0, GROUND_Y); ctx.lineTo(W, GROUND_Y); ctx.stroke();
   ctx.globalAlpha = 1;
 
-  // whose ground is whose
   ctx.font = '500 15px "IBM Plex Mono", monospace'; ctx.globalAlpha = .8;
-  if (S.world.water){ ctx.fillStyle = C.a; ctx.textAlign = "left";
-    ctx.fillText("water · claimed by role 1", 24, GROUND_Y - 18); }
-  if (S.world.rock){ ctx.fillStyle = C.b; ctx.textAlign = "right";
-    ctx.fillText("mountain · claimed by role 2", W - 24, GROUND_Y - 18); }
+  if (c.world.water){ ctx.fillStyle = C.a; ctx.textAlign = "left";
+    ctx.fillText(role ? "water" : "water · claimed by role 1", 24, GROUND_Y - 18); }
+  if (c.world.rock){ ctx.fillStyle = C.b; ctx.textAlign = "right";
+    ctx.fillText(role ? "mountain" : "mountain · claimed by role 2", W - 24, GROUND_Y - 18); }
+  // a world nobody has named at all
+  if (!c.world.water && !c.world.rock){
+    ctx.fillStyle = C.muted; ctx.textAlign = "center"; ctx.globalAlpha = .75;
+    ctx.fillText("no ground has been named", W/2, GROUND_Y + 44);
+  }
   ctx.globalAlpha = 1; ctx.textAlign = "left";
 
-  const list = assemble();
-  S.matches = list.length;
+  const list = assemble(c);
+  c.matches = list.length;
   list.forEach((m,i) => drawMatch(ctx, m, i));
 }
 
+const groundName = c => c.world.water && c.world.rock ? "water and mountain, both claimed"
+  : c.world.water ? "water only" : c.world.rock ? "mountain only" : "no ground named";
 function hud(){
-  document.getElementById("bBuilt").textContent = S.design ? NAME(S.design.id) : "nothing built yet";
-  document.getElementById("bMatches").textContent = S.matches + " matches";
-  document.getElementById("bWorld").textContent =
-    S.world.water && S.world.rock ? "water and mountain, both claimed"
-    : S.world.water ? "water only" : S.world.rock ? "mountain only" : "no ground claimed";
+  const solo = CASES[S.case].solo;
+  if (solo){
+    const a = S.side.A, b = S.side.B;
+    document.getElementById("bBuilt").textContent =
+      `${NAME(a.design && a.design.id)} · ${NAME(b.design && b.design.id)}`;
+    document.getElementById("bMatches").textContent = `${a.matches} + ${b.matches} matches`;
+    document.getElementById("bWorld").textContent = `${groundName(a)} · ${groundName(b)}`;
+  } else {
+    const c = S.shared;
+    document.getElementById("bBuilt").textContent = c.design ? NAME(c.design.id) : "nothing built yet";
+    document.getElementById("bMatches").textContent = c.matches + " matches";
+    document.getElementById("bWorld").textContent = groundName(c);
+  }
   document.getElementById("turnN").textContent = "turn " + S.turn;
   ["A","B"].forEach(r => {
-    const el = document.getElementById("hit" + r), now = S.design && S.design.id === GOAL[r];
+    const c = CX(r);
+    const el = document.getElementById("hit" + r), now = c.design && c.design.id === GOAL[r];
     el.className = now ? "yes" : "no";
     el.textContent = now ? "standing now" : S.hit[r] ? `built at turn ${S.hit[r]}, gone` : "not built";
   });
@@ -949,9 +1041,10 @@ const reset = () => {
   stop();
   Object.assign(S, {turn:0, speaker:"A", said:{A:new Set(), B:new Set()},
     wants:new Map(), avoids:new Map(), world:{water:false, rock:false},
-    design:null, matches:0, done:false, hit:{A:0, B:0}, ruledOut:[], blocked:[],
+    done:false, hit:{A:0, B:0},
     seen:{A:null, B:null}, unexplained:{A:0, B:0}, still:0,
     words:[], spoken:0, taken:0});
+  S.shared = mkCtx(); S.side = {A: mkCtx(), B: mkCtx()};
   logEl.innerHTML = ""; logs.A.innerHTML = ""; logs.B.innerHTML = ""; vhost.innerHTML = "";
   roomsEl.hidden = !split(); logEl.hidden = split();
   document.getElementById("playBtn").textContent = "Play";
