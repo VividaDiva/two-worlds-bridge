@@ -106,6 +106,15 @@
   .case:hover{border-color:var(--ink)}
   .case[aria-pressed="true"]{border-color:var(--signal); background:color-mix(in srgb,var(--signal) 8%,transparent)}
 
+  .views{display:flex; gap:6px; align-items:center; flex-wrap:wrap}
+  .vtab{
+    background:transparent; border:1px solid var(--line); border-radius:8px; padding:5px 12px;
+    font-size:12.5px; cursor:pointer; color:var(--muted); transition:all .15s;
+  }
+  .vtab:hover{border-color:var(--ink); color:var(--ink)}
+  .vtab[aria-selected="true"]{background:var(--panel); border-color:var(--ink); color:var(--ink); font-weight:600}
+  .vnote{margin:0; flex:1; min-width:240px; font-size:11.5px; color:var(--muted); line-height:1.45}
+
   .key{
     margin:-2px 0 0; font-size:11.5px; color:var(--muted); font-family:"IBM Plex Mono",monospace; letter-spacing:.02em;
   }
@@ -297,6 +306,11 @@
         <em id="actB">may only refuse</em><i class="hit no" id="hitB">not built</i></span>
     </div>
     <table class="cmp" id="cmp"></table>
+    <div class="views" role="tablist" aria-label="What to show">
+      <button class="vtab" data-v="scene" role="tab" aria-selected="true">What was built</button>
+      <button class="vtab" data-v="said" role="tab" aria-selected="false">What was said</button>
+      <p class="vnote" id="vnote"></p>
+    </div>
     <div class="canvas-wrap">
       <canvas id="scene"></canvas>
       <div class="badge">
@@ -412,6 +426,18 @@ const CASES = {
             note:"case 1 again, but each of them is alone in a room with the machine and neither knows the other is there"},
 };
 const LEAD = {want:"I want ", avoid:"I do not want "};
+
+// The machine registers features, not words. These are the words that carry them —
+// everything else in a sentence is said, heard, and does nothing.
+const CARRIES = {
+  water:["water"], rock:["mountain"], plank:["plank"],
+  low:["flat","down","ground","climbing","lying"], flat:["flat","lying"],
+  few:["few","matches","cheap","cheapest"], bare:["nothing","frame","wires"],
+  high:["high","air","peak"], towers:["tower","towers"], cables:["wires","cables"],
+  clear:["carry","beneath","middle"], truss:["triangles"], triangles:["triangles"],
+  arch:["curve","bending"], curve:["curve","bending"], piers:["posts"],
+  polarity:["want","not"],
+};
 // Apart, neither of them can refuse a ground they have never heard anyone name.
 const linesFor = role => SPEECH[role][CASES[S.case][role]]
   .filter(l => !(CASES[S.case].split && l.crossRef));
@@ -420,9 +446,10 @@ const linesFor = role => SPEECH[role][CASES[S.case][role]]
    4 · THE MACHINE — it hears features, and picks from the kit
    ═══════════════════════════════════════════════════════════ */
 const S = {
-  case:"given", results:{},
+  case:"given", results:{}, tick:0,
   turn:0, speaker:"A", said:{A:new Set(), B:new Set()},
   seen:{A:null, B:null}, unexplained:{A:0, B:0},
+  view:"scene", words:[], spoken:0, taken:0,
   wants:new Map(), avoids:new Map(), world:{water:false, rock:false},
   design:null, matches:0, log:[], done:false, playing:false, speed:1, hit:{A:0, B:0},
 };
@@ -483,10 +510,27 @@ function choose(role){
   return {line:best, index:lines.indexOf(best), repeat:!fresh.length};
 }
 
+// Reddy's idea space, made literal: everything said is ejected into the gap and stays there.
+function eject(who, text, registered){
+  const carriers = new Set();
+  registered.forEach(f => (CARRIES[f] || []).forEach(w => carriers.add(w)));
+  const home = who === "A" ? GAP_L + SPAN*0.28 : who === "B" ? GAP_L + SPAN*0.72 : GAP_L + SPAN*0.5;
+  text.split(/\s+/).forEach(tok => {
+    const w = tok.replace(/[^A-Za-z0-9'-]/g, ""); if (!w) return;
+    const took = who !== "AI" && carriers.has(w.toLowerCase());
+    S.words.push({w, who, took,
+      x: home + (Math.random() - .5) * SPAN * (who === "AI" ? 1.05 : .66),
+      yn: Math.random(), phase: Math.random() * 6.28});
+    if (who !== "AI"){ S.spoken++; if (took) S.taken++; }
+  });
+}
+
 function takeTurn(){
   if (S.done) return;
   const role = S.speaker;
   const {line, index, repeat} = choose(role);
+  eject(role, LEAD[CASES[S.case][role]] + line.say,
+        [...(line.want || []), ...(line.avoid || []), "polarity"]);
   S.said[role].add(index);
   hear(line, role);
   const before = S.design ? S.design.id : null;
@@ -499,6 +543,8 @@ function takeTurn(){
   const best = build();
   const after = S.design ? S.design.id : null;
   S.turn++;
+  eject("AI", `${NAME(S.design ? S.design.id : null)} ${S.matches} matches ` +
+        (before !== after ? "taken apart and rebuilt" : "nothing changed what it heard was already true of this"), []);
   pushSaid(role, line, repeat);
   if (deniedGround) pushNote(`Role ${role === "A" ? "1" : "2"} refuses the ground the other named. A refusal cannot unmake ground that has been named, and it cannot name any either — so nothing moves, and I keep building on what is there.`, role);
   pushBuild(before, after, best, role, split() ? drifted : null, seenBefore);
@@ -756,6 +802,67 @@ function assemble(){
    8 · SCENE
    ═══════════════════════════════════════════════════════════ */
 const cv = document.getElementById("scene"), ctx = cv.getContext("2d");
+const AIR = {top:66, bottom:300};        // where unclaimed speech hangs
+const LANDED = GROUND_Y - 54;            // where the words that became matches sit
+function paintSaid(ctx){
+  const d = S.design, deck = d ? (S.world.rock ? DECK_HIGH : (d.has.includes("high") ? DECK_MID : DECK_LOW)) : GROUND_Y - 70;
+  // the ground, kept faint — this view is about the air above it
+  ctx.save(); ctx.globalAlpha = .3;
+  ctx.fillStyle = C.land; ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
+  if (S.world.rock){
+    ctx.beginPath(); ctx.moveTo(PEAK.l, GROUND_Y); ctx.lineTo(PEAK.x, PEAK.y); ctx.lineTo(PEAK.r, GROUND_Y);
+    ctx.closePath(); ctx.fillStyle = C.rock; ctx.fill();
+  }
+  ctx.restore();
+  if (d){                                        // the matches the picked-up words became
+    ctx.save(); ctx.strokeStyle = C.wood; ctx.globalAlpha = .5; ctx.lineWidth = 8; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(GAP_L, deck); ctx.lineTo(GAP_R, deck); ctx.stroke(); ctx.restore();
+  }
+
+  const t = S.tick * .012;
+  ctx.save(); ctx.textAlign = "center";
+
+  // said, and nothing became of it
+  S.words.forEach(o => {
+    if (o.took) return;
+    const col = o.who === "A" ? C.a : o.who === "B" ? C.b : C.muted;
+    const drift = reduced ? 0 : Math.sin(t + o.phase) * 5;
+    ctx.globalAlpha = o.who === "AI" ? .16 : .34;
+    ctx.font = (o.who === "AI" ? '400 12px' : '400 14px') + ' "IBM Plex Mono", monospace';
+    ctx.fillStyle = col;
+    ctx.fillText(o.w, o.x, AIR.top + o.yn * (AIR.bottom - AIR.top) + drift);
+  });
+
+  // picked up — shown once each, laid along the deck in the order the machine took them
+  const seen = new Set(), taken = [];
+  S.words.forEach(o => {
+    if (!o.took) return;
+    const k = o.who + "/" + o.w.toLowerCase();
+    if (seen.has(k)) return;
+    seen.add(k); taken.push(o);
+  });
+  const rows = taken.length > 14 ? 3 : 2;
+  taken.forEach((o, i) => {
+    const col = o.who === "A" ? C.a : C.b;
+    const x = GAP_L + 48 + (SPAN - 96) * (taken.length < 2 ? .5 : i / (taken.length - 1));
+    const y = LANDED - (i % rows) * 23;
+    ctx.globalAlpha = .3; ctx.strokeStyle = col; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x, y + 6); ctx.lineTo(x, GROUND_Y - 4); ctx.stroke();
+    ctx.globalAlpha = 1; ctx.fillStyle = col;
+    ctx.font = '600 16px "IBM Plex Mono", monospace';
+    ctx.fillText(o.w, x, y);
+  });
+  ctx.restore();
+
+  ctx.save();
+  ctx.font = '500 14px "IBM Plex Mono", monospace';
+  ctx.fillStyle = C.muted; ctx.fillText(`${S.spoken} words spoken by the two of them`, 30, 44);
+  ctx.fillStyle = C.signal; ctx.fillText(`${S.taken} were picked up and became matches`, 30, 68);
+  ctx.fillStyle = C.muted; ctx.globalAlpha = .8;
+  ctx.fillText("the rest are still in the air", 30, 92);
+  ctx.restore();
+}
+
 function paint(){
   const r = cv.getBoundingClientRect(); if (!r.width) return;
   const dpr = Math.min(devicePixelRatio||1, 2);
@@ -764,6 +871,8 @@ function paint(){
   ctx.setTransform(1,0,0,1,0,0);
   ctx.fillStyle = C.sky; ctx.fillRect(0,0,cv.width,cv.height);
   ctx.setTransform(k,0,0,k, (cv.width - W*k)/2, (cv.height - H*k)/2);
+
+  if (S.view === "said"){ paintSaid(ctx); return; }
 
   // water — Role 1's ground, a flat band
   if (S.world.water){
@@ -841,17 +950,38 @@ const reset = () => {
   Object.assign(S, {turn:0, speaker:"A", said:{A:new Set(), B:new Set()},
     wants:new Map(), avoids:new Map(), world:{water:false, rock:false},
     design:null, matches:0, done:false, hit:{A:0, B:0}, ruledOut:[], blocked:[],
-    seen:{A:null, B:null}, unexplained:{A:0, B:0}, still:0});
+    seen:{A:null, B:null}, unexplained:{A:0, B:0}, still:0,
+    words:[], spoken:0, taken:0});
   logEl.innerHTML = ""; logs.A.innerHTML = ""; logs.B.innerHTML = ""; vhost.innerHTML = "";
   roomsEl.hidden = !split(); logEl.hidden = split();
   document.getElementById("playBtn").textContent = "Play";
   paint(); hud();
 };
+const VNOTE = {
+  scene: "The matchstick bridge as it stands. Every turn the machine takes it apart and rebuilds it from whatever it has heard so far.",
+  said: "Every word either of them has said, ejected into the space between them and left there — Reddy\u2019s <b>idea space</b>, made literal. The words in colour at deck level are the few the machine actually picked up; they became the matches. Everything faint is still in the air: said, reified, and inert. Grey is the machine, ejecting into the same space, with none of it picked up either.",
+};
+function setView(v){
+  S.view = v;
+  document.querySelectorAll(".vtab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.v === v)));
+  document.getElementById("vnote").innerHTML = VNOTE[v]
+    + (v === "said" && CASES[S.case].split
+        ? " <b>Apart, they never hear one another — and their words still land in the same store.</b>" : "");
+  paint();
+}
+document.querySelectorAll(".vtab").forEach(t => t.onclick = () => setView(t.dataset.v));
+
+// the floating words drift even when the simulation is paused
+(function drift(){
+  if (S.view === "said" && !reduced){ S.tick += 1; paint(); }
+  requestAnimationFrame(drift);
+})();
+
 document.getElementById("resetBtn").onclick = reset;
 document.querySelectorAll(".case").forEach(btn => btn.onclick = () => {
   S.case = btn.dataset.c;
   document.querySelectorAll(".case").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
-  reset(); paintCaseLabels(); play();
+  reset(); paintCaseLabels(); setView(S.view); play();
 });
 function paintCaseLabels(){
   const c = CASES[S.case];
@@ -866,7 +996,7 @@ new ResizeObserver(() => paint()).observe(cv.parentElement);
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { readPalette(); paint(); });
 new MutationObserver(() => { readPalette(); paint(); })
   .observe(document.documentElement, {attributes:true, attributeFilter:["data-theme"]});
-paintCaseLabels(); renderCmp(); renderBadges(); paint(); hud();
+paintCaseLabels(); renderCmp(); renderBadges(); setView("scene"); paint(); hud();
 setTimeout(play, 600);
 })();
 </script>
