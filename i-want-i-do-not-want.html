@@ -108,6 +108,49 @@
   .case:hover{border-color:var(--ink)}
   .case[aria-pressed="true"]{border-color:var(--signal); background:color-mix(in srgb,var(--signal) 8%,transparent)}
 
+  /* the ledger of what the machine used and what it threw away */
+  .analysis{
+    position:absolute; inset:0; overflow-y:auto; padding:16px 18px 20px;
+    background:var(--panel); display:flex; flex-direction:column; gap:14px;
+  }
+  .an-top{display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px}
+  .an-stat{border:1px solid var(--line); border-radius:9px; padding:8px 11px}
+  .an-stat dt{
+    font-family:"IBM Plex Mono",monospace; font-size:9px; letter-spacing:.11em;
+    text-transform:uppercase; color:var(--muted); margin-bottom:3px;
+  }
+  .an-stat dd{margin:0; font-family:Archivo,sans-serif; font-weight:600; font-size:20px; font-variant-numeric:tabular-nums}
+  .an-stat dd small{display:block; font-size:11px; font-weight:500; color:var(--muted); letter-spacing:0}
+  .an-stat.hero dd{color:var(--fault)}
+
+  .an-rates{display:flex; flex-direction:column; gap:6px}
+  .an-rate{display:grid; grid-template-columns:96px 1fr 74px; gap:9px; align-items:center; font-size:11.5px}
+  .an-rate .who{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.06em}
+  .an-rate.a .who{color:var(--roleA)} .an-rate.b .who{color:var(--roleB)} .an-rate.m .who{color:var(--muted)}
+  .an-rate .bar{height:9px; border-radius:5px; background:var(--line-soft); overflow:hidden; display:flex}
+  .an-rate .bar i{display:block; height:9px}
+  .an-rate .n{font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--muted); text-align:right; font-variant-numeric:tabular-nums}
+
+  .an-sec > h4{
+    font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.12em; text-transform:uppercase;
+    margin:0 0 3px; display:flex; gap:8px; align-items:baseline; flex-wrap:wrap;
+  }
+  .an-sec > p{margin:0 0 8px; font-size:11.5px; color:var(--muted); max-width:74ch}
+  .an-sec.used > h4{color:var(--signal)}
+  .an-sec.meaning > h4{color:var(--fault)}
+  .an-sec.grammar > h4, .an-sec.machine > h4{color:var(--muted)}
+  .wchips{display:flex; gap:5px; flex-wrap:wrap}
+  .wchip{
+    display:inline-flex; align-items:baseline; gap:5px; border:1px solid var(--line);
+    border-radius:6px; padding:2px 7px; font-family:"IBM Plex Mono",monospace; font-size:11.5px;
+  }
+  .wchip .x{font-size:9px; color:var(--muted); font-variant-numeric:tabular-nums}
+  .wchip .did{font-size:9px; color:var(--muted)}
+  .wchip.a{border-color:color-mix(in srgb,var(--roleA) 50%,transparent); color:var(--roleA)}
+  .wchip.b{border-color:color-mix(in srgb,var(--roleB) 50%,transparent); color:var(--roleB)}
+  .an-sec.meaning .wchip{font-size:13px; padding:3px 9px}
+  .an-sec.grammar .wchip, .an-sec.machine .wchip{opacity:.5; font-size:10.5px; padding:1px 6px}
+
   .views{display:flex; gap:6px; align-items:center; flex-wrap:wrap}
   .vtab{
     background:transparent; border:1px solid var(--line); border-radius:8px; padding:5px 12px;
@@ -321,10 +364,12 @@
     <div class="views" role="tablist" aria-label="What to show">
       <button class="vtab" data-v="scene" role="tab" aria-selected="true">What was built</button>
       <button class="vtab" data-v="said" role="tab" aria-selected="false">What was said</button>
+      <button class="vtab" data-v="dropped" role="tab" aria-selected="false">What was dropped</button>
       <p class="vnote" id="vnote"></p>
     </div>
     <div class="canvas-wrap">
       <canvas id="scene"></canvas>
+      <div class="analysis" id="analysis" hidden></div>
       <div class="badge">
         <span class="built" id="bBuilt">nothing built yet</span>
         <span class="n" id="bMatches">0 matches</span>
@@ -536,14 +581,29 @@ function choose(role){
 }
 
 // Reddy's idea space, made literal: everything said is ejected into the gap and stays there.
+const FEATLABEL = {
+  water:"names the water", rock:"names the mountain", plank:"a bare deck", low:"low, on the ground",
+  flat:"lying flat", few:"as few matches as possible", bare:"nothing on it", high:"held up high",
+  towers:"towers", cables:"cables", clear:"a clear span", truss:"triangulation",
+  triangles:"triangulation", arch:"a curve", curve:"a curve", piers:"posts in the middle",
+  polarity:"the speech act itself",
+};
+// grammar the machine loses nothing by ignoring
+const GRAMMAR = new Set(("a an the and or but is are be to of it in on at we i you this that for with as our my its " +
+  "do does so if no have has from by can will would need make just too very there here been was were they them " +
+  "he she his her us me then than what when how all any out up down over under about into also still more most " +
+  "only own same such other some each one two both am are").split(" "));
+
 function eject(who, text, registered){
-  const carriers = new Set();
-  registered.forEach(f => (CARRIES[f] || []).forEach(w => carriers.add(w)));
+  const carriers = new Map();
+  registered.forEach(f => (CARRIES[f] || []).forEach(w => { if (!carriers.has(w)) carriers.set(w, f); }));
   const home = who === "A" ? GAP_L + SPAN*0.28 : who === "B" ? GAP_L + SPAN*0.72 : GAP_L + SPAN*0.5;
   text.split(/\s+/).forEach(tok => {
     const w = tok.replace(/[^A-Za-z0-9'-]/g, ""); if (!w) return;
-    const took = who !== "AI" && carriers.has(w.toLowerCase());
-    S.words.push({w, who, took,
+    const lower = w.toLowerCase();
+    const took = who !== "AI" && carriers.has(lower);
+    S.words.push({w, who, took, feat: took ? carriers.get(lower) : null,
+      grammar: GRAMMAR.has(lower),
       x: home + (Math.random() - .5) * SPAN * (who === "AI" ? 1.05 : .66),
       yn: Math.random(), phase: Math.random() * 6.28});
     if (who !== "AI"){ S.spoken++; if (took) S.taken++; }
@@ -584,6 +644,7 @@ function takeTurn(){
     S.done = true; record(); pushVerdict(); stop();
   }
   paint(); hud();
+  if (S.view === "dropped") renderAnalysis();
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1050,13 +1111,93 @@ const reset = () => {
   document.getElementById("playBtn").textContent = "Play";
   paint(); hud();
 };
+function renderAnalysis(){
+  const host = document.getElementById("analysis");
+  const human = S.words.filter(o => o.who !== "AI");
+  if (!human.length){ host.innerHTML = `<p style="color:var(--muted);font-size:13px">Run a case and the ledger fills in.</p>`; return; }
+
+  // one row per distinct word, so repetition is visible rather than hidden
+  const tally = new Map();
+  S.words.forEach(o => {
+    const key = o.who + "|" + o.w.toLowerCase();
+    const t = tally.get(key) || {w:o.w.toLowerCase(), who:o.who, took:o.took, feat:o.feat, grammar:o.grammar, n:0};
+    t.n++; tally.set(key, t);
+  });
+  const rows = [...tally.values()].sort((a,b) => b.n - a.n || a.w.localeCompare(b.w));
+
+  const used    = rows.filter(r => r.took);
+  const meaning = rows.filter(r => !r.took && r.who !== "AI" && !r.grammar);
+  const grammar = rows.filter(r => !r.took && r.who !== "AI" && r.grammar);
+  const machine = rows.filter(r => r.who === "AI");
+
+  const spoken = human.length, took = human.filter(o => o.took).length;
+  const pct = n => Math.round(100 * n / Math.max(1, spoken));
+  const rate = role => {
+    const all = human.filter(o => o.who === role);
+    return {n: all.length, k: all.filter(o => o.took).length};
+  };
+  const ra = rate("A"), rb = rate("B"), mw = S.words.filter(o => o.who === "AI").length;
+
+  const chip = (r, extra) => `<span class="wchip ${r.who.toLowerCase()}">${r.w}${
+    r.n > 1 ? `<span class="x">×${r.n}</span>` : ""}${
+    extra && r.feat ? `<span class="did">${FEATLABEL[r.feat] || r.feat}</span>` : ""}</span>`;
+
+  const rateRow = (cls, label, n, k) => `<div class="an-rate ${cls}">
+      <span class="who">${label}</span>
+      <span class="bar"><i style="width:${n ? 100*k/n : 0}%;background:var(--signal)"></i><i style="width:${n ? 100*(n-k)/n : 0}%;background:var(--line)"></i></span>
+      <span class="n">${k}/${n} used</span></div>`;
+
+  host.innerHTML = `
+    <dl class="an-top">
+      <div class="an-stat"><dt>Words spoken</dt><dd>${spoken}<small>by the two of them</small></dd></div>
+      <div class="an-stat"><dt>Words used</dt><dd>${took}<small>${pct(took)}% — became matches</small></dd></div>
+      <div class="an-stat hero"><dt>Words discarded</dt><dd>${spoken - took}<small>${pct(spoken - took)}% — heard, then dropped</small></dd></div>
+      <div class="an-stat"><dt>The machine said</dt><dd>${mw}<small>none of it picked up</small></dd></div>
+    </dl>
+
+    <div class="an-rates">
+      ${rateRow("a", "role 1", ra.n, ra.k)}
+      ${rateRow("b", "role 2", rb.n, rb.k)}
+      ${rateRow("m", "the machine", mw, 0)}
+    </div>
+
+    <section class="an-sec used">
+      <h4>Used · ${used.length} distinct words</h4>
+      <p>Every word that changed the bridge, and what it changed. This is the machine&rsquo;s entire vocabulary for this run.</p>
+      <div class="wchips">${used.map(r => chip(r, true)).join("")}</div>
+    </section>
+
+    <section class="an-sec meaning">
+      <h4>Discarded · ${meaning.length} words that carried meaning</h4>
+      <p>Not grammar. These are words a person would have understood — purpose, manner, urgency, the reason for wanting any of it — and the machine has no slot for a single one of them.</p>
+      <div class="wchips">${meaning.map(r => chip(r)).join("")}</div>
+    </section>
+
+    <section class="an-sec grammar">
+      <h4>Discarded · ${grammar.length} function words</h4>
+      <p>Articles, pronouns, prepositions. The machine loses little by ignoring these.</p>
+      <div class="wchips">${grammar.map(r => chip(r)).join("")}</div>
+    </section>
+
+    <section class="an-sec machine">
+      <h4>The machine&rsquo;s own words · ${machine.length} distinct</h4>
+      <p>It ejects into the same space and none of it is ever picked up, including by itself.</p>
+      <div class="wchips">${machine.map(r => chip(r)).join("")}</div>
+    </section>`;
+}
+
 const VNOTE = {
   scene: "The matchstick bridge as it stands. Every turn the machine takes it apart and rebuilds it from whatever it has heard so far.",
+  dropped: "The same run, counted. <b>Used</b> is the machine\u2019s whole working vocabulary. <b>Discarded \u00b7 meaning</b> is the part worth arguing about: words that are not grammar, that a person would have understood, and that changed nothing.",
   said: "Every word either of them has said, ejected into the space between them and left there — Reddy\u2019s <b>idea space</b>, made literal. The words in colour at deck level are the few the machine actually picked up; they became the matches. Everything faint is still in the air: said, reified, and inert. Grey is the machine, ejecting into the same space, with none of it picked up either.",
 };
 function setView(v){
   S.view = v;
   document.querySelectorAll(".vtab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.v === v)));
+  document.getElementById("analysis").hidden = v !== "dropped";
+  document.getElementById("scene").hidden = v === "dropped";
+  document.querySelector(".badge").hidden = v === "dropped";   // it would sit on top of the ledger
+  if (v === "dropped") renderAnalysis();
   document.getElementById("vnote").innerHTML = VNOTE[v]
     + (v === "said" && CASES[S.case].split
         ? " <b>Apart, they never hear one another — and their words still land in the same store.</b>" : "");
