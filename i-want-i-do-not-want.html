@@ -136,6 +136,15 @@
     margin:0 0 3px; display:flex; gap:8px; align-items:baseline; flex-wrap:wrap;
   }
   .an-sec > p{margin:0 0 8px; font-size:11.5px; color:var(--muted); max-width:74ch}
+  .an-sec.built > h4{color:var(--ink)}
+  .prov-head{
+    font-family:Archivo,sans-serif; font-weight:600; font-size:15px; margin:0 0 8px !important;
+    color:var(--ink) !important; max-width:none !important;
+  }
+  .prov-head.all{color:var(--fault) !important}
+  .wchip.prov{font-size:12.5px; padding:3px 9px}
+  .wchip.prov.none{border-color:color-mix(in srgb,var(--fault) 55%,transparent); color:var(--fault)}
+  .wchip.prov.both{border-color:var(--ink); color:var(--ink)}
   .an-sec.used > h4{color:var(--signal)}
   .an-sec.meaning > h4{color:var(--fault)}
   .an-sec.grammar > h4, .an-sec.machine > h4{color:var(--muted)}
@@ -515,6 +524,7 @@ const S = {
 // One site, one model, one bridge — unless the case gives each of them their own.
 function mkCtx(){
   return {wants:new Map(), avoids:new Map(), world:{water:false, rock:false},
+          namedBy:new Map(),                     // feature -> who ever put it into words
           design:null, matches:0, ruledOut:[], blocked:[]};
 }
 S.shared = mkCtx();
@@ -524,6 +534,10 @@ const CTXS = () => CASES[S.case].solo ? [S.side.A, S.side.B] : [S.shared];
 
 function hear(line, role){
   const c = CX(role);
+  [...(line.want || []), ...(line.avoid || [])].forEach(f => {
+    if (!c.namedBy.has(f)) c.namedBy.set(f, new Set());
+    c.namedBy.get(f).add(role);
+  });
   (line.want || []).forEach(f => {
     if (f === "water") c.world.water = true;
     else if (f === "rock") c.world.rock = true;
@@ -562,6 +576,20 @@ function build(c){
    and repeats itself when it has nothing new left to say.
    ═══════════════════════════════════════════════════════════ */
 const GOAL = {A:"plank", B:"stayed"};
+
+// Of the properties the built structure actually has, which were ever put into words?
+function provenance(c){
+  if (!c.design) return {feats:[], named:0, total:0};
+  const seen = new Set(), feats = [];
+  c.design.has.forEach(f => {
+    const label = FEATLABEL[f] || f;
+    if (seen.has(label)) return;                 // truss/triangles and arch/curve are one property
+    seen.add(label);
+    const by = c.namedBy.get(f);
+    feats.push({f, label, a: !!(by && by.has("A")), b: !!(by && by.has("B"))});
+  });
+  return {feats, named: feats.filter(x => x.a || x.b).length, total: feats.length};
+}
 function choose(role){
   const c = CX(role);
   const lines = linesFor(role), said = S.said[role];
@@ -586,7 +614,7 @@ const FEATLABEL = {
   flat:"lying flat", few:"as few matches as possible", bare:"nothing on it", high:"held up high",
   towers:"towers", cables:"cables", clear:"a clear span", truss:"triangulation",
   triangles:"triangulation", arch:"a curve", curve:"a curve", piers:"posts in the middle",
-  polarity:"the speech act itself",
+  polarity:"the speech act itself", tall:"very tall towers",
 };
 // grammar the machine loses nothing by ignoring
 const GRAMMAR = new Set(("a an the and or but is are be to of it in on at we i you this that for with as our my its " +
@@ -712,6 +740,7 @@ function record(){
     groundOfB: solo ? groundPhrase(S.side.B) : null,
     hitA: S.hit.A, hitB: S.hit.B,
     scoreA: scoreOf(GOAL.A, c), scoreB: scoreOf(GOAL.B, c),
+    prov: provenance(c), provB: solo ? provenance(S.side.B) : null,
     plankBlocked: c.blocked.includes("plank"),
     actA: CASES[S.case].A,
     unspoken: c.design ? c.design.has.every(f => !c.wants.has(f) && !c.avoids.has(f)) : false,
@@ -740,12 +769,12 @@ function renderCmp(){
       <td class="win">${NAME(r.built)} · ${r.matches} · ${NAME(r.builtB).toLowerCase()} · ${r.matchesB}</td>
       <td class="k">${r.groundOf} · ${r.groundOfB}</td>
       <td class="win">each got its own</td>
-      <td class="k">nothing to account for</td></tr>`;
+      <td class="k">${r.prov.total - r.prov.named}/${r.prov.total} · ${r.provB.total - r.provB.named}/${r.provB.total} unnamed</td></tr>`;
     return `<tr><td class="k">${c.label}</td>
       <td class="win">${NAME(r.built)} · ${r.matches} matches</td>
       <td class="k">on ${r.groundOf}</td>
       <td class="win ${wcls}">${winner}, from turn ${r.built === GOAL.A ? r.hitA : r.hitB}</td>
-      <td class="k">${r.split ? r.unexplained + " changes with no cause in the room" : "every change was witnessed"}</td></tr>`;
+      <td class="k">${r.prov.total - r.prov.named}/${r.prov.total} unnamed</td></tr>`;
   }).join("");
   const g = S.results.given, w = S.results.swapped, a = S.results.separate;
   const al = S.results.alone;
@@ -763,7 +792,7 @@ function renderCmp(){
   }
   document.getElementById("cmp").innerHTML =
     `<caption>${caption}</caption>
-     <tr><th>case</th><th>what stands</th><th>ground</th><th>whose goal, from when</th><th>what they could account for</th></tr>${rows}`;
+     <tr><th>case</th><th>what stands</th><th>ground</th><th>whose goal, from when</th><th>properties nobody named</th></tr>${rows}`;
 }
 
 function pushVerdict(){
@@ -1147,7 +1176,30 @@ function renderAnalysis(){
       <span class="bar"><i style="width:${n ? 100*k/n : 0}%;background:var(--signal)"></i><i style="width:${n ? 100*(n-k)/n : 0}%;background:var(--line)"></i></span>
       <span class="n">${k}/${n} used</span></div>`;
 
+  const provBlock = (c, who) => {
+    const pr = provenance(c);
+    if (!pr.total) return "";
+    const unnamed = pr.total - pr.named;
+    return `<section class="an-sec built">
+      <h4>${who ? who + " &mdash; " : ""}what was built &middot; who named it</h4>
+      <p class="prov-head ${unnamed === pr.total ? "all" : unnamed ? "some" : "none"}">${
+        unnamed === 0
+          ? `Every property of this bridge was asked for out loud \u2014 all ${pr.total} of them.`
+          : `${unnamed} of ${pr.total} propert${pr.total === 1 ? "y" : "ies"} of this bridge ${
+              unnamed === 1 ? "was" : "were"} never named by either of them.`
+      }</p>
+      <div class="wchips">${pr.feats.map(f => {
+        const cls = f.a && f.b ? "both" : f.a ? "a" : f.b ? "b" : "none";
+        const tag = f.a && f.b ? "both named it" : f.a ? "role 1 named it" : f.b ? "role 2 named it" : "nobody named it";
+        return `<span class="wchip prov ${cls}">${f.label}<span class="did">${tag}</span></span>`;
+      }).join("")}</div>
+    </section>`;
+  };
+
   host.innerHTML = `
+    ${CASES[S.case].solo
+      ? provBlock(S.side.A, "Role 1") + provBlock(S.side.B, "Role 2")
+      : provBlock(S.shared, "")}
     <dl class="an-top">
       <div class="an-stat"><dt>Words spoken</dt><dd>${spoken}<small>by the two of them</small></dd></div>
       <div class="an-stat"><dt>Words used</dt><dd>${took}<small>${pct(took)}% — became matches</small></dd></div>
