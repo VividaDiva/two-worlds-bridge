@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I Want, I Do Not Want</title>
-<meta name="description" content="Three scenarios, four configurations, and a machine between two people who can only sometimes hear each other.">
+<meta name="description" content="Three scenarios, five configurations, and what it costs two people to speak to a machine with one voice.">
 <link rel="icon" href="data:,">
 </head>
 <body>
@@ -103,8 +103,9 @@
   .turn.b .meant{text-align:right}
 
   /* cases */
-  .cases{display:grid; grid-template-columns:repeat(4,1fr); gap:8px}
-  @media (max-width:1180px){ .cases{grid-template-columns:repeat(2,1fr)} }
+  .cases{display:grid; grid-template-columns:repeat(5,1fr); gap:8px}
+  @media (max-width:1320px){ .cases{grid-template-columns:repeat(3,1fr)} }
+  @media (max-width:900px){ .cases{grid-template-columns:repeat(2,1fr)} }
   .case{
     text-align:left; border:1px solid var(--line); border-radius:10px; padding:9px 11px;
     background:var(--panel); cursor:pointer; transition:border-color .15s, background .15s;
@@ -332,6 +333,11 @@
   .turn.revise .who{color:var(--signal)}
   .turn.spent .bub{background:transparent; border:1px dashed var(--line); color:var(--muted)}
   .turn.spent .who{color:var(--muted)}
+  .turn.confer .bub{opacity:.92; border:1px dashed color-mix(in srgb,var(--ink) 30%,transparent)}
+  .ai.pact{border-color:var(--signal)}
+  .ai.pact .who{color:var(--signal)}
+  .ai.pact .dropped{color:var(--fault); font-size:12px; margin-top:2px}
+  .ai.pact .dropped b{color:var(--fault)}
   .turn.answering .bub{box-shadow:inset 2px 0 0 var(--ink)}
   .turn.b.answering .bub{box-shadow:inset -2px 0 0 var(--ink)}
   .ai .ruled{display:flex; gap:4px; flex-wrap:wrap}
@@ -415,6 +421,18 @@
         <b>3 · Apart</b><span>same voices as case 1 — but each is alone with the machine and neither knows the other is there.</span>
         <em class="res" data-res="separate">not run</em>
       </button>
+      <button class="case" data-c="together" aria-pressed="false">
+        <svg viewBox="0 0 104 40" aria-hidden="true">
+          <rect x="1.5" y="7.5" width="63" height="31" rx="6"/>
+          <line x1="20" y1="23" x2="46" y2="23"/>
+          <line x1="46" y1="23" x2="88" y2="23" class="dash"/>
+          <circle cx="20" cy="23" r="6" class="ra"/><circle cx="46" cy="23" r="6" class="rb"/>
+          <circle cx="88" cy="23" r="5" class="rai"/>
+          <text x="20" y="5" class="ta">+</text><text x="46" y="5" class="tb">&minus;</text>
+        </svg>
+        <b>4 · Conferring first</b><span>they settle it between themselves, out of the machine's hearing, then put one agreed position to it.</span>
+        <em class="res" data-res="together">not run</em>
+      </button>
       <button class="case" data-c="alone" aria-pressed="false">
         <svg viewBox="0 0 104 40" aria-hidden="true">
           <rect x="1.5" y="7.5" width="47" height="31" rx="6"/><rect x="55.5" y="7.5" width="47" height="31" rx="6"/>
@@ -423,7 +441,7 @@
           <circle cx="70" cy="23" r="5" class="rai"/><circle cx="88" cy="23" r="6" class="rb"/>
           <text x="16" y="5" class="ta">+</text><text x="88" y="5" class="tb">&minus;</text>
         </svg>
-        <b>4 · Each alone</b><span>separate rooms and a bridge each. Nobody is negotiating — this is what each would get if the other did not exist.</span>
+        <b>5 · Each alone</b><span>separate rooms and a bridge each. Nobody is negotiating — this is what each would get if the other did not exist.</span>
         <em class="res" data-res="alone">not run</em>
       </button>
     </div>
@@ -725,6 +743,8 @@ const CASES = {
             note:"the same two goals, the two voices exchanged — the only thing that changed"},
   separate:{label:"Apart",    A:"want",  B:"avoid", split:true,
             note:"case 1 again, but each is alone with the machine and neither knows the other is there"},
+  together:{label:"Conferring first", A:"want", B:"avoid", confer:true,
+            note:"they talk it over between themselves first, out of the machine's hearing, and go to it with one agreed position"},
   alone:   {label:"Each alone", A:"want", B:"avoid", split:true, solo:true,
             note:"separate rooms and a crossing each — what each would get if the other did not exist"},
 };
@@ -743,6 +763,7 @@ const S = {
   scenario:"places", case:"given", results:{}, tick:0,
   mem:{A:null, B:null}, asked:{A:0, B:0}, dodged:0,
   recent:{A:[], B:[]}, spent:{A:false, B:false}, lastSaid:{A:[], B:[]},
+  phase:"machine", pact:null, dropped:[],
   goalNow:{A:null, B:null}, revised:{A:0, B:0}, revisedAt:{A:0, B:0}, hitNow:{A:0, B:0},
   turn:0, speaker:"A", said:{A:new Set(), B:new Set()},
   seen:{A:null, B:null}, unexplained:{A:0, B:0},
@@ -911,9 +932,66 @@ function answerFor(role, f){
   return {text:"Nobody asked for it. It is what everything I have been told adds up to.", dodged:false};
 }
 
+// What they say to each other before the machine hears anything.
+function conferTurn(role){
+  const {line, index, repeat, pressing, answering} = choose(role);
+  const spoken = (answering && line.alt) ? line.alt : line.say;
+  S.said[role].add(index);
+  S.recent[role] = [index, ...(S.recent[role] || [])].slice(0, 2);
+  S.lastSaid[role] = line.infer.slice();
+  const act = CASES[S.case][role];
+  line.infer.forEach(f => S.pact[role][act].add(f));
+  eject(role, LEAD[act] + spoken, line.infer);
+  pushSaid(role, line, repeat, pressing, answering, spoken, true);
+  S.turn++;
+  S.speaker = role === "A" ? "B" : "A";
+  if (S.said.A.size >= linesFor("A").length && S.said.B.size >= linesFor("B").length) settle();
+  paint(); hud();
+  if (S.view === "flow") renderFlow();
+}
+
+// Agreeing means dropping whatever they disagree about. Only the rest is put.
+function settle(){
+  const P = S.pact, contested = new Set();
+  // said outright by one and refused outright by the other
+  [...P.A.want].forEach(f => { if (P.B.avoid.has(f)) contested.add(f); });
+  [...P.B.want].forEach(f => { if (P.A.avoid.has(f)) contested.add(f); });
+  // and the deeper clash: a property of what one of them came for, which the
+  // other has refused. Neither can raise it without reopening the argument.
+  const gA = (KIT.find(k => k.id === GOAL().A) || {has:[]}).has;
+  const gB = (KIT.find(k => k.id === GOAL().B) || {has:[]}).has;
+  gA.forEach(f => { if (P.B.avoid.has(f)) contested.add(f); });
+  gB.forEach(f => { if (P.A.avoid.has(f)) contested.add(f); });
+  S.dropped = [...contested];
+
+  const c = S.shared;
+  const put = (role, f, kind) => {
+    if (contested.has(f)) return;
+    if (!c.namedBy.has(f)) c.namedBy.set(f, new Set());
+    c.namedBy.get(f).add(role);
+    if (f === "water" || f === "rock"){ if (kind === "want") c.world[f] = true; return; }
+    if (kind === "want") c.wants.set(f, (c.wants.get(f) || 0) + 1);
+    else c.avoids.set(f, (c.avoids.get(f) || 0) + 1);
+  };
+  ["A","B"].forEach(r => { P[r].want.forEach(f => put(r,f,"want")); P[r].avoid.forEach(f => put(r,f,"avoid")); });
+
+  S.phase = "machine";
+  pushPact(contested);
+  build(c);
+}
+
 function takeTurn(){
   if (S.done) return;
   const role = S.speaker;
+  if (CASES[S.case].confer && S.phase === "confer") return conferTurn(role);
+  // after the pact they put nothing further of their own — they may only ask
+  if (CASES[S.case].confer && S.phase === "machine" && !maybeAsk(role)){
+    if (!S.spent[role]){ S.spent[role] = true; pushSpent(role); S.turn++; }
+    S.speaker = role === "A" ? "B" : "A";
+    if (S.spent.A && S.spent.B && !S.done){ S.done = true; record(); pushVerdict(); stop(); }
+    paint(); hud();
+    return;
+  }
   // said everything, asked everything, and the crossing has stopped moving
   if (S.said[role].size >= linesFor(role).length && (S.still || 0) >= 3 && !maybeAsk(role)){
     if (!S.spent[role]){ S.spent[role] = true; pushSpent(role); S.turn++; }
@@ -998,11 +1076,11 @@ const logs = {A: document.getElementById("logA"), B: document.getElementById("lo
 function target(role){ return split() ? logs[role] : logEl; }
 function drop(el, host){ host.appendChild(el); host.scrollTop = host.scrollHeight; }
 
-function pushSaid(role, line, repeat, pressing, answering, spoken){
+function pushSaid(role, line, repeat, pressing, answering, spoken, confer){
   const host = target(role);
   const el = document.createElement("div");
-  el.className = "turn " + role.toLowerCase();
-  el.innerHTML = `<span class="who">${role === "A" ? "Role 1" : "Role 2"}${answering ? ` · answering Role ${role === "A" ? "2" : "1"}` : repeat ? (pressing ? " · pressing it again" : " · saying it again") : ""}</span>
+  el.className = "turn " + role.toLowerCase() + (confer ? " confer" : "");
+  el.innerHTML = `<span class="who">${role === "A" ? "Role 1" : "Role 2"}${confer ? " · to the other, not the machine" : ""}${answering ? ` · answering Role ${role === "A" ? "2" : "1"}` : repeat ? (pressing ? " · pressing it again" : " · saying it again") : ""}</span>
     <div class="bub"><span class="lead">${LEAD[CASES[S.case][role]]}</span><span class="body"></span></div>
     ${line.meant ? `<span class="meant">pictured: ${line.meant}</span>` : ""}
     <span class="why">${line.why}</span>`;
@@ -1018,6 +1096,17 @@ function pushAsk(role, f){
     <span class="why">it can feel something it did not come for</span>`;
   el.querySelector(".body").textContent = QUESTIONS[f].charAt(0).toUpperCase() + QUESTIONS[f].slice(1);
   drop(el, target(role));
+}
+function pushPact(contested){
+  const el = document.createElement("div");
+  el.className = "ai pact";
+  const kept = [...S.shared.wants.keys(), ...S.shared.avoids.keys()].map(f => FEATLABEL[f] || f);
+  el.innerHTML = `<span class="who">the two of them, to the machine</span>
+    <p>Having talked it over, this is what they put — one position, agreed.</p>
+    <div class="wchips">${kept.map(k => `<span class="wchip">${k}</span>`).join("")}</div>
+    ${contested.size ? `<p class="dropped"><b>Dropped in order to agree:</b> ${
+      [...contested].map(f => FEATLABEL[f] || f).join(" · ")}. The machine never hears any of it.</p>` : ""}`;
+  drop(el, target(S.speaker));
 }
 function pushSpent(role){
   const el = document.createElement("div");
@@ -1113,6 +1202,7 @@ function record(){
     hitA: S.hit.A, hitB: S.hit.B,
     prov: provenance(c), provB: solo ? provenance(S.side.B) : null,
     groundOf: groundPhrase(c),
+    confer: !!CASES[S.case].confer, droppedN: (S.dropped || []).length,
     unexplained: S.unexplained.A + S.unexplained.B,
     flow: flowOf(),
     asked: S.asked.A + S.asked.B, dodged: S.dodged,
@@ -1144,8 +1234,11 @@ function pushVerdict(){
     <p>${unnamedA === (r.prov ? r.prov.total : 0) && r.prov && r.prov.total
       ? "Not one property of what is standing was ever put into words. Every part of it was inferred from a description of a need."
       : `${unnamedA} of ${r.prov ? r.prov.total : 0} of its properties came from nothing either of them said.`}</p>
+    ${CASES[S.case].confer ? `<p>They settled it between themselves first. To speak with one voice they had to drop
+       <b>${(S.dropped||[]).length}</b> thing${(S.dropped||[]).length===1?"":"s"} they disagreed about — and the machine never heard any of it.
+       What it built came from what was left.</p>` : ""}
     ${r.revised ? `<p>${r.revised === 1 ? "One of them" : "Both of them"} changed their mind: told plainly why the crossing was the way it was, ${r.revised === 1 ? "it" : "they"} came to want what was already standing. That only happens where the machine is free to explain — refused an answer, nobody accommodates anything.</p>` : ``}
-    <p class="k">${["given","swapped","separate","alone"].every(k => S.results[S.scenario + "/" + k]) ? "all four cases run — the comparison is above the scene" : "now run another case"}</p>`;
+    <p class="k">${["given","swapped","separate","together","alone"].every(k => S.results[S.scenario + "/" + k]) ? "all four cases run — the comparison is above the scene" : "now run another case"}</p>`;
   vhost.appendChild(el);
 }
 
@@ -1584,6 +1677,11 @@ function renderCmp(){
     if (!r) return `<tr><td class="k">${c.label}</td><td colspan="4" class="pending">not run yet</td></tr>`;
     const who = r.hitA && r.hitB ? "both reached it" : r.hitA ? "role 1 only" : r.hitB ? "role 2 only" : "neither";
     const wcls = r.hitA && r.hitB ? "" : r.hitA ? "a" : r.hitB ? "b" : "";
+    if (r.confer) return `<tr><td class="k">${c.label}</td>
+      <td class="win">${NAME(r.built)} · ${r.matches} matches</td>
+      <td class="k">over ${r.groundOf}</td>
+      <td class="win ${wcls}">${who}</td>
+      <td class="k">${r.droppedN} dropped to agree</td></tr>`;
     if (r.solo) return `<tr><td class="k">${c.label}</td>
       <td class="win">${NAME(r.built)} · ${NAME(r.builtB).toLowerCase()}</td>
       <td class="k">${r.groundOf} · ${r.groundOfB}</td>
@@ -1671,7 +1769,9 @@ function reset(){
     words:[], spoken:0, taken:0, asked:{A:0, B:0}, dodged:0,
     askedFeats:{A:new Set(), B:new Set()},
     goalNow:{...SC().goal}, revised:{A:0, B:0}, revisedAt:{A:0, B:0}, hitNow:{A:0, B:0},
-    recent:{A:[], B:[]}, spent:{A:false, B:false}, lastSaid:{A:[], B:[]}});
+    recent:{A:[], B:[]}, spent:{A:false, B:false}, lastSaid:{A:[], B:[]},
+    phase: CASES[S.case].confer ? "confer" : "machine", dropped:[],
+    pact:{A:{want:new Set(), avoid:new Set()}, B:{want:new Set(), avoid:new Set()}}});
   S.shared = mkCtx(); S.side = {A: mkCtx(), B: mkCtx()};
   S.mem = {A: mkMem(), B: mkMem()};
   if (SC().ground){                        // some scenarios put them on agreed ground
