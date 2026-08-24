@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I Want, I Do Not Want</title>
-<meta name="description" content="Three scenarios, five configurations, and what it costs two people to speak to a machine with one voice.">
+<meta name="description" content="Three scenarios, five configurations, and a machine that is only interrogated by people who have nobody else to ask.">
 <link rel="icon" href="data:,">
 </head>
 <body>
@@ -387,7 +387,7 @@
   <section class="stage">
     <div class="scen" id="scen"></div>
     <p class="scen-note" id="scenNote"></p>
-    <p class="caveat">These two are scripted, not people. They can ask the machine why, and can come to want what is standing once they are told — but they never lie, never invent a sentence outside their script, never learn a word from each other, and only ever give ground toward what is already built. Apart, each knows only what it has said itself and whatever the machine has put in front of it.</p>
+    <p class="caveat">These two are scripted, not people. In one room they answer each other; separated, they question the machine instead, and can come to want what is standing once they are told — but they never lie, never invent a sentence outside their script, never learn a word from each other, and only ever give ground toward what is already built. Apart, each knows only what it has said itself and whatever the machine has put in front of it.</p>
     <div class="cases" id="cases">
       <button class="case" data-c="given" aria-pressed="true">
         <svg viewBox="0 0 104 40" aria-hidden="true">
@@ -418,7 +418,7 @@
           <circle cx="70" cy="23" r="5" class="rai"/><circle cx="88" cy="23" r="6" class="rb"/>
           <text x="16" y="5" class="ta">+</text><text x="88" y="5" class="tb">&minus;</text>
         </svg>
-        <b>3 · Apart</b><span>same voices as case 1 — but each is alone with the machine and neither knows the other is there.</span>
+        <b>3 · Apart</b><span>same voices as case 1, but each is alone with the machine. With nobody else to ask, they start asking <em>it</em> why.</span>
         <em class="res" data-res="separate">not run</em>
       </button>
       <button class="case" data-c="together" aria-pressed="false">
@@ -893,6 +893,9 @@ function eject(who, text, inferred){
 // It asks only about something it can feel that its own goal does not have,
 // and only once it has been at this a while. Two questions each, at most.
 function maybeAsk(role){
+  // In one room you turn to the other person. Apart, the machine is the only
+  // thing there is to ask, so this is where the questions happen.
+  if (!split()) return null;
   if ((S.asked[role] || 0) >= 2 || S.turn < 5) return null;
   const st = CX(role).design; if (!st) return null;
   const goalKit = KIT.find(k => k.id === GNOW(role));
@@ -985,7 +988,7 @@ function takeTurn(){
   const role = S.speaker;
   if (CASES[S.case].confer && S.phase === "confer") return conferTurn(role);
   // after the pact they put nothing further of their own — they may only ask
-  if (CASES[S.case].confer && S.phase === "machine" && !maybeAsk(role)){
+  if (CASES[S.case].confer && S.phase === "machine"){
     if (!S.spent[role]){ S.spent[role] = true; pushSpent(role); S.turn++; }
     S.speaker = role === "A" ? "B" : "A";
     if (S.spent.A && S.spent.B && !S.done){ S.done = true; record(); pushVerdict(); stop(); }
@@ -1705,7 +1708,7 @@ function renderCmp(){
     caption = `<b>${SC().blurb}</b> ${grounds}`
       + `<br><br><b>Nothing was ever named.</b> Neither of them may say what they want built, so every property of every result is the machine&rsquo;s reading of a need${
           unspokenAll ? ", and in each shared case some of it traces back to nothing either of them said at all" : ""}.`
-      + ((a.asked) ? `<br><br><b>What they asked.</b> When what stands is not what they came for, each asks the machine why — never naming a part, only what they can feel. The answer is where the four cases finally come apart. In one room it can say plainly that the other one refused something, <i>and you heard them</i>. Apart it must not, so it says only that something it has been told rules this out and it cannot say what: <b>${a.dodged} of ${a.asked} questions answered without disclosure</b>. Alone there is nobody to protect, and the answer is the hardest of the three — <i>you refused it yourself, and the crossing you have in mind is exactly that</i>.` : ``);
+      + ((a.asked) ? `<br><br><b>Who asks, and what they are told.</b> In the same room they turn to each other — answering, rephrasing, pressing a point in different words. Nobody interrogates the machine, because there is somebody better to ask. It is only when they are separated that the machine becomes the one thing available to ask, and then the answer depends on whether there is anyone to protect. <b>Apart</b>, it must not reveal that another person exists: <b>${a.dodged} of ${a.asked} questions answered without disclosure</b>. <b>Alone</b>, there is nobody to shield, and the answer is the hardest of all — <i>you refused it yourself, and the crossing you have in mind is exactly that</i>.` : ``);
   }
   document.getElementById("cmp").innerHTML =
     `<caption>${caption}</caption>
