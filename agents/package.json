@@ -1,0 +1,17 @@
+{
+  "name": "two-worlds-agents",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Role A and Role B played by two different models, arguing through the same deterministic machine.",
+  "scripts": {
+    "start": "node run.mjs",
+    "places": "node run.mjs --scenario places --case given",
+    "apart": "node run.mjs --scenario places --case separate"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.0",
+    "openai": "^4.104.0",
+    "zod": "^3.25.0"
+  }
+}
