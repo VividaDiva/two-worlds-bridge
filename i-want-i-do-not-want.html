@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I Want, I Do Not Want</title>
-<meta name="description" content="Three scenarios, four configurations, and the conduit drawn to scale.">
+<meta name="description" content="Three scenarios, four configurations, and a machine between two people who can only sometimes hear each other.">
 <link rel="icon" href="data:,">
 </head>
 <body>
@@ -332,6 +332,8 @@
   .turn.revise .who{color:var(--signal)}
   .turn.spent .bub{background:transparent; border:1px dashed var(--line); color:var(--muted)}
   .turn.spent .who{color:var(--muted)}
+  .turn.answering .bub{box-shadow:inset 2px 0 0 var(--ink)}
+  .turn.b.answering .bub{box-shadow:inset -2px 0 0 var(--ink)}
   .ai .ruled{display:flex; gap:4px; flex-wrap:wrap}
   .ai .ruled span{
     font-family:"IBM Plex Mono",monospace; font-size:9.5px; padding:1px 6px; border-radius:4px;
@@ -552,7 +554,8 @@ const SCENARIOS = {
           {say:"to stay out of it. It runs fast and it is over my knees.",infer:["water"], why:"describes it moving, and how deep"},
           {say:"to step straight over, not climb up to anything.",       infer:["low"],    why:"the crossing has risen away from it"},
           {say:"to take nothing across heavier than myself.",            infer:["light"],  why:"names the load, never the structure"},
-          {say:"to look down and see what is passing below me.",         infer:["open"],   why:"wants nothing closing it in"},
+          {say:"to look down and see what is passing below me.",         infer:["open"],   why:"wants nothing closing it in",
+           counters:["exposed","guarded"], alt:"to look down and see what is passing below me. That is the whole reason to cross here, not something to be shut away from."},
           {say:"it done before dark. It is four paces, not a project.",  infer:["minimal"],why:"the thing keeps growing"},
         ],
         avoid:[
@@ -572,8 +575,10 @@ const SCENARIOS = {
           {say:"the trees left where they are.",                           infer:["minimal"],why:"wants little built"},
         ],
         avoid:[
-          {say:"to be out over that with nothing at my hands.",            infer:["exposed"],why:"refuses the bare edge — and a bare log is a bare edge"},
-          {say:"to feel it swing when the wind comes through.",            infer:["sways"],  why:"refuses movement"},
+          {say:"to be out over that with nothing at my hands.",            infer:["exposed"],why:"refuses the bare edge — and a bare log is a bare edge",
+           counters:["open","minimal"], alt:"to be out over that with nothing at my hands. You may like the view. I am the one who has to stand on it."},
+          {say:"to feel it swing when the wind comes through.",            infer:["sways"],  why:"refuses movement",
+           counters:["minimal","light"], alt:"to feel it swing when the wind comes through — and the slighter you make it, the more it will."},
           {say:"anything standing at the bottom of it.",                   infer:["inGap"],  why:"refuses anything standing in the gap"},
           {say:"a great deal taken from around here to make it.",          infer:["many"],   why:"refuses the built-up frame"},
           {say:"to climb up to it before I can cross.",                    infer:["high"],   why:"refuses being raised"},
@@ -590,7 +595,8 @@ const SCENARIOS = {
     want:{A:"a log to walk over", B:"a log that will take a loaded cart"},
     speech:{
       A:{want:[
-          {say:"to cross on foot, carrying nothing but myself.",          infer:["light","low"], why:"names the load, never the structure"},
+          {say:"to cross on foot, carrying nothing but myself.",          infer:["light","low"], why:"names the load, never the structure",
+           counters:["heavy","many"], alt:"to cross on foot, carrying nothing but myself. Only one of us is bringing anything."},
           {say:"to look down and see what is passing below me.",          infer:["open"],   why:"wants nothing closing it in"},
           {say:"it plain. Four paces, not a project.",                    infer:["minimal"],why:"the thing keeps growing"},
           {say:"to step straight over in my boots and be done.",          infer:["light"],  why:"one person, on foot"},
@@ -603,10 +609,12 @@ const SCENARIOS = {
           {say:"anything driven into the bed of it.",                     infer:["inGap"],  why:"refuses anything standing in the gap"},
           {say:"to climb up to anything before I can cross.",             infer:["high"],   why:"refuses being raised"},
           {say:"to feel it shift under my feet.",                         infer:["sways"],  why:"refuses anything that moves"},
-          {say:"the whole thing built for wheels I do not own.",          infer:["heavy"],  why:"refuses being built for carts"},
+          {say:"the whole thing built for wheels I do not own.",          infer:["heavy"],  why:"refuses being built for carts",
+           counters:["heavy","many","steady"], alt:"the whole thing built for wheels I do not own. You are asking for a road and calling it a crossing."},
         ]},
       B:{want:[
-          {say:"to bring a loaded cart over without unhitching it.",      infer:["heavy"],  why:"names the load, never the structure"},
+          {say:"to bring a loaded cart over without unhitching it.",      infer:["heavy"],  why:"names the load, never the structure",
+           counters:["minimal","light"], alt:"to bring a loaded cart over without unhitching it. What you are describing would not hold it for a day."},
           {say:"two of them to pass each other without stopping.",        infer:["heavy","many"],why:"names the traffic, never the width"},
           {say:"it to take the weight in winter when the ground is soft.",infer:["steady","heavy"],why:"names the season, never the footing"},
           {say:"it to last twenty years without being rebuilt.",          infer:["many","steady"],why:"names the lifetime, never the material"},
@@ -614,7 +622,8 @@ const SCENARIOS = {
           {say:"to stop hauling everything the long way round.",          infer:["heavy"],  why:"names the detour, never the remedy"},
         ],
         avoid:[
-          {say:"to unload it all and carry it across by hand.",           infer:["light"],  why:"refuses a crossing built for one person"},
+          {say:"to unload it all and carry it across by hand.",           infer:["light"],  why:"refuses a crossing built for one person",
+           counters:["light","minimal","open"], alt:"to unload it all and carry it across by hand, which is exactly what your version leaves me doing."},
           {say:"to feel it give under the wheels.",                       infer:["sways"],  why:"refuses anything that moves"},
           {say:"to rebuild it every winter.",                             infer:["minimal"],why:"refuses the slight version"},
           {say:"a thing so plain that a cart rolls straight off the side.",infer:["open"],  why:"refuses the unguarded edge"},
@@ -637,7 +646,8 @@ const SCENARIOS = {
           {say:"it like the one everyone walks over at lunchtime.",   meant:"crowds crossing between the two towers",
            infer:["light","low"],     why:"the machine pictures a thin modern walkway instead"},
           {say:"it thin. From the side you should barely see it.",    meant:"slender between two heavy stone piers",
-           infer:["minimal","open"],  why:"the machine drops the stone and keeps the thinness"},
+           infer:["minimal","open"],  why:"the machine drops the stone and keeps the thinness",
+           counters:["many","high","heavy"], alt:"it thin. From the side you should barely see it — not the heavy great thing you keep describing."},
           {say:"it to feel a little alive underfoot.",                meant:"solid, but busy with people",
            infer:["sways"],           why:"the machine hears movement and builds something that moves"},
           {say:"it plain and grey and quiet.",                        meant:"stone",
@@ -663,7 +673,8 @@ const SCENARIOS = {
           {say:"the one from the postcards. Everyone photographs it.",meant:"the great cable crossing with the stone arches",
            infer:["many","water"],    why:"names a place and assumes the picture travels with it"},
           {say:"it grand. It should be the thing you see first.",     meant:"towers you can see from the harbour",
-           infer:["many","high"],     why:"the machine hears bulk, not proportion"},
+           infer:["many","high"],     why:"the machine hears bulk, not proportion",
+           counters:["minimal","open","light"], alt:"it grand. It should be the thing you see first, not something you could walk past without noticing."},
           {say:"it to carry everything. Carts, crowds, all of it.",   meant:"roadway and promenade together",
            infer:["heavy"],           why:"names the traffic, never the structure"},
           {say:"it to still be standing in a hundred years.",         meant:"stone and steel",
@@ -731,7 +742,7 @@ const W_WANT = 2, W_AVOID = 4;
 const S = {
   scenario:"places", case:"given", results:{}, tick:0,
   mem:{A:null, B:null}, asked:{A:0, B:0}, dodged:0,
-  recent:{A:[], B:[]}, spent:{A:false, B:false},
+  recent:{A:[], B:[]}, spent:{A:false, B:false}, lastSaid:{A:[], B:[]},
   goalNow:{A:null, B:null}, revised:{A:0, B:0}, revisedAt:{A:0, B:0}, hitNow:{A:0, B:0},
   turn:0, speaker:"A", said:{A:new Set(), B:new Set()},
   seen:{A:null, B:null}, unexplained:{A:0, B:0},
@@ -810,10 +821,14 @@ function choose(role){
   const offGoal = !standing || standing.id !== GNOW(role);
 
   const recent = (S.recent && S.recent[role]) || [];
-  let best = pool[0], bestGain = -1e9, pressing = false;
+  // Apart, the other one might as well not exist. In one room you just heard them.
+  const heard = split() ? [] : ((S.lastSaid && S.lastSaid[role === "A" ? "B" : "A"]) || []);
+  let best = pool[0], bestGain = -1e9, pressing = false, answering = false;
   pool.forEach(l => {
     let gain = recent.includes(lines.indexOf(l)) ? -6 : 0;   // you just said that
     let presses = false;
+    const answers = !!(l.counters && l.counters.some(f => heard.includes(f)));
+    if (answers) gain += 7;                                  // that is worth answering now
     l.infer.forEach(f => {
       if (f === "water" || f === "rock"){
         if (act === "want" && !know.world[f]) gain += 9;   // name your ground first
@@ -826,9 +841,9 @@ function choose(role){
       // toward it — even if it means saying the same thing over again
       if (offGoal && goalKit && goalKit.has.includes(f) === (act === "want")){ gain += 3; presses = true; }
     });
-    if (gain > bestGain){ bestGain = gain; best = l; presses ? pressing = true : pressing = false; }
+    if (gain > bestGain){ bestGain = gain; best = l; pressing = presses; answering = answers; }
   });
-  return {line:best, index:lines.indexOf(best), repeat:!fresh.length, pressing};
+  return {line:best, index:lines.indexOf(best), repeat:!fresh.length, pressing, answering};
 }
 
 // Reddy's idea space: everything said is ejected into the gap and stays there.
@@ -933,10 +948,12 @@ function takeTurn(){
     if (S.view === "dropped") renderAnalysis();
     return;
   }
-  const {line, index, repeat, pressing} = choose(role);
-  eject(role, LEAD[CASES[S.case][role]] + line.say, line.infer);
+  const {line, index, repeat, pressing, answering} = choose(role);
+  const spoken = (answering && line.alt) ? line.alt : line.say;
+  eject(role, LEAD[CASES[S.case][role]] + spoken, line.infer);
   S.said[role].add(index);
   S.recent[role] = [index, ...(S.recent[role] || [])].slice(0, 2);
+  S.lastSaid[role] = line.infer.slice();      // what the other one will have heard
   hear(line, role);
 
   const c = CX(role);
@@ -951,7 +968,7 @@ function takeTurn(){
 
   eject("AI", `${NAME(after)} ${c.matches} matches ` +
         (before !== after ? "taken apart and rebuilt" : "nothing changed what it heard was already true of this"), []);
-  pushSaid(role, line, repeat, pressing);
+  pushSaid(role, line, repeat, pressing, answering, spoken);
   pushBuild(before, after, best, role, split() ? drifted : null, seenBefore, c);
   S.seen[role] = after;
 
@@ -981,15 +998,16 @@ const logs = {A: document.getElementById("logA"), B: document.getElementById("lo
 function target(role){ return split() ? logs[role] : logEl; }
 function drop(el, host){ host.appendChild(el); host.scrollTop = host.scrollHeight; }
 
-function pushSaid(role, line, repeat, pressing){
+function pushSaid(role, line, repeat, pressing, answering, spoken){
   const host = target(role);
   const el = document.createElement("div");
   el.className = "turn " + role.toLowerCase();
-  el.innerHTML = `<span class="who">${role === "A" ? "Role 1" : "Role 2"}${repeat ? (pressing ? " · pressing it again" : " · saying it again") : ""}</span>
+  el.innerHTML = `<span class="who">${role === "A" ? "Role 1" : "Role 2"}${answering ? ` · answering Role ${role === "A" ? "2" : "1"}` : repeat ? (pressing ? " · pressing it again" : " · saying it again") : ""}</span>
     <div class="bub"><span class="lead">${LEAD[CASES[S.case][role]]}</span><span class="body"></span></div>
     ${line.meant ? `<span class="meant">pictured: ${line.meant}</span>` : ""}
     <span class="why">${line.why}</span>`;
-  el.querySelector(".body").textContent = line.say;
+  el.querySelector(".body").textContent = spoken || line.say;
+  if (answering) el.classList.add("answering");
   drop(el, host);
 }
 function pushAsk(role, f){
@@ -1653,7 +1671,7 @@ function reset(){
     words:[], spoken:0, taken:0, asked:{A:0, B:0}, dodged:0,
     askedFeats:{A:new Set(), B:new Set()},
     goalNow:{...SC().goal}, revised:{A:0, B:0}, revisedAt:{A:0, B:0}, hitNow:{A:0, B:0},
-    recent:{A:[], B:[]}, spent:{A:false, B:false}});
+    recent:{A:[], B:[]}, spent:{A:false, B:false}, lastSaid:{A:[], B:[]}});
   S.shared = mkCtx(); S.side = {A: mkCtx(), B: mkCtx()};
   S.mem = {A: mkMem(), B: mkMem()};
   if (SC().ground){                        // some scenarios put them on agreed ground
