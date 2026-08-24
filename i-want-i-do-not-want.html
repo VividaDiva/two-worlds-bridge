@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I Want, I Do Not Want</title>
-<meta name="description" content="Three scenarios, four configurations, and a Sankey showing how little of what was said ever reaches what gets built.">
+<meta name="description" content="Three scenarios, four configurations, and the conduit drawn to scale.">
 <link rel="icon" href="data:,">
 </head>
 <body>
@@ -145,6 +145,7 @@
   .fbig svg{width:100%; height:auto; display:block; overflow:visible}
   .fbig svg text{font-family:"IBM Plex Mono",monospace; font-size:13px; fill:var(--muted)}
   .fbig svg text.big{font-size:15px; fill:var(--ink); font-weight:600}
+  .fbig svg text.mid{font-size:12px}
   .fcompare{
     margin:0; font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted);
     display:flex; gap:14px; flex-wrap:wrap;
@@ -1463,55 +1464,63 @@ function renderAnalysis(){
     </section>`;
 }
 
-/* ── one small Sankey per case: who spoke, and what became of it ── */
-function sankey(flow, w, h){
-  const PAD = 3, BAR = 13;
-  const src = [
-    {k:"A",  n:flow.A.carried + flow.A.meaning + flow.A.grammar, col:"var(--roleA)", lab:"role 1"},
-    {k:"B",  n:flow.B.carried + flow.B.meaning + flow.B.grammar, col:"var(--roleB)", lab:"role 2"},
-    {k:"AI", n:flow.AI,                                          col:"var(--muted)", lab:"machine"},
-  ].filter(d => d.n > 0);
-  const dst = [
-    {k:"carried", n:flow.A.carried + flow.B.carried, col:"var(--signal)", lab:"carried"},
-    {k:"meaning", n:flow.A.meaning + flow.B.meaning, col:"var(--fault)",  lab:"meaning"},
-    {k:"grammar", n:flow.A.grammar + flow.B.grammar, col:"var(--line)",   lab:"grammar"},
-    {k:"never",   n:flow.AI,                          col:"var(--line)",   lab:"machine"},
-  ].filter(d => d.n > 0);
+/* ── the conduit, drawn as one: both of them speaking inward, most of it
+      falling out before the middle, and the machine's own output below ── */
+function conduit(f, w){
+  const A = f.A, B = f.B;
+  const aTot = A.carried + A.meaning + A.grammar;
+  const bTot = B.carried + B.meaning + B.grammar;
+  const carried = A.carried + B.carried;
+  // the tallest bar on the diagram is 118px, whichever it is
+  const scale = 118 / Math.max(aTot, bTot, f.AI, 1);
+  const BAR = 13, midY = 74;
 
-  const total = src.reduce((a,d) => a + d.n, 0) || 1;
-  const usable = h - PAD * (Math.max(src.length, dst.length) - 1);
-  const scale = usable / total;
+  const hA = Math.max(aTot * scale, 2), hB = Math.max(bTot * scale, 2);
+  const hC = Math.max(carried * scale, 2), hM = Math.max(f.AI * scale, 2);
+  const xA = 74, xB = w - 74 - BAR, xC = w/2 - BAR/2;
+  const yA = midY - hA/2, yB = midY - hB/2, yC = midY - hC/2;
+  const dropTop = midY + Math.max(hA, hB)/2 + 40;
+  const xD1 = w * 0.30, xD2 = w * 0.70 - BAR;
+  const yM = dropTop + Math.max(A.meaning + A.grammar, B.meaning + B.grammar) * scale + 52;
+  const h = yM + hM + 28;
 
-  let y = 0; src.forEach(d => { d.y = y; d.h = d.n * scale; y += d.h + PAD; });
-  y = 0;     dst.forEach(d => { d.y = y; d.h = d.n * scale; y += d.h + PAD; });
-
-  // links, stacked down each bar in a stable order
-  const links = [];
-  src.forEach(sn => {
-    const parts = sn.k === "AI"
-      ? [["never", flow.AI]]
-      : [["carried", flow[sn.k].carried], ["meaning", flow[sn.k].meaning], ["grammar", flow[sn.k].grammar]];
-    parts.forEach(([dk, n]) => { if (n > 0) links.push({s:sn, dk, n, col:sn.col}); });
-  });
-  const so = {}, dof = {};
-  links.forEach(l => {
-    const d = dst.find(x => x.k === l.dk);
-    l.sy = l.s.y + (so[l.s.k] = (so[l.s.k] || 0)) ; so[l.s.k] += l.n * scale;
-    l.dy = d.y   + (dof[d.k] = (dof[d.k] || 0))   ; dof[d.k]  += l.n * scale;
-    l.t = l.n * scale; l.d = d;
-  });
-
-  const x0 = w * .16, x1 = w - w * .20;
-  const ribbon = l => {
-    const a = l.sy, b = l.dy, t = Math.max(l.t, .8), mx = (x0 + BAR + x1) / 2;
-    return `M${x0+BAR},${a} C${mx},${a} ${mx},${b} ${x1},${b} L${x1},${b+t} C${mx},${b+t} ${mx},${a+t} ${x0+BAR},${a+t} Z`;
+  const ribbon = (x1,y1,x2,y2,t) => {
+    const mx = (x1 + x2) / 2, tt = Math.max(t, 1);
+    return `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2} L${x2},${y2+tt} C${mx},${y2+tt} ${mx},${y1+tt} ${x1},${y1+tt} Z`;
   };
-  return `<svg viewBox="0 0 ${w} ${h}" role="img">
-    ${links.map(l => `<path d="${ribbon(l)}" fill="${l.col}" opacity=".26"/>`).join("")}
-    ${src.map(d => `<rect x="${x0}" y="${d.y}" width="${BAR}" height="${Math.max(d.h,1)}" fill="${d.col}" rx="1.5"/>
-      <text x="${x0-10}" y="${d.y + d.h/2 + 4}" text-anchor="end">${d.lab} ${d.n}</text>`).join("")}
-    ${dst.map(d => `<rect x="${x1}" y="${d.y}" width="${BAR}" height="${Math.max(d.h,1)}" fill="${d.col}" rx="1.5"/>
-      <text x="${x1+BAR+9}" y="${d.y + d.h/2 + 4}" class="${d.k==="carried"?"big":""}">${d.lab} ${d.n}</text>`).join("")}
+
+  let aOff = 0, bOff = 0, cOff = 0, d1 = 0, d2 = 0;
+  const paths = [];
+  // what reaches the middle
+  paths.push(`<path d="${ribbon(xA+BAR, yA+aOff, xC, yC+cOff, A.carried*scale)}" fill="var(--roleA)" opacity=".4"/>`);
+  aOff += A.carried*scale; cOff += A.carried*scale;
+  paths.push(`<path d="${ribbon(xB, yB+bOff, xC+BAR, yC+cOff, B.carried*scale)}" fill="var(--roleB)" opacity=".4"/>`);
+  bOff += B.carried*scale; cOff += B.carried*scale;
+  // what falls out before it
+  [["meaning","var(--fault)"],["grammar","var(--line)"]].forEach(([k,col]) => {
+    paths.push(`<path d="${ribbon(xA+BAR, yA+aOff, xD1, dropTop+d1, A[k]*scale)}" fill="${col}" opacity=".3"/>`);
+    aOff += A[k]*scale; d1 += A[k]*scale;
+    paths.push(`<path d="${ribbon(xB, yB+bOff, xD2+BAR, dropTop+d2, B[k]*scale)}" fill="${col}" opacity=".3"/>`);
+    bOff += B[k]*scale; d2 += B[k]*scale;
+  });
+
+  const bar = (x,y,ht,col) => `<rect x="${x}" y="${y}" width="${BAR}" height="${Math.max(ht,2)}" fill="${col}" rx="2"/>`;
+  const lab = (x,y,t,cls,anchor) => `<text x="${x}" y="${y}" text-anchor="${anchor||"start"}" class="${cls||""}">${t}</text>`;
+
+  return `<svg viewBox="0 0 ${w} ${Math.round(h)}" role="img">
+    ${paths.join("")}
+    ${bar(xA, yA, hA, "var(--roleA)")}
+    ${bar(xB, yB, hB, "var(--roleB)")}
+    ${bar(xC, yC, hC, "var(--signal)")}
+    ${bar(xD1, dropTop, d1, "var(--fault)")}
+    ${bar(xD2, dropTop, d2, "var(--fault)")}
+    ${bar(xC, yM, hM, "var(--muted)")}
+    ${lab(xA - 10, midY + 5, "role 1 " + aTot, "", "end")}
+    ${lab(xB + BAR + 10, midY + 5, "role 2 " + bTot)}
+    ${lab(w/2, yC - 14, "reached the machine " + carried, "big mid", "middle")}
+    ${lab(xD1 - 10, dropTop + d1/2 + 5, "fell out " + (A.meaning+A.grammar), "", "end")}
+    ${lab(xD2 + BAR + 10, dropTop + d2/2 + 5, "fell out " + (B.meaning+B.grammar))}
+    ${lab(w/2, yM - 12, "the machine said " + f.AI + ", and none of it was picked up", "mid", "middle")}
   </svg>`;
 }
 
@@ -1538,7 +1547,7 @@ function renderFlow(){
          reached the thing being built. The machine said ${f.AI} more, and not one of those was picked up by anything,
          including itself.</p>
     </div>
-    <div class="fbig">${sankey(f, 900, 290)}</div>
+    <div class="fbig">${conduit(f, 900)}</div>
     <p class="fcompare">carried, in the other cases: ${others}</p>`;
 }
 
