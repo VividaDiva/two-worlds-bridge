@@ -135,7 +135,22 @@
     background:var(--panel); display:flex; flex-direction:column; gap:14px;
   }
   .flowview{gap:10px}
-  .flowgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(268px,1fr)); gap:12px}
+  .fhead h4{
+    font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--signal); margin:0 0 4px;
+  }
+  .fhead p{margin:0 0 4px; font-size:13px; color:var(--muted); max-width:82ch}
+  .fhead p b{color:var(--signal)}
+  .fbig{border:1px solid var(--line); border-radius:10px; padding:16px 14px; background:var(--panel)}
+  .fbig svg{width:100%; height:auto; display:block; overflow:visible}
+  .fbig svg text{font-family:"IBM Plex Mono",monospace; font-size:13px; fill:var(--muted)}
+  .fbig svg text.big{font-size:15px; fill:var(--ink); font-weight:600}
+  .fcompare{
+    margin:0; font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted);
+    display:flex; gap:14px; flex-wrap:wrap;
+  }
+  .fcompare .o b{color:var(--ink)}
+  .flowview .pending{font-size:13px; color:var(--muted); font-style:italic}
   .fcard{border:1px solid var(--line); border-radius:10px; padding:10px 12px 6px; background:var(--panel)}
   .fcard.now{border-color:var(--signal)}
   .fcard h5{
@@ -1427,7 +1442,7 @@ function renderAnalysis(){
 
 /* ── one small Sankey per case: who spoke, and what became of it ── */
 function sankey(flow, w, h){
-  const PAD = 2, BAR = 9;
+  const PAD = 3, BAR = 13;
   const src = [
     {k:"A",  n:flow.A.carried + flow.A.meaning + flow.A.grammar, col:"var(--roleA)", lab:"role 1"},
     {k:"B",  n:flow.B.carried + flow.B.meaning + flow.B.grammar, col:"var(--roleB)", lab:"role 2"},
@@ -1463,7 +1478,7 @@ function sankey(flow, w, h){
     l.t = l.n * scale; l.d = d;
   });
 
-  const x0 = 52, x1 = w - 74;
+  const x0 = w * .16, x1 = w - w * .20;
   const ribbon = l => {
     const a = l.sy, b = l.dy, t = Math.max(l.t, .8), mx = (x0 + BAR + x1) / 2;
     return `M${x0+BAR},${a} C${mx},${a} ${mx},${b} ${x1},${b} L${x1},${b+t} C${mx},${b+t} ${mx},${a+t} ${x0+BAR},${a+t} Z`;
@@ -1471,33 +1486,37 @@ function sankey(flow, w, h){
   return `<svg viewBox="0 0 ${w} ${h}" role="img">
     ${links.map(l => `<path d="${ribbon(l)}" fill="${l.col}" opacity=".26"/>`).join("")}
     ${src.map(d => `<rect x="${x0}" y="${d.y}" width="${BAR}" height="${Math.max(d.h,1)}" fill="${d.col}" rx="1.5"/>
-      <text x="${x0-6}" y="${d.y + d.h/2 + 3}" text-anchor="end">${d.lab} ${d.n}</text>`).join("")}
+      <text x="${x0-10}" y="${d.y + d.h/2 + 4}" text-anchor="end">${d.lab} ${d.n}</text>`).join("")}
     ${dst.map(d => `<rect x="${x1}" y="${d.y}" width="${BAR}" height="${Math.max(d.h,1)}" fill="${d.col}" rx="1.5"/>
-      <text x="${x1+BAR+5}" y="${d.y + d.h/2 + 3}" class="${d.k==="carried"?"big":""}">${d.lab} ${d.n}</text>`).join("")}
+      <text x="${x1+BAR+9}" y="${d.y + d.h/2 + 4}" class="${d.k==="carried"?"big":""}">${d.lab} ${d.n}</text>`).join("")}
   </svg>`;
 }
 
 function renderFlow(){
   const host = document.getElementById("flow");
-  const cards = Object.entries(CASES).map(([k,c]) => {
+  const f = flowOf();                      // the run in front of you, live
+  const spoken = f.A.carried+f.A.meaning+f.A.grammar + f.B.carried+f.B.meaning+f.B.grammar;
+  const carried = f.A.carried + f.B.carried;
+  if (!spoken){ host.innerHTML = `<p class="pending">Nothing said yet in this case.</p>`; return; }
+
+  // the other cases, as one line of figures rather than three more diagrams
+  const others = Object.entries(CASES).filter(([k]) => k !== S.case).map(([k,c]) => {
     const r = S.results[S.scenario + "/" + k];
-    const now = k === S.case;
-    if (!r || !r.flow) return `<div class="fcard ${now?"now":""}"><h5><span>${c.label}</span></h5>
-      <p class="pending">not run yet</p></div>`;
-    const f = r.flow;
-    const spoken = f.A.carried+f.A.meaning+f.A.grammar + f.B.carried+f.B.meaning+f.B.grammar;
-    const carried = f.A.carried + f.B.carried;
-    return `<div class="fcard ${now?"now":""}">
-      <h5><span>${c.label}</span><span>${Math.round(100*carried/Math.max(1,spoken))}% carried</span></h5>
-      <p class="sub">${spoken} words between them, ${carried} of which the machine could use.</p>
-      ${sankey(f, 318, 128)}</div>`;
+    if (!r || !r.flow) return `<span class="o">${c.label} —</span>`;
+    const sp = r.flow.A.carried+r.flow.A.meaning+r.flow.A.grammar + r.flow.B.carried+r.flow.B.meaning+r.flow.B.grammar;
+    const ca = r.flow.A.carried + r.flow.B.carried;
+    return `<span class="o">${c.label} <b>${Math.round(100*ca/Math.max(1,sp))}%</b></span>`;
   }).join("");
-  host.innerHTML = `<p class="sub" style="margin:0;font-size:12.5px;color:var(--muted);max-width:80ch">
-      Every word spoken in each run, and what became of it. <b style="color:var(--signal)">Carried</b> is the part the machine
-      could turn into a property of the crossing. <b style="color:var(--fault)">Meaning, dropped</b> is everything that was not
-      grammar and still went nowhere. The machine's own words are counted too, and none of them are ever picked up — by anyone,
-      including itself.</p>
-    <div class="flowgrid">${cards}</div>`;
+
+  host.innerHTML = `
+    <div class="fhead">
+      <h4>${CASES[S.case].label} · ${SC().label.toLowerCase()}</h4>
+      <p>${spoken} words between the two of them. <b>${carried}</b> of them — ${Math.round(100*carried/spoken)}% —
+         reached the thing being built. The machine said ${f.AI} more, and not one of those was picked up by anything,
+         including itself.</p>
+    </div>
+    <div class="fbig">${sankey(f, 900, 290)}</div>
+    <p class="fcompare">carried, in the other cases: ${others}</p>`;
 }
 
 function renderBadges(){
@@ -1550,7 +1569,7 @@ function renderCmp(){
    ═══════════════════════════════════════════════════════════ */
 const VNOTE = {
   scene: "The crossing as it stands. Neither of them may name a structure, so everything here is the machine's reading of a described need.",
-  flow: "Where every word went, one panel per case. Run all four and the panels sit side by side: the same two people, the same argument, and four different amounts of it surviving the channel.",
+  flow: "Where every word of <b>this</b> case went. It fills in as the run proceeds; switch case above to see another. The figures for the other three are underneath, so you can compare without four diagrams at once.",
   dropped: "The same run, counted. <b>Carried</b> is every word that let the machine infer something — none of them the name of a structure. <b>Discarded · meaning</b> is the part worth arguing about.",
   said: "Every word either of them has said, ejected into the space between them and left there — Reddy’s <b>idea space</b>, made literal. The words in colour are the few the machine could do anything with. Everything faint is still in the air: said, reified, and inert. Grey is the machine, ejecting into the same space, with none of it picked up either.",
 };
