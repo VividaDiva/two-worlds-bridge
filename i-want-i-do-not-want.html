@@ -329,6 +329,8 @@
   .ai.answer.dodged .who{color:var(--fault)}
   .turn.revise .bub{background:transparent; border:1px solid var(--signal); color:var(--signal)}
   .turn.revise .who{color:var(--signal)}
+  .turn.spent .bub{background:transparent; border:1px dashed var(--line); color:var(--muted)}
+  .turn.spent .who{color:var(--muted)}
   .ai .ruled{display:flex; gap:4px; flex-wrap:wrap}
   .ai .ruled span{
     font-family:"IBM Plex Mono",monospace; font-size:9.5px; padding:1px 6px; border-radius:4px;
@@ -728,6 +730,7 @@ const W_WANT = 2, W_AVOID = 4;
 const S = {
   scenario:"places", case:"given", results:{}, tick:0,
   mem:{A:null, B:null}, asked:{A:0, B:0}, dodged:0,
+  recent:{A:[], B:[]}, spent:{A:false, B:false},
   goalNow:{A:null, B:null}, revised:{A:0, B:0}, revisedAt:{A:0, B:0}, hitNow:{A:0, B:0},
   turn:0, speaker:"A", said:{A:new Set(), B:new Set()},
   seen:{A:null, B:null}, unexplained:{A:0, B:0},
@@ -805,9 +808,11 @@ function choose(role){
   const goalKit = KIT.find(k => k.id === GNOW(role));
   const offGoal = !standing || standing.id !== GNOW(role);
 
-  let best = pool[0], bestGain = -1, pressing = false;
+  const recent = (S.recent && S.recent[role]) || [];
+  let best = pool[0], bestGain = -1e9, pressing = false;
   pool.forEach(l => {
-    let gain = 0, presses = false;
+    let gain = recent.includes(lines.indexOf(l)) ? -6 : 0;   // you just said that
+    let presses = false;
     l.infer.forEach(f => {
       if (f === "water" || f === "rock"){
         if (act === "want" && !know.world[f]) gain += 9;   // name your ground first
@@ -893,6 +898,15 @@ function answerFor(role, f){
 function takeTurn(){
   if (S.done) return;
   const role = S.speaker;
+  // said everything, asked everything, and the crossing has stopped moving
+  if (S.said[role].size >= linesFor(role).length && (S.still || 0) >= 3 && !maybeAsk(role)){
+    if (!S.spent[role]){ S.spent[role] = true; pushSpent(role); S.turn++; }
+    S.speaker = role === "A" ? "B" : "A";
+    if (S.spent.A && S.spent.B && !S.done){ S.done = true; record(); pushVerdict(); stop(); }
+    paint(); hud();
+    return;
+  }
+
   const q = maybeAsk(role);
   if (q){
     S.asked[role] = (S.asked[role] || 0) + 1;
@@ -921,6 +935,7 @@ function takeTurn(){
   const {line, index, repeat, pressing} = choose(role);
   eject(role, LEAD[CASES[S.case][role]] + line.say, line.infer);
   S.said[role].add(index);
+  S.recent[role] = [index, ...(S.recent[role] || [])].slice(0, 2);
   hear(line, role);
 
   const c = CX(role);
@@ -983,6 +998,14 @@ function pushAsk(role, f){
     <div class="bub"><span class="body"></span></div>
     <span class="why">it can feel something it did not come for</span>`;
   el.querySelector(".body").textContent = QUESTIONS[f].charAt(0).toUpperCase() + QUESTIONS[f].slice(1);
+  drop(el, target(role));
+}
+function pushSpent(role){
+  const el = document.createElement("div");
+  el.className = "turn spent " + role.toLowerCase();
+  el.innerHTML = `<span class="who">${role === "A" ? "Role 1" : "Role 2"} · nothing further</span>
+    <div class="bub"><span class="body">I have said what I came to say.</span></div>
+    <span class="why">it has run out of ways to put it, and nothing is moving</span>`;
   drop(el, target(role));
 }
 function pushRevise(role, kit, self){
@@ -1620,7 +1643,8 @@ function reset(){
     seen:{A:null, B:null}, unexplained:{A:0, B:0}, still:0,
     words:[], spoken:0, taken:0, asked:{A:0, B:0}, dodged:0,
     askedFeats:{A:new Set(), B:new Set()},
-    goalNow:{...SC().goal}, revised:{A:0, B:0}, revisedAt:{A:0, B:0}, hitNow:{A:0, B:0}});
+    goalNow:{...SC().goal}, revised:{A:0, B:0}, revisedAt:{A:0, B:0}, hitNow:{A:0, B:0},
+    recent:{A:[], B:[]}, spent:{A:false, B:false}});
   S.shared = mkCtx(); S.side = {A: mkCtx(), B: mkCtx()};
   S.mem = {A: mkMem(), B: mkMem()};
   if (SC().ground){                        // some scenarios put them on agreed ground
