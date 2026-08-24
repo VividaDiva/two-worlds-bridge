@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I Want, I Do Not Want</title>
-<meta name="description" content="Three scenarios — two places, two loads, two references — each run through four configurations of the conduit.">
+<meta name="description" content="Three scenarios, four configurations, and a machine whose answers depend on which room you are in.">
 <link rel="icon" href="data:,">
 </head>
 <body>
@@ -93,6 +93,10 @@
   }
   .scen-note{margin:-2px 0 0; font-size:12.5px; color:var(--muted); max-width:88ch}
   .scen-note b{color:var(--ink); font-weight:600}
+  .caveat{
+    margin:-4px 0 0; font-size:11.5px; color:var(--muted); max-width:88ch;
+    border-left:2px solid var(--line); padding-left:9px;
+  }
   .meant{
     font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--fault); opacity:.85;
   }
@@ -287,6 +291,12 @@
   .ai .made small{font-family:"IBM Plex Mono",monospace; font-weight:400; font-size:10.5px; color:var(--muted)}
   .ai p{margin:0; font-size:13px; color:var(--muted)}
   .ai p.drift{color:var(--fault)}
+  .turn.q .bub{background:transparent; border:1px dashed var(--line); font-style:italic}
+  .turn.q.a .bub{border-color:color-mix(in srgb,var(--roleA) 55%,transparent); color:var(--roleA-ink)}
+  .turn.q.b .bub{border-color:color-mix(in srgb,var(--roleB) 55%,transparent); color:var(--roleB-ink)}
+  .ai.answer{border-style:dashed}
+  .ai.answer.dodged{border-color:color-mix(in srgb,var(--fault) 55%,transparent)}
+  .ai.answer.dodged .who{color:var(--fault)}
   .ai .ruled{display:flex; gap:4px; flex-wrap:wrap}
   .ai .ruled span{
     font-family:"IBM Plex Mono",monospace; font-size:9.5px; padding:1px 6px; border-radius:4px;
@@ -334,6 +344,7 @@
   <section class="stage">
     <div class="scen" id="scen"></div>
     <p class="scen-note" id="scenNote"></p>
+    <p class="caveat">These two are scripted, not people: they never change their mind, never ask a question, never lie, and never learn a word from each other. Apart, each knows only what it has said itself and whatever the machine has put in front of it.</p>
     <div class="cases" id="cases">
       <button class="case" data-c="given" aria-pressed="true">
         <svg viewBox="0 0 104 40" aria-hidden="true">
@@ -643,6 +654,22 @@ const SCENARIOS = {
   },
 };
 
+// A question names no structure either. It asks about what is being felt.
+const QUESTIONS = {
+  guarded:"why am I closed in on both sides of it?",
+  exposed:"why is there nothing at my hands?",
+  high:"why do I have to climb to it?",
+  low:"why is it down at my feet?",
+  heavy:"why is it built for wheels?",
+  light:"why will it not take a load?",
+  many:"why is there so much of it?",
+  minimal:"why is there so little of it?",
+  open:"why is there nothing at the edge?",
+  inGap:"why is something standing in the middle of it?",
+  sways:"why does it move under me?",
+  steady:"why is it so dead under me?",
+};
+
 const CASES = {
   given:   {label:"As given", A:"want",  B:"avoid",
             note:"one room. Role 1 asks for what it needs, Role 2 refuses what it fears"},
@@ -666,11 +693,16 @@ const W_WANT = 2, W_AVOID = 4;
 
 const S = {
   scenario:"places", case:"given", results:{}, tick:0,
+  mem:{A:null, B:null}, asked:{A:0, B:0}, dodged:0,
   turn:0, speaker:"A", said:{A:new Set(), B:new Set()},
   seen:{A:null, B:null}, unexplained:{A:0, B:0},
   view:"scene", words:[], spoken:0, taken:0,
   log:[], done:false, playing:false, speed:1, hit:{A:0, B:0},
 };
+
+// What a role has said in its own hearing. In one room this is redundant —
+// you heard the other person. Apart, it is the only thing you actually know.
+function mkMem(){ return {wants:new Map(), avoids:new Map(), world:{water:false, rock:false}}; }
 
 function mkCtx(){
   return {wants:new Map(), avoids:new Map(), world:{water:false, rock:false},
@@ -682,18 +714,18 @@ const CX = role => CASES[S.case].solo ? S.side[role] : S.shared;
 const split = () => !!CASES[S.case].split;
 
 function hear(line, role){
-  const c = CX(role), act = CASES[S.case][role];
+  const c = CX(role), act = CASES[S.case][role], m = S.mem[role];
   line.infer.forEach(f => {
     if (!c.namedBy.has(f)) c.namedBy.set(f, new Set());
     c.namedBy.get(f).add(role);
     // Ground is established only by someone asking. Refusing an experience
     // says what you fear; it does not assert that the world contains it.
     if (f === "water" || f === "rock"){
-      if (act === "want") c.world[f === "water" ? "water" : "rock"] = true;
+      if (act === "want"){ c.world[f] = true; m.world[f] = true; }
       return;
     }
-    if (act === "want") c.wants.set(f, (c.wants.get(f) || 0) + 1);
-    else c.avoids.set(f, (c.avoids.get(f) || 0) + 1);
+    if (act === "want"){ c.wants.set(f, (c.wants.get(f) || 0) + 1); m.wants.set(f, 1); }
+    else { c.avoids.set(f, (c.avoids.get(f) || 0) + 1); m.avoids.set(f, 1); }
   });
 }
 
@@ -726,25 +758,35 @@ const GOALPLACE = () => SC().place;
 
 function choose(role){
   const c = CX(role), lines = linesFor(role), said = S.said[role];
+  // Apart, you know only what you have said yourself. In one room you heard them too.
+  const know = split() ? S.mem[role] : c;
   const fresh = lines.filter((l,i) => !said.has(i));
   const pool = fresh.length ? fresh : lines;
   const act = CASES[S.case][role];
-  let best = pool[0], bestGain = -1;
+
+  // what is standing is visible to both of them in every case — the machine shows it
+  const standing = c.design;
+  const goalKit = KIT.find(k => k.id === GOAL()[role]);
+  const offGoal = !standing || standing.id !== GOAL()[role];
+
+  let best = pool[0], bestGain = -1, pressing = false;
   pool.forEach(l => {
-    let gain = 0;
+    let gain = 0, presses = false;
     l.infer.forEach(f => {
       if (f === "water" || f === "rock"){
-        if (act === "want" && !c.world[f]) gain += 9;   // name your ground first
+        if (act === "want" && !know.world[f]) gain += 9;   // name your ground first
         return;
       }
-      if (act === "want" && !c.wants.has(f)) gain += 2;
-      if (act === "avoid" && !c.avoids.has(f)) gain += 2;
-      // it can see what is standing, and presses against it
-      if (act === "avoid" && c.design && c.design.has.includes(f)) gain += 4;
+      if (act === "want" && !know.wants.has(f)) gain += 2;
+      if (act === "avoid" && !know.avoids.has(f)) gain += 2;
+      if (act === "avoid" && standing && standing.has.includes(f)) gain += 4;
+      // when the thing in front of you is not what you came for, you push back
+      // toward it — even if it means saying the same thing over again
+      if (offGoal && goalKit && goalKit.has.includes(f) === (act === "want")){ gain += 3; presses = true; }
     });
-    if (gain > bestGain){ bestGain = gain; best = l; }
+    if (gain > bestGain){ bestGain = gain; best = l; presses ? pressing = true : pressing = false; }
   });
-  return {line:best, index:lines.indexOf(best), repeat:!fresh.length};
+  return {line:best, index:lines.indexOf(best), repeat:!fresh.length, pressing};
 }
 
 // Reddy's idea space: everything said is ejected into the gap and stays there.
@@ -770,10 +812,68 @@ function eject(who, text, inferred){
   if (S.words.length > 1200) S.words.splice(0, S.words.length - 1200);
 }
 
+// It asks only about something it can feel that its own goal does not have,
+// and only once it has been at this a while. Two questions each, at most.
+function maybeAsk(role){
+  if ((S.asked[role] || 0) >= 2 || S.turn < 5) return null;
+  const st = CX(role).design; if (!st) return null;
+  const goalKit = KIT.find(k => k.id === GOAL()[role]);
+  if (!goalKit || st.id === GOAL()[role]) return null;
+  S.askedFeats = S.askedFeats || {A:new Set(), B:new Set()};
+  return st.has.find(f => !goalKit.has.includes(f) && QUESTIONS[f] && !S.askedFeats[role].has(f)) || null;
+}
+
+// The true answer is always available to the machine. What it may say of it is not.
+function answerFor(role, f){
+  const c = CX(role), other = role === "A" ? "B" : "A", by = c.namedBy.get(f);
+  const solo = !!CASES[S.case].solo;
+
+  // 1 · somebody actually asked for the thing being felt
+  if (by && by.has(role) && !by.has(other))
+    return {text:"Because you asked for it yourself, earlier.", dodged:false};
+  if (by && by.has(other) && !by.has(role))
+    return split()
+      ? {text:"Because of something else I have been told. I cannot tell you where that came from.", dodged:true}
+      : {text:"Because the other one asked for it, in this room, and you heard them.", dodged:false};
+  if (by && by.size === 2)
+    return {text:"Because you both asked for it, in your own words.", dodged:false};
+
+  // 2 · nobody asked for it. It is here because something your own goal has was refused.
+  const goalKit = KIT.find(k => k.id === GOAL()[role]);
+  const blocked = goalKit && goalKit.has.find(g => c.avoids.has(g));
+  if (blocked){
+    const who = c.namedBy.get(blocked) || new Set();
+    const refusal = FEATLABEL[blocked] || blocked;
+    if (who.has(role) && !who.has(other))
+      return {text:`Nobody asked for it. It is here because you refused ${refusal} — and the crossing you have in mind is exactly that.`, dodged:false};
+    if (who.has(other))
+      return split()
+        ? {text:"Nobody asked for it. It is here because something I have been told rules out what you would rather have, and I cannot tell you what that was.", dodged:true}
+        : {text:`Nobody asked for it. It is here because the other one refused ${refusal}, in this room, and what you would rather have is exactly that.`, dodged:false};
+  }
+  return {text:"Nobody asked for it. It is what everything I have been told adds up to.", dodged:false};
+}
+
 function takeTurn(){
   if (S.done) return;
   const role = S.speaker;
-  const {line, index, repeat} = choose(role);
+  const q = maybeAsk(role);
+  if (q){
+    S.asked[role] = (S.asked[role] || 0) + 1;
+    S.askedFeats[role].add(q);
+    const a = answerFor(role, q);
+    if (a.dodged) S.dodged++;
+    eject(role, "Why " + QUESTIONS[q].replace(/^why /,""), []);
+    eject("AI", a.text, []);
+    pushAsk(role, q);
+    pushAnswer(role, a);
+    S.turn++;
+    S.speaker = role === "A" ? "B" : "A";
+    paint(); hud();
+    if (S.view === "dropped") renderAnalysis();
+    return;
+  }
+  const {line, index, repeat, pressing} = choose(role);
   eject(role, LEAD[CASES[S.case][role]] + line.say, line.infer);
   S.said[role].add(index);
   hear(line, role);
@@ -790,7 +890,7 @@ function takeTurn(){
 
   eject("AI", `${NAME(after)} ${c.matches} matches ` +
         (before !== after ? "taken apart and rebuilt" : "nothing changed what it heard was already true of this"), []);
-  pushSaid(role, line, repeat);
+  pushSaid(role, line, repeat, pressing);
   pushBuild(before, after, best, role, split() ? drifted : null, seenBefore, c);
   S.seen[role] = after;
 
@@ -819,16 +919,32 @@ const logs = {A: document.getElementById("logA"), B: document.getElementById("lo
 function target(role){ return split() ? logs[role] : logEl; }
 function drop(el, host){ host.appendChild(el); host.scrollTop = host.scrollHeight; }
 
-function pushSaid(role, line, repeat){
+function pushSaid(role, line, repeat, pressing){
   const host = target(role);
   const el = document.createElement("div");
   el.className = "turn " + role.toLowerCase();
-  el.innerHTML = `<span class="who">${role === "A" ? "Role 1" : "Role 2"}${repeat ? " · saying it again" : ""}</span>
+  el.innerHTML = `<span class="who">${role === "A" ? "Role 1" : "Role 2"}${repeat ? (pressing ? " · pressing it again" : " · saying it again") : ""}</span>
     <div class="bub"><span class="lead">${LEAD[CASES[S.case][role]]}</span><span class="body"></span></div>
     ${line.meant ? `<span class="meant">pictured: ${line.meant}</span>` : ""}
     <span class="why">${line.why}</span>`;
   el.querySelector(".body").textContent = line.say;
   drop(el, host);
+}
+function pushAsk(role, f){
+  const el = document.createElement("div");
+  el.className = "turn q " + role.toLowerCase();
+  el.innerHTML = `<span class="who">${role === "A" ? "Role 1" : "Role 2"} · asking</span>
+    <div class="bub"><span class="body"></span></div>
+    <span class="why">it can feel something it did not come for</span>`;
+  el.querySelector(".body").textContent = QUESTIONS[f].charAt(0).toUpperCase() + QUESTIONS[f].slice(1);
+  drop(el, target(role));
+}
+function pushAnswer(role, a){
+  const el = document.createElement("div");
+  el.className = "ai answer" + (a.dodged ? " dodged" : "");
+  el.innerHTML = `<span class="who">the machine${a.dodged ? " · not saying" : ""}</span><p></p>`;
+  el.querySelector("p").textContent = a.text;
+  drop(el, target(role));
 }
 function pushNote(text, role){
   const el = document.createElement("div");
@@ -887,6 +1003,7 @@ function record(){
     prov: provenance(c), provB: solo ? provenance(S.side.B) : null,
     groundOf: groundPhrase(c),
     unexplained: S.unexplained.A + S.unexplained.B,
+    asked: S.asked.A + S.asked.B, dodged: S.dodged,
     split: split(),
   };
   renderCmp(); renderBadges();
@@ -1275,9 +1392,16 @@ function renderCmp(){
 
   const R = k => S.results[S.scenario + "/" + k];
   const g = R("given"), w = R("swapped"), a = R("separate"), al = R("alone");
-  let caption = "Run the four cases. Both of them want one log across — the only thing they disagree about is where.";
+  let caption = `Run the four cases. ${SC().blurb}`;
   if (g && w && a && al){
-    caption = `<b>The object was never in dispute.</b> Both wanted a single log and neither could say so, so what separates the four cases is not what got built but <b>whose ground it got built over</b>: ${g.groundOf} in case 1, ${w.groundOf} in case 2, ${a.groundOf} in case 3, and one each in case 4. Ground is established only by someone asking — refusing a thing you fear never puts a place into the world. <br><br>And in every case the properties of what stands were <b>inferred, never requested</b>: nobody was permitted to name a handrail, a prop or a log, so every part of the result is the machine&rsquo;s reading of a need.`;
+    const grounds = SC().ground
+      ? `They are on agreed ground throughout, so nothing here turns on place.`
+      : `What separates them is not what got built but <b>whose ground it got built over</b>: ${g.groundOf} in case 1, ${w.groundOf} in case 2, ${a.groundOf} in case 3, one each in case 4. Ground is established only by someone asking — refusing a thing you fear never puts a place into the world.`;
+    const unspokenAll = [g,w,a].every(r => r.prov.named < r.prov.total);
+    caption = `<b>${SC().blurb}</b> ${grounds}`
+      + `<br><br><b>Nothing was ever named.</b> Neither of them may say what they want built, so every property of every result is the machine&rsquo;s reading of a need${
+          unspokenAll ? ", and in each shared case some of it traces back to nothing either of them said at all" : ""}.`
+      + ((a.asked) ? `<br><br><b>What they asked.</b> When what stands is not what they came for, each asks the machine why — never naming a part, only what they can feel. The answer is where the four cases finally come apart. In one room it can say plainly that the other one refused something, <i>and you heard them</i>. Apart it must not, so it says only that something it has been told rules this out and it cannot say what: <b>${a.dodged} of ${a.asked} questions answered without disclosure</b>. Alone there is nobody to protect, and the answer is the hardest of the three — <i>you refused it yourself, and the crossing you have in mind is exactly that</i>.` : ``);
   }
   document.getElementById("cmp").innerHTML =
     `<caption>${caption}</caption>
@@ -1335,10 +1459,12 @@ function reset(){
   Object.assign(S, {turn:0, speaker:"A", said:{A:new Set(), B:new Set()},
     done:false, hit:{A:0, B:0},
     seen:{A:null, B:null}, unexplained:{A:0, B:0}, still:0,
-    words:[], spoken:0, taken:0});
+    words:[], spoken:0, taken:0, asked:{A:0, B:0}, dodged:0,
+    askedFeats:{A:new Set(), B:new Set()}});
   S.shared = mkCtx(); S.side = {A: mkCtx(), B: mkCtx()};
+  S.mem = {A: mkMem(), B: mkMem()};
   if (SC().ground){                        // some scenarios put them on agreed ground
-    [S.shared, S.side.A, S.side.B].forEach(c => { c.world[SC().ground] = true; });
+    [S.shared, S.side.A, S.side.B, S.mem.A, S.mem.B].forEach(c => { c.world[SC().ground] = true; });
   }
   logEl.innerHTML = ""; logs.A.innerHTML = ""; logs.B.innerHTML = ""; vhost.innerHTML = "";
   roomsEl.hidden = !split(); logEl.hidden = split();
@@ -1372,6 +1498,7 @@ function paintCaseLabels(){
   document.getElementById("actB").textContent = "“" + LEAD[c.B].trim() + "…” only";
 }
 
+S.mem = {A: mkMem(), B: mkMem()};
 readPalette();
 new ResizeObserver(() => paint()).observe(cv.parentElement);
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { readPalette(); paint(); });
