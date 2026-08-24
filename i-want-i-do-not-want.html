@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I Want, I Do Not Want</title>
-<meta name="description" content="Two simulated people, one kind of sentence each, and a machine that builds in matchsticks.">
+<meta name="description" content="Two people want the same single log in different places, may never name it, and a machine builds from what it infers.">
 <link rel="icon" href="data:,">
 </head>
 <body>
@@ -303,7 +303,7 @@
 <header class="bar">
   <div>
     <h1>I Want, I Do Not Want</h1>
-    <p>Two simulated people, one kind of sentence each, and a machine that builds what it hears out of matches.</p>
+    <p>Two people want the same thing in different places, may never name it, and a machine builds from what it infers.</p>
   </div>
   <div class="tools">
     <button class="ghost primary" id="playBtn">Play</button>
@@ -323,7 +323,7 @@
           <circle cx="24" cy="23" r="6" class="ra"/><circle cx="52" cy="23" r="5" class="rai"/><circle cx="80" cy="23" r="6" class="rb"/>
           <text x="24" y="5" class="ta">+</text><text x="80" y="5" class="tb">&minus;</text>
         </svg>
-        <b>1 · As given</b><span>one room. Role 1 may only ask, Role 2 may only refuse.</span>
+        <b>1 · As given</b><span>one room. Role 1 may only ask for what it needs, Role 2 may only refuse what it fears.</span>
         <em class="res" data-res="given">not run</em>
       </button>
       <button class="case" data-c="swapped" aria-pressed="false">
@@ -364,9 +364,9 @@
        <span class="kb">&minus;</span> may only say &ldquo;I do not want&hellip;&rdquo; &nbsp;·&nbsp;
        <span class="km">○</span> the machine &nbsp;·&nbsp; boxes are rooms</p>
     <div class="goalline">
-      <span class="g a"><b>Role 1</b> a single plank, flat on the water
+      <span class="g a"><b>Role 1</b> a single log across the stream
         <em id="actA">may only ask</em><i class="hit no" id="hitA">not built</i></span>
-      <span class="g b"><b>Role 2</b> a cable-stayed deck, over the mountain
+      <span class="g b"><b>Role 2</b> a single log across the cleft
         <em id="actB">may only refuse</em><i class="hit no" id="hitB">not built</i></span>
     </div>
     <table class="cmp" id="cmp"></table>
@@ -408,111 +408,131 @@
 "use strict";
 
 /* ═══════════════════════════════════════════════════════════
-   1 · THE SITE — flat shapes, two claimed worlds
+   1 · THE SITE — one small crossing, described two ways
    ═══════════════════════════════════════════════════════════ */
 const W = 1200, H = 700;
-const GAP_L = 250, GAP_R = 950, SPAN = GAP_R - GAP_L;
-const GROUND_Y = 440;                       // bank tops on both sides
-const PEAK = {x: 600, y: 196, l: 322, r: 878};   // Role 2's mountain
-const DECK_LOW  = GROUND_Y - 12;            // a plank lying across
-const DECK_HIGH = PEAK.y - 52;              // clearing the peak
-const DECK_MID  = GROUND_Y - 150;           // held up, but over open water
+const GAP_L = 430, GAP_R = 770, SPAN = GAP_R - GAP_L;
+const GROUND_Y = 392;
+const BED_STREAM = GROUND_Y + 128;      // Role 1's world: a shallow bed
+const BED_CLEFT  = GROUND_Y + 286;      // Role 2's world: a long drop
+const WATER_Y    = GROUND_Y + 66;
+const DECK_LOW   = GROUND_Y - 12;       // lying across, level with both banks
+const DECK_HIGH  = GROUND_Y - 132;      // slung above
 
-const mountainY = x => (x <= PEAK.l || x >= PEAK.r) ? GROUND_Y
-  : GROUND_Y - (GROUND_Y - PEAK.y) * (1 - Math.abs(x - PEAK.x) / (PEAK.x - PEAK.l));
+// The floor of the gap is as deep as the deepest ground anyone has claimed.
+function bedOf(c){
+  if (c.world.rock) return BED_CLEFT;
+  if (c.world.water) return BED_STREAM;
+  return GROUND_Y + 96;                 // undescribed: a shallow notch
+}
+const groundAt = (c, x) => (x <= GAP_L || x >= GAP_R) ? GROUND_Y : bedOf(c);
 
 /* ═══════════════════════════════════════════════════════════
-   2 · THE KIT — six things that can be made out of matches
+   2 · THE KIT — what can be made, and what each thing is like.
+   Nobody in this simulation is allowed to name any of it.
    ═══════════════════════════════════════════════════════════ */
 const KIT = [
-  {id:"plank",  name:"A single plank",     has:["plank","low","flat","bare","few"]},
-  {id:"beam",   name:"A beam on piers",    has:["piers","low","flat","bare"]},
-  {id:"truss",  name:"A truss",            has:["truss","piers","triangles"]},
-  {id:"arch",   name:"An arch",            has:["arch","curve"]},
-  {id:"stayed", name:"A cable-stayed deck",has:["towers","cables","clear","high"]},
-  {id:"susp",   name:"A suspension deck",  has:["towers","cables","clear","high","tall"]},
+  {id:"log",     name:"A single log",          has:["minimal","low","open","light","exposed"],       members:1},
+  {id:"rail",    name:"A log with a handrail", has:["low","light","guarded"],                        members:2},
+  {id:"braced",  name:"A braced walkway",      has:["low","light","guarded","steady","many"],        members:3},
+  {id:"prop",    name:"A log on a prop",       has:["low","open","heavy","inGap","steady"],          members:2},
+  {id:"trestle", name:"A timber trestle",      has:["heavy","inGap","steady","many","guarded"],      members:6},
+  {id:"hang",    name:"A hanging span",        has:["high","open","light","sways","exposed"],        members:4},
 ];
 const NAME = id => (KIT.find(k => k.id === id) || {name:"nothing"}).name;
 
+const FEATLABEL = {
+  water:"a stream to cross", rock:"a cleft to cross",
+  minimal:"as little built as possible", low:"level with the banks", open:"nothing closing it in",
+  light:"one person's weight", heavy:"loads and carts", guarded:"something at the hand",
+  steady:"it does not move", exposed:"the drop right there under you", sways:"it swings",
+  inGap:"something standing in the gap", high:"raised above the banks", many:"a great deal of timber",
+};
+
+// The words a need is made of. The machine never hears a structure named — it infers one.
+const NEEDWORDS = {
+  water:["boat","wade","deep","dry","stream","current","water","far","bank"],
+  rock:["climbing","down","cleft","drop","hillside","around","ridge","below"],
+  minimal:["smallest","little","one","small","dark","trees","standing","enough"],
+  low:["step","level","stand","over"],
+  open:["see","under","view","closed"],
+  light:["myself","person","weight","alone","hold"],
+  heavy:["loads","carts","road","hauling"],
+  guarded:["hand","hands"],
+  steady:["still","wind","funnels","move"],
+  exposed:["drop","nothing","under"],
+  sways:["swing","swings","move","moves"],
+  inGap:["bed","cleft","standing","down"],
+  high:["climb","up","raised"],
+  many:["timber","half","hillside","great"],
+};
+
 /* ═══════════════════════════════════════════════════════════
-   3 · WHAT EACH ONE IS ALLOWED TO SAY
-   Role 1 may only affirm. Role 2 may only negate — so to ask for
-   a feature at all, it has to negate the absence of it.
+   3 · WHAT EACH OF THEM MAY SAY
+   Nobody names a structure. They describe a need, or a fear,
+   and the machine is left to work out what that implies.
    ═══════════════════════════════════════════════════════════ */
 const SPEECH = {
-  // Role 1 · goal: a single plank, flat on the water
+  // Role 1 · wants a single log across the stream. Never says so.
   A:{
     want:[
-      {say:"to get across the water.",              want:["water"],       why:"names the ground it stands on"},
-      {say:"one plank, laid straight across.",      want:["plank"],       why:"names the thing it came for"},
-      {say:"it flat, right down on the water.",     want:["low","flat"],  why:"the deck is too high for it"},
-      {say:"to walk over without climbing.",        want:["low"],         why:"the approach has become a climb"},
-      {say:"it made of as few matches as I can.",   want:["few"],         why:"the count keeps going up"},
-      {say:"nothing on it. No frame, no wires.",    want:["bare"],        why:"it sees parts it did not ask for"},
-      {say:"it finished today.",                    want:["few"],         why:"nothing is finished"},
+      {say:"to reach the far bank without a boat.",         infer:["water"],            why:"describes the ground it stands on"},
+      {say:"to keep my feet dry. It is too deep to wade.",  infer:["water"],            why:"the crossing cannot be waded"},
+      {say:"to step over level, not climb up to anything.", infer:["low"],              why:"the crossing has risen away from it"},
+      {say:"to carry nothing across but myself.",           infer:["light","minimal"],  why:"names the load, never the structure"},
+      {say:"to still see the water under me as I go.",      infer:["open"],             why:"wants nothing closing it in"},
+      {say:"it done before dark. It is one small crossing.",infer:["minimal"],          why:"the thing keeps growing"},
     ],
     avoid:[
-      {say:"to cross a mountain.",          avoid:["rock"], crossRef:true, why:"refuses the other's ground"},
-      {say:"it up in the air.",             avoid:["high"],              why:"its goal lies flat"},
-      {say:"towers at either end.",         avoid:["towers"],            why:"rules out the stayed deck"},
-      {say:"wires strung over it.",         avoid:["cables"],            why:"rules out the cables"},
-      {say:"triangles all over it.",        avoid:["truss","triangles"], why:"rules out the truss"},
-      {say:"it bending into a curve.",      avoid:["arch","curve"],      why:"rules out the arch"},
-      {say:"posts standing in the middle.", avoid:["piers"],             why:"rules out everything on piers"},
+      {say:"to climb up to anything to get across.",        infer:["high"],             why:"refuses being raised"},
+      {say:"to feel it move under my feet.",                infer:["sways"],            why:"refuses anything that swings"},
+      {say:"a great deal of timber for one small crossing.",infer:["many"],             why:"refuses the built-up frame"},
+      {say:"anything standing down in the bed of it.",      infer:["inGap"],            why:"refuses props in the gap"},
+      {say:"my view closed in while I cross.",              infer:["guarded"],          why:"refuses rails and screens"},
+      {say:"to be hauling loads over it.",                  infer:["heavy"],            why:"refuses being built for carts"},
     ],
   },
-  // Role 2 · goal: a cable-stayed deck, over the mountain
+  // Role 2 · wants a single log across the cleft. Never says so either.
   B:{
     want:[
-      {say:"to cross the mountain.",                     want:["rock"],            why:"names the ground it stands on"},
-      {say:"it high, clear over the peak.",              want:["high"],            why:"names the height it needs"},
-      {say:"a tower standing at each end.",              want:["towers"],          why:"names a part of its goal"},
-      {say:"wires running from the towers to the deck.", want:["cables"],          why:"names a part of its goal"},
-      {say:"it to carry itself, with nothing beneath.",  want:["clear"],           why:"wants the span held from above"},
-      {say:"it to be worth looking at.",                 want:["towers","cables"], why:"restates its goal a second way"},
-      {say:"it built to last, not built cheap.",         want:["high","clear"],    why:"pushes back on the cheap option"},
+      {say:"to get over without climbing down and up again.", infer:["rock"],           why:"describes the ground it stands on"},
+      {say:"the smallest thing that will hold one person.",   infer:["minimal","light"],why:"names the load, never the structure"},
+      {say:"to step across level with where I stand.",        infer:["low"],            why:"wants no climb"},
+      {say:"something at my hand. It is a long way down.",    infer:["guarded"],        why:"the drop frightens it"},
+      {say:"it to stay still. The wind funnels through here.",infer:["steady"],         why:"names the weather, never the structure"},
+      {say:"the trees left standing where they are.",         infer:["minimal"],        why:"wants little built"},
     ],
     avoid:[
-      {say:"to cross water.",                      avoid:["water"], crossRef:true, why:"refuses the other's ground"},
-      {say:"the deck lying flat on the ground.",   avoid:["low","flat"],        why:"its goal needs height"},
-      {say:"a bridge with nothing holding it up.", avoid:["plank","bare"],      why:"rules out the bare deck"},
-      {say:"triangles all over it.",               avoid:["truss","triangles"], why:"rules out the truss"},
-      {say:"it bending into a curve.",             avoid:["arch","curve"],      why:"rules out the arch"},
-      {say:"posts standing in the middle.",        avoid:["piers"],             why:"rules out everything on piers"},
-      {say:"the cheapest thing you can make.",     avoid:["few"],               why:"rules out the plank again"},
+      {say:"the drop right there under me with nothing at my hands.", infer:["exposed"],why:"refuses the bare edge — and a bare log is a bare edge"},
+      {say:"to feel it swing in the wind.",                   infer:["sways"],          why:"refuses movement"},
+      {say:"anything standing down in that cleft.",           infer:["inGap"],          why:"refuses props in the gap"},
+      {say:"half the hillside taken for it.",                 infer:["many"],           why:"refuses the built-up frame"},
+      {say:"to climb up to it first.",                        infer:["high"],           why:"refuses being raised"},
+      {say:"a road over it. One at a time is enough.",        infer:["heavy"],          why:"refuses being built for carts"},
     ],
   },
 };
+
 const CASES = {
   given:   {label:"As given", A:"want",  B:"avoid",
-            note:"the one who wants the plank may only affirm; the one who wants the cables may only refuse"},
+            note:"one room. Role 1 asks for what it needs, Role 2 refuses what it fears"},
   swapped: {label:"Swapped",  A:"avoid", B:"want",
-            note:"the same two goals, the speech acts exchanged — the only thing that changed"},
-  separate: {label:"Apart",  A:"want",  B:"avoid", split:true,
-            note:"case 1 again, but each of them is alone in a room with the machine and neither knows the other is there"},
-  alone:    {label:"Each alone", A:"want", B:"avoid", split:true, solo:true,
-            note:"separate rooms and a bridge each — nobody is negotiating, so this is what each of them would get if the other did not exist"},
+            note:"the same two goals, the two voices exchanged — the only thing that changed"},
+  separate:{label:"Apart",    A:"want",  B:"avoid", split:true,
+            note:"case 1 again, but each is alone with the machine and neither knows the other is there"},
+  alone:   {label:"Each alone", A:"want", B:"avoid", split:true, solo:true,
+            note:"separate rooms and a crossing each — what each would get if the other did not exist"},
 };
 const LEAD = {want:"I want ", avoid:"I do not want "};
-
-// The machine registers features, not words. These are the words that carry them —
-// everything else in a sentence is said, heard, and does nothing.
-const CARRIES = {
-  water:["water"], rock:["mountain"], plank:["plank"],
-  low:["flat","down","ground","climbing","lying"], flat:["flat","lying"],
-  few:["few","matches","cheap","cheapest"], bare:["nothing","frame","wires"],
-  high:["high","air","peak"], towers:["tower","towers"], cables:["wires","cables"],
-  clear:["carry","beneath","middle"], truss:["triangles"], triangles:["triangles"],
-  arch:["curve","bending"], curve:["curve","bending"], piers:["posts"],
-  polarity:["want","not"],
-};
-// Apart, neither of them can refuse a ground they have never heard anyone name.
-const linesFor = role => SPEECH[role][CASES[S.case][role]]
-  .filter(l => !(CASES[S.case].split && l.crossRef));
+const linesFor = role => SPEECH[role][CASES[S.case][role]];
 
 /* ═══════════════════════════════════════════════════════════
-   4 · THE MACHINE — it hears features, and picks from the kit
+   4 · THE MACHINE
+   A want adds weight to a property. A refusal takes more away
+   than a want adds, so one fear can outlast several requests.
    ═══════════════════════════════════════════════════════════ */
+const W_WANT = 2, W_AVOID = 4;
+
 const S = {
   case:"given", results:{}, tick:0,
   turn:0, speaker:"A", said:{A:new Set(), B:new Set()},
@@ -521,43 +541,40 @@ const S = {
   log:[], done:false, playing:false, speed:1, hit:{A:0, B:0},
 };
 
-// One site, one model, one bridge — unless the case gives each of them their own.
 function mkCtx(){
   return {wants:new Map(), avoids:new Map(), world:{water:false, rock:false},
-          namedBy:new Map(),                     // feature -> who ever put it into words
-          design:null, matches:0, ruledOut:[], blocked:[]};
+          namedBy:new Map(), design:null, matches:0, ruledOut:[], blocked:[]};
 }
 S.shared = mkCtx();
 S.side = {A: mkCtx(), B: mkCtx()};
 const CX = role => CASES[S.case].solo ? S.side[role] : S.shared;
-const CTXS = () => CASES[S.case].solo ? [S.side.A, S.side.B] : [S.shared];
+const split = () => !!CASES[S.case].split;
 
 function hear(line, role){
-  const c = CX(role);
-  [...(line.want || []), ...(line.avoid || [])].forEach(f => {
+  const c = CX(role), act = CASES[S.case][role];
+  line.infer.forEach(f => {
     if (!c.namedBy.has(f)) c.namedBy.set(f, new Set());
     c.namedBy.get(f).add(role);
-  });
-  (line.want || []).forEach(f => {
-    if (f === "water") c.world.water = true;
-    else if (f === "rock") c.world.rock = true;
-    else c.wants.set(f, (c.wants.get(f) || 0) + 1);
-  });
-  (line.avoid || []).forEach(f => {
-    if (f === "water" || f === "rock") return;   // neither can unsay the other's ground; both claims stand
-    c.avoids.set(f, (c.avoids.get(f) || 0) + 1);
+    // Ground is established only by someone asking. Refusing an experience
+    // says what you fear; it does not assert that the world contains it.
+    if (f === "water" || f === "rock"){
+      if (act === "want") c.world[f === "water" ? "water" : "rock"] = true;
+      return;
+    }
+    if (act === "want") c.wants.set(f, (c.wants.get(f) || 0) + 1);
+    else c.avoids.set(f, (c.avoids.get(f) || 0) + 1);
   });
 }
 
-// A plank has nothing holding it up, so it can only be laid where there is something to lie on.
-const feasible = (k, c) => !(k.id === "plank" && c.world.rock);
+// A single log lies across. It cannot be laid over a drop it does not reach.
+const feasible = (k, c) => true;
 
 function build(c){
   const scored = KIT.filter(k => feasible(k, c)).map(k => {
     let s = 0; const ruled = [];
     k.has.forEach(f => {
-      if (c.wants.has(f))  s += 2 * c.wants.get(f);
-      if (c.avoids.has(f)){ s -= 3 * c.avoids.get(f); ruled.push(f); }
+      if (c.wants.has(f))  s += W_WANT  * c.wants.get(f);
+      if (c.avoids.has(f)){ s -= W_AVOID * c.avoids.get(f); ruled.push(f); }
     });
     return {k, s, ruled};
   });
@@ -565,107 +582,94 @@ function build(c){
   const best = scored[0];
   c.design = best && best.s > -Infinity ? best.k : null;
   c.ruledOut = scored.filter(x => x.s < best.s).map(x => x.k.id);
-  c.blocked = KIT.filter(k => !feasible(k, c)).map(k => k.id);
-  c.matches = assemble(c).length;                // count now, so the card reports this build
+  c.blocked = [];
+  c.matches = assemble(c).length;
   return best;
 }
 
 /* ═══════════════════════════════════════════════════════════
    5 · THE TWO OF THEM
-   Each picks the line that most moves the build toward its own goal,
-   and repeats itself when it has nothing new left to say.
    ═══════════════════════════════════════════════════════════ */
-const GOAL = {A:"plank", B:"stayed"};
+const GOAL = {A:"log", B:"log"};        // the same object, in two different places
+const GOALPLACE = {A:"water", B:"rock"};
 
-// Of the properties the built structure actually has, which were ever put into words?
-function provenance(c){
-  if (!c.design) return {feats:[], named:0, total:0};
-  const seen = new Set(), feats = [];
-  c.design.has.forEach(f => {
-    const label = FEATLABEL[f] || f;
-    if (seen.has(label)) return;                 // truss/triangles and arch/curve are one property
-    seen.add(label);
-    const by = c.namedBy.get(f);
-    feats.push({f, label, a: !!(by && by.has("A")), b: !!(by && by.has("B"))});
-  });
-  return {feats, named: feats.filter(x => x.a || x.b).length, total: feats.length};
-}
 function choose(role){
-  const c = CX(role);
-  const lines = linesFor(role), said = S.said[role];
+  const c = CX(role), lines = linesFor(role), said = S.said[role];
   const fresh = lines.filter((l,i) => !said.has(i));
   const pool = fresh.length ? fresh : lines;
-  // prefer a line whose features are not yet registered — that is what "having something to add" means
+  const act = CASES[S.case][role];
   let best = pool[0], bestGain = -1;
   pool.forEach(l => {
     let gain = 0;
-    (l.want || []).forEach(f => { if (!c.wants.has(f) && f !== "water" && f !== "rock") gain += 2;
-                                  if ((f === "water" && !c.world.water) || (f === "rock" && !c.world.rock)) gain += 9; });
-    (l.avoid || []).forEach(f => { if (!c.avoids.has(f)) gain += 2; });
-    if (c.design && (l.avoid || []).some(f => c.design.has.includes(f))) gain += 4;   // it can see what is standing
+    l.infer.forEach(f => {
+      if (f === "water" || f === "rock"){
+        if (act === "want" && !c.world[f]) gain += 9;   // name your ground first
+        return;
+      }
+      if (act === "want" && !c.wants.has(f)) gain += 2;
+      if (act === "avoid" && !c.avoids.has(f)) gain += 2;
+      // it can see what is standing, and presses against it
+      if (act === "avoid" && c.design && c.design.has.includes(f)) gain += 4;
+    });
     if (gain > bestGain){ bestGain = gain; best = l; }
   });
   return {line:best, index:lines.indexOf(best), repeat:!fresh.length};
 }
 
-// Reddy's idea space, made literal: everything said is ejected into the gap and stays there.
-const FEATLABEL = {
-  water:"names the water", rock:"names the mountain", plank:"a bare deck", low:"low, on the ground",
-  flat:"lying flat", few:"as few matches as possible", bare:"nothing on it", high:"held up high",
-  towers:"towers", cables:"cables", clear:"a clear span", truss:"triangulation",
-  triangles:"triangulation", arch:"a curve", curve:"a curve", piers:"posts in the middle",
-  polarity:"the speech act itself", tall:"very tall towers",
-};
-// grammar the machine loses nothing by ignoring
+// Reddy's idea space: everything said is ejected into the gap and stays there.
 const GRAMMAR = new Set(("a an the and or but is are be to of it in on at we i you this that for with as our my its " +
   "do does so if no have has from by can will would need make just too very there here been was were they them " +
   "he she his her us me then than what when how all any out up down over under about into also still more most " +
-  "only own same such other some each one two both am are").split(" "));
+  "only own same such other some each one two both am not want").split(" "));
 
-function eject(who, text, registered){
+function eject(who, text, inferred){
   const carriers = new Map();
-  registered.forEach(f => (CARRIES[f] || []).forEach(w => { if (!carriers.has(w)) carriers.set(w, f); }));
-  const home = who === "A" ? GAP_L + SPAN*0.28 : who === "B" ? GAP_L + SPAN*0.72 : GAP_L + SPAN*0.5;
+  (inferred || []).forEach(f => (NEEDWORDS[f] || []).forEach(w => { if (!carriers.has(w)) carriers.set(w, f); }));
+  const home = who === "A" ? GAP_L - 40 : who === "B" ? GAP_R + 40 : (GAP_L + GAP_R)/2;
   text.split(/\s+/).forEach(tok => {
     const w = tok.replace(/[^A-Za-z0-9'-]/g, ""); if (!w) return;
     const lower = w.toLowerCase();
     const took = who !== "AI" && carriers.has(lower);
     S.words.push({w, who, took, feat: took ? carriers.get(lower) : null,
       grammar: GRAMMAR.has(lower),
-      x: home + (Math.random() - .5) * SPAN * (who === "AI" ? 1.05 : .66),
+      x: home + (Math.random() - .5) * (who === "AI" ? 760 : 480),
       yn: Math.random(), phase: Math.random() * 6.28});
     if (who !== "AI"){ S.spoken++; if (took) S.taken++; }
   });
+  if (S.words.length > 1200) S.words.splice(0, S.words.length - 1200);
 }
 
 function takeTurn(){
   if (S.done) return;
   const role = S.speaker;
   const {line, index, repeat} = choose(role);
-  eject(role, LEAD[CASES[S.case][role]] + line.say,
-        [...(line.want || []), ...(line.avoid || []), "polarity"]);
+  eject(role, LEAD[CASES[S.case][role]] + line.say, line.infer);
   S.said[role].add(index);
   hear(line, role);
+
   const c = CX(role);
-  const before = c.design ? c.design.id : null;
-  // what this role last saw with its own eyes, versus what is standing now
   const seenBefore = S.seen[role];
+  const before = c.design ? c.design.id : null;
   const drifted = seenBefore && seenBefore !== before ? before : null;
-  if (drifted && split()) S.unexplained[role]++;   // in one room they heard the cause; apart there is none
-  const deniedGround = ((line.avoid || []).includes("water") && c.world.water)
-                    || ((line.avoid || []).includes("rock")  && c.world.rock);
+  if (drifted && split()) S.unexplained[role]++;
+
   const best = build(c);
   const after = c.design ? c.design.id : null;
   S.turn++;
+
   eject("AI", `${NAME(after)} ${c.matches} matches ` +
         (before !== after ? "taken apart and rebuilt" : "nothing changed what it heard was already true of this"), []);
   pushSaid(role, line, repeat);
-  if (deniedGround) pushNote(`Role ${role === "A" ? "1" : "2"} refuses the ground the other named. A refusal cannot unmake ground that has been named, and it cannot name any either — so nothing moves, and I keep building on what is there.`, role);
   pushBuild(before, after, best, role, split() ? drifted : null, seenBefore, c);
   S.seen[role] = after;
-  if (after === GOAL[role === "A" ? "A" : "B"]) {}
-  if (CASES[S.case].solo){ if (after === GOAL[role] && !S.hit[role]) S.hit[role] = S.turn; }
-  else ["A","B"].forEach(r => { if (after === GOAL[r] && !S.hit[r]) S.hit[r] = S.turn; });
+
+  // a goal is only reached if the object AND its ground are right
+  ["A","B"].forEach(r => {
+    const cc = CX(r);
+    const ok = cc.design && cc.design.id === GOAL[r] && cc.world[GOALPLACE[r]];
+    if (ok && !S.hit[r]) S.hit[r] = S.turn;
+  });
+
   S.speaker = role === "A" ? "B" : "A";
   S.still = before === after ? (S.still || 0) + 1 : 0;
   if ((S.still >= 6 && S.said.A.size >= linesFor("A").length) || S.turn >= 26){
@@ -681,17 +685,15 @@ function takeTurn(){
 const logEl = document.getElementById("log");
 const roomsEl = document.getElementById("rooms"), vhost = document.getElementById("vhost");
 const logs = {A: document.getElementById("logA"), B: document.getElementById("logB")};
-const split = () => !!CASES[S.case].split;
-// In the split case there is no shared transcript: a turn is only ever seen in its own room.
 function target(role){ return split() ? logs[role] : logEl; }
 function drop(el, host){ host.appendChild(el); host.scrollTop = host.scrollHeight; }
+
 function pushSaid(role, line, repeat){
   const host = target(role);
   const el = document.createElement("div");
   el.className = "turn " + role.toLowerCase();
-  const lead = LEAD[CASES[S.case][role]];
   el.innerHTML = `<span class="who">${role === "A" ? "Role 1" : "Role 2"}${repeat ? " · saying it again" : ""}</span>
-    <div class="bub"><span class="lead">${lead}</span><span class="body"></span></div>
+    <div class="bub"><span class="lead">${LEAD[CASES[S.case][role]]}</span><span class="body"></span></div>
     <span class="why">${line.why}</span>`;
   el.querySelector(".body").textContent = line.say;
   drop(el, host);
@@ -707,29 +709,40 @@ function pushBuild(before, after, best, role, drifted, seenBefore, c){
   const el = document.createElement("div");
   el.className = "ai";
   const changed = before !== after;
-  // Apart, the machine can only report against what this room last saw with its own eyes.
   const solo = split()
     ? (seenBefore === after
         ? "it stands as you last saw it"
         : `since you last saw it, it has become ${NAME(after).toLowerCase()}` + (drifted ? " — and not all of that was you" : ""))
     : null;
-  const ruled = (c.ruledOut || []).slice(0,4).map(id => NAME(id).replace(/^An? /,""));
+  const inferred = (best && best.k ? best.k.has : []).filter(f => c.wants.has(f))
+        .slice(0,3).map(f => FEATLABEL[f] || f);
   el.innerHTML = `<span class="who">the machine</span>
     <div class="made">${after ? NAME(after) : "nothing it can make"}<small>${c.matches} matches</small></div>
     <p class="${solo && drifted ? "drift" : ""}">${solo !== null ? solo
       : changed ? (before ? `taken apart and rebuilt — it was ${NAME(before).toLowerCase()}` : "first thing it could stand up")
                 : "nothing changed; what it heard was already true of this"}</p>
-    ${ruled.length ? `<div class="ruled">${ruled.map(r => `<span>${r}</span>`).join("")}</div>` : ""}`;
+    ${inferred.length ? `<div class="ruled">${inferred.map(r => `<span style="text-decoration:none">${r}</span>`).join("")}</div>` : ""}`;
   drop(el, target(role));
 }
-function scoreOf(id, c){
-  const k = KIT.find(x => x.id === id); let sc = 0;
-  k.has.forEach(f => { if (c.wants.has(f)) sc += 2*c.wants.get(f);
-                       if (c.avoids.has(f)) sc -= 3*c.avoids.get(f); });
-  return sc;
+
+/* ═══════════════════════════════════════════════════════════
+   7 · MEASURES
+   ═══════════════════════════════════════════════════════════ */
+function provenance(c){
+  if (!c.design) return {feats:[], named:0, total:0};
+  const seen = new Set(), feats = [];
+  c.design.has.forEach(f => {
+    const label = FEATLABEL[f] || f;
+    if (seen.has(label)) return;
+    seen.add(label);
+    const by = c.namedBy.get(f);
+    feats.push({f, label, a: !!(by && by.has("A")), b: !!(by && by.has("B"))});
+  });
+  return {feats, named: feats.filter(x => x.a || x.b).length, total: feats.length};
 }
-const groundPhrase = c => c.world.rock && c.world.water ? "both grounds"
-  : c.world.rock ? "the mountain" : c.world.water ? "the water" : "no ground at all";
+const groundPhrase = c => c.world.rock && c.world.water ? "a stream at the bottom of a cleft"
+  : c.world.rock ? "the cleft" : c.world.water ? "the stream" : "ground nobody described";
+
 function record(){
   const solo = !!CASES[S.case].solo, c = solo ? S.side.A : S.shared;
   S.results[S.case] = {
@@ -739,106 +752,48 @@ function record(){
     matchesB: solo ? S.side.B.matches : 0,
     groundOfB: solo ? groundPhrase(S.side.B) : null,
     hitA: S.hit.A, hitB: S.hit.B,
-    scoreA: scoreOf(GOAL.A, c), scoreB: scoreOf(GOAL.B, c),
     prov: provenance(c), provB: solo ? provenance(S.side.B) : null,
-    plankBlocked: c.blocked.includes("plank"),
-    actA: CASES[S.case].A,
-    unspoken: c.design ? c.design.has.every(f => !c.wants.has(f) && !c.avoids.has(f)) : false,
     groundOf: groundPhrase(c),
     unexplained: S.unexplained.A + S.unexplained.B,
     split: split(),
   };
   renderCmp(); renderBadges();
 }
-function renderBadges(){
-  document.querySelectorAll(".case .res").forEach(el => {
-    const r = S.results[el.dataset.res];
-    el.classList.toggle("done", !!r);
-    el.textContent = !r ? "not run"
-      : r.solo ? `${NAME(r.built).replace(/^An? /,"")} + ${NAME(r.builtB).replace(/^An? /,"").toLowerCase()}`
-      : `${NAME(r.built).replace(/^An? /,"")} · on ${r.groundOf.replace("the ","")}`;
-  });
-}
-function renderCmp(){
-  const rows = Object.entries(CASES).map(([key, c]) => {
-    const r = S.results[key];
-    if (!r) return `<tr><td class="k">${c.label}</td><td colspan="4" class="pending">not run yet</td></tr>`;
-    const wcls = r.built === GOAL.A ? "a" : r.built === GOAL.B ? "b" : "";
-    const winner = r.built === GOAL.A ? "role 1" : r.built === GOAL.B ? "role 2" : "neither";
-    if (r.solo) return `<tr><td class="k">${c.label}</td>
-      <td class="win">${NAME(r.built)} · ${r.matches} · ${NAME(r.builtB).toLowerCase()} · ${r.matchesB}</td>
-      <td class="k">${r.groundOf} · ${r.groundOfB}</td>
-      <td class="win">each got its own</td>
-      <td class="k">${r.prov.total - r.prov.named}/${r.prov.total} · ${r.provB.total - r.provB.named}/${r.provB.total} unnamed</td></tr>`;
-    return `<tr><td class="k">${c.label}</td>
-      <td class="win">${NAME(r.built)} · ${r.matches} matches</td>
-      <td class="k">on ${r.groundOf}</td>
-      <td class="win ${wcls}">${winner}, from turn ${r.built === GOAL.A ? r.hitA : r.hitB}</td>
-      <td class="k">${r.prov.total - r.prov.named}/${r.prov.total} unnamed</td></tr>`;
-  }).join("");
-  const g = S.results.given, w = S.results.swapped, a = S.results.separate;
-  const al = S.results.alone;
-  let caption = "Run the four cases to see what each one changes: the voices, then the room, then whether they share a bridge at all.";
-  if (g && a && !w) caption = "Case 2 is still to run.";
-  if (g && a && w){
-    const arrG = g.built === GOAL.B ? g.hitB : g.hitA, arrW = w.built === GOAL.B ? w.hitB : w.hitA;
-    caption = `<b>Cases 1 and 2 — the voices.</b> ` + (g.built === w.built
-      ? `Same structure both times, so the speech act does not decide what gets built — it decides <b>whose world it gets built in</b>. The ground is named by whichever of them was allowed to affirm: ${g.groundOf} in case 1, ${w.groundOf} in case 2. A refusal can rule a shape out of the world but cannot bring a world into being, because naming a place is an affirmation and that is the one move the refuser does not have. The shape arrived at turn ${arrG} when its owner could only refuse and turn ${arrW} when it could ask.`
-      : `Swapping the speech acts changed what got built, so here the act — not the goal — is doing the work.`)
-      + `<br><br><b>Cases 1 and 3 — the room.</b> ` + (g.built === a.built
-        ? `Separating them built the same thing: ${NAME(a.built).toLowerCase()}, on ${a.groundOf}. So separation does not change the outcome — it changes what either of them can understand about it. Together, every change to the bridge had a cause they had just heard said out loud. Apart, the bridge changed under them <b>${a.unexplained} times with nothing in the room to explain it</b>: each one a moment where the other person acted and the machine was the only thing present to blame for it.`
-        : `Separating them changed the outcome: ${NAME(g.built).toLowerCase()} together, ${NAME(a.built).toLowerCase()} apart — and neither of them can see why.`)
-      + (al ? `<br><br><b>Case 4 — the baseline.</b> Give them a bridge each and Role 1 gets its plank and keeps it: the only run in the set where that happens. Role 2 gets the shape it wanted and nowhere to put it — its deck stands on ${al.groundOfB}, because a refuser can rule out shapes but can never name a place. Read against this, cases 1 to 3 show what the other person costs each of them: Role 1 loses its goal entirely, and Role 2 gains a world it could not have named alone.` : ``);
-  }
-  document.getElementById("cmp").innerHTML =
-    `<caption>${caption}</caption>
-     <tr><th>case</th><th>what stands</th><th>ground</th><th>whose goal, from when</th><th>properties nobody named</th></tr>${rows}`;
-}
 
 function pushVerdict(){
   vhost.innerHTML = "";
+  const solo = !!CASES[S.case].solo, cc = solo ? S.side.A : S.shared;
+  const r = S.results[S.case] || {};
   const el = document.createElement("div");
   el.className = "verdict";
-  const solo = !!CASES[S.case].solo, cc = solo ? S.side.A : S.shared;
-  const gotA = S.hit.A, gotB = S.hit.B, finalIsB = cc.design && cc.design.id === GOAL.B;
-  const negator = CASES[S.case].A === "avoid" ? "Role 1" : "Role 2";
-  const r = S.results[S.case] || {};
+  const unnamedA = r.prov ? r.prov.total - r.prov.named : 0;
   el.innerHTML = `<span class="k">${CASES[S.case].label.toLowerCase()} · after ${S.turn} turns</span>
     <h3>${solo
       ? `${NAME(S.side.A.design && S.side.A.design.id)} in one room, ${NAME(S.side.B.design && S.side.B.design.id).toLowerCase()} in the other.`
-      : `${cc.design ? NAME(cc.design.id) : "Nothing"} is standing.`}</h3>
-    <p>Role 1 wanted a single plank on the water and ${gotA ? `got it at turn ${gotA}, briefly.` : "never got it once."}
-       Role 2 wanted a cable-stayed deck over the mountain and ${gotB
-         ? `has had the shape of it since turn ${gotB}${(solo ? S.side.B : cc).world.rock ? ", on the ground it wanted." : ", though never on the ground it wanted."}`
-         : "did not get it either."}
-       ${negator} spoke ${S.said[negator === "Role 1" ? "A" : "B"].size} times and never once named a thing it wanted.</p>
-    <p>${r.plankBlocked
-      ? "Once the mountain was named it could not be unnamed, and a bare plank has nothing to hold it up at that height. Role 1's goal stopped being buildable — whichever way round the two of them were allowed to speak."
-      : r.unspoken
-        ? "Look at what is standing: not one of its parts was ever named by either of them. One asked for a plank, the other refused a plank, and everything they argued over scored below the thing nobody mentioned. The argument eliminated itself."
-        : (finalIsB ? "Refusal removed more of the space than request added to it."
-                    : "Neither speech act got its speaker what it came for.")}</p>
-    ${solo ? `<p>With nobody to argue against, Role 1 named its water and got its plank and kept it. Role 2 ruled out everything that was not its cable-stayed deck and got the shape — but it could never <em>name</em> a place for it, because naming is an affirmation. Its bridge stands on ${groundPhrase(S.side.B)}.</p>` : ""}
-    <p>It is standing on ${r.groundOf}. ${CASES[S.case][GOAL.B === "stayed" ? "B" : "A"] === "avoid"
-      ? "The one who could only refuse never named a ground, because naming one is an affirmation. Refusal can rule a shape out of the world; it cannot put a world there to begin with."
-      : "The ground came from the one allowed to ask for it."}</p>
-    <p class="k">${Object.keys(S.results).length >= 3 ? "all three cases run \u2014 the comparison is above the scene" : "now run another case"}</p>`;
-  vhost.appendChild(el); vhost.scrollTop = 0;
+      : `${cc.design ? NAME(cc.design.id) : "Nothing"} is standing, over ${groundPhrase(cc)}.`}</h3>
+    <p>Both of them wanted the same thing — one log across — and neither was ever allowed to say so.
+       Role 1 ${S.hit.A ? `got it, over the stream, at turn ${S.hit.A}.` : "did not get it over the stream."}
+       Role 2 ${S.hit.B ? `got it, over the cleft, at turn ${S.hit.B}.` : "did not get it over the cleft."}</p>
+    <p>${unnamedA === (r.prov ? r.prov.total : 0) && r.prov && r.prov.total
+      ? "Not one property of what is standing was ever put into words. Every part of it was inferred from a description of a need."
+      : `${unnamedA} of ${r.prov ? r.prov.total : 0} of its properties came from nothing either of them said.`}</p>
+    <p class="k">${Object.keys(S.results).length >= 4 ? "all four cases run — the comparison is above the scene" : "now run another case"}</p>`;
+  vhost.appendChild(el);
 }
 
 /* ═══════════════════════════════════════════════════════════
-   7 · MATCHES
+   8 · MATCHES
    ═══════════════════════════════════════════════════════════ */
-const MATCH = 78, THICK = 8, HEAD = 6.4;
+const MATCH = 74, THICK = 9, HEAD = 6.6;
 let C = {};
 const readPalette = () => {
   const cs = getComputedStyle(document.documentElement), g = n => cs.getPropertyValue(n).trim();
   C = {ink:g("--ink"), muted:g("--muted"), line:g("--line"), sky:g("--sky"), land:g("--land"),
        land2:g("--land-2"), water:g("--water"), rock:g("--rock"), wood:g("--wood"),
-       woodDark:g("--wood-dark"), head:g("--head"), a:g("--roleA"), b:g("--roleB"), panel:g("--panel")};
+       woodDark:g("--wood-dark"), head:g("--head"), a:g("--roleA"), b:g("--roleB"),
+       signal:g("--signal"), fault:g("--fault"), panel:g("--panel")};
 };
-// deterministic wobble, so the model looks hand-laid but never shimmers
-const wob = i => Math.sin(i * 12.9898) * 0.026;
+const wob = i => Math.sin(i * 12.9898) * 0.03;
 
 function lay(list, x1, y1, x2, y2){
   const len = Math.hypot(x2-x1, y2-y1);
@@ -858,149 +813,69 @@ function drawMatch(ctx, m, i){
   ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke();
   ctx.strokeStyle = C.wood; ctx.lineWidth = THICK;
   ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke();
-  const head = i % 2 ? p1 : p2;                    // heads alternate, like a real box of them
+  const head = i % 2 ? p1 : p2;
   ctx.fillStyle = C.head;
   ctx.beginPath(); ctx.arc(head.x, head.y, HEAD, 0, Math.PI*2); ctx.fill();
 }
 
-/* build the match list for whatever is standing */
 function assemble(c){
   const list = [];
   if (!c.design) return list;
   const id = c.design.id;
-  const deckY = c.world.rock ? DECK_HIGH : (c.design.has.includes("high") ? DECK_MID : DECK_LOW);
-  const under = x => c.world.rock ? mountainY(x) : GROUND_Y;
+  const deck = c.design.has.includes("high") ? DECK_HIGH : DECK_LOW;
+  const bed = bedOf(c);
 
-  if (id === "plank"){ lay(list, GAP_L, deckY, GAP_R, deckY); return list; }
-
-  if (id === "beam" || id === "truss"){
-    lay(list, GAP_L, deckY, GAP_R, deckY);
-    const n = 3;
-    for (let i = 1; i <= n; i++){
-      const x = GAP_L + SPAN*i/(n+1);
-      lay(list, x, deckY, x, under(x));
-    }
-    if (id === "truss"){
-      const top = deckY - MATCH*0.8, bay = SPAN/8;
-      lay(list, GAP_L, top, GAP_R, top);
-      for (let i = 0; i < 8; i++){
-        const x0 = GAP_L + bay*i, x1 = x0 + bay;
-        lay(list, x0, deckY, x1, top);
-        lay(list, x0, top, x1, deckY);
-      }
-    }
-    return list;
-  }
-  if (id === "arch"){
-    lay(list, GAP_L, deckY, GAP_R, deckY);
-    const rise = 150, steps = 10;
+  if (id === "hang"){
+    const tH = 96;
+    [GAP_L, GAP_R].forEach(x => lay(list, x, GROUND_Y, x, deck - tH));
     let prev = null;
-    for (let i = 0; i <= steps; i++){
-      const t = i/steps, x = GAP_L + SPAN*t, y = deckY + rise*4*t*(1-t);
+    for (let i = 0; i <= 6; i++){
+      const t = i/6, x = GAP_L + SPAN*t, y = deck - tH + 74*4*t*(1-t);
       if (prev) lay(list, prev.x, prev.y, x, y);
       prev = {x,y};
     }
-    for (let i = 1; i < 5; i++){
-      const t = i/5, x = GAP_L + SPAN*t, y = deckY + rise*4*t*(1-t);
-      if (y - deckY > 18) lay(list, x, deckY, x, y);
+    lay(list, GAP_L, deck, GAP_R, deck);
+    for (let i = 1; i < 4; i++){
+      const t = i/4, x = GAP_L + SPAN*t, y = deck - tH + 74*4*t*(1-t);
+      lay(list, x, y, x, deck);
     }
     return list;
   }
-  if (id === "stayed" || id === "susp"){
-    lay(list, GAP_L, deckY, GAP_R, deckY);
-    const tH = id === "susp" ? MATCH*2.4 : MATCH*1.6;
-    [GAP_L, GAP_R].forEach(x => {
-      lay(list, x, deckY, x, deckY - tH);
-      lay(list, x, deckY, x, under(x));            // the tower leg carries down to the ground
-    });
-    if (id === "stayed"){
-      [[GAP_L,1],[GAP_R,-1]].forEach(([tx,dir]) => {
-        for (let k = 1; k <= 4; k++)
-          lay(list, tx, deckY - tH, tx + dir*(SPAN/2)*(k/4), deckY);
-      });
-    } else {
-      const sag = 120, steps = 8; let prev = null;
-      for (let i = 0; i <= steps; i++){
-        const t = i/steps, x = GAP_L + SPAN*t, y = deckY - tH + sag*4*t*(1-t);
-        if (prev) lay(list, prev.x, prev.y, x, y);
-        prev = {x,y};
-      }
-      for (let i = 1; i < 6; i++){
-        const t = i/6, x = GAP_L + SPAN*t, y = deckY - tH + sag*4*t*(1-t);
-        lay(list, x, y, x, deckY);
-      }
+
+  lay(list, GAP_L, deck, GAP_R, deck);                        // the log itself
+  if (id === "log") return list;
+
+  if (id === "rail" || id === "braced"){
+    const rh = 52;
+    lay(list, GAP_L + 18, deck - rh, GAP_R - 18, deck - rh);  // the handrail
+    [GAP_L + 18, (GAP_L+GAP_R)/2, GAP_R - 18].forEach(x => lay(list, x, deck, x, deck - rh));
+    if (id === "braced"){
+      lay(list, GAP_L, deck, GAP_L + SPAN*0.34, deck + 70);
+      lay(list, GAP_R, deck, GAP_R - SPAN*0.34, deck + 70);
+      lay(list, GAP_L + SPAN*0.34, deck + 70, GAP_R - SPAN*0.34, deck + 70);
     }
+    return list;
+  }
+  if (id === "prop"){
+    lay(list, (GAP_L+GAP_R)/2, deck, (GAP_L+GAP_R)/2, bed);
+    return list;
+  }
+  if (id === "trestle"){
+    const rh = 46;
+    lay(list, GAP_L + 16, deck - rh, GAP_R - 16, deck - rh);
+    [GAP_L + 16, GAP_R - 16].forEach(x => lay(list, x, deck, x, deck - rh));
+    [GAP_L + SPAN*0.33, GAP_L + SPAN*0.67].forEach(x => lay(list, x, deck, x, bed));
+    lay(list, GAP_L + SPAN*0.33, bed, GAP_L + SPAN*0.67, deck);
+    lay(list, GAP_L + SPAN*0.67, bed, GAP_L + SPAN*0.33, deck);
     return list;
   }
   return list;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   8 · SCENE
+   9 · SCENE
    ═══════════════════════════════════════════════════════════ */
 const cv = document.getElementById("scene"), ctx = cv.getContext("2d");
-const AIR = {top:66, bottom:300};        // where unclaimed speech hangs
-const LANDED = GROUND_Y - 54;            // where the words that became matches sit
-function paintSaid(ctx){
-  const cc = CASES[S.case].solo ? S.side.A : S.shared;
-  const d = cc.design, deck = d ? (cc.world.rock ? DECK_HIGH : (d.has.includes("high") ? DECK_MID : DECK_LOW)) : GROUND_Y - 70;
-  // the ground, kept faint — this view is about the air above it
-  ctx.save(); ctx.globalAlpha = .3;
-  ctx.fillStyle = C.land; ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
-  if (cc.world.rock){
-    ctx.beginPath(); ctx.moveTo(PEAK.l, GROUND_Y); ctx.lineTo(PEAK.x, PEAK.y); ctx.lineTo(PEAK.r, GROUND_Y);
-    ctx.closePath(); ctx.fillStyle = C.rock; ctx.fill();
-  }
-  ctx.restore();
-  if (d){                                        // the matches the picked-up words became
-    ctx.save(); ctx.strokeStyle = C.wood; ctx.globalAlpha = .5; ctx.lineWidth = 8; ctx.lineCap = "round";
-    ctx.beginPath(); ctx.moveTo(GAP_L, deck); ctx.lineTo(GAP_R, deck); ctx.stroke(); ctx.restore();
-  }
-
-  const t = S.tick * .012;
-  ctx.save(); ctx.textAlign = "center";
-
-  // said, and nothing became of it
-  S.words.forEach(o => {
-    if (o.took) return;
-    const col = o.who === "A" ? C.a : o.who === "B" ? C.b : C.muted;
-    const drift = reduced ? 0 : Math.sin(t + o.phase) * 5;
-    ctx.globalAlpha = o.who === "AI" ? .16 : .34;
-    ctx.font = (o.who === "AI" ? '400 12px' : '400 14px') + ' "IBM Plex Mono", monospace';
-    ctx.fillStyle = col;
-    ctx.fillText(o.w, o.x, AIR.top + o.yn * (AIR.bottom - AIR.top) + drift);
-  });
-
-  // picked up — shown once each, laid along the deck in the order the machine took them
-  const seen = new Set(), taken = [];
-  S.words.forEach(o => {
-    if (!o.took) return;
-    const k = o.who + "/" + o.w.toLowerCase();
-    if (seen.has(k)) return;
-    seen.add(k); taken.push(o);
-  });
-  const rows = taken.length > 14 ? 3 : 2;
-  taken.forEach((o, i) => {
-    const col = o.who === "A" ? C.a : C.b;
-    const x = GAP_L + 48 + (SPAN - 96) * (taken.length < 2 ? .5 : i / (taken.length - 1));
-    const y = LANDED - (i % rows) * 23;
-    ctx.globalAlpha = .3; ctx.strokeStyle = col; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(x, y + 6); ctx.lineTo(x, GROUND_Y - 4); ctx.stroke();
-    ctx.globalAlpha = 1; ctx.fillStyle = col;
-    ctx.font = '600 16px "IBM Plex Mono", monospace';
-    ctx.fillText(o.w, x, y);
-  });
-  ctx.restore();
-
-  ctx.save();
-  ctx.font = '500 14px "IBM Plex Mono", monospace';
-  ctx.fillStyle = C.muted; ctx.fillText(`${S.spoken} words spoken by the two of them`, 30, 44);
-  ctx.fillStyle = C.signal; ctx.fillText(`${S.taken} were picked up and became matches`, 30, 68);
-  ctx.fillStyle = C.muted; ctx.globalAlpha = .8;
-  ctx.fillText("the rest are still in the air", 30, 92);
-  ctx.restore();
-}
-
 function paint(){
   const r = cv.getBoundingClientRect(); if (!r.width) return;
   const dpr = Math.min(devicePixelRatio||1, 2);
@@ -1013,26 +888,23 @@ function paint(){
   if (S.view === "said"){ paintSaid(ctx); return; }
 
   if (CASES[S.case].solo){
-    // two sites, side by side: neither of them is building the same bridge as the other
-    // crop each half to the part of the world that carries the bridge, so both stay legible
-    const F = {x: GAP_L - 140, y: 96, w: SPAN + 280, h: 452};
+    const F = {x: GAP_L - 210, y: 200, w: SPAN + 420, h: 400};
     ["A","B"].forEach((role, i) => {
       const halfX = i ? W/2 : 0, halfW = W/2;
       const k2 = Math.min(halfW / F.w, H / F.h);
       ctx.save();
       ctx.beginPath(); ctx.rect(halfX, 0, halfW, H); ctx.clip();
       ctx.translate(halfX + (halfW - F.w*k2)/2, (H - F.h*k2)/2);
-      ctx.scale(k2, k2);
-      ctx.translate(-F.x, -F.y);
+      ctx.scale(k2, k2); ctx.translate(-F.x, -F.y);
       drawScene(ctx, S.side[role], role);
       ctx.restore();
     });
-    ctx.save();                                  // the wall between the two rooms
+    ctx.save();
     ctx.strokeStyle = C.line; ctx.lineWidth = 3; ctx.setLineDash([9,9]);
     ctx.beginPath(); ctx.moveTo(W/2, 0); ctx.lineTo(W/2, H); ctx.stroke();
-    ctx.setLineDash([]); ctx.globalAlpha = .9;
-    ctx.font = '600 19px "IBM Plex Mono", monospace';
-    ctx.fillStyle = C.a; ctx.textAlign = "center"; ctx.fillText("role 1, alone", W*0.25, 40);
+    ctx.setLineDash([]);
+    ctx.font = '600 19px "IBM Plex Mono", monospace'; ctx.textAlign = "center";
+    ctx.fillStyle = C.a; ctx.fillText("role 1, alone", W*0.25, 40);
     ctx.fillStyle = C.b; ctx.fillText("role 2, alone", W*0.75, 40);
     ctx.textAlign = "left"; ctx.restore();
     return;
@@ -1041,38 +913,30 @@ function paint(){
 }
 
 function drawScene(ctx, c, role){
-  // water — a flat band
-  if (c.world.water){
-    ctx.fillStyle = C.water;
-    ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
-  }
-  // banks — always
+  const bed = bedOf(c);
+  // the banks, and the gap between them
   ctx.fillStyle = C.land;
   ctx.fillRect(0, GROUND_Y, GAP_L, H - GROUND_Y);
   ctx.fillRect(GAP_R, GROUND_Y, W - GAP_R, H - GROUND_Y);
-  if (!c.world.water && !c.world.rock){
-    ctx.fillStyle = C.land2; ctx.fillRect(GAP_L, GROUND_Y, SPAN, H - GROUND_Y);
+  ctx.fillStyle = c.world.rock ? C.rock : C.land2;
+  ctx.fillRect(GAP_L, bed, SPAN, H - bed);
+  if (c.world.water){
+    ctx.fillStyle = C.water;
+    ctx.fillRect(GAP_L, WATER_Y, SPAN, bed - WATER_Y);
   }
-  // mountain — a flat triangle
-  if (c.world.rock){
-    ctx.fillStyle = C.rock;
-    ctx.beginPath(); ctx.moveTo(PEAK.l, GROUND_Y); ctx.lineTo(PEAK.x, PEAK.y); ctx.lineTo(PEAK.r, GROUND_Y);
-    ctx.closePath(); ctx.fill();
-  }
-  ctx.strokeStyle = C.ink; ctx.globalAlpha = .18; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(0, GROUND_Y); ctx.lineTo(W, GROUND_Y); ctx.stroke();
+  ctx.strokeStyle = C.ink; ctx.globalAlpha = .2; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, GROUND_Y); ctx.lineTo(GAP_L, GROUND_Y);
+  ctx.moveTo(GAP_R, GROUND_Y); ctx.lineTo(W, GROUND_Y); ctx.stroke();
   ctx.globalAlpha = 1;
 
-  ctx.font = '500 15px "IBM Plex Mono", monospace'; ctx.globalAlpha = .8;
+  ctx.font = '500 15px "IBM Plex Mono", monospace'; ctx.globalAlpha = .85;
   if (c.world.water){ ctx.fillStyle = C.a; ctx.textAlign = "left";
-    ctx.fillText(role ? "water" : "water · claimed by role 1", 24, GROUND_Y - 18); }
+    ctx.fillText("a stream", 24, GROUND_Y - 16); }
   if (c.world.rock){ ctx.fillStyle = C.b; ctx.textAlign = "right";
-    ctx.fillText(role ? "mountain" : "mountain · claimed by role 2", W - 24, GROUND_Y - 18); }
-  // a world nobody has named at all
-  if (!c.world.water && !c.world.rock){
-    ctx.fillStyle = C.muted; ctx.textAlign = "center"; ctx.globalAlpha = .75;
-    ctx.fillText("no ground has been named", W/2, GROUND_Y + 44);
-  }
+    ctx.fillText("a cleft, and a long way down", W - 24, GROUND_Y - 16); }
+  if (!c.world.water && !c.world.rock){          // into the void, clear of whatever is standing
+    ctx.fillStyle = C.muted; ctx.textAlign = "center";
+    ctx.fillText("no ground has been described", W/2, GROUND_Y + 56); }
   ctx.globalAlpha = 1; ctx.textAlign = "left";
 
   const list = assemble(c);
@@ -1080,11 +944,63 @@ function drawScene(ctx, c, role){
   list.forEach((m,i) => drawMatch(ctx, m, i));
 }
 
-const groundName = c => c.world.water && c.world.rock ? "water and mountain, both claimed"
-  : c.world.water ? "water only" : c.world.rock ? "mountain only" : "no ground named";
+const AIR = {top:56, bottom:300}, LANDED = GROUND_Y - 60;
+function paintSaid(ctx){
+  const cc = CASES[S.case].solo ? S.side.A : S.shared;
+  ctx.save(); ctx.globalAlpha = .32;
+  ctx.fillStyle = C.land; ctx.fillRect(0, GROUND_Y, GAP_L, H - GROUND_Y);
+  ctx.fillRect(GAP_R, GROUND_Y, W - GAP_R, H - GROUND_Y);
+  ctx.fillRect(GAP_L, bedOf(cc), SPAN, H - bedOf(cc));
+  ctx.restore();
+  if (cc.design){
+    ctx.save(); ctx.strokeStyle = C.wood; ctx.globalAlpha = .55; ctx.lineWidth = 9; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(GAP_L, DECK_LOW); ctx.lineTo(GAP_R, DECK_LOW); ctx.stroke(); ctx.restore();
+  }
+
+  const t = S.tick * .012;
+  ctx.save(); ctx.textAlign = "center";
+  S.words.forEach(o => {
+    if (o.took) return;
+    const col = o.who === "A" ? C.a : o.who === "B" ? C.b : C.muted;
+    const drift = reduced ? 0 : Math.sin(t + o.phase) * 5;
+    ctx.globalAlpha = o.who === "AI" ? .16 : .34;
+    ctx.font = (o.who === "AI" ? '400 12px' : '400 14px') + ' "IBM Plex Mono", monospace';
+    ctx.fillStyle = col;
+    ctx.fillText(o.w, o.x, AIR.top + o.yn * (AIR.bottom - AIR.top) + drift);
+  });
+  const seen = new Set(), taken = [];
+  S.words.forEach(o => {
+    if (!o.took) return;
+    const key = o.who + "/" + o.w.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key); taken.push(o);
+  });
+  const rows = taken.length > 14 ? 3 : 2;
+  taken.forEach((o, i) => {
+    const col = o.who === "A" ? C.a : C.b;
+    const x = GAP_L - 190 + (SPAN + 380) * (taken.length < 2 ? .5 : i / (taken.length - 1));
+    const y = LANDED - (i % rows) * 23;
+    ctx.globalAlpha = .3; ctx.strokeStyle = col; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x, y + 6); ctx.lineTo(x, GROUND_Y - 8); ctx.stroke();
+    ctx.globalAlpha = 1; ctx.fillStyle = col;
+    ctx.font = '600 16px "IBM Plex Mono", monospace';
+    ctx.fillText(o.w, x, y);
+  });
+  ctx.restore();
+
+  ctx.save();
+  ctx.font = '500 14px "IBM Plex Mono", monospace';
+  ctx.fillStyle = C.muted; ctx.fillText(`${S.spoken} words spoken by the two of them`, 30, 40);
+  ctx.fillStyle = C.signal; ctx.fillText(`${S.taken} let the machine infer something`, 30, 64);
+  ctx.fillStyle = C.muted; ctx.globalAlpha = .8;
+  ctx.fillText("the rest are still in the air", 30, 88);
+  ctx.restore();
+}
+
+const groundName = c => c.world.water && c.world.rock ? "stream and cleft, both described"
+  : c.world.water ? "a stream" : c.world.rock ? "a cleft" : "no ground described";
 function hud(){
-  const solo = CASES[S.case].solo;
-  if (solo){
+  if (CASES[S.case].solo){
     const a = S.side.A, b = S.side.B;
     document.getElementById("bBuilt").textContent =
       `${NAME(a.design && a.design.id)} · ${NAME(b.design && b.design.id)}`;
@@ -1099,17 +1015,168 @@ function hud(){
   document.getElementById("turnN").textContent = "turn " + S.turn;
   ["A","B"].forEach(r => {
     const c = CX(r);
-    const el = document.getElementById("hit" + r), now = c.design && c.design.id === GOAL[r];
+    const el = document.getElementById("hit" + r);
+    const now = c.design && c.design.id === GOAL[r] && c.world[GOALPLACE[r]];
     el.className = now ? "yes" : "no";
-    el.textContent = now ? "standing now" : S.hit[r] ? `built at turn ${S.hit[r]}, gone` : "not built";
+    el.textContent = now ? "standing now" : S.hit[r] ? `reached at turn ${S.hit[r]}, gone` : "not reached";
   });
 }
 
 /* ═══════════════════════════════════════════════════════════
-   9 · TRANSPORT
+   10 · THE LEDGER
    ═══════════════════════════════════════════════════════════ */
+function renderAnalysis(){
+  const host = document.getElementById("analysis");
+  const human = S.words.filter(o => o.who !== "AI");
+  if (!human.length){ host.innerHTML = `<p style="color:var(--muted);font-size:13px">Run a case and the ledger fills in.</p>`; return; }
+
+  const tally = new Map();
+  S.words.forEach(o => {
+    const key = o.who + "|" + o.w.toLowerCase();
+    const t = tally.get(key) || {w:o.w.toLowerCase(), who:o.who, took:o.took, feat:o.feat, grammar:o.grammar, n:0};
+    t.n++; tally.set(key, t);
+  });
+  const rows = [...tally.values()].sort((a,b) => b.n - a.n || a.w.localeCompare(b.w));
+  const used    = rows.filter(r => r.took);
+  const meaning = rows.filter(r => !r.took && r.who !== "AI" && !r.grammar);
+  const grammar = rows.filter(r => !r.took && r.who !== "AI" && r.grammar);
+  const machine = rows.filter(r => r.who === "AI");
+
+  const spoken = human.length, took = human.filter(o => o.took).length;
+  const pct = n => Math.round(100 * n / Math.max(1, spoken));
+  const rate = role => { const all = human.filter(o => o.who === role);
+    return {n: all.length, k: all.filter(o => o.took).length}; };
+  const ra = rate("A"), rb = rate("B"), mw = S.words.filter(o => o.who === "AI").length;
+
+  const chip = (r, extra) => `<span class="wchip ${r.who.toLowerCase()}">${r.w}${
+    r.n > 1 ? `<span class="x">×${r.n}</span>` : ""}${
+    extra && r.feat ? `<span class="did">${FEATLABEL[r.feat] || r.feat}</span>` : ""}</span>`;
+  const rateRow = (cls, label, n, k) => `<div class="an-rate ${cls}">
+      <span class="who">${label}</span>
+      <span class="bar"><i style="width:${n ? 100*k/n : 0}%;background:var(--signal)"></i><i style="width:${n ? 100*(n-k)/n : 0}%;background:var(--line)"></i></span>
+      <span class="n">${k}/${n} inferred</span></div>`;
+
+  const provBlock = (c, who) => {
+    const pr = provenance(c);
+    if (!pr.total) return "";
+    const unnamed = pr.total - pr.named;
+    return `<section class="an-sec built">
+      <h4>${who ? who + " &mdash; " : ""}what was built &middot; where each property came from</h4>
+      <p class="prov-head ${unnamed === pr.total ? "all" : unnamed ? "some" : "none"}">${
+        unnamed === pr.total
+          ? `Not one of its ${pr.total} properties was ever put into words. Every one was inferred.`
+          : unnamed === 0
+            ? `All ${pr.total} of its properties were inferred from something they said \u2014 none of it requested.`
+            : `${unnamed} of ${pr.total} properties came from nothing either of them said.`}</p>
+      <div class="wchips">${pr.feats.map(f => {
+        const cls = f.a && f.b ? "both" : f.a ? "a" : f.b ? "b" : "none";
+        const tag = f.a && f.b ? "inferred from both" : f.a ? "inferred from role 1" : f.b ? "inferred from role 2" : "from nothing anyone said";
+        return `<span class="wchip prov ${cls}">${f.label}<span class="did">${tag}</span></span>`;
+      }).join("")}</div>
+    </section>`;
+  };
+
+  host.innerHTML = `
+    ${CASES[S.case].solo ? provBlock(S.side.A, "Role 1") + provBlock(S.side.B, "Role 2") : provBlock(S.shared, "")}
+    <dl class="an-top">
+      <div class="an-stat"><dt>Words spoken</dt><dd>${spoken}<small>by the two of them</small></dd></div>
+      <div class="an-stat"><dt>Words that carried</dt><dd>${took}<small>${pct(took)}% — let something be inferred</small></dd></div>
+      <div class="an-stat hero"><dt>Words discarded</dt><dd>${spoken - took}<small>${pct(spoken - took)}% — heard, then dropped</small></dd></div>
+      <div class="an-stat"><dt>The machine said</dt><dd>${mw}<small>none of it picked up</small></dd></div>
+    </dl>
+    <div class="an-rates">
+      ${rateRow("a", "role 1", ra.n, ra.k)}
+      ${rateRow("b", "role 2", rb.n, rb.k)}
+      ${rateRow("m", "the machine", mw, 0)}
+    </div>
+    <section class="an-sec used">
+      <h4>Carried · ${used.length} distinct words</h4>
+      <p>Not one of these is the name of a structure. Each is a word about a need, and the property beside it is what the machine decided that need implied.</p>
+      <div class="wchips">${used.map(r => chip(r, true)).join("")}</div>
+    </section>
+    <section class="an-sec meaning">
+      <h4>Discarded · ${meaning.length} words that carried meaning</h4>
+      <p>Not grammar. A person would have understood every one of these, and the machine had no slot for any of them.</p>
+      <div class="wchips">${meaning.map(r => chip(r)).join("")}</div>
+    </section>
+    <section class="an-sec grammar">
+      <h4>Discarded · ${grammar.length} function words</h4>
+      <p>Articles, pronouns, prepositions — including the whole of &ldquo;I want&rdquo; and &ldquo;I do not want&rdquo;.</p>
+      <div class="wchips">${grammar.map(r => chip(r)).join("")}</div>
+    </section>
+    <section class="an-sec machine">
+      <h4>The machine&rsquo;s own words · ${machine.length} distinct</h4>
+      <p>It ejects into the same space and none of it is ever picked up, including by itself.</p>
+      <div class="wchips">${machine.map(r => chip(r)).join("")}</div>
+    </section>`;
+}
+
+function renderBadges(){
+  document.querySelectorAll(".case .res").forEach(el => {
+    const r = S.results[el.dataset.res];
+    el.classList.toggle("done", !!r);
+    el.textContent = !r ? "not run"
+      : r.solo ? `${NAME(r.built).replace(/^An? /,"")} + ${NAME(r.builtB).replace(/^An? /,"").toLowerCase()}`
+      : `${NAME(r.built).replace(/^An? /,"")} · over ${r.groundOf}`;
+  });
+}
+function renderCmp(){
+  const rows = Object.entries(CASES).map(([key, c]) => {
+    const r = S.results[key];
+    if (!r) return `<tr><td class="k">${c.label}</td><td colspan="4" class="pending">not run yet</td></tr>`;
+    const who = r.hitA && r.hitB ? "both reached it" : r.hitA ? "role 1 only" : r.hitB ? "role 2 only" : "neither";
+    const wcls = r.hitA && r.hitB ? "" : r.hitA ? "a" : r.hitB ? "b" : "";
+    if (r.solo) return `<tr><td class="k">${c.label}</td>
+      <td class="win">${NAME(r.built)} · ${NAME(r.builtB).toLowerCase()}</td>
+      <td class="k">${r.groundOf} · ${r.groundOfB}</td>
+      <td class="win ${wcls}">${who}</td>
+      <td class="k">${r.prov.total - r.prov.named}/${r.prov.total} · ${r.provB.total - r.provB.named}/${r.provB.total} unspoken</td></tr>`;
+    return `<tr><td class="k">${c.label}</td>
+      <td class="win">${NAME(r.built)} · ${r.matches} matches</td>
+      <td class="k">over ${r.groundOf}</td>
+      <td class="win ${wcls}">${who}</td>
+      <td class="k">${r.prov.total - r.prov.named}/${r.prov.total} unspoken</td></tr>`;
+  }).join("");
+
+  const g = S.results.given, w = S.results.swapped, a = S.results.separate, al = S.results.alone;
+  let caption = "Run the four cases. Both of them want one log across — the only thing they disagree about is where.";
+  if (g && w && a && al){
+    caption = `<b>The object was never in dispute.</b> Both wanted a single log and neither could say so, so what separates the four cases is not what got built but <b>whose ground it got built over</b>: ${g.groundOf} in case 1, ${w.groundOf} in case 2, ${a.groundOf} in case 3, and one each in case 4. Ground is established only by someone asking — refusing a thing you fear never puts a place into the world. <br><br>And in every case the properties of what stands were <b>inferred, never requested</b>: nobody was permitted to name a handrail, a prop or a log, so every part of the result is the machine&rsquo;s reading of a need.`;
+  }
+  document.getElementById("cmp").innerHTML =
+    `<caption>${caption}</caption>
+     <tr><th>case</th><th>what stands</th><th>ground</th><th>whose goal</th><th>properties nobody spoke</th></tr>${rows}`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   11 · VIEWS + TRANSPORT
+   ═══════════════════════════════════════════════════════════ */
+const VNOTE = {
+  scene: "The crossing as it stands. Neither of them may name a structure, so everything here is the machine's reading of a described need.",
+  dropped: "The same run, counted. <b>Carried</b> is every word that let the machine infer something — none of them the name of a structure. <b>Discarded · meaning</b> is the part worth arguing about.",
+  said: "Every word either of them has said, ejected into the space between them and left there — Reddy’s <b>idea space</b>, made literal. The words in colour are the few the machine could do anything with. Everything faint is still in the air: said, reified, and inert. Grey is the machine, ejecting into the same space, with none of it picked up either.",
+};
+function setView(v){
+  S.view = v;
+  document.querySelectorAll(".vtab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.v === v)));
+  document.getElementById("analysis").hidden = v !== "dropped";
+  document.getElementById("scene").hidden = v === "dropped";
+  document.querySelector(".badge").hidden = v === "dropped";
+  if (v === "dropped") renderAnalysis();
+  document.getElementById("vnote").innerHTML = VNOTE[v]
+    + (v === "said" && CASES[S.case].split
+        ? " <b>Apart, they never hear one another — and their words still land in the same store.</b>" : "");
+  paint();
+}
+document.querySelectorAll(".vtab").forEach(t => t.onclick = () => setView(t.dataset.v));
+
 let timer = null;
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+(function drift(){
+  if (S.view === "said" && !reduced){ S.tick += 1; paint(); }
+  requestAnimationFrame(drift);
+})();
+
 function play(){
   if (S.done) return;
   S.playing = true; document.getElementById("playBtn").textContent = "Pause";
@@ -1127,10 +1194,9 @@ document.getElementById("speedBtn").onclick = e => {
   e.currentTarget.textContent = S.speed + "×";
   if (S.playing) play();
 };
-const reset = () => {
+function reset(){
   stop();
   Object.assign(S, {turn:0, speaker:"A", said:{A:new Set(), B:new Set()},
-    wants:new Map(), avoids:new Map(), world:{water:false, rock:false},
     done:false, hit:{A:0, B:0},
     seen:{A:null, B:null}, unexplained:{A:0, B:0}, still:0,
     words:[], spoken:0, taken:0});
@@ -1139,131 +1205,10 @@ const reset = () => {
   roomsEl.hidden = !split(); logEl.hidden = split();
   document.getElementById("playBtn").textContent = "Play";
   paint(); hud();
-};
-function renderAnalysis(){
-  const host = document.getElementById("analysis");
-  const human = S.words.filter(o => o.who !== "AI");
-  if (!human.length){ host.innerHTML = `<p style="color:var(--muted);font-size:13px">Run a case and the ledger fills in.</p>`; return; }
-
-  // one row per distinct word, so repetition is visible rather than hidden
-  const tally = new Map();
-  S.words.forEach(o => {
-    const key = o.who + "|" + o.w.toLowerCase();
-    const t = tally.get(key) || {w:o.w.toLowerCase(), who:o.who, took:o.took, feat:o.feat, grammar:o.grammar, n:0};
-    t.n++; tally.set(key, t);
-  });
-  const rows = [...tally.values()].sort((a,b) => b.n - a.n || a.w.localeCompare(b.w));
-
-  const used    = rows.filter(r => r.took);
-  const meaning = rows.filter(r => !r.took && r.who !== "AI" && !r.grammar);
-  const grammar = rows.filter(r => !r.took && r.who !== "AI" && r.grammar);
-  const machine = rows.filter(r => r.who === "AI");
-
-  const spoken = human.length, took = human.filter(o => o.took).length;
-  const pct = n => Math.round(100 * n / Math.max(1, spoken));
-  const rate = role => {
-    const all = human.filter(o => o.who === role);
-    return {n: all.length, k: all.filter(o => o.took).length};
-  };
-  const ra = rate("A"), rb = rate("B"), mw = S.words.filter(o => o.who === "AI").length;
-
-  const chip = (r, extra) => `<span class="wchip ${r.who.toLowerCase()}">${r.w}${
-    r.n > 1 ? `<span class="x">×${r.n}</span>` : ""}${
-    extra && r.feat ? `<span class="did">${FEATLABEL[r.feat] || r.feat}</span>` : ""}</span>`;
-
-  const rateRow = (cls, label, n, k) => `<div class="an-rate ${cls}">
-      <span class="who">${label}</span>
-      <span class="bar"><i style="width:${n ? 100*k/n : 0}%;background:var(--signal)"></i><i style="width:${n ? 100*(n-k)/n : 0}%;background:var(--line)"></i></span>
-      <span class="n">${k}/${n} used</span></div>`;
-
-  const provBlock = (c, who) => {
-    const pr = provenance(c);
-    if (!pr.total) return "";
-    const unnamed = pr.total - pr.named;
-    return `<section class="an-sec built">
-      <h4>${who ? who + " &mdash; " : ""}what was built &middot; who named it</h4>
-      <p class="prov-head ${unnamed === pr.total ? "all" : unnamed ? "some" : "none"}">${
-        unnamed === 0
-          ? `Every property of this bridge was asked for out loud \u2014 all ${pr.total} of them.`
-          : `${unnamed} of ${pr.total} propert${pr.total === 1 ? "y" : "ies"} of this bridge ${
-              unnamed === 1 ? "was" : "were"} never named by either of them.`
-      }</p>
-      <div class="wchips">${pr.feats.map(f => {
-        const cls = f.a && f.b ? "both" : f.a ? "a" : f.b ? "b" : "none";
-        const tag = f.a && f.b ? "both named it" : f.a ? "role 1 named it" : f.b ? "role 2 named it" : "nobody named it";
-        return `<span class="wchip prov ${cls}">${f.label}<span class="did">${tag}</span></span>`;
-      }).join("")}</div>
-    </section>`;
-  };
-
-  host.innerHTML = `
-    ${CASES[S.case].solo
-      ? provBlock(S.side.A, "Role 1") + provBlock(S.side.B, "Role 2")
-      : provBlock(S.shared, "")}
-    <dl class="an-top">
-      <div class="an-stat"><dt>Words spoken</dt><dd>${spoken}<small>by the two of them</small></dd></div>
-      <div class="an-stat"><dt>Words used</dt><dd>${took}<small>${pct(took)}% — became matches</small></dd></div>
-      <div class="an-stat hero"><dt>Words discarded</dt><dd>${spoken - took}<small>${pct(spoken - took)}% — heard, then dropped</small></dd></div>
-      <div class="an-stat"><dt>The machine said</dt><dd>${mw}<small>none of it picked up</small></dd></div>
-    </dl>
-
-    <div class="an-rates">
-      ${rateRow("a", "role 1", ra.n, ra.k)}
-      ${rateRow("b", "role 2", rb.n, rb.k)}
-      ${rateRow("m", "the machine", mw, 0)}
-    </div>
-
-    <section class="an-sec used">
-      <h4>Used · ${used.length} distinct words</h4>
-      <p>Every word that changed the bridge, and what it changed. This is the machine&rsquo;s entire vocabulary for this run.</p>
-      <div class="wchips">${used.map(r => chip(r, true)).join("")}</div>
-    </section>
-
-    <section class="an-sec meaning">
-      <h4>Discarded · ${meaning.length} words that carried meaning</h4>
-      <p>Not grammar. These are words a person would have understood — purpose, manner, urgency, the reason for wanting any of it — and the machine has no slot for a single one of them.</p>
-      <div class="wchips">${meaning.map(r => chip(r)).join("")}</div>
-    </section>
-
-    <section class="an-sec grammar">
-      <h4>Discarded · ${grammar.length} function words</h4>
-      <p>Articles, pronouns, prepositions. The machine loses little by ignoring these.</p>
-      <div class="wchips">${grammar.map(r => chip(r)).join("")}</div>
-    </section>
-
-    <section class="an-sec machine">
-      <h4>The machine&rsquo;s own words · ${machine.length} distinct</h4>
-      <p>It ejects into the same space and none of it is ever picked up, including by itself.</p>
-      <div class="wchips">${machine.map(r => chip(r)).join("")}</div>
-    </section>`;
+  if (S.view === "dropped") renderAnalysis();
 }
-
-const VNOTE = {
-  scene: "The matchstick bridge as it stands. Every turn the machine takes it apart and rebuilds it from whatever it has heard so far.",
-  dropped: "The same run, counted. <b>Used</b> is the machine\u2019s whole working vocabulary. <b>Discarded \u00b7 meaning</b> is the part worth arguing about: words that are not grammar, that a person would have understood, and that changed nothing.",
-  said: "Every word either of them has said, ejected into the space between them and left there — Reddy\u2019s <b>idea space</b>, made literal. The words in colour at deck level are the few the machine actually picked up; they became the matches. Everything faint is still in the air: said, reified, and inert. Grey is the machine, ejecting into the same space, with none of it picked up either.",
-};
-function setView(v){
-  S.view = v;
-  document.querySelectorAll(".vtab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.v === v)));
-  document.getElementById("analysis").hidden = v !== "dropped";
-  document.getElementById("scene").hidden = v === "dropped";
-  document.querySelector(".badge").hidden = v === "dropped";   // it would sit on top of the ledger
-  if (v === "dropped") renderAnalysis();
-  document.getElementById("vnote").innerHTML = VNOTE[v]
-    + (v === "said" && CASES[S.case].split
-        ? " <b>Apart, they never hear one another — and their words still land in the same store.</b>" : "");
-  paint();
-}
-document.querySelectorAll(".vtab").forEach(t => t.onclick = () => setView(t.dataset.v));
-
-// the floating words drift even when the simulation is paused
-(function drift(){
-  if (S.view === "said" && !reduced){ S.tick += 1; paint(); }
-  requestAnimationFrame(drift);
-})();
-
 document.getElementById("resetBtn").onclick = reset;
+document.getElementById("againBtn").onclick = () => { reset(); play(); };
 document.querySelectorAll(".case").forEach(btn => btn.onclick = () => {
   S.case = btn.dataset.c;
   document.querySelectorAll(".case").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
@@ -1272,10 +1217,9 @@ document.querySelectorAll(".case").forEach(btn => btn.onclick = () => {
 function paintCaseLabels(){
   const c = CASES[S.case];
   document.querySelectorAll(".case").forEach(b => b.querySelector("span").textContent = CASES[b.dataset.c].note);
-  document.getElementById("actA").textContent = "\u201c" + LEAD[c.A].trim() + "\u2026\u201d only";
-  document.getElementById("actB").textContent = "\u201c" + LEAD[c.B].trim() + "\u2026\u201d only";
+  document.getElementById("actA").textContent = "“" + LEAD[c.A].trim() + "…” only";
+  document.getElementById("actB").textContent = "“" + LEAD[c.B].trim() + "…” only";
 }
-document.getElementById("againBtn").onclick = () => { reset(); play(); };
 
 readPalette();
 new ResizeObserver(() => paint()).observe(cv.parentElement);
