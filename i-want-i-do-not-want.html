@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I Want, I Do Not Want</title>
-<meta name="description" content="Three scenarios, five configurations, and two people who may only ever say what they want or what they do not.">
+<meta name="description" content="Three scenarios, five configurations, and two people who never phrase anything the same way twice.">
 <link rel="icon" href="data:,">
 </head>
 <body>
@@ -540,15 +540,15 @@ const FEATLABEL = {
 const NEEDWORDS = {
   water:["soaked","running","knees","past","underneath","current","wet","dry","feet"],
   rock:["down","up","side","bottom","way","round","other"],
-  minimal:["smallest","paces","project","trees","plain","little","small","today","thin","cheap","again","slight"],
-  low:["step","level","standing","over","onto","feet","walks"],
-  open:["look","see","sky","hemmed","shut","hear","plain"],
-  light:["myself","person","weight","one","alone","unload","full","hand"],
-  heavy:["cart","carts","loaded","wheels","laden","road","hauling","pass","lot","heavy","carry"],
-  guarded:["hand","hold","hemmed","edge","lean"],
-  steady:["put","wind","funnels","shifting","give","winter","still","dead"],
+  minimal:["smallest","paces","project","trees","plain","little","small","today","thin","cheap","again","slight","least"],
+  low:["step","level","standing","over","onto","feet","walks","walk"],
+  open:["look","see","sky","hemmed","shut","hear","plain","closed","side"],
+  light:["myself","person","weight","one","alone","unload","full","hand","own"],
+  heavy:["cart","carts","carting","loaded","wheels","laden","road","hauling","pass","lot","heavy","carry","load"],
+  guarded:["hand","hold","hemmed","edge","edges","lean","view"],
+  steady:["put","wind","funnels","shifting","give","winter","still","dead","rebuilding"],
   exposed:["out","nothing","that"],
-  sways:["swaying","shifting","moving","bounce","give","alive"],
+  sways:["swaying","shifting","moving","bounce","give","gives","alive"],
   inGap:["driven","bottom","standing","bed"],
   high:["climb","climbing","up","onto","grand","stair"],
   many:["half","cut","great","deal","taken","twenty","years","grand","postcards","photographs","two"],
@@ -569,42 +569,117 @@ const SCENARIOS = {
     want:{A:"a single log across the stream", B:"a single log across the cleft"},
     speech:{
       A:{want:[
-          {say:"to get over there without ending up soaked to the knees.",       infer:["water"],  why:"says what would happen, never what is there"},
-          {say:"to stay out of it altogether. It's running fast this month.",    infer:["water"],  why:"describes it moving, and how deep"},
-          {say:"to just step over, not clamber up onto something.",              infer:["low"],    why:"the way over has risen away from it"},
-          {say:"to be taking nothing over but my own weight.",                   infer:["light"],  why:"names the load, never the structure"},
-          {say:"to be able to look down and watch it going past underneath.",    infer:["open"],   why:"wants nothing closing it in"},
-          {say:"it done today, honestly. It's four paces. It isn't a project.",  infer:["minimal"],why:"the thing keeps growing"},
+          {infer:["water"], why:"says what would happen, never what is there", says:[
+            "to get over there without ending up soaked to the knees.",
+            "to keep my feet dry, that's all. It's running high just now.",
+            "to get across without going in up to my knees again."]},
+          {infer:["water"], why:"describes it moving, and how deep", says:[
+            "to stay out of it altogether. It's running fast this month.",
+            "to stop going in at all. It's past my knees and running.",
+            "to keep out of the wet. It's quicker than it looks."]},
+          {infer:["low"], why:"the way over has risen away from it", says:[
+            "to just step over, not clamber up onto something.",
+            "to step across level, not go climbing onto anything.",
+            "to walk straight over it at the height I'm standing."]},
+          {infer:["light"], why:"names the load, never the structure", says:[
+            "to be taking nothing over but my own weight.",
+            "to get myself across and nothing else. One person.",
+            "it to hold me, alone, and that's the whole of it."]},
+          {infer:["open"], why:"wants nothing closing it in", says:[
+            "to be able to look down and watch it going past underneath.",
+            "to see what's going past under me while I'm on it.",
+            "to still be able to look out, not be shut in."]},
+          {infer:["minimal"], why:"the thing keeps growing", says:[
+            "it done today, honestly. It's four paces. It isn't a project.",
+            "it small and done with. Four paces, not a project.",
+            "the little version. It's four paces, that's all it is."]},
         ],
         avoid:[
-          {say:"to be climbing up onto something just to get over.",             infer:["high"],   why:"refuses being raised"},
-          {say:"to feel the thing shifting about under my feet.",                infer:["sways"],  why:"refuses anything that moves"},
-          {say:"half the wood round here cut down for something this small.",    infer:["many"],   why:"refuses the built-up frame"},
-          {say:"anything driven down into the bottom of it. The bed moves anyway.",infer:["inGap"],why:"refuses anything standing in the gap"},
-          {say:"to be hemmed in on both sides the whole way over.",              infer:["guarded"],why:"refuses rails and screens",
+          {infer:["high"], why:"refuses being raised", says:[
+            "to be climbing up onto something just to get over.",
+            "to have to climb up to it first.",
+            "to go up onto anything before I can get across."]},
+          {infer:["sways"], why:"refuses anything that moves", says:[
+            "to feel the thing shifting about under my feet.",
+            "to feel it moving while I'm standing on it.",
+            "anything that gives under me halfway over."]},
+          {infer:["many"], why:"refuses the built-up frame", says:[
+            "half the wood round here cut down for something this small.",
+            "a great deal of it. Keep it small.",
+            "half the place taken apart to put it up."]},
+          {infer:["inGap"], why:"refuses anything standing in the gap", says:[
+            "anything driven down into the bottom of it. The bed moves anyway.",
+            "anything standing down at the bottom. It shifts about down there.",
+            "anything driven in below. It won't hold anyway."]},
+          {infer:["guarded"], why:"refuses rails and screens",
            counters:["exposed"],
-           alt:"to be hemmed in on both sides the whole way over. Being able to see out is the entire point of going this way."},
-          {say:"the whole thing built for wheels I haven't got.",                infer:["heavy"],  why:"refuses being built for carts"},
+           alt:"to be hemmed in on both sides the whole way over. Being able to see out is the entire point of going this way.",
+           says:[
+            "to be hemmed in on both sides the whole way over.",
+            "to have my view shut off while I'm crossing.",
+            "to be hemmed in. I'd rather see out."]},
+          {infer:["heavy"], why:"refuses being built for carts", says:[
+            "the whole thing built for wheels I haven't got.",
+            "it made for carts. Nobody here has one.",
+            "a road over it. I'm on foot."]},
         ]},
       B:{want:[
-          {say:"to get over without going all the way down one side and up the other.", infer:["rock"], why:"describes the way round, never the ground"},
-          {say:"the smallest thing that'll hold one person, honestly.",          infer:["minimal","light"],why:"names the load, never the structure"},
-          {say:"to step across level with where I'm standing now.",              infer:["low"],    why:"wants no climb"},
-          {say:"something to put a hand on. It's a long way down.",              infer:["guarded"],why:"the drop frightens it"},
-          {say:"it to stay put. The wind really funnels through here.",          infer:["steady"], why:"names the weather, never the structure"},
-          {say:"the trees left where they are, if that's possible.",             infer:["minimal"],why:"wants little built"},
+          {infer:["rock"], why:"describes the way round, never the ground", says:[
+            "to get over without going all the way down one side and up the other.",
+            "to stop going down and up again every time. It's the long way round.",
+            "to get across without the climb down and the climb back up."]},
+          {infer:["minimal","light"], why:"names the load, never the structure", says:[
+            "the smallest thing that'll hold one person, honestly.",
+            "the small version. It only has to take one of us.",
+            "the least you can do that'll still hold a person."]},
+          {infer:["low"], why:"wants no climb", says:[
+            "to step across level with where I'm standing now.",
+            "to walk straight over from where I am.",
+            "to step over it, not up onto it."]},
+          {infer:["guarded"], why:"the drop frightens it", says:[
+            "something to put a hand on. It's a long way down.",
+            "something at my hand going over. It's a long way to the bottom.",
+            "something to hold on to. I don't like it down there."]},
+          {infer:["steady"], why:"names the weather, never the structure", says:[
+            "it to stay put. The wind really funnels through here.",
+            "it to stay still. The wind comes straight through this way.",
+            "it not to move. The wind gets up here something awful."]},
+          {infer:["minimal"], why:"wants little built", says:[
+            "the trees left where they are, if that's possible.",
+            "as little of it as you can manage. Leave the trees.",
+            "the small version, and the trees where they are."]},
         ],
         avoid:[
-          {say:"to be out over that with nothing to hold on to.",                infer:["exposed"],why:"refuses the bare edge — and a bare log is a bare edge",
+          {infer:["exposed"], why:"refuses the bare edge — and a bare log is a bare edge",
            counters:["open","minimal"],
-           alt:"to be out over that with nothing to hold on to. You might enjoy the view. I'm the one who has to stand on it."},
-          {say:"to feel it swaying about every time the wind gets up.",          infer:["sways"],  why:"refuses movement",
+           alt:"to be out over that with nothing to hold on to. You might enjoy the view. I'm the one who has to stand on it.",
+           says:[
+            "to be out over that with nothing to hold on to.",
+            "to be stood out over it with nothing at all at my hand.",
+            "to be out there with nothing to take hold of."]},
+          {infer:["sways"], why:"refuses movement",
            counters:["minimal","light"],
-           alt:"to feel it swaying about every time the wind gets up — and the slighter you make it, the more it will."},
-          {say:"anything standing down at the bottom of it.",                    infer:["inGap"],  why:"refuses anything standing in the gap"},
-          {say:"a great deal of the place taken apart to build it.",             infer:["many"],   why:"refuses the built-up frame"},
-          {say:"to have to climb up to it before I can even start.",             infer:["high"],   why:"refuses being raised"},
-          {say:"a road over it. One at a time is plenty.",                       infer:["heavy"],  why:"refuses being built for carts"},
+           alt:"to feel it swaying about every time the wind gets up — and the slighter you make it, the more it will.",
+           says:[
+            "to feel it swaying about every time the wind gets up.",
+            "to feel it moving under me when the wind comes through.",
+            "anything that gives when the wind gets up."]},
+          {infer:["inGap"], why:"refuses anything standing in the gap", says:[
+            "anything standing down at the bottom of it.",
+            "anything driven in down there.",
+            "anything put down at the bottom to hold it."]},
+          {infer:["many"], why:"refuses the built-up frame", says:[
+            "a great deal of the place taken apart to build it.",
+            "half of round here cut down to make it.",
+            "a great deal of it. It doesn't need to be that."]},
+          {infer:["high"], why:"refuses being raised", says:[
+            "to have to climb up to it before I can even start.",
+            "to be climbing up onto it first.",
+            "to go up to it. I'd rather step on."]},
+          {infer:["heavy"], why:"refuses being built for carts", says:[
+            "a road over it. One at a time is plenty.",
+            "it built for carts. One person at a time is fine.",
+            "the whole thing made for wheels. Nobody brings any."]},
         ]},
     },
   },
@@ -617,44 +692,120 @@ const SCENARIOS = {
     want:{A:"a log to walk over", B:"a log that will take a loaded cart"},
     speech:{
       A:{want:[
-          {say:"to get over on my own two feet, carrying nothing but myself.",   infer:["light","low"], why:"names the load, never the structure",
+          {infer:["light","low"], why:"names the load, never the structure",
            counters:["heavy","many"],
-           alt:"to get over on my own two feet, carrying nothing but myself. Only one of us is bringing anything."},
-          {say:"to be able to look down and watch it going past underneath.",    infer:["open"],   why:"wants nothing closing it in"},
-          {say:"it plain. Four paces. It doesn't need to be a project.",         infer:["minimal"],why:"the thing keeps growing"},
-          {say:"to step straight over in my boots and get on with the day.",     infer:["low"],    why:"one person, on foot"},
-          {say:"as little of it as possible. Nothing standing down there.",      infer:["minimal"],why:"wants the water left alone"},
-          {say:"to still hear it running while I'm standing on the thing.",      infer:["open"],   why:"wants it thin enough to hear through"},
+           alt:"to get over on my own two feet, carrying nothing but myself. Only one of us is bringing anything.",
+           says:[
+            "to get over on my own two feet, carrying nothing but myself.",
+            "to walk over. One person, nothing else.",
+            "to step across on my own. That's all it has to take."]},
+          {infer:["open"], why:"wants nothing closing it in", says:[
+            "to be able to look down and watch it going past underneath.",
+            "to see it going past under me as I walk over.",
+            "to look out while I'm on it, not be shut in."]},
+          {infer:["minimal"], why:"the thing keeps growing", says:[
+            "it plain. Four paces. It doesn't need to be a project.",
+            "the small version. It's four paces.",
+            "it plain and small and finished today."]},
+          {infer:["low"], why:"one person, on foot", says:[
+            "to step straight over in my boots and get on with the day.",
+            "to walk over it level and carry on.",
+            "to step across without climbing anything."]},
+          {infer:["minimal"], why:"wants the water left alone", says:[
+            "as little of it as possible. Nothing standing down there.",
+            "the small version, and nothing put in below.",
+            "as little built as you can manage."]},
+          {infer:["open"], why:"wants it thin enough to hear through", says:[
+            "to still hear it running while I'm standing on the thing.",
+            "to hear it going past under me. That's half the point.",
+            "to look down and see it, not have it shut away."]},
         ],
         avoid:[
-          {say:"to be hemmed in on both sides the whole way over.",              infer:["guarded"],why:"refuses rails and screens"},
-          {say:"half the wood round here cut down for four paces.",              infer:["many"],   why:"refuses the built-up frame"},
-          {say:"anything driven down into the bottom of it.",                    infer:["inGap"],  why:"refuses anything standing in the gap"},
-          {say:"to be climbing up onto something first.",                        infer:["high"],   why:"refuses being raised"},
-          {say:"to feel the thing shifting about under my feet.",                infer:["sways"],  why:"refuses anything that moves"},
-          {say:"the whole thing built for wheels I haven't got.",                infer:["heavy"],  why:"refuses being built for carts",
+          {infer:["guarded"], why:"refuses rails and screens", says:[
+            "to be hemmed in on both sides the whole way over.",
+            "to have it shut in at the edges.",
+            "to be hemmed in. I'd rather see out."]},
+          {infer:["many"], why:"refuses the built-up frame", says:[
+            "half the wood round here cut down for four paces.",
+            "a great deal of it for something this small.",
+            "half the place taken to build four paces."]},
+          {infer:["inGap"], why:"refuses anything standing in the gap", says:[
+            "anything driven down into the bottom of it.",
+            "anything standing down there in the bottom.",
+            "anything driven in below."]},
+          {infer:["high"], why:"refuses being raised", says:[
+            "to be climbing up onto something first.",
+            "to have to climb up to it.",
+            "to go up onto anything to get over."]},
+          {infer:["sways"], why:"refuses anything that moves", says:[
+            "to feel the thing shifting about under my feet.",
+            "to feel it moving while I'm on it.",
+            "anything that gives underfoot."]},
+          {infer:["heavy"], why:"refuses being built for carts",
            counters:["heavy","many","steady"],
-           alt:"the whole thing built for wheels I haven't got. You're asking for a road and calling it a crossing."},
+           alt:"the whole thing built for wheels I haven't got. You're asking for a road and calling it a crossing.",
+           says:[
+            "the whole thing built for wheels I haven't got.",
+            "it made for carts when I'm walking.",
+            "a road. I only want to walk over."]},
         ]},
       B:{want:[
-          {say:"to bring a loaded cart over without having to unhitch it first.",infer:["heavy"],  why:"names the load, never the structure",
+          {infer:["heavy"], why:"names the load, never the structure",
            counters:["minimal","light"],
-           alt:"to bring a loaded cart over without having to unhitch it first. What you're describing wouldn't hold it for a day."},
-          {say:"two of them to pass each other without either one stopping.",    infer:["heavy","many"],why:"names the traffic, never the width"},
-          {say:"it to take a full cart in winter, when the ground goes soft.",   infer:["steady","heavy"],why:"names the season, never the footing"},
-          {say:"it still standing in twenty years without being done again.",    infer:["many","steady"],why:"names the lifetime, never the material"},
-          {say:"something along the edge so nothing rolls off the side of it.",  infer:["guarded"],why:"names the accident it fears"},
-          {say:"to stop hauling everything the long way round.",                 infer:["heavy"],  why:"names the detour, never the remedy"},
+           alt:"to bring a loaded cart over without having to unhitch it first. What you're describing wouldn't hold it for a day.",
+           says:[
+            "to bring a loaded cart over without having to unhitch it first.",
+            "to take a full cart over in one go.",
+            "to get a loaded cart across without unloading the lot."]},
+          {infer:["heavy","many"], why:"names the traffic, never the width", says:[
+            "two of them to pass each other without either one stopping.",
+            "two carts to pass on it without stopping.",
+            "two of us to get by each other with a full load on."]},
+          {infer:["steady","heavy"], why:"names the season, never the footing", says:[
+            "it to take a full cart in winter, when the ground goes soft.",
+            "it to hold a loaded cart in winter. The ground gives here.",
+            "it to still take a cart when the winter's on."]},
+          {infer:["many","steady"], why:"names the lifetime, never the material", says:[
+            "it still standing in twenty years without being done again.",
+            "it still there in twenty years. I don't want it done twice.",
+            "twenty years out of it, standing, no rebuilding."]},
+          {infer:["guarded"], why:"names the accident it fears", says:[
+            "something along the edge so nothing rolls off the side of it.",
+            "something at the edge. Things roll.",
+            "an edge on it so a load can't go over the side."]},
+          {infer:["heavy"], why:"names the detour, never the remedy", says:[
+            "to stop hauling everything the long way round.",
+            "to stop carting it all the way round every time.",
+            "to stop hauling a full load round the long way."]},
         ],
         avoid:[
-          {say:"to unload the whole cart and carry it over by hand.",            infer:["light"],  why:"refuses a crossing built for one person",
+          {infer:["light"], why:"refuses a crossing built for one person",
            counters:["light","minimal","open"],
-           alt:"to unload the whole cart and carry it over by hand, which is exactly what your version leaves me doing."},
-          {say:"to feel it give under the wheels halfway across.",               infer:["sways"],  why:"refuses anything that moves"},
-          {say:"to be building it again every winter.",                          infer:["minimal"],why:"refuses the slight version"},
-          {say:"it so plain that a cart just rolls off the side.",               infer:["open"],   why:"refuses the unguarded edge"},
-          {say:"to go the long way round with a full load on.",                  infer:["light"],  why:"refuses a footbridge"},
-          {say:"it done cheap and then done twice.",                             infer:["minimal"],why:"refuses the minimum"},
+           alt:"to unload the whole cart and carry it over by hand, which is exactly what your version leaves me doing.",
+           says:[
+            "to unload the whole cart and carry it over by hand.",
+            "to unload it all and take it over one person at a time.",
+            "to be carrying it over by hand because it won't take a cart."]},
+          {infer:["sways"], why:"refuses anything that moves", says:[
+            "to feel it give under the wheels halfway across.",
+            "to feel it moving with a load on.",
+            "anything that gives when a cart's on it."]},
+          {infer:["minimal"], why:"refuses the slight version", says:[
+            "to be building it again every winter.",
+            "the cheap version, done again next year.",
+            "something so slight it wants doing again."]},
+          {infer:["open"], why:"refuses the unguarded edge", says:[
+            "it so plain that a cart just rolls off the side.",
+            "it plain at the edges with a load going over.",
+            "nothing at the edge. Things go off the side."]},
+          {infer:["light"], why:"refuses a footbridge", says:[
+            "to go the long way round with a full load on.",
+            "it built for one person when I've got a full cart.",
+            "to be carrying a full load round the long way."]},
+          {infer:["minimal"], why:"refuses the minimum", says:[
+            "it done cheap and then done twice.",
+            "the cheap version. It'll want doing again.",
+            "it slight. It has to last."]},
         ]},
     },
   },
@@ -667,64 +818,114 @@ const SCENARIOS = {
     want:{A:"the one in London", B:"the one in New York"},
     speech:{
       A:{want:[
-          {say:"the one back home, the one they put over the current. You know it.", meant:"the great stone towers with the road that lifts",
-           infer:["water"],          why:"names a place and assumes the picture goes with it"},
-          {say:"it like the one everybody walks over on their lunch break.",     meant:"crowds crossing between the two towers",
-           infer:["light","low"],    why:"the machine pictures a thin modern walkway instead"},
-          {say:"it thin. From the side you should barely see it's there.",       meant:"slender between two heavy stone piers",
-           infer:["minimal","open"], why:"the machine drops the stone and keeps the thinness",
+          {meant:"the great stone towers with the road that lifts", infer:["water"],   why:"names a place and assumes the picture goes with it", says:[
+            "the one back home, the one they put over the current. You know it.",
+            "the one at home, over the current. Everybody knows it.",
+            "the one from home, over the current. You've seen it."]},
+          {meant:"crowds crossing between the two towers", infer:["light","low"], why:"the machine pictures a thin modern walkway instead", says:[
+            "it like the one everybody walks over on their lunch break.",
+            "the one people walk over at lunchtime. Like that.",
+            "like the one you walk over, one person after another."]},
+          {meant:"slender between two heavy stone piers", infer:["minimal","open"], why:"the machine drops the stone and keeps the thinness",
            counters:["many","high","heavy"],
-           alt:"it thin. From the side you should barely see it's there — not the heavy great thing you keep describing."},
-          {say:"it to feel a bit alive under you when you're on it.",            meant:"solid, but busy with people",
-           infer:["sways"],          why:"the machine hears movement and builds something that moves"},
-          {say:"it plain and grey and quiet about itself.",                      meant:"stone",
-           infer:["minimal"],        why:"the machine hears restraint, not material"},
-          {say:"to see sky the whole way over, not be shut in.",                 meant:"open between the towers",
-           infer:["open"],           why:"the one thing that survives intact"},
+           alt:"it thin. From the side you should barely see it's there — not the heavy great thing you keep describing.",
+           says:[
+            "it thin. From the side you should barely see it's there.",
+            "it slight from the side. Almost not there.",
+            "it thin, so you'd look straight past it side on."]},
+          {meant:"solid, but busy with people", infer:["sways"], why:"the machine hears movement and builds something that moves", says:[
+            "it to feel a bit alive under you when you're on it.",
+            "it alive underfoot, not dead.",
+            "it to have a bit of give, a bit of life to it."]},
+          {meant:"stone", infer:["minimal"], why:"the machine hears restraint, not material", says:[
+            "it plain and grey and quiet about itself.",
+            "it plain. Grey. Not shouting.",
+            "it plain and small in the way it carries itself."]},
+          {meant:"open between the towers", infer:["open"], why:"the one thing that survives intact", says:[
+            "to see sky the whole way over, not be shut in.",
+            "to look out the whole way across.",
+            "sky above me the whole way, not hemmed in."]},
         ],
         avoid:[
-          {say:"anything driven down into the bottom of it.",                    meant:"the piers are already there",
-           infer:["inGap"],          why:"refuses what its own picture depends on"},
-          {say:"it heavy and grey and municipal-looking.",                       meant:"not another concrete flyover",
-           infer:["heavy"],          why:"refuses the load its picture actually carries"},
-          {say:"to have to climb up onto it.",                                   meant:"you walk straight on at street level",
-           infer:["high"],           why:"refuses height"},
-          {say:"a great deal of it, honestly. Keep it slight.",                  meant:"slender, not small",
-           infer:["many"],           why:"the machine hears small where it meant slender"},
-          {say:"to be hemmed in the whole way over.",                            meant:"open parapets, not a tunnel",
-           infer:["guarded"],        why:"refuses the handrail it was picturing"},
-          {say:"it to feel dead under you.",                                     meant:"lively with people",
-           infer:["steady"],         why:"refuses stillness, and loses steadiness with it"},
+          {meant:"the piers are already there", infer:["inGap"], why:"refuses what its own picture depends on", says:[
+            "anything driven down into the bottom of it.",
+            "anything standing down in the bottom.",
+            "anything driven in below it."]},
+          {meant:"not another concrete flyover", infer:["heavy"], why:"refuses the load its picture actually carries", says:[
+            "it heavy and grey and municipal-looking.",
+            "it heavy. It shouldn't look like a road.",
+            "the heavy version. Not another one of those."]},
+          {meant:"you walk straight on at street level", infer:["high"], why:"refuses height", says:[
+            "to have to climb up onto it.",
+            "to go up to it. You should walk straight on.",
+            "to be climbing up before I'm on it."]},
+          {meant:"slender, not small", infer:["many"], why:"the machine hears small where it meant slender", says:[
+            "a great deal of it, honestly. Keep it slight.",
+            "half of it. Keep it slight.",
+            "a great deal. It should be slight."]},
+          {meant:"open parapets, not a tunnel", infer:["guarded"], why:"refuses the handrail it was picturing", says:[
+            "to be hemmed in the whole way over.",
+            "it shut in at the edges.",
+            "to be hemmed in. You should be able to see out."]},
+          {meant:"lively with people", infer:["steady"], why:"refuses stillness, and loses steadiness with it", says:[
+            "it to feel dead under you.",
+            "it dead underfoot.",
+            "it to feel like standing still on the ground."]},
         ]},
       B:{want:[
-          {say:"the one off the postcards. Everybody photographs it.",           meant:"the great cable crossing with the stone arches",
-           infer:["many"],           why:"names a place and assumes the picture goes with it"},
-          {say:"it grand. It ought to be the thing you notice first.",           meant:"towers you can see from the harbour",
-           infer:["many","high"],    why:"the machine hears bulk, not proportion",
+          {meant:"the great cable crossing with the stone arches", infer:["many"], why:"names a place and assumes the picture goes with it", says:[
+            "the one off the postcards. Everybody photographs it.",
+            "the one on all the postcards. You've seen it a hundred times.",
+            "the one everybody photographs. That one."]},
+          {meant:"towers you can see from the harbour", infer:["many","high"], why:"the machine hears bulk, not proportion",
            counters:["minimal","open","light"],
-           alt:"it grand. It ought to be the thing you notice first, not something you could walk past without seeing."},
-          {say:"it to carry the lot. Carts, crowds, all of it at once.",         meant:"roadway and promenade together",
-           infer:["heavy"],          why:"names the traffic, never the structure"},
-          {say:"it still standing in twenty years and a hundred after that.",    meant:"stone and steel",
-           infer:["steady","many"],  why:"names the lifetime, never the material"},
-          {say:"something along the edge. People lean on it and look out.",      meant:"a promenade railing",
-           infer:["guarded"],        why:"names the habit, not the part"},
-          {say:"it to take the wind that gets up out there.",                    meant:"heavy enough not to move",
-           infer:["steady"],         why:"names the weather, never the mass"},
+           alt:"it grand. It ought to be the thing you notice first, not something you could walk past without seeing.",
+           says:[
+            "it grand. It ought to be the thing you notice first.",
+            "it grand. You should see it before anything else.",
+            "grand, and high enough to see from a long way off."]},
+          {meant:"roadway and promenade together", infer:["heavy"], why:"names the traffic, never the structure", says:[
+            "it to carry the lot. Carts, crowds, all of it at once.",
+            "it to take everything. Carts and people together.",
+            "it to carry a full load and a crowd at the same time."]},
+          {meant:"stone and steel", infer:["steady","many"], why:"names the lifetime, never the material", says:[
+            "it still standing in twenty years and a hundred after that.",
+            "it still there in twenty years. Longer.",
+            "twenty years and it should still be standing."]},
+          {meant:"a promenade railing", infer:["guarded"], why:"names the habit, not the part", says:[
+            "something along the edge. People lean on it and look out.",
+            "an edge to lean on. People stop on these things.",
+            "something at the edge to put a hand on."]},
+          {meant:"heavy enough not to move", infer:["steady"], why:"names the weather, never the mass", says:[
+            "it to take the wind that gets up out there.",
+            "it to stay put when the wind gets up.",
+            "it still in the wind. It shouldn't move."]},
         ],
         avoid:[
-          {say:"some thin little thing you'd walk past without noticing.",       meant:"not a footbridge",
-           infer:["minimal"],        why:"refuses the slight version"},
-          {say:"to feel it moving every time the wind gets up.",                 meant:"it should feel like ground",
-           infer:["sways"],          why:"refuses movement"},
-          {say:"it built for one person at a time.",                             meant:"it carries a city",
-           infer:["light"],          why:"refuses the footbridge"},
-          {say:"to climb a great stair just to get onto it.",                    meant:"you drive straight on",
-           infer:["high"],           why:"refuses the approach it would actually need"},
-          {say:"the sky shut off above me the whole way over.",                  meant:"open above the roadway",
-           infer:["open"],           why:"the machine hears this as wanting openness removed"},
-          {say:"it done cheap. It's meant to last.",                             meant:"it is a monument",
-           infer:["minimal"],        why:"refuses restraint"},
+          {meant:"not a footbridge", infer:["minimal"], why:"refuses the slight version", says:[
+            "some thin little thing you'd walk past without noticing.",
+            "the thin version. You'd not even see it.",
+            "something small and slight. It isn't that."]},
+          {meant:"it should feel like ground", infer:["sways"], why:"refuses movement", says:[
+            "to feel it moving every time the wind gets up.",
+            "to feel it give under me.",
+            "anything that's moving while you're on it."]},
+          {meant:"it carries a city", infer:["light"], why:"refuses the footbridge", says:[
+            "it built for one person at a time.",
+            "it made for one person. It carries a city.",
+            "something that only takes one of us at once."]},
+          {meant:"you drive straight on", infer:["high"], why:"refuses the approach it would actually need", says:[
+            "to climb a great stair just to get onto it.",
+            "to be climbing up to get on.",
+            "a great climb up before you're even on it."]},
+          {meant:"open above the roadway", infer:["open"], why:"the machine hears this as wanting openness removed", says:[
+            "the sky shut off above me the whole way over.",
+            "to have the sky shut out the whole way.",
+            "it closed in over the top."]},
+          {meant:"it is a monument", infer:["minimal"], why:"refuses restraint", says:[
+            "it done cheap. It's meant to last.",
+            "the cheap version. This should stand.",
+            "it slight and cheap. It's meant to be there."]},
         ]},
     },
   },
@@ -759,6 +960,8 @@ const CASES = {
             note:"separate rooms and a crossing each — what each would get if the other did not exist"},
 };
 const LEAD = {want:"I want ", avoid:"I do not want "};
+// Each intent has several ways of being said. Nobody says it the same way twice.
+const voice = l => l.says[Math.floor(Math.random() * l.says.length)];
 const SC = () => SCENARIOS[S.scenario];
 const linesFor = role => SC().speech[role][CASES[S.case][role]];
 
@@ -948,7 +1151,7 @@ function answerFor(role, f){
 // What they say to each other before the machine hears anything.
 function conferTurn(role){
   const {line, index, repeat, pressing, answering} = choose(role);
-  const spoken = (answering && line.alt) ? line.alt : line.say;
+  const spoken = (answering && line.alt) ? line.alt : voice(line);
   S.said[role].add(index);
   S.recent[role] = [index, ...(S.recent[role] || [])].slice(0, 2);
   S.lastSaid[role] = line.infer.slice();
@@ -1040,7 +1243,7 @@ function takeTurn(){
     return;
   }
   const {line, index, repeat, pressing, answering} = choose(role);
-  const spoken = (answering && line.alt) ? line.alt : line.say;
+  const spoken = (answering && line.alt) ? line.alt : voice(line);
   eject(role, LEAD[CASES[S.case][role]] + spoken, line.infer);
   S.said[role].add(index);
   S.recent[role] = [index, ...(S.recent[role] || [])].slice(0, 2);
@@ -1097,7 +1300,7 @@ function pushSaid(role, line, repeat, pressing, answering, spoken, confer){
     <div class="bub"><span class="lead">${LEAD[CASES[S.case][role]]}</span><span class="body"></span></div>
     ${line.meant ? `<span class="meant">pictured: ${line.meant}</span>` : ""}
     <span class="why">${line.why}</span>`;
-  el.querySelector(".body").textContent = spoken || line.say;
+  el.querySelector(".body").textContent = spoken || voice(line);
   if (answering) el.classList.add("answering");
   drop(el, host);
 }
