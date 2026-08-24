@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I Want, I Do Not Want</title>
-<meta name="description" content="Three scenarios, four configurations, and a machine whose willingness to explain decides whether anyone can change their mind.">
+<meta name="description" content="Three scenarios, four configurations, and a Sankey showing how little of what was said ever reaches what gets built.">
 <link rel="icon" href="data:,">
 </head>
 <body>
@@ -134,6 +134,21 @@
     position:absolute; inset:0; overflow-y:auto; padding:16px 18px 20px;
     background:var(--panel); display:flex; flex-direction:column; gap:14px;
   }
+  .flowview{gap:10px}
+  .flowgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(268px,1fr)); gap:12px}
+  .fcard{border:1px solid var(--line); border-radius:10px; padding:10px 12px 6px; background:var(--panel)}
+  .fcard.now{border-color:var(--signal)}
+  .fcard h5{
+    font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.11em; text-transform:uppercase;
+    margin:0 0 2px; color:var(--muted); display:flex; justify-content:space-between; gap:8px;
+  }
+  .fcard.now h5{color:var(--signal)}
+  .fcard .sub{font-size:11.5px; color:var(--muted); margin:0 0 6px}
+  .fcard svg{width:100%; height:auto; display:block; overflow:visible}
+  .fcard svg text{font-family:"IBM Plex Mono",monospace; font-size:8.5px; fill:var(--muted)}
+  .fcard svg text.big{font-size:10px; fill:var(--ink); font-weight:600}
+  .fcard .pending{font-size:12px; color:var(--muted); font-style:italic; padding:16px 0}
+
   .an-top{display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px}
   .an-stat{border:1px solid var(--line); border-radius:9px; padding:8px 11px}
   .an-stat dt{
@@ -406,11 +421,13 @@
       <button class="vtab" data-v="scene" role="tab" aria-selected="true">What was built</button>
       <button class="vtab" data-v="said" role="tab" aria-selected="false">What was said</button>
       <button class="vtab" data-v="dropped" role="tab" aria-selected="false">What was dropped</button>
+      <button class="vtab" data-v="flow" role="tab" aria-selected="false">Where it went</button>
       <p class="vnote" id="vnote"></p>
     </div>
     <div class="canvas-wrap">
       <canvas id="scene"></canvas>
       <div class="analysis" id="analysis" hidden></div>
+      <div class="analysis flowview" id="flow" hidden></div>
       <div class="badge">
         <span class="built" id="bBuilt">nothing built yet</span>
         <span class="n" id="bMatches">0 matches</span>
@@ -921,6 +938,7 @@ function takeTurn(){
   }
   paint(); hud();
   if (S.view === "dropped") renderAnalysis();
+  if (S.view === "flow") renderFlow();
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1015,6 +1033,18 @@ function provenance(c){
 const groundPhrase = c => c.world.rock && c.world.water ? "a stream at the bottom of a cleft"
   : c.world.rock ? "the cleft" : c.world.water ? "the stream" : "ground nobody described";
 
+// Every word spoken in a run, and what became of it.
+function flowOf(){
+  const f = {A:{carried:0, meaning:0, grammar:0}, B:{carried:0, meaning:0, grammar:0}, AI:0};
+  S.words.forEach(o => {
+    if (o.who === "AI"){ f.AI++; return; }
+    if (o.took) f[o.who].carried++;
+    else if (o.grammar) f[o.who].grammar++;
+    else f[o.who].meaning++;
+  });
+  return f;
+}
+
 function record(){
   const solo = !!CASES[S.case].solo, c = solo ? S.side.A : S.shared;
   S.results[S.scenario + '/' + S.case] = {
@@ -1027,6 +1057,7 @@ function record(){
     prov: provenance(c), provB: solo ? provenance(S.side.B) : null,
     groundOf: groundPhrase(c),
     unexplained: S.unexplained.A + S.unexplained.B,
+    flow: flowOf(),
     asked: S.asked.A + S.asked.B, dodged: S.dodged,
     revised: S.revised.A + S.revised.B,
     cameFor: {...GOAL()}, leftWanting: {...S.goalNow},
@@ -1394,6 +1425,81 @@ function renderAnalysis(){
     </section>`;
 }
 
+/* ── one small Sankey per case: who spoke, and what became of it ── */
+function sankey(flow, w, h){
+  const PAD = 2, BAR = 9;
+  const src = [
+    {k:"A",  n:flow.A.carried + flow.A.meaning + flow.A.grammar, col:"var(--roleA)", lab:"role 1"},
+    {k:"B",  n:flow.B.carried + flow.B.meaning + flow.B.grammar, col:"var(--roleB)", lab:"role 2"},
+    {k:"AI", n:flow.AI,                                          col:"var(--muted)", lab:"machine"},
+  ].filter(d => d.n > 0);
+  const dst = [
+    {k:"carried", n:flow.A.carried + flow.B.carried, col:"var(--signal)", lab:"carried"},
+    {k:"meaning", n:flow.A.meaning + flow.B.meaning, col:"var(--fault)",  lab:"meaning"},
+    {k:"grammar", n:flow.A.grammar + flow.B.grammar, col:"var(--line)",   lab:"grammar"},
+    {k:"never",   n:flow.AI,                          col:"var(--line)",   lab:"machine"},
+  ].filter(d => d.n > 0);
+
+  const total = src.reduce((a,d) => a + d.n, 0) || 1;
+  const usable = h - PAD * (Math.max(src.length, dst.length) - 1);
+  const scale = usable / total;
+
+  let y = 0; src.forEach(d => { d.y = y; d.h = d.n * scale; y += d.h + PAD; });
+  y = 0;     dst.forEach(d => { d.y = y; d.h = d.n * scale; y += d.h + PAD; });
+
+  // links, stacked down each bar in a stable order
+  const links = [];
+  src.forEach(sn => {
+    const parts = sn.k === "AI"
+      ? [["never", flow.AI]]
+      : [["carried", flow[sn.k].carried], ["meaning", flow[sn.k].meaning], ["grammar", flow[sn.k].grammar]];
+    parts.forEach(([dk, n]) => { if (n > 0) links.push({s:sn, dk, n, col:sn.col}); });
+  });
+  const so = {}, dof = {};
+  links.forEach(l => {
+    const d = dst.find(x => x.k === l.dk);
+    l.sy = l.s.y + (so[l.s.k] = (so[l.s.k] || 0)) ; so[l.s.k] += l.n * scale;
+    l.dy = d.y   + (dof[d.k] = (dof[d.k] || 0))   ; dof[d.k]  += l.n * scale;
+    l.t = l.n * scale; l.d = d;
+  });
+
+  const x0 = 52, x1 = w - 74;
+  const ribbon = l => {
+    const a = l.sy, b = l.dy, t = Math.max(l.t, .8), mx = (x0 + BAR + x1) / 2;
+    return `M${x0+BAR},${a} C${mx},${a} ${mx},${b} ${x1},${b} L${x1},${b+t} C${mx},${b+t} ${mx},${a+t} ${x0+BAR},${a+t} Z`;
+  };
+  return `<svg viewBox="0 0 ${w} ${h}" role="img">
+    ${links.map(l => `<path d="${ribbon(l)}" fill="${l.col}" opacity=".26"/>`).join("")}
+    ${src.map(d => `<rect x="${x0}" y="${d.y}" width="${BAR}" height="${Math.max(d.h,1)}" fill="${d.col}" rx="1.5"/>
+      <text x="${x0-6}" y="${d.y + d.h/2 + 3}" text-anchor="end">${d.lab} ${d.n}</text>`).join("")}
+    ${dst.map(d => `<rect x="${x1}" y="${d.y}" width="${BAR}" height="${Math.max(d.h,1)}" fill="${d.col}" rx="1.5"/>
+      <text x="${x1+BAR+5}" y="${d.y + d.h/2 + 3}" class="${d.k==="carried"?"big":""}">${d.lab} ${d.n}</text>`).join("")}
+  </svg>`;
+}
+
+function renderFlow(){
+  const host = document.getElementById("flow");
+  const cards = Object.entries(CASES).map(([k,c]) => {
+    const r = S.results[S.scenario + "/" + k];
+    const now = k === S.case;
+    if (!r || !r.flow) return `<div class="fcard ${now?"now":""}"><h5><span>${c.label}</span></h5>
+      <p class="pending">not run yet</p></div>`;
+    const f = r.flow;
+    const spoken = f.A.carried+f.A.meaning+f.A.grammar + f.B.carried+f.B.meaning+f.B.grammar;
+    const carried = f.A.carried + f.B.carried;
+    return `<div class="fcard ${now?"now":""}">
+      <h5><span>${c.label}</span><span>${Math.round(100*carried/Math.max(1,spoken))}% carried</span></h5>
+      <p class="sub">${spoken} words between them, ${carried} of which the machine could use.</p>
+      ${sankey(f, 318, 128)}</div>`;
+  }).join("");
+  host.innerHTML = `<p class="sub" style="margin:0;font-size:12.5px;color:var(--muted);max-width:80ch">
+      Every word spoken in each run, and what became of it. <b style="color:var(--signal)">Carried</b> is the part the machine
+      could turn into a property of the crossing. <b style="color:var(--fault)">Meaning, dropped</b> is everything that was not
+      grammar and still went nowhere. The machine's own words are counted too, and none of them are ever picked up — by anyone,
+      including itself.</p>
+    <div class="flowgrid">${cards}</div>`;
+}
+
 function renderBadges(){
   document.querySelectorAll(".case .res").forEach(el => {
     const r = S.results[S.scenario + '/' + el.dataset.res];
@@ -1444,6 +1550,7 @@ function renderCmp(){
    ═══════════════════════════════════════════════════════════ */
 const VNOTE = {
   scene: "The crossing as it stands. Neither of them may name a structure, so everything here is the machine's reading of a described need.",
+  flow: "Where every word went, one panel per case. Run all four and the panels sit side by side: the same two people, the same argument, and four different amounts of it surviving the channel.",
   dropped: "The same run, counted. <b>Carried</b> is every word that let the machine infer something — none of them the name of a structure. <b>Discarded · meaning</b> is the part worth arguing about.",
   said: "Every word either of them has said, ejected into the space between them and left there — Reddy’s <b>idea space</b>, made literal. The words in colour are the few the machine could do anything with. Everything faint is still in the air: said, reified, and inert. Grey is the machine, ejecting into the same space, with none of it picked up either.",
 };
@@ -1451,9 +1558,11 @@ function setView(v){
   S.view = v;
   document.querySelectorAll(".vtab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.v === v)));
   document.getElementById("analysis").hidden = v !== "dropped";
-  document.getElementById("scene").hidden = v === "dropped";
-  document.querySelector(".badge").hidden = v === "dropped";
+  document.getElementById("flow").hidden = v !== "flow";
+  document.getElementById("scene").hidden = (v === "dropped" || v === "flow");
+  document.querySelector(".badge").hidden = (v === "dropped" || v === "flow");
   if (v === "dropped") renderAnalysis();
+  if (v === "flow") renderFlow();
   document.getElementById("vnote").innerHTML = VNOTE[v]
     + (v === "said" && CASES[S.case].split
         ? " <b>Apart, they never hear one another — and their words still land in the same store.</b>" : "");
