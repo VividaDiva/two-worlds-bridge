@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I Want, I Do Not Want</title>
-<meta name="description" content="Three scenarios, four configurations, and a machine whose answers depend on which room you are in.">
+<meta name="description" content="Three scenarios, four configurations, and a machine whose willingness to explain decides whether anyone can change their mind.">
 <link rel="icon" href="data:,">
 </head>
 <body>
@@ -297,6 +297,8 @@
   .ai.answer{border-style:dashed}
   .ai.answer.dodged{border-color:color-mix(in srgb,var(--fault) 55%,transparent)}
   .ai.answer.dodged .who{color:var(--fault)}
+  .turn.revise .bub{background:transparent; border:1px solid var(--signal); color:var(--signal)}
+  .turn.revise .who{color:var(--signal)}
   .ai .ruled{display:flex; gap:4px; flex-wrap:wrap}
   .ai .ruled span{
     font-family:"IBM Plex Mono",monospace; font-size:9.5px; padding:1px 6px; border-radius:4px;
@@ -694,6 +696,7 @@ const W_WANT = 2, W_AVOID = 4;
 const S = {
   scenario:"places", case:"given", results:{}, tick:0,
   mem:{A:null, B:null}, asked:{A:0, B:0}, dodged:0,
+  goalNow:{A:null, B:null}, revised:{A:0, B:0}, revisedAt:{A:0, B:0}, hitNow:{A:0, B:0},
   turn:0, speaker:"A", said:{A:new Set(), B:new Set()},
   seen:{A:null, B:null}, unexplained:{A:0, B:0},
   view:"scene", words:[], spoken:0, taken:0,
@@ -753,7 +756,8 @@ function build(c){
 /* ═══════════════════════════════════════════════════════════
    5 · THE TWO OF THEM
    ═══════════════════════════════════════════════════════════ */
-const GOAL = () => SC().goal;
+const GOAL = () => SC().goal;                 // what each of them arrived wanting
+const GNOW = role => (S.goalNow && S.goalNow[role]) || GOAL()[role];
 const GOALPLACE = () => SC().place;
 
 function choose(role){
@@ -766,8 +770,8 @@ function choose(role){
 
   // what is standing is visible to both of them in every case — the machine shows it
   const standing = c.design;
-  const goalKit = KIT.find(k => k.id === GOAL()[role]);
-  const offGoal = !standing || standing.id !== GOAL()[role];
+  const goalKit = KIT.find(k => k.id === GNOW(role));
+  const offGoal = !standing || standing.id !== GNOW(role);
 
   let best = pool[0], bestGain = -1, pressing = false;
   pool.forEach(l => {
@@ -817,8 +821,8 @@ function eject(who, text, inferred){
 function maybeAsk(role){
   if ((S.asked[role] || 0) >= 2 || S.turn < 5) return null;
   const st = CX(role).design; if (!st) return null;
-  const goalKit = KIT.find(k => k.id === GOAL()[role]);
-  if (!goalKit || st.id === GOAL()[role]) return null;
+  const goalKit = KIT.find(k => k.id === GNOW(role));
+  if (!goalKit || st.id === GNOW(role)) return null;
   S.askedFeats = S.askedFeats || {A:new Set(), B:new Set()};
   return st.has.find(f => !goalKit.has.includes(f) && QUESTIONS[f] && !S.askedFeats[role].has(f)) || null;
 }
@@ -830,7 +834,7 @@ function answerFor(role, f){
 
   // 1 · somebody actually asked for the thing being felt
   if (by && by.has(role) && !by.has(other))
-    return {text:"Because you asked for it yourself, earlier.", dodged:false};
+    return {text:"Because you asked for it yourself, earlier.", dodged:false, self:true};
   if (by && by.has(other) && !by.has(role))
     return split()
       ? {text:"Because of something else I have been told. I cannot tell you where that came from.", dodged:true}
@@ -839,13 +843,13 @@ function answerFor(role, f){
     return {text:"Because you both asked for it, in your own words.", dodged:false};
 
   // 2 · nobody asked for it. It is here because something your own goal has was refused.
-  const goalKit = KIT.find(k => k.id === GOAL()[role]);
+  const goalKit = KIT.find(k => k.id === GNOW(role));
   const blocked = goalKit && goalKit.has.find(g => c.avoids.has(g));
   if (blocked){
     const who = c.namedBy.get(blocked) || new Set();
     const refusal = FEATLABEL[blocked] || blocked;
     if (who.has(role) && !who.has(other))
-      return {text:`Nobody asked for it. It is here because you refused ${refusal} — and the crossing you have in mind is exactly that.`, dodged:false};
+      return {text:`Nobody asked for it. It is here because you refused ${refusal} — and the crossing you have in mind is exactly that.`, dodged:false, self:true};
     if (who.has(other))
       return split()
         ? {text:"Nobody asked for it. It is here because something I have been told rules out what you would rather have, and I cannot tell you what that was.", dodged:true}
@@ -867,6 +871,15 @@ function takeTurn(){
     eject("AI", a.text, []);
     pushAsk(role, q);
     pushAnswer(role, a);
+    // Being told why is what makes accommodation possible. Being refused an
+    // answer is not a reason to change your mind, so nobody does.
+    const st = CX(role).design;
+    if (!a.dodged && st && st.id !== GNOW(role)){
+      S.goalNow[role] = st.id;
+      S.revised[role] = (S.revised[role] || 0) + 1;
+      S.revisedAt[role] = S.turn + 1;
+      pushRevise(role, st, a.self);
+    }
     S.turn++;
     S.speaker = role === "A" ? "B" : "A";
     paint(); hud();
@@ -897,8 +910,8 @@ function takeTurn(){
   // a goal is only reached if the object AND its ground are right
   ["A","B"].forEach(r => {
     const cc = CX(r);
-    const ok = cc.design && cc.design.id === GOAL()[r] && cc.world[GOALPLACE()[r]];
-    if (ok && !S.hit[r]) S.hit[r] = S.turn;
+    if (cc.design && cc.design.id === GOAL()[r] && cc.world[GOALPLACE()[r]] && !S.hit[r]) S.hit[r] = S.turn;
+    if (cc.design && cc.design.id === GNOW(r) && cc.world[GOALPLACE()[r]] && !S.hitNow[r]) S.hitNow[r] = S.turn;
   });
 
   S.speaker = role === "A" ? "B" : "A";
@@ -937,6 +950,17 @@ function pushAsk(role, f){
     <div class="bub"><span class="body"></span></div>
     <span class="why">it can feel something it did not come for</span>`;
   el.querySelector(".body").textContent = QUESTIONS[f].charAt(0).toUpperCase() + QUESTIONS[f].slice(1);
+  drop(el, target(role));
+}
+function pushRevise(role, kit, self){
+  const el = document.createElement("div");
+  el.className = "turn revise " + role.toLowerCase();
+  el.innerHTML = `<span class="who">${role === "A" ? "Role 1" : "Role 2"} · changing its mind</span>
+    <div class="bub"><span class="body"></span></div>
+    <span class="why">it now wants what is standing, having been told why it is there</span>`;
+  el.querySelector(".body").textContent = self
+    ? "Then I will take it as it is. I did not see that I had asked for it."
+    : "Then I will take it. I did not know that was why.";
   drop(el, target(role));
 }
 function pushAnswer(role, a){
@@ -1004,6 +1028,9 @@ function record(){
     groundOf: groundPhrase(c),
     unexplained: S.unexplained.A + S.unexplained.B,
     asked: S.asked.A + S.asked.B, dodged: S.dodged,
+    revised: S.revised.A + S.revised.B,
+    cameFor: {...GOAL()}, leftWanting: {...S.goalNow},
+    hitNowA: S.hitNow.A, hitNowB: S.hitNow.B,
     split: split(),
   };
   renderCmp(); renderBadges();
@@ -1023,12 +1050,13 @@ function pushVerdict(){
     ${SC().refs ? `<p>Neither of them described anything. Each named a crossing they assumed the other could see,
        and the machine has its own picture of what those names mean. What it built came from their <em>words</em>,
        which point somewhere quite different from their <em>pictures</em> — shown in red under everything they said.</p>` : ""}
-    <p>${SC().refs ? "Each pictured a famous crossing." : "Both of them wanted the same thing — one log across — and neither was ever allowed to say so."}
-       Role 1 ${S.hit.A ? `got it, over the stream, at turn ${S.hit.A}.` : "did not get it over the stream."}
-       Role 2 ${S.hit.B ? `got it, over the cleft, at turn ${S.hit.B}.` : "did not get it over the cleft."}</p>
+    <p>Role 1 came for <b>${SC().want.A}</b> and ${S.hit.A ? `had it at turn ${S.hit.A}` : "never had it"}.
+       Role 2 came for <b>${SC().want.B}</b> and ${S.hit.B ? `had it at turn ${S.hit.B}` : "never had it"}.
+       Neither was ever allowed to name a single part of what they wanted built.</p>
     <p>${unnamedA === (r.prov ? r.prov.total : 0) && r.prov && r.prov.total
       ? "Not one property of what is standing was ever put into words. Every part of it was inferred from a description of a need."
       : `${unnamedA} of ${r.prov ? r.prov.total : 0} of its properties came from nothing either of them said.`}</p>
+    ${r.revised ? `<p>${r.revised === 1 ? "One of them" : "Both of them"} changed their mind: told plainly why the crossing was the way it was, ${r.revised === 1 ? "it" : "they"} came to want what was already standing. That only happens where the machine is free to explain — refused an answer, nobody accommodates anything.</p>` : ``}
     <p class="k">${["given","swapped","separate","alone"].every(k => S.results[S.scenario + "/" + k]) ? "all four cases run — the comparison is above the scene" : "now run another case"}</p>`;
   vhost.appendChild(el);
 }
@@ -1270,7 +1298,10 @@ function hud(){
     const el = document.getElementById("hit" + r);
     const now = c.design && c.design.id === GOAL()[r] && c.world[GOALPLACE()[r]];
     el.className = now ? "yes" : "no";
-    el.textContent = now ? "standing now" : S.hit[r] ? `reached at turn ${S.hit[r]}, gone` : "not reached";
+    const moved = GNOW(r) !== GOAL()[r];
+    el.textContent = now ? "standing now"
+      : moved ? `gave it up on turn ${S.revisedAt[r]} — now wants ${NAME(GNOW(r)).toLowerCase()}`
+      : S.hit[r] ? `reached at turn ${S.hit[r]}, gone` : "not reached";
   });
 }
 
@@ -1460,7 +1491,8 @@ function reset(){
     done:false, hit:{A:0, B:0},
     seen:{A:null, B:null}, unexplained:{A:0, B:0}, still:0,
     words:[], spoken:0, taken:0, asked:{A:0, B:0}, dodged:0,
-    askedFeats:{A:new Set(), B:new Set()}});
+    askedFeats:{A:new Set(), B:new Set()},
+    goalNow:{...SC().goal}, revised:{A:0, B:0}, revisedAt:{A:0, B:0}, hitNow:{A:0, B:0}});
   S.shared = mkCtx(); S.side = {A: mkCtx(), B: mkCtx()};
   S.mem = {A: mkMem(), B: mkMem()};
   if (SC().ground){                        // some scenarios put them on agreed ground
@@ -1499,6 +1531,7 @@ function paintCaseLabels(){
 }
 
 S.mem = {A: mkMem(), B: mkMem()};
+S.goalNow = {...SCENARIOS[S.scenario].goal};
 readPalette();
 new ResizeObserver(() => paint()).observe(cv.parentElement);
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { readPalette(); paint(); });
