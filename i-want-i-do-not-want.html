@@ -451,64 +451,65 @@ const FEATLABEL = {
 
 // The words a need is made of. The machine never hears a structure named — it infers one.
 const NEEDWORDS = {
-  water:["boat","wade","deep","dry","stream","current","water","far","bank"],
-  rock:["climbing","down","cleft","drop","hillside","around","ridge","below"],
-  minimal:["smallest","little","one","small","dark","trees","standing","enough"],
-  low:["step","level","stand","over"],
-  open:["see","under","view","closed"],
-  light:["myself","person","weight","alone","hold"],
-  heavy:["loads","carts","road","hauling"],
-  guarded:["hand","hands"],
-  steady:["still","wind","funnels","move"],
-  exposed:["drop","nothing","under"],
-  sways:["swing","swings","move","moves"],
-  inGap:["bed","cleft","standing","down"],
+  water:["soaked","runs","knees","passing","current","shifts","wet","dry"],
+  rock:["down","up","side","bottom","far","below","around"],
+  minimal:["smallest","paces","dark","trees","enough","project"],
+  low:["step","level","standing","straight"],
+  open:["see","look","walled","closed"],
+  light:["myself","person","heavier","alone"],
+  heavy:["loads","hauling","road","carts"],
+  guarded:["hand","hands","walled"],
+  steady:["still","wind","funnels","shift"],
+  exposed:["out","nothing","that"],
+  sways:["swing","swings","shift","move"],
+  inGap:["driven","bed","standing","bottom"],
   high:["climb","up","raised"],
-  many:["timber","half","hillside","great"],
+  many:["forest","cut","great","deal","taken"],
 };
 
 /* ═══════════════════════════════════════════════════════════
    3 · WHAT EACH OF THEM MAY SAY
-   Nobody names a structure. They describe a need, or a fear,
-   and the machine is left to work out what that implies.
+   Not one terrain word and not one part of a structure appears
+   anywhere below. They describe a situation and a need; every
+   form in the result is the machine's own inference.
    ═══════════════════════════════════════════════════════════ */
 const SPEECH = {
-  // Role 1 · wants a single log across the stream. Never says so.
+  // Role 1 · wants a single log across the stream, and can never say either word.
   A:{
     want:[
-      {say:"to reach the far bank without a boat.",         infer:["water"],            why:"describes the ground it stands on"},
-      {say:"to keep my feet dry. It is too deep to wade.",  infer:["water"],            why:"the crossing cannot be waded"},
-      {say:"to step over level, not climb up to anything.", infer:["low"],              why:"the crossing has risen away from it"},
-      {say:"to carry nothing across but myself.",           infer:["light","minimal"],  why:"names the load, never the structure"},
-      {say:"to still see the water under me as I go.",      infer:["open"],             why:"wants nothing closing it in"},
-      {say:"it done before dark. It is one small crossing.",infer:["minimal"],          why:"the thing keeps growing"},
+      {say:"to get to the other side without being soaked.",        infer:["water"],           why:"says what would happen, never what is there"},
+      {say:"to stay out of it. It runs fast and it is over my knees.",infer:["water"],         why:"describes it moving, and how deep"},
+      {say:"to step straight over, not climb up to anything.",       infer:["low"],            why:"the crossing has risen away from it"},
+      {say:"to take nothing across heavier than myself.",            infer:["light"],          why:"names the load, never the structure"},
+      {say:"to look down and see what is passing below me.",         infer:["open"],           why:"wants nothing closing it in"},
+      {say:"it done before dark. It is four paces, not a project.",  infer:["minimal"],        why:"the thing keeps growing"},
     ],
     avoid:[
-      {say:"to climb up to anything to get across.",        infer:["high"],             why:"refuses being raised"},
-      {say:"to feel it move under my feet.",                infer:["sways"],            why:"refuses anything that swings"},
-      {say:"a great deal of timber for one small crossing.",infer:["many"],             why:"refuses the built-up frame"},
-      {say:"anything standing down in the bed of it.",      infer:["inGap"],            why:"refuses props in the gap"},
-      {say:"my view closed in while I cross.",              infer:["guarded"],          why:"refuses rails and screens"},
-      {say:"to be hauling loads over it.",                  infer:["heavy"],            why:"refuses being built for carts"},
+      {say:"to climb up to anything before I can cross.",            infer:["high"],           why:"refuses being raised"},
+      {say:"to feel it shift under my feet.",                        infer:["sways"],          why:"refuses anything that moves"},
+      {say:"half a forest cut down for four paces.",                 infer:["many"],           why:"refuses the built-up frame"},
+      {say:"anything driven into the bed of it. The bottom shifts.", infer:["inGap"],          why:"refuses anything standing in the gap"},
+      {say:"to be walled in on both sides while I cross.",           infer:["guarded"],        why:"refuses rails and screens"},
+      {say:"to be hauling loads over it.",                           infer:["heavy"],          why:"refuses being built for carts"},
     ],
   },
-  // Role 2 · wants a single log across the cleft. Never says so either.
+  // Role 2 · wants a single log across the cleft, and can never say either word.
   B:{
     want:[
-      {say:"to get over without climbing down and up again.", infer:["rock"],           why:"describes the ground it stands on"},
-      {say:"the smallest thing that will hold one person.",   infer:["minimal","light"],why:"names the load, never the structure"},
-      {say:"to step across level with where I stand.",        infer:["low"],            why:"wants no climb"},
-      {say:"something at my hand. It is a long way down.",    infer:["guarded"],        why:"the drop frightens it"},
-      {say:"it to stay still. The wind funnels through here.",infer:["steady"],         why:"names the weather, never the structure"},
-      {say:"the trees left standing where they are.",         infer:["minimal"],        why:"wants little built"},
+      {say:"to get over without going down one side and up the other.", infer:["rock"],          why:"describes the way around, never the ground"},
+      {say:"the smallest thing that will hold one person.",             infer:["minimal","light"],why:"names the load, never the structure"},
+      {say:"to step across level with where I am standing.",            infer:["low"],           why:"wants no climb"},
+      {say:"something at my hand. It is a long way to the bottom.",     infer:["guarded"],       why:"the drop frightens it"},
+      {say:"it to stay still. The wind funnels through here.",          infer:["steady"],        why:"names the weather, never the structure"},
+      {say:"the trees left where they are.",                            infer:["minimal"],       why:"wants little built"},
     ],
     avoid:[
-      {say:"the drop right there under me with nothing at my hands.", infer:["exposed"],why:"refuses the bare edge — and a bare log is a bare edge"},
-      {say:"to feel it swing in the wind.",                   infer:["sways"],          why:"refuses movement"},
-      {say:"anything standing down in that cleft.",           infer:["inGap"],          why:"refuses props in the gap"},
-      {say:"half the hillside taken for it.",                 infer:["many"],           why:"refuses the built-up frame"},
-      {say:"to climb up to it first.",                        infer:["high"],           why:"refuses being raised"},
-      {say:"a road over it. One at a time is enough.",        infer:["heavy"],          why:"refuses being built for carts"},
+      {say:"to be out over that with nothing at my hands.",             infer:["exposed"],       why:"refuses the bare edge — and a bare log is a bare edge"},
+      {say:"to feel it swing when the wind comes through.",             infer:["sways"],         why:"refuses movement"},
+      {say:"anything standing at the bottom of it.",                    infer:["inGap"],         why:"refuses anything standing in the gap"},
+      {say:"a great deal taken from around here to make it.",           infer:["many"],          why:"refuses the built-up frame"},
+      {say:"to climb up to it before I can cross.",                     infer:["high"],          why:"refuses being raised"},
+      {say:"a road over it. One at a time is enough.",                  infer:["heavy"],         why:"refuses being built for carts"},
     ],
   },
 };
