@@ -419,13 +419,19 @@
   .miss .said{font-size:12.5px}
   .miss .as{font-size:11px; color:var(--signal); font-family:var(--mono,ui-monospace,monospace)}
   /* what it did, in matches. Same frame every turn so two of them can be compared. */
-  .mini{margin:6px 0 0; display:flex; align-items:center; gap:9px}
-  .mini svg{width:154px; height:auto; flex:none; display:block; overflow:visible}
-  .mini .bank{fill:none; stroke:var(--line); stroke-width:3}
+  .mini{margin:7px 0 0; display:flex; align-items:center; gap:10px}
+  .mini svg{
+    width:196px; height:auto; flex:none; display:block;
+    border:1px solid var(--line-soft); border-radius:6px; background:var(--sky);
+  }
+  .mini .land{fill:var(--land)}
+  .mini .water{fill:var(--water)}
+  .mini .rock{fill:var(--rock)}
   .mini line{stroke-linecap:round}
-  .mini .kept{stroke:var(--muted); stroke-width:4; opacity:.5}
-  .mini .gone{stroke:var(--fault); stroke-width:3.5; opacity:.5; stroke-dasharray:5 6}
-  .mini .added{stroke:var(--signal); stroke-width:5.5}
+  .mini .kept{stroke:var(--wood-dark); stroke-width:7; opacity:.75}
+  .mini .gone{stroke:var(--fault); stroke-width:5; opacity:.6; stroke-dasharray:2 6}
+  .mini .added{stroke:var(--wood); stroke-width:8}
+  .mini .head{fill:var(--head)}
   .mini figcaption{
     font-family:var(--mono); font-size:9.5px; letter-spacing:.09em; text-transform:uppercase;
     color:var(--muted);
@@ -1895,36 +1901,55 @@ function segsFor(id, world){
 }
 const segKey = m => `${Math.round(m.x1)},${Math.round(m.y1)},${Math.round(m.x2)},${Math.round(m.y2)}`;
 
-// One frame for every one of these, so a diagram five turns apart is at the same
-// scale as this one and the two can be compared by eye. The hanging span is the
-// only thing in the kit that reaches above the banks, and giving every diagram
-// headroom for a structure that almost never gets built would waste half the
-// height of all the others — so it gets a taller frame of its own, and the
-// low structures, which are what actually get compared, all share one.
-const MINI_LOW  = {x:352, y:314, w:496, h:218};
-const MINI_HIGH = {x:352, y:150, w:496, h:382};
+// The frame is fitted to the matchsticks and then snapped to a 40px grid, so
+// most diagrams land on the same frame and can be read against each other, while
+// the two things that break the mould — a hanging span reaching above the banks,
+// a trestle standing on the floor of a cleft — are never cropped to keep them
+// company. The ground is allowed to run off the bottom; the structure is not.
+const MINI_X = 352, MINI_W = 496, SNAP = 40;
+const snapDown = v => Math.floor(v / SNAP) * SNAP, snapUp = v => Math.ceil(v / SNAP) * SNAP;
 function miniDiff(beforeId, afterId, world){
-  const tall = beforeId === "hang" || afterId === "hang";
-  const MINI = tall ? MINI_HIGH : MINI_LOW;
   const A = segsFor(beforeId, world), B = segsFor(afterId, world);
   const inA = new Set(A.map(segKey)), inB = new Set(B.map(segKey));
   const gone  = A.filter(m => !inB.has(segKey(m)));
   const kept  = B.filter(m =>  inA.has(segKey(m)));
   const added = B.filter(m => !inA.has(segKey(m)));
+
+  const ys = A.concat(B).flatMap(m => [m.y1, m.y2]);
+  const top = snapDown(Math.min(GROUND_Y - 40, ...ys) - 16);
+  const MINI = {x:MINI_X, w:MINI_W, y:top,
+                h: snapUp(Math.max(GROUND_Y + 64, ...ys) + 16) - top};
   // A cleft goes down a long way. Rather than stretch every diagram to fit the
   // deepest ground any of them might stand over, the banks run off the bottom
   // edge — which is what a drop looks like anyway.
-  const bed = Math.min(world.rock ? BED_CLEFT : world.water ? BED_STREAM : GROUND_Y + 96,
-                       MINI.y + MINI.h - 4);
-  const seg = (m, cls) => `<line x1="${m.x1.toFixed(1)}" y1="${m.y1.toFixed(1)}" x2="${m.x2.toFixed(1)}" y2="${m.y2.toFixed(1)}" class="${cls}"/>`;
+  // A cleft goes down a long way. Rather than stretch every diagram to fit the
+  // deepest ground any of them might stand over, the banks run off the bottom
+  // edge — which is what a drop looks like anyway.
+  const bot = MINI.y + MINI.h;
+  const bed = Math.min(world.rock ? BED_CLEFT : world.water ? BED_STREAM : GROUND_Y + 96, bot - 4);
+  const fill = world.rock ? "rock" : world.water ? "water" : "none";
+
+  // Drawn as sticks, not as lines. Each match is pulled in at both ends so the
+  // one beside it is a separate object, and the laid ones get a head — the
+  // point of the diagram is that you can count them.
+  const stick = (m, cls) => {
+    const dx = m.x2 - m.x1, dy = m.y2 - m.y1, L = Math.hypot(dx, dy) || 1;
+    const t = Math.min(.17, 5 / L);                    // the gap between one match and the next
+    const x1 = m.x1 + dx*t, y1 = m.y1 + dy*t, x2 = m.x2 - dx*t, y2 = m.y2 - dy*t;
+    return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" class="${cls}"/>`
+         + (cls === "added" ? `<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="4.5" class="head"/>` : "");
+  };
   const tally = !added.length && !gone.length ? "nothing moved"
     : [added.length ? `${added.length} laid` : "", gone.length ? `${gone.length} taken up` : ""].filter(Boolean).join(" · ");
+
   return `<figure class="mini">
     <svg viewBox="${MINI.x} ${MINI.y} ${MINI.w} ${MINI.h}" aria-hidden="true">
-      <path class="bank" d="M${MINI.x} ${GROUND_Y} H${GAP_L} L${GAP_L} ${bed} H${GAP_R} L${GAP_R} ${GROUND_Y} H${MINI.x + MINI.w}"/>
-      ${gone.map(m => seg(m, "gone")).join("")}
-      ${kept.map(m => seg(m, "kept")).join("")}
-      ${added.map(m => seg(m, "added")).join("")}
+      <rect class="land" x="${MINI.x}" y="${GROUND_Y}" width="${GAP_L - MINI.x}" height="${bot - GROUND_Y}"/>
+      <rect class="land" x="${GAP_R}" y="${GROUND_Y}" width="${MINI.x + MINI.w - GAP_R}" height="${bot - GROUND_Y}"/>
+      ${fill === "none" ? "" : `<rect class="${fill}" x="${GAP_L}" y="${bed}" width="${SPAN}" height="${bot - bed}"/>`}
+      ${gone.map(m => stick(m, "gone")).join("")}
+      ${kept.map(m => stick(m, "kept")).join("")}
+      ${added.map(m => stick(m, "added")).join("")}
     </svg>
     <figcaption>${tally}</figcaption>
   </figure>`;
