@@ -1779,6 +1779,7 @@ const showSpan = sp => sp.min === sp.max ? `${sp.med}` : `${sp.min}–${sp.max}`
 function dist(key){
   const list = S.runs[key] || [];
   if (!list.length) return null;
+  const modal = modeOf(list, r => r.built)[0][0];
   return { n: list.length,
     built:  modeOf(list, r => r.built),
     builtB: modeOf(list, r => r.builtB),
@@ -1786,8 +1787,11 @@ function dist(key){
     who:    modeOf(list, r => r.hitA && r.hitB ? "both reached it" : r.hitA ? "role 1 only" : r.hitB ? "role 2 only" : "neither"),
     turns:  medOf(list, r => r.turns),
     matches:medOf(list, r => r.matches),
-    unspoken: medOf(list, r => r.prov.total - r.prov.named),
-    total:  list[0].prov.total,
+    // Both halves of "n of m unspoken" must come from the same structure. Once
+    // a case stopped landing on one structure every time, a median taken across
+    // all runs was being printed over a total taken from whichever run came first.
+    unspoken: medOf(list.filter(r => r.built === modal), r => r.prov.total - r.prov.named),
+    total:  medOf(list.filter(r => r.built === modal), r => r.prov.total),
     heard:  medOf(list, r => r.heardN),
     miss:   medOf(list, r => r.missN),
     dropped:medOf(list, r => r.droppedN),
