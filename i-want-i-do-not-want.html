@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I Want, I Do Not Want</title>
-<meta name="description" content="Two people who do not share a lexicon rebuild each other's meaning out of their own associations. Every case arrives already run.">
+<meta name="description" content="Every case played twenty-four times before the page appears. The machine builds the same thing every run; what the two of them understood of each other does not.">
 <link rel="icon" href="data:,">
 </head>
 <body>
@@ -376,6 +376,10 @@
     .stage{height:74dvh}
   }
   @media (prefers-reduced-motion:reduce){ *{transition:none !important} }
+.freq{font-style:normal; font-size:11px; letter-spacing:.02em; color:var(--dim);
+      border:1px solid var(--line); border-radius:999px; padding:1px 6px; margin-left:4px; white-space:nowrap}
+.freq.all{opacity:.6}
+#cmp td.q{opacity:.55}
 .bar .pre{display:block; margin-top:6px; color:var(--dim); font-size:12px; max-width:62ch}
 </style>
 
@@ -383,7 +387,7 @@
   <div>
     <h1>I Want, I Do Not Want</h1>
     <p>Two people at odds over one crossing, one kind of sentence each, and a machine that builds from what it infers.
-       <span class="pre">Every case below has already been played through &mdash; switch between them to read the results. Watching one happen is optional.</span></p>
+       <span class="pre">Every case was played twenty-four times before this page appeared, and the table reports how often each outcome came up. Switch between cases to read them; watching one happen is optional.</span></p>
   </div>
   <div class="tools">
     <button class="ghost primary" id="playBtn">Watch it happen</button>
@@ -1503,8 +1507,53 @@ function record(){
     cameFor: {...GOAL()}, leftWanting: {...S.goalNow},
     hitNowA: S.hitNow.A, hitNowB: S.hitNow.B,
     split: split(),
+    heardN: S.readings.filter(r => r.heard.length).length,
+    missN:  S.readings.filter(r => r.heard.length && !r.agreed).length,
   };
+  if (S.silent){ (S.runs[S.scenario + '/' + S.case] ||= []).push(S.results[S.scenario + '/' + S.case]); return; }
   renderCmp(); renderBadges();
+}
+
+// One run is an anecdote. Every case is played RUNS times before the page is
+// shown, and what the table reports is how often each outcome came up.
+const RUNS = 24;
+const modeOf = (list, key) => {
+  const m = new Map();
+  for (const r of list){ const v = key(r); if (v == null) continue; m.set(v, (m.get(v) || 0) + 1); }
+  return [...m].sort((a, b) => b[1] - a[1] || String(a[0]).localeCompare(String(b[0])));
+};
+const medOf = (list, key) => {
+  const v = list.map(key).filter(x => typeof x === "number").sort((a, b) => a - b);
+  return v.length ? v[v.length >> 1] : 0;
+};
+// A cell says nothing when every run agreed — the caption reports that once,
+// for all of them. Only a result that moved is worth marking.
+const often = (pairs, n) => (!pairs.length || pairs[0][1] === n) ? ""
+  : ` <i class="freq">${pairs[0][1]} of ${n}</i>`;
+const spanOf = (list, key) => {
+  const v = list.map(key).filter(x => typeof x === "number").sort((a, b) => a - b);
+  return v.length ? { min: v[0], max: v[v.length - 1], med: v[v.length >> 1] } : { min:0, max:0, med:0 };
+};
+const showSpan = sp => sp.min === sp.max ? `${sp.med}` : `${sp.min}–${sp.max}`;
+function dist(key){
+  const list = S.runs[key] || [];
+  if (!list.length) return null;
+  return { n: list.length,
+    built:  modeOf(list, r => r.built),
+    builtB: modeOf(list, r => r.builtB),
+    ground: modeOf(list, r => r.groundOf),
+    who:    modeOf(list, r => r.hitA && r.hitB ? "both reached it" : r.hitA ? "role 1 only" : r.hitB ? "role 2 only" : "neither"),
+    turns:  medOf(list, r => r.turns),
+    matches:medOf(list, r => r.matches),
+    unspoken: medOf(list, r => r.prov.total - r.prov.named),
+    total:  list[0].prov.total,
+    heard:  medOf(list, r => r.heardN),
+    miss:   medOf(list, r => r.missN),
+    dropped:medOf(list, r => r.droppedN),
+    asked:  medOf(list, r => r.asked), dodged: medOf(list, r => r.dodged),
+    missSpan: spanOf(list, r => r.missN), heardSpan: spanOf(list, r => r.heardN),
+    firm: modeOf(list, r => r.built)[0][1] === list.length,
+  };
 }
 
 function pushVerdict(){
@@ -1532,7 +1581,7 @@ function pushVerdict(){
        <b>${(S.dropped||[]).length}</b> thing${(S.dropped||[]).length===1?"":"s"} they disagreed about — and the machine never heard any of it.
        What it built came from what was left.</p>` : ""}
     ${r.revised ? `<p>${r.revised === 1 ? "One of them" : "Both of them"} changed their mind: told plainly why the crossing was the way it was, ${r.revised === 1 ? "it" : "they"} came to want what was already standing. That only happens where the machine is free to explain — refused an answer, nobody accommodates anything.</p>` : ``}
-    <p class="k">${["given","swapped","separate","together","alone"].every(k => S.results[S.scenario + "/" + k]) ? "all four cases run — the comparison is above the scene" : "now run another case"}</p>`;
+    <p class="k">${["given","swapped","separate","together","alone"].every(k => S.results[S.scenario + "/" + k]) ? "all five cases run — the comparison is above the scene" : "now run another case"}</p>`;
   vhost.appendChild(el);
 }
 
@@ -2011,52 +2060,69 @@ function renderPicture(){
 
 function renderBadges(){
   document.querySelectorAll(".case .res").forEach(el => {
-    const r = S.results[S.scenario + '/' + el.dataset.res];
-    el.classList.toggle("done", !!r);
-    el.textContent = !r ? "not run"
-      : r.solo ? `${NAME(r.built).replace(/^An? /,"")} + ${NAME(r.builtB).replace(/^An? /,"").toLowerCase()}`
-      : `${NAME(r.built).replace(/^An? /,"")} · over ${r.groundOf}`;
+    const key = S.scenario + '/' + el.dataset.res;
+    const d = dist(key), r = S.results[key];
+    el.classList.toggle("done", !!(d || r));
+    if (!d && !r){ el.textContent = "not run"; return; }
+    const strip = id => NAME(id).replace(/^An? /, "");
+    if (!d){ el.textContent = r.solo ? `${strip(r.built)} + ${strip(r.builtB).toLowerCase()}`
+                                     : `${strip(r.built)} · over ${r.groundOf}`; return; }
+    const head = CASES[el.dataset.res].solo
+      ? `${strip(d.built[0][0])} + ${strip(d.builtB[0][0]).toLowerCase()}`
+      : `${strip(d.built[0][0])} · over ${d.ground[0][0]}`;
+    el.innerHTML = head + (d.built[0][1] === d.n ? "" : ` <i class="freq">${d.built[0][1]}/${d.n}</i>`);
   });
 }
 function renderCmp(){
   const rows = Object.entries(CASES).map(([key, c]) => {
-    const r = S.results[S.scenario + '/' + key];
-    if (!r) return `<tr><td class="k">${c.label}</td><td colspan="4" class="pending">not run yet</td></tr>`;
-    const who = r.hitA && r.hitB ? "both reached it" : r.hitA ? "role 1 only" : r.hitB ? "role 2 only" : "neither";
-    const wcls = r.hitA && r.hitB ? "" : r.hitA ? "a" : r.hitB ? "b" : "";
-    if (r.confer) return `<tr><td class="k">${c.label}</td>
-      <td class="win">${NAME(r.built)} · ${r.matches} matches</td>
-      <td class="k">over ${r.groundOf}</td>
-      <td class="win ${wcls}">${who}</td>
-      <td class="k">${r.droppedN} dropped to agree</td></tr>`;
-    if (r.solo) return `<tr><td class="k">${c.label}</td>
-      <td class="win">${NAME(r.built)} · ${NAME(r.builtB).toLowerCase()}</td>
-      <td class="k">${r.groundOf} · ${r.groundOfB}</td>
-      <td class="win ${wcls}">${who}</td>
-      <td class="k">${r.prov.total - r.prov.named}/${r.prov.total} · ${r.provB.total - r.provB.named}/${r.provB.total} unspoken</td></tr>`;
+    const d = dist(S.scenario + '/' + key), r = S.results[S.scenario + '/' + key];
+    if (!d && !r) return `<tr><td class="k">${c.label}</td><td colspan="5" class="pending">not run yet</td></tr>`;
+    if (!d){    // a case watched before the sweep finished
+      const who = r.hitA && r.hitB ? "both reached it" : r.hitA ? "role 1 only" : r.hitB ? "role 2 only" : "neither";
+      return `<tr><td class="k">${c.label}</td><td class="win">${NAME(r.built)}</td>
+        <td class="k">over ${r.groundOf}</td><td class="win">${who}</td>
+        <td class="k">one run</td><td class="k">one run</td></tr>`;
+    }
+    const wcls = d.who[0][0] === "both reached it" ? "" : d.who[0][0] === "role 1 only" ? "a"
+               : d.who[0][0] === "role 2 only" ? "b" : "";
+    const goal = `<td class="win ${wcls}">${d.who[0][0]}${often(d.who, d.n)}</td>`;
+    if (c.solo) return `<tr><td class="k">${c.label}</td>
+      <td class="win">${NAME(d.built[0][0])} · ${NAME(d.builtB[0][0]).toLowerCase()}${often(d.built, d.n)}</td>
+      <td class="k">each over their own</td>${goal}
+      <td class="k">${d.unspoken}/${d.total} unspoken</td>
+      <td class="k q">there is no one to hear</td></tr>`;
+    // Column five is the machine's channel; column six is the one between them.
+    const between = c.confer ? `${d.dropped} dropped in order to agree`
+                  : c.split  ? `<span class="q">neither hears a word</span>`
+                  : `${showSpan(d.missSpan)} of ${showSpan(d.heardSpan)} sentences misread`;
     return `<tr><td class="k">${c.label}</td>
-      <td class="win">${NAME(r.built)} · ${r.matches} matches</td>
-      <td class="k">over ${r.groundOf}</td>
-      <td class="win ${wcls}">${who}</td>
-      <td class="k">${r.prov.total - r.prov.named}/${r.prov.total} unspoken</td></tr>`;
+      <td class="win">${NAME(d.built[0][0])} · ${d.matches} matches${often(d.built, d.n)}</td>
+      <td class="k">over ${d.ground[0][0]}${often(d.ground, d.n)}</td>${goal}
+      <td class="k">${d.unspoken}/${d.total} unspoken</td>
+      <td class="k">${between}</td></tr>`;
   }).join("");
 
-  const R = k => S.results[S.scenario + "/" + k];
-  const g = R("given"), w = R("swapped"), a = R("separate"), al = R("alone");
-  let caption = `Run the four cases. ${SC().blurb}`;
+  const D = k => dist(S.scenario + "/" + k);
+  const g = D("given"), w = D("swapped"), a = D("separate"), al = D("alone");
+  let caption = `Run the cases. ${SC().blurb}`;
   if (g && w && a && al){
+    const cases = Object.keys(CASES).map(D).filter(Boolean);
+    const firm = cases.filter(d => d.built[0][1] === d.n).length;
     const grounds = SC().ground
       ? `They are on agreed ground throughout, so nothing here turns on place.`
-      : `What separates them is not what got built but <b>whose ground it got built over</b>: ${g.groundOf} in case 1, ${w.groundOf} in case 2, ${a.groundOf} in case 3, one each in case 4. Ground is established only by someone asking — refusing a thing you fear never puts a place into the world.`;
-    const unspokenAll = [g,w,a].every(r => r.prov.named < r.prov.total);
+      : `What separates them is not what got built but <b>whose ground it got built over</b>: ${g.ground[0][0]} in case 1, ${w.ground[0][0]} in case 2, ${a.ground[0][0]} in case 3, one each in case 5. Ground is established only by someone asking — refusing a thing you fear never puts a place into the world.`;
     caption = `<b>${SC().blurb}</b> ${grounds}`
-      + `<br><br><b>Nothing was ever named.</b> Neither of them may say what they want built, so every property of every result is the machine&rsquo;s reading of a need${
-          unspokenAll ? ", and in each shared case some of it traces back to nothing either of them said at all" : ""}.`
-      + ((a.asked) ? `<br><br><b>Who asks, and what they are told.</b> In the same room they turn to each other — answering, rephrasing, pressing a point in different words. Nobody interrogates the machine, because there is somebody better to ask. It is only when they are separated that the machine becomes the one thing available to ask, and then the answer depends on whether there is anyone to protect. <b>Apart</b>, it must not reveal that another person exists: <b>${a.dodged} of ${a.asked} questions answered without disclosure</b>. <b>Alone</b>, there is nobody to shield, and the answer is the hardest of all — <i>you refused it yourself, and the crossing you have in mind is exactly that</i>.` : ``);
+      + `<br><br><b>Nothing was ever named.</b> Neither of them may say what they want built, so every property of every result is the machine&rsquo;s reading of a need, and in each shared case some of it traces back to nothing either of them said at all.`
+      + (a.asked ? `<br><br><b>Who asks, and what they are told.</b> In the same room they turn to each other — answering, rephrasing, pressing a point in different words. Nobody interrogates the machine, because there is somebody better to ask. It is only when they are separated that the machine becomes the one thing available to ask, and then the answer depends on whether there is anyone to protect. <b>Apart</b>, it must not reveal that another person exists: <b>${a.dodged} of ${a.asked} questions answered without disclosure</b>. <b>Alone</b>, there is nobody to shield, and the answer is the hardest of all — <i>you refused it yourself, and the crossing you have in mind is exactly that</i>.` : ``)
+      + `<br><br><b>Every figure here is ${g.n} runs, not one.</b> They pick fresh wording each time, so a result that held once might be an accident of phrasing. Each case was played ${g.n} times before this page appeared; a cell is marked <i class="freq">n of ${g.n}</i> only where the outcome moved.`
+      + (firm === cases.length
+          ? ` <b>None of them moved.</b> Across ${cases.length * g.n} runs of this scenario the machine built the same thing every time — and yet the last column keeps changing, because <b>what they understood of each other varied while what got built did not</b>. Phrasing is free to alter who feels understood without altering one matchstick. That is not a bug in the model; it is the claim.`
+          : ` <i class="freq">${cases.length - firm} of ${cases.length}</i> cases in this scenario came out differently between runs.`);
   }
   document.getElementById("cmp").innerHTML =
     `<caption>${caption}</caption>
-     <tr><th>case</th><th>what stands</th><th>ground</th><th>whose goal</th><th>properties nobody spoke</th></tr>${rows}`;
+     <tr><th>case</th><th>what stands</th><th>ground</th><th>whose goal</th>
+         <th>properties nobody spoke</th><th>what passed between them</th></tr>${rows}`;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2187,14 +2253,16 @@ new MutationObserver(() => { readPalette(); paint(); })
 // happen again — the phrasings are sampled fresh, so it will not be identical.
 function precompute(){
   const wasScenario = S.scenario, wasCase = S.case;
-  S.silent = true;
+  S.silent = true; S.runs = {};
   for (const sc of Object.keys(SCENARIOS)){
     S.scenario = sc;
     for (const c of Object.keys(CASES)){
       S.case = c;
-      reset();
-      let n = 0;
-      while (!S.done && n < 90){ takeTurn(); n++; }
+      for (let i = 0; i < RUNS; i++){
+        reset();
+        let n = 0;
+        while (!S.done && n < 90){ takeTurn(); n++; }
+      }
     }
   }
   S.silent = false;
