@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I Want, I Do Not Want</title>
-<meta name="description" content="A run you can read at a glance: what got built turn by turn, and the two ways every sentence in it could go wrong.">
+<meta name="description" content="A machine that answers with what it understood and what it did with the matches, and two people who cannot say what they want built.">
 <link rel="icon" href="data:,">
 </head>
 <body>
@@ -440,10 +440,19 @@
     padding:11px 13px; display:flex; flex-direction:column; gap:6px; box-shadow:var(--shadow);
   }
   .ai .who{font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted)}
-  .ai .made{font-family:Archivo,sans-serif; font-weight:600; font-size:15px; display:flex; gap:8px; align-items:baseline; flex-wrap:wrap}
-  .ai .made small{font-family:"IBM Plex Mono",monospace; font-weight:400; font-size:10.5px; color:var(--muted)}
+  /* the reading is the reply, so it carries the weight the name used to */
+  .ai .mread{font-size:13.5px; color:var(--ink); margin:0 0 8px; line-height:1.5}
+  .ai .mread.off{color:var(--ink)}
+  .ai .mread.off b{color:var(--signal)}
+  .ai .did{display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap}
+  .ai .didtext{flex:1; min-width:150px; display:flex; flex-direction:column; gap:5px}
+  .ai .act{margin:0; font-size:13px; color:var(--ink); line-height:1.5}
+  .ai .act.drift{color:var(--fault)}
+  .ai .std{
+    font-family:var(--mono); font-size:9.5px; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--muted);
+  }
   .ai p{margin:0; font-size:13px; color:var(--muted)}
-  .ai p.drift{color:var(--fault)}
   .turn.q .bub{background:transparent; border:1px dashed var(--line); font-style:italic}
   .turn.q.a .bub{border-color:color-mix(in srgb,var(--roleA) 55%,transparent); color:var(--roleA-ink)}
   .turn.q.b .bub{border-color:color-mix(in srgb,var(--roleB) 55%,transparent); color:var(--roleB-ink)}
@@ -460,7 +469,7 @@
   .miss .said{font-size:12.5px}
   .miss .as{font-size:11px; color:var(--signal); font-family:var(--mono,ui-monospace,monospace)}
   /* what it did, in matches. Same frame every turn so two of them can be compared. */
-  .mini{margin:7px 0 0; display:flex; align-items:center; gap:10px}
+  .mini{margin:0; display:flex; flex-direction:column; align-items:flex-start; gap:4px}
   .mini svg{
     width:196px; height:auto; flex:none; display:block;
     border:1px solid var(--line-soft); border-radius:6px; background:var(--sky);
@@ -475,8 +484,9 @@
   .mini .head{fill:var(--head)}
   .mini figcaption{
     font-family:var(--mono); font-size:9.5px; letter-spacing:.09em; text-transform:uppercase;
-    color:var(--muted);
+    color:var(--signal);
   }
+  .mini figcaption.still{color:var(--muted)}
   .ai > p{font-size:12.5px; color:var(--muted); line-height:1.5}
   .ai .mvoice{font-size:13px; margin:5px 0 0; line-height:1.5; color:var(--ink)}
   .ai .mread{font-size:11.5px; color:var(--muted); margin:0 0 5px}
@@ -2011,7 +2021,7 @@ function miniDiff(beforeId, afterId, world){
       ${kept.map(m => stick(m, "kept")).join("")}
       ${added.map(m => stick(m, "added")).join("")}
     </svg>
-    <figcaption>${tally}</figcaption>
+    <figcaption class="${added.length || gone.length ? "" : "still"}">${tally}</figcaption>
   </figure>`;
 }
 
@@ -2077,13 +2087,23 @@ function pushBuild(before, after, best, role, drifted, seenBefore, c, taken, mea
     : `<p class="mread${missed.length ? " off" : ""}">It takes that to be about
         <b>${taken.map(f => FEATLABEL[f] || f).join(" and ")}</b>${
         missed.length ? `, and does not catch ${missed.map(f => FEATLABEL[f] || f).join(" or ")}` : ""}.</p>`;
+  // What it understood, then what it did about it. The name of the thing is a
+  // caption on the diagram, not the headline: naming a structure is precisely
+  // what neither of the other two is allowed to do, and having the machine
+  // announce one in the largest type in the block made the label look like the
+  // reply. The reply is the reading and the act.
+  const act = solo !== null ? solo
+    : changed ? action(before, after, c.matches, (why && why.wasMatches) || 0)
+              : stoodStill(after, taken, why);
   el.innerHTML = `<span class="who">the machine</span>
     ${read}
-    <div class="made">${after ? NAME(after) : "nothing it can make"}<small>${c.matches} matches</small></div>
-    ${after ? miniDiff(before, after, c.world) : ""}
-    <p class="${solo && drifted ? "drift" : ""}">${solo !== null ? solo
-      : changed ? action(before, after, c.matches, (why && why.wasMatches) || 0)
-                : stoodStill(after, taken, why)}</p>
+    <div class="did">
+      ${after ? miniDiff(before, after, c.world) : ""}
+      <div class="didtext">
+        <p class="act ${solo && drifted ? "drift" : ""}">${act}</p>
+        <span class="std">${after ? NAME(after).toLowerCase() : "nothing it can make"} &nbsp;·&nbsp; ${c.matches} matches</span>
+      </div>
+    </div>
     ${inferred.length ? `<div class="ruled">${inferred.map(r => `<span style="text-decoration:none">${r}</span>`).join("")}</div>` : ""}`;
   drop(el, target(role));
 }
