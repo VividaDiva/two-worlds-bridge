@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I Want, I Do Not Want</title>
-<meta name="description" content="Three scenarios, five configurations, and two people who never phrase anything the same way twice.">
+<meta name="description" content="Two people who do not share a lexicon rebuild each other's meaning out of their own associations.">
 <link rel="icon" href="data:,">
 </head>
 <body>
@@ -333,6 +333,14 @@
   .turn.revise .who{color:var(--signal)}
   .turn.spent .bub{background:transparent; border:1px dashed var(--line); color:var(--muted)}
   .turn.spent .who{color:var(--muted)}
+  .reading{
+    font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.02em;
+    border-left:2px solid var(--line); padding-left:7px;
+  }
+  .reading.ok{color:var(--muted)}
+  .reading.off{color:var(--fault); border-left-color:var(--fault)}
+  .turn.b .reading{border-left:none; border-right:2px solid var(--line); padding:0 7px 0 0; text-align:right}
+  .turn.b .reading.off{border-right-color:var(--fault)}
   .turn.confer .bub{opacity:.92; border:1px dashed color-mix(in srgb,var(--ink) 30%,transparent)}
   .ai.pact{border-color:var(--signal)}
   .ai.pact .who{color:var(--signal)}
@@ -460,12 +468,14 @@
       <button class="vtab" data-v="said" role="tab" aria-selected="false">What was said</button>
       <button class="vtab" data-v="dropped" role="tab" aria-selected="false">What was dropped</button>
       <button class="vtab" data-v="flow" role="tab" aria-selected="false">Where it went</button>
+      <button class="vtab" data-v="picture" role="tab" aria-selected="false">What they think of each other</button>
       <p class="vnote" id="vnote"></p>
     </div>
     <div class="canvas-wrap">
       <canvas id="scene"></canvas>
       <div class="analysis" id="analysis" hidden></div>
       <div class="analysis flowview" id="flow" hidden></div>
+      <div class="analysis" id="picture" hidden></div>
       <div class="badge">
         <span class="built" id="bBuilt">nothing built yet</span>
         <span class="n" id="bMatches">0 matches</span>
@@ -553,6 +563,48 @@ const NEEDWORDS = {
   high:["climb","climbing","up","onto","grand","stair"],
   many:["half","cut","great","deal","taken","twenty","years","grand","postcards","photographs","two"],
 };
+
+/* ═══════════════════════════════════════════════════════════
+   HOW EACH OF THEM READS A WORD
+   The machine has the lexicon above. These two do not — each hears
+   through its own, and on the words that matter they disagree. One
+   of them stands over water and one over a drop, so "out" is
+   openness to the first and exposure to the second. Same word,
+   opposite meaning, and neither of them can tell.
+   ═══════════════════════════════════════════════════════════ */
+// Most words they read the same way. Communication mostly works.
+const HEARS_SHARED = {
+  cart:"heavy", carts:"heavy", wheels:"heavy", loaded:"heavy", load:"heavy", road:"heavy",
+  climb:"high", climbing:"high", onto:"high",
+  wind:"steady", funnels:"steady",
+  swaying:"sways", moving:"sways", shifting:"sways", gives:"sways",
+  driven:"inGap", standing:"inGap",
+  myself:"light", person:"light", alone:"light",
+  paces:"minimal", project:"minimal", trees:"minimal", cheap:"minimal",
+  hemmed:"guarded", edge:"guarded",
+  half:"many", cut:"many", great:"many", twenty:"many",
+  soaked:"water", knees:"water", running:"water",
+};
+// And these they do not. One of them stands over water, the other over a drop,
+// so the same word arrives as two different things and neither can tell.
+const HEARS = {
+  A:{ ...HEARS_SHARED, out:"open",    level:"low",    hold:"light",   small:"minimal",
+      plain:"minimal", thin:"minimal", see:"open",    look:"open",    dry:"water" },
+  B:{ ...HEARS_SHARED, out:"exposed", level:"steady", hold:"guarded", small:"exposed",
+      plain:"exposed", thin:"exposed", see:"open",    look:"open",
+      down:"rock",     bottom:"rock",  drop:"rock",   side:"rock" },
+};
+
+// What one of them takes from a sentence, using nothing but its own associations.
+function readAs(text, who){
+  const lex = HEARS[who] || {};
+  const out = new Set();
+  text.toLowerCase().split(/\s+/).forEach(tok => {
+    const w = tok.replace(/[^a-z0-9'-]/g, "");
+    if (lex[w]) out.add(lex[w]);
+  });
+  return [...out];
+}
 
 /* ═══════════════════════════════════════════════════════════
    3 · THREE SCENARIOS
@@ -976,6 +1028,7 @@ const S = {
   scenario:"places", case:"given", results:{}, tick:0,
   mem:{A:null, B:null}, asked:{A:0, B:0}, dodged:0,
   recent:{A:[], B:[]}, spent:{A:false, B:false}, lastSaid:{A:[], B:[]},
+  picture:{A:null, B:null}, readings:[],
   phase:"machine", pact:null, dropped:[],
   goalNow:{A:null, B:null}, revised:{A:0, B:0}, revisedAt:{A:0, B:0}, hitNow:{A:0, B:0},
   turn:0, speaker:"A", said:{A:new Set(), B:new Set()},
@@ -1056,7 +1109,9 @@ function choose(role){
 
   const recent = (S.recent && S.recent[role]) || [];
   // Apart, the other one might as well not exist. In one room you just heard them.
-  const heard = split() ? [] : ((S.lastSaid && S.lastSaid[role === "A" ? "B" : "A"]) || []);
+  // it presses against what it believes the other one wants, which is not
+  // necessarily what the other one said
+  const heard = split() ? [] : ((S.lastHeard && S.lastHeard[role]) || []);
   let best = pool[0], bestGain = -1e9, pressing = false, answering = false;
   pool.forEach(l => {
     let gain = recent.includes(lines.indexOf(l)) ? -6 : 0;   // you just said that
@@ -1244,10 +1299,25 @@ function takeTurn(){
   }
   const {line, index, repeat, pressing, answering} = choose(role);
   const spoken = (answering && line.alt) ? line.alt : voice(line);
+  const act = CASES[S.case][role], other = role === "A" ? "B" : "A";
+  // meant — what the speaker means by it. heard — what the other one takes
+  // from it, if there is anyone there to take anything.
+  const heard = split() ? [] : readAs(spoken, other);
+  if (!split()){
+    const pic = S.picture[other];
+    heard.forEach(f => {
+      const m = act === "want" ? pic.wants : pic.avoids;
+      m.set(f, (m.get(f) || 0) + 1);
+    });
+  }
+  S.readings.push({turn:S.turn + 1, role, spoken, meant:line.infer.slice(), heard,
+                   agreed: line.infer.every(f => heard.includes(f)) && heard.length > 0});
   eject(role, LEAD[CASES[S.case][role]] + spoken, line.infer);
   S.said[role].add(index);
   S.recent[role] = [index, ...(S.recent[role] || [])].slice(0, 2);
-  S.lastSaid[role] = line.infer.slice();      // what the other one will have heard
+  S.lastSaid[role] = line.infer.slice();
+  S.lastHeard = S.lastHeard || {A:[], B:[]};
+  S.lastHeard[other] = heard;                 // what the other one actually took from it
   hear(line, role);
 
   const c = CX(role);
@@ -1262,7 +1332,7 @@ function takeTurn(){
 
   eject("AI", `${NAME(after)} ${c.matches} matches ` +
         (before !== after ? "taken apart and rebuilt" : "nothing changed what it heard was already true of this"), []);
-  pushSaid(role, line, repeat, pressing, answering, spoken);
+  pushSaid(role, line, repeat, pressing, answering, spoken, false, {meant:line.infer, heard});
   pushBuild(before, after, best, role, split() ? drifted : null, seenBefore, c);
   S.seen[role] = after;
 
@@ -1281,6 +1351,7 @@ function takeTurn(){
   paint(); hud();
   if (S.view === "dropped") renderAnalysis();
   if (S.view === "flow") renderFlow();
+  if (S.view === "picture") renderPicture();
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1292,13 +1363,17 @@ const logs = {A: document.getElementById("logA"), B: document.getElementById("lo
 function target(role){ return split() ? logs[role] : logEl; }
 function drop(el, host){ host.appendChild(el); host.scrollTop = host.scrollHeight; }
 
-function pushSaid(role, line, repeat, pressing, answering, spoken, confer){
+function pushSaid(role, line, repeat, pressing, answering, spoken, confer, reading){
   const host = target(role);
   const el = document.createElement("div");
   el.className = "turn " + role.toLowerCase() + (confer ? " confer" : "");
   el.innerHTML = `<span class="who">${role === "A" ? "Role 1" : "Role 2"}${confer ? " · to the other, not the machine" : ""}${answering ? ` · answering Role ${role === "A" ? "2" : "1"}` : repeat ? (pressing ? " · pressing it again" : " · saying it again") : ""}</span>
     <div class="bub"><span class="lead">${LEAD[CASES[S.case][role]]}</span><span class="body"></span></div>
     ${line.meant ? `<span class="meant">pictured: ${line.meant}</span>` : ""}
+    ${reading && reading.heard && reading.heard.length ? `<span class="reading${
+        reading.meant.every(f => reading.heard.includes(f)) ? " ok" : " off"}">meant ${
+        reading.meant.map(f => FEATLABEL[f] || f).join(", ")} &nbsp;·&nbsp; heard as ${
+        reading.heard.map(f => FEATLABEL[f] || f).join(", ")}</span>` : ""}
     <span class="why">${line.why}</span>`;
   el.querySelector(".body").textContent = spoken || voice(line);
   if (answering) el.classList.add("answering");
@@ -1878,6 +1953,57 @@ function renderFlow(){
     <p class="fcompare">carried, in the other cases: ${others}</p>`;
 }
 
+/* ── what each of them believes the other wants, against what it does ── */
+function renderPicture(){
+  const host = document.getElementById("picture");
+  if (split()){
+    host.innerHTML = `<p class="pending">They are apart in this case. Neither has heard a word from the other,
+      so neither has a picture of them at all — not even a wrong one. Run case 1, 2 or 4.</p>`;
+    return;
+  }
+  const truth = role => {
+    const act = CASES[S.case][role], src = CX(role);
+    return new Set([...(act === "want" ? src.wants : src.avoids).keys()]);
+  };
+  const panel = (believer, about) => {
+    const pic = S.picture[believer], real = truth(about);
+    const act = CASES[S.case][about];
+    const held = act === "want" ? pic.wants : pic.avoids;
+    const beliefs = [...held.keys()];
+    const right = beliefs.filter(f => real.has(f));
+    const wrong = beliefs.filter(f => !real.has(f));
+    const missed = [...real].filter(f => !held.has(f));
+    return `<section class="an-sec pic">
+      <h4>Role ${believer === "A" ? "1" : "2"} thinks Role ${about === "A" ? "1" : "2"} ${act === "want" ? "wants" : "refuses"}</h4>
+      <p class="prov-head ${wrong.length ? "some" : "none"}">${right.length} right, ${wrong.length} wrong,
+         ${missed.length} never noticed at all.</p>
+      <div class="wchips">
+        ${right.map(f => `<span class="wchip prov both">${FEATLABEL[f] || f}<span class="did">right</span></span>`).join("")}
+        ${wrong.map(f => `<span class="wchip prov none">${FEATLABEL[f] || f}<span class="did">wrong — never said</span></span>`).join("")}
+        ${missed.map(f => `<span class="wchip prov" style="opacity:.5">${FEATLABEL[f] || f}<span class="did">said, never heard</span></span>`).join("")}
+      </div></section>`;
+  };
+  const misread = S.readings.filter(r => r.heard.length && !r.agreed);
+  host.innerHTML = `
+    <p class="sub" style="margin:0;font-size:12.5px;color:var(--muted);max-width:82ch">
+      Neither of them has the other's lexicon. Each rebuilds what it hears out of its own associations,
+      and on the words that matter those associations disagree — <b>out</b> is openness to one and exposure
+      to the other. What follows is not what they said. It is what each of them now believes about the other.</p>
+    ${panel("A","B")}
+    ${panel("B","A")}
+    ${misread.length ? `<section class="an-sec meaning">
+      <h4>Taken to mean something else · ${misread.length} of ${S.readings.filter(r=>r.heard.length).length} heard</h4>
+      <p>The sentence on the left was said. The reading on the right is what the other one made of it.</p>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        ${misread.slice(0,8).map(r => `<div style="font-size:12.5px">
+          <b style="color:var(--${r.role === "A" ? "roleA" : "roleB"})">${r.spoken}</b><br>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--muted)">meant ${
+            r.meant.map(f => FEATLABEL[f] || f).join(", ")}</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--fault)"> &nbsp;→ heard as ${
+            r.heard.map(f => FEATLABEL[f] || f).join(", ")}</span></div>`).join("")}
+      </div></section>` : ""}`;
+}
+
 function renderBadges(){
   document.querySelectorAll(".case .res").forEach(el => {
     const r = S.results[S.scenario + '/' + el.dataset.res];
@@ -1933,6 +2059,7 @@ function renderCmp(){
    ═══════════════════════════════════════════════════════════ */
 const VNOTE = {
   scene: "The crossing as it stands. Neither of them may name a structure, so everything here is the machine's reading of a described need.",
+  picture: "Reddy's actual claim, which the other views do not show: the listener does not receive a meaning, it <b>rebuilds</b> one out of its own materials. These two do not share a lexicon. Each reads the other through its own associations, and this is what each ends up believing.",
   flow: "Where every word of <b>this</b> case went. It fills in as the run proceeds; switch case above to see another. The figures for the other three are underneath, so you can compare without four diagrams at once.",
   dropped: "The same run, counted. <b>Carried</b> is every word that let the machine infer something — none of them the name of a structure. <b>Discarded · meaning</b> is the part worth arguing about.",
   said: "Every word either of them has said, ejected into the space between them and left there — Reddy’s <b>idea space</b>, made literal. The words in colour are the few the machine could do anything with. Everything faint is still in the air: said, reified, and inert. Grey is the machine, ejecting into the same space, with none of it picked up either.",
@@ -1942,10 +2069,13 @@ function setView(v){
   document.querySelectorAll(".vtab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.v === v)));
   document.getElementById("analysis").hidden = v !== "dropped";
   document.getElementById("flow").hidden = v !== "flow";
-  document.getElementById("scene").hidden = (v === "dropped" || v === "flow");
-  document.querySelector(".badge").hidden = (v === "dropped" || v === "flow");
+  document.getElementById("picture").hidden = v !== "picture";
+  const hide = (v === "dropped" || v === "flow" || v === "picture");
+  document.getElementById("scene").hidden = hide;
+  document.querySelector(".badge").hidden = hide;
   if (v === "dropped") renderAnalysis();
   if (v === "flow") renderFlow();
+  if (v === "picture") renderPicture();
   document.getElementById("vnote").innerHTML = VNOTE[v]
     + (v === "said" && CASES[S.case].split
         ? " <b>Apart, they never hear one another — and their words still land in the same store.</b>" : "");
@@ -1986,6 +2116,7 @@ function reset(){
     askedFeats:{A:new Set(), B:new Set()},
     goalNow:{...SC().goal}, revised:{A:0, B:0}, revisedAt:{A:0, B:0}, hitNow:{A:0, B:0},
     recent:{A:[], B:[]}, spent:{A:false, B:false}, lastSaid:{A:[], B:[]},
+    picture:{A:{wants:new Map(), avoids:new Map()}, B:{wants:new Map(), avoids:new Map()}}, readings:[],
     phase: CASES[S.case].confer ? "confer" : "machine", dropped:[],
     pact:{A:{want:new Set(), avoid:new Set()}, B:{want:new Set(), avoid:new Set()}}});
   S.shared = mkCtx(); S.side = {A: mkCtx(), B: mkCtx()};
