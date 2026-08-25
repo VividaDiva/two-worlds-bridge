@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I Want, I Do Not Want</title>
-<meta name="description" content="Two people argue about a crossing, answering what they took each other to mean rather than what was said, while a machine builds from what it hears.">
+<meta name="description" content="Each of two people either holds firm or gives ground — and a giving one concedes to its picture of the other, which it built by misreading them.">
 <link rel="icon" href="data:,">
 </head>
 <body>
@@ -333,6 +333,22 @@
   .turn.revise .bub{background:transparent; border:1px solid var(--signal); color:var(--signal)}
   .turn.revise .who{color:var(--signal)}
   .turn.spent .bub{background:transparent; border:1px dashed var(--line); color:var(--muted)}
+  .turn.gave .bub{background:transparent; border:1px dashed var(--line); font-style:italic}
+  .tmp{font:inherit; font-size:10.5px; letter-spacing:.04em; text-transform:uppercase;
+       background:transparent; color:var(--dim); border:1px solid var(--line);
+       border-radius:999px; padding:1px 7px; margin-left:6px; cursor:pointer}
+  .tmp:hover{color:var(--ink); border-color:var(--dim)}
+  .tmp.giving{color:var(--signal); border-color:color-mix(in srgb,var(--signal) 50%,transparent)}
+  .grid2{display:grid; grid-template-columns:auto 1fr 1fr; gap:8px; align-items:stretch}
+  .grid2 .hd{font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--dim);
+             align-self:end; padding-bottom:2px}
+  .grid2 .rw{font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--dim);
+             align-self:center; max-width:11ch; line-height:1.35}
+  .cell{border:1px solid var(--line); border-radius:10px; padding:9px 11px; background:var(--panel)}
+  .cell b{display:block; font-size:13.5px; margin-bottom:3px}
+  .cell .m{font-size:11.5px; color:var(--muted); line-height:1.5}
+  .cell.won{border-color:color-mix(in srgb,var(--signal) 45%,transparent)}
+  .cell .bad{color:var(--signal)}
   .turn.spent .who{color:var(--muted)}
   .reading{
     font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.02em;
@@ -388,7 +404,7 @@
   <div>
     <h1>I Want, I Do Not Want</h1>
     <p>Two people at odds over one crossing, one kind of sentence each, and a machine that builds from what it infers.
-       <span class="pre">Every case was played twenty-four times before this page appeared, and the table reports how often each outcome came up. Switch between cases to read them; watching one happen is optional.</span></p>
+       <span class="pre">Every case was played twenty-four times in each of four temperament pairings before this page appeared, and the table reports how often each outcome came up. Switch between cases to read them; watching one happen is optional.</span></p>
   </div>
   <div class="tools">
     <button class="ghost primary" id="playBtn">Watch it happen</button>
@@ -465,9 +481,9 @@
        <span class="km">○</span> the machine &nbsp;·&nbsp; boxes are rooms</p>
     <div class="goalline">
       <span class="g a"><b>Role 1</b> a single log across the stream
-        <em id="actA">may only ask</em><i class="hit no" id="hitA">not built</i></span>
+        <em id="actA">may only ask</em><button type="button" class="tmp" id="tempA">holds firm</button><i class="hit no" id="hitA">not built</i></span>
       <span class="g b"><b>Role 2</b> a single log across the cleft
-        <em id="actB">may only refuse</em><i class="hit no" id="hitB">not built</i></span>
+        <em id="actB">may only refuse</em><button type="button" class="tmp" id="tempB">holds firm</button><i class="hit no" id="hitB">not built</i></span>
     </div>
     <table class="cmp" id="cmp"></table>
     <div class="views" role="tablist" aria-label="What to show">
@@ -476,6 +492,7 @@
       <button class="vtab" data-v="dropped" role="tab" aria-selected="false">What was dropped</button>
       <button class="vtab" data-v="flow" role="tab" aria-selected="false">Where it went</button>
       <button class="vtab" data-v="picture" role="tab" aria-selected="false">What they think of each other</button>
+      <button class="vtab" data-v="temper" role="tab" aria-selected="false">What giving ground does</button>
       <p class="vnote" id="vnote"></p>
     </div>
     <div class="canvas-wrap">
@@ -483,6 +500,7 @@
       <div class="analysis" id="analysis" hidden></div>
       <div class="analysis flowview" id="flow" hidden></div>
       <div class="analysis" id="picture" hidden></div>
+      <div class="analysis" id="temper" hidden></div>
       <div class="badge">
         <span class="built" id="bBuilt">nothing built yet</span>
         <span class="n" id="bMatches">0 matches</span>
@@ -1064,6 +1082,27 @@ const REFUSE = {
   high:   ["No climbing, then", "You'll not have to reach up to it", "Not raised up, then"],
   many:   ["Not a great deal of it, then", "Nothing costly, then", "You'll not have much of it"],
 };
+// ── Two ways of being in an argument ─────────────────────────────────
+// Firm presses its own point and presses hardest exactly where the other one
+// objects. Giving stops pressing what it believes the other has refused, and
+// will take a demand back. Note *believes*: a giving role concedes to its
+// picture of the other, and that picture is built by reading sentences through
+// its own lexicon. Generosity goes wherever the reading sent it.
+const TEMPERS = {firm:"holds firm", giving:"gives ground"};
+const MARK = {
+  firm:  ["even so", "all the same", "that's as may be", "I'll still say it"],
+  giving:["fair enough", "I'll grant you that", "that's fair", "point taken"],
+};
+// The thing itself in the first person, still without naming a structure or a ground.
+const PLAIN = {
+  water:"the wet", rock:"what's underneath", minimal:"it being small",
+  low:"going straight across", open:"being able to see out", light:"it being for one only",
+  heavy:"it taking a load", guarded:"something at the hand", steady:"it being firm underfoot",
+  exposed:"being out over it", sways:"it moving about", inGap:"something standing in the middle",
+  high:"climbing up to it", many:"a great deal of it",
+};
+const giving = role => S.temper[role] === "giving" && !split();
+
 // When they have heard it three times already they stop translating and say so.
 const AGAIN = ["You've said that", "I know — you keep saying it", "You've told me", "Yes, you've been clear"];
 // And when there is nothing to answer, an ordinary way of starting to talk.
@@ -1074,7 +1113,8 @@ function say(role, phrase){
   S.lastUp = S.lastUp || {A:"", B:""};
   if (phrase === S.lastUp[role]) return "";
   S.lastUp[role] = phrase;
-  return phrase + " — ";
+  // Conceding the point and then not conceding it is how people actually talk.
+  return Math.random() < .45 ? `${phrase} — ${pick(MARK[S.temper[role]])}, ` : `${phrase} — `;
 }
 function uptakeFor(role){
   const heard = (S.lastHeard && S.lastHeard[role]) || [];
@@ -1101,7 +1141,8 @@ const linesFor = role => SC().speech[role][CASES[S.case][role]];
 const W_WANT = 2, W_AVOID = 4;
 
 const S = {
-  scenario:"places", case:"given", results:{}, tick:0,
+  scenario:"places", case:"given", results:{}, runs:{}, tick:0,
+  temper:{A:"firm", B:"firm"},   // a setting, like the case — reset does not clear it
   mem:{A:null, B:null}, asked:{A:0, B:0}, dodged:0,
   recent:{A:[], B:[]}, spent:{A:false, B:false}, lastSaid:{A:[], B:[]},
   picture:{A:null, B:null}, readings:[],
@@ -1170,6 +1211,38 @@ const GOAL = () => SC().goal;                 // what each of them arrived wanti
 const GNOW = role => (S.goalNow && S.goalNow[role]) || GOAL()[role];
 const GOALPLACE = () => SC().place;
 
+// Taking something back. A giving role drops a demand of its own as soon as it
+// believes the other one is against it — and then we check that belief against
+// what the other actually said. A concession made on a misreading costs the
+// giver something real and buys the other nothing at all.
+function withdraw(role){
+  if (!giving(role)) return null;
+  const c = CX(role), act = CASES[S.case][role];
+  const mine  = act === "want" ? c.wants  : c.avoids;
+  const pic   = S.picture[role];
+  const believed = act === "want" ? pic.avoids : pic.wants;   // what I think they are against
+  const truth    = act === "want" ? c.avoids  : c.wants;      // what they have actually put
+  const done = new Set(S.gave[role].map(g => g.f));
+  const f = [...mine.keys()].find(k => believed.has(k) && !done.has(k) && k !== "water" && k !== "rock");
+  if (!f) return null;
+  mine.delete(f);
+  const g = {f, warranted: truth.has(f), act};
+  S.gave[role].push(g);
+  return g;
+}
+function pushGave(role, g){
+  const el = document.createElement("div");
+  el.className = "turn gave " + role.toLowerCase();
+  el.innerHTML = `<span class="who">${role === "A" ? "Role 1" : "Role 2"} · giving ground</span>
+    <div class="bub"><span class="body"></span></div>
+    <span class="why">${g.warranted ? "the other one did object to it"
+      : "the other one never objected to it — this was given up to a misreading"}</span>`;
+  el.querySelector(".body").textContent = g.act === "want"
+    ? pick([`All right — I'll not press for ${PLAIN[g.f]}.`, `I'll let ${PLAIN[g.f]} go, then.`])
+    : pick([`All right — I'll not stand against ${PLAIN[g.f]}.`, `I'll stop objecting to ${PLAIN[g.f]}, then.`]);
+  drop(el, target(role));
+}
+
 function choose(role){
   const c = CX(role), lines = linesFor(role), said = S.said[role];
   // Apart, you know only what you have said yourself. In one room you heard them too.
@@ -1188,9 +1261,14 @@ function choose(role){
   // it presses against what it believes the other one wants, which is not
   // necessarily what the other one said
   const heard = split() ? [] : ((S.lastHeard && S.lastHeard[role]) || []);
+  // What it thinks the other one is after. Every judgement below is made
+  // against this, not against what the other one actually said.
+  const pic = (S.picture && S.picture[role]) || {wants:new Map(), avoids:new Map()};
+  const clash = f => act === "want" ? pic.avoids.has(f) : pic.wants.has(f);
+  const soft = giving(role), press = soft ? 1 : 6;
   let best = pool[0], bestGain = -1e9, pressing = false, answering = false;
   pool.forEach(l => {
-    let gain = recent.includes(lines.indexOf(l)) ? -6 : 0;   // you just said that
+    let gain = recent.includes(lines.indexOf(l)) ? (soft ? -6 : -4) : 0;   // you just said that
     let presses = false;
     const answers = !!(l.counters && l.counters.some(f => heard.includes(f)));
     if (answers) gain += 7;                                  // that is worth answering now
@@ -1204,7 +1282,9 @@ function choose(role){
       if (act === "avoid" && standing && standing.has.includes(f)) gain += 4;
       // when the thing in front of you is not what you came for, you push back
       // toward it — even if it means saying the same thing over again
-      if (offGoal && goalKit && goalKit.has.includes(f) === (act === "want")){ gain += 3; presses = true; }
+      if (offGoal && goalKit && goalKit.has.includes(f) === (act === "want")){ gain += press; presses = true; }
+      // one of them backs off the contested point; the other goes straight at it
+      if (!split() && clash(f)) gain += soft ? -6 : 2;
     });
     if (gain > bestGain){ bestGain = gain; best = l; pressing = presses; answering = answers; }
   });
@@ -1322,11 +1402,20 @@ function settle(){
   const gB = (KIT.find(k => k.id === GOAL().B) || {has:[]}).has;
   gA.forEach(f => { if (P.B.avoid.has(f)) contested.add(f); });
   gB.forEach(f => { if (P.A.avoid.has(f)) contested.add(f); });
-  S.dropped = [...contested];
+
+  // Who yields on a contested point. If exactly one of them gives ground, the
+  // other's version stands and the machine hears it. If they both hold firm —
+  // or, just as fatally, both give way — neither can raise it, and it is
+  // dropped out of the agreed position altogether.
+  const yielder = S.temper.A === S.temper.B ? null : (S.temper.A === "giving" ? "A" : "B");
+  const kept = new Map();
+  if (yielder) contested.forEach(f => kept.set(f, yielder === "A" ? "B" : "A"));
+  S.dropped = [...contested].filter(f => !kept.has(f));
+  S.yielded = [...kept.keys()];
 
   const c = S.shared;
   const put = (role, f, kind) => {
-    if (contested.has(f)) return;
+    if (contested.has(f) && kept.get(f) !== role) return;
     if (!c.namedBy.has(f)) c.namedBy.set(f, new Set());
     c.namedBy.get(f).add(role);
     if (f === "water" || f === "rock"){ if (kind === "want") c.world[f] = true; return; }
@@ -1336,7 +1425,7 @@ function settle(){
   ["A","B"].forEach(r => { P[r].want.forEach(f => put(r,f,"want")); P[r].avoid.forEach(f => put(r,f,"avoid")); });
 
   S.phase = "machine";
-  pushPact(contested);
+  pushPact(S.dropped, yielder);
   build(c);
 }
 
@@ -1412,6 +1501,7 @@ function takeTurn(){
   S.lastHeard = S.lastHeard || {A:[], B:[]};
   S.lastHeard[other] = heard;                 // what the other one actually took from it
   hear(line, role);
+  const gaveUp = withdraw(role);
 
   const c = CX(role);
   const seenBefore = S.seen[role];
@@ -1426,6 +1516,7 @@ function takeTurn(){
   eject("AI", `${NAME(after)} ${c.matches} matches ` +
         (before !== after ? "taken apart and rebuilt" : "nothing changed what it heard was already true of this"), []);
   pushSaid(role, line, repeat, pressing, answering, spoken, false, {meant:line.infer, heard}, up);
+  if (gaveUp) pushGave(role, gaveUp);
   pushBuild(before, after, best, role, split() ? drifted : null, seenBefore, c);
   S.seen[role] = after;
 
@@ -1482,15 +1573,18 @@ function pushAsk(role, f){
   el.querySelector(".body").textContent = QUESTIONS[f].charAt(0).toUpperCase() + QUESTIONS[f].slice(1);
   drop(el, target(role));
 }
-function pushPact(contested){
+function pushPact(dropped, yielder){
   const el = document.createElement("div");
   el.className = "ai pact";
   const kept = [...S.shared.wants.keys(), ...S.shared.avoids.keys()].map(f => FEATLABEL[f] || f);
   el.innerHTML = `<span class="who">the two of them, to the machine</span>
     <p>Having talked it over, this is what they put — one position, agreed.</p>
     <div class="wchips">${kept.map(k => `<span class="wchip">${k}</span>`).join("")}</div>
-    ${contested.size ? `<p class="dropped"><b>Dropped in order to agree:</b> ${
-      [...contested].map(f => FEATLABEL[f] || f).join(" · ")}. The machine never hears any of it.</p>` : ""}`;
+    ${yielder && S.yielded.length ? `<p class="dropped"><b>Role ${yielder === "A" ? "1" : "2"} gave way on:</b> ${
+      S.yielded.map(f => FEATLABEL[f] || f).join(" · ")}. Because one of them stopped arguing, the machine
+      hears the other's version of all of it.</p>` : ""}
+    ${dropped.length ? `<p class="dropped"><b>Dropped in order to agree:</b> ${
+      dropped.map(f => FEATLABEL[f] || f).join(" · ")}. The machine never hears any of it.</p>` : ""}`;
   drop(el, target(S.speaker));
 }
 function pushSpent(role){
@@ -1578,7 +1672,7 @@ function flowOf(){
 
 function record(){
   const solo = !!CASES[S.case].solo, c = solo ? S.side.A : S.shared;
-  S.results[S.scenario + '/' + S.case] = {
+  S.results[KEY(S.case)] = {
     solo,
     built: c.design ? c.design.id : null, matches: c.matches, turns: S.turn,
     builtB: solo ? (S.side.B.design ? S.side.B.design.id : null) : null,
@@ -1588,6 +1682,7 @@ function record(){
     prov: provenance(c), provB: solo ? provenance(S.side.B) : null,
     groundOf: groundPhrase(c),
     confer: !!CASES[S.case].confer, droppedN: (S.dropped || []).length,
+    yieldedN: (S.yielded || []).length,
     unexplained: S.unexplained.A + S.unexplained.B,
     flow: flowOf(),
     asked: S.asked.A + S.asked.B, dodged: S.dodged,
@@ -1595,16 +1690,22 @@ function record(){
     cameFor: {...GOAL()}, leftWanting: {...S.goalNow},
     hitNowA: S.hitNow.A, hitNowB: S.hitNow.B,
     split: split(),
+    gaveA: S.gave.A.length, gaveB: S.gave.B.length,
+    misgiven: S.gave.A.concat(S.gave.B).filter(g => !g.warranted).length,
+    temper: {...S.temper},
     heardN: S.readings.filter(r => r.heard.length).length,
     missN:  S.readings.filter(r => r.heard.length && !r.agreed).length,
   };
-  if (S.silent){ (S.runs[S.scenario + '/' + S.case] ||= []).push(S.results[S.scenario + '/' + S.case]); return; }
+  if (S.silent){ (S.runs[KEY(S.case)] ||= []).push(S.results[KEY(S.case)]); return; }
   renderCmp(); renderBadges();
 }
 
 // One run is an anecdote. Every case is played RUNS times before the page is
 // shown, and what the table reports is how often each outcome came up.
 const RUNS = 24;
+// A result belongs to a case and to a pair of temperaments together.
+const KEY = (cs, tA, tB) => `${S.scenario}/${cs}/${(tA || S.temper.A)[0]}${(tB || S.temper.B)[0]}`;
+const PAIRS = [["firm","firm"], ["firm","giving"], ["giving","firm"], ["giving","giving"]];
 const modeOf = (list, key) => {
   const m = new Map();
   for (const r of list){ const v = key(r); if (v == null) continue; m.set(v, (m.get(v) || 0) + 1); }
@@ -1639,6 +1740,9 @@ function dist(key){
     miss:   medOf(list, r => r.missN),
     dropped:medOf(list, r => r.droppedN),
     asked:  medOf(list, r => r.asked), dodged: medOf(list, r => r.dodged),
+    gave:   medOf(list, r => r.gaveA + r.gaveB), misgiven: medOf(list, r => r.misgiven),
+    yielded:medOf(list, r => r.yieldedN || 0),
+    hitA:   list.filter(r => r.hitA).length, hitB: list.filter(r => r.hitB).length,
     missSpan: spanOf(list, r => r.missN), heardSpan: spanOf(list, r => r.heardN),
     firm: modeOf(list, r => r.built)[0][1] === list.length,
   };
@@ -1648,7 +1752,7 @@ function pushVerdict(){
   if (S.silent) return;
   vhost.innerHTML = "";
   const solo = !!CASES[S.case].solo, cc = solo ? S.side.A : S.shared;
-  const r = S.results[S.scenario + '/' + S.case] || {};
+  const r = S.results[KEY(S.case)] || {};
   const el = document.createElement("div");
   el.className = "verdict";
   const unnamedA = r.prov ? r.prov.total - r.prov.named : 0;
@@ -1669,7 +1773,7 @@ function pushVerdict(){
        <b>${(S.dropped||[]).length}</b> thing${(S.dropped||[]).length===1?"":"s"} they disagreed about — and the machine never heard any of it.
        What it built came from what was left.</p>` : ""}
     ${r.revised ? `<p>${r.revised === 1 ? "One of them" : "Both of them"} changed their mind: told plainly why the crossing was the way it was, ${r.revised === 1 ? "it" : "they"} came to want what was already standing. That only happens where the machine is free to explain — refused an answer, nobody accommodates anything.</p>` : ``}
-    <p class="k">${["given","swapped","separate","together","alone"].every(k => S.results[S.scenario + "/" + k]) ? "all five cases run — the comparison is above the scene" : "now run another case"}</p>`;
+    <p class="k">${["given","swapped","separate","together","alone"].every(k => S.results[KEY(k)]) ? "all five cases run — the comparison is above the scene" : "now run another case"}</p>`;
   vhost.appendChild(el);
 }
 
@@ -2077,7 +2181,7 @@ function renderFlow(){
 
   // the other cases, as one line of figures rather than three more diagrams
   const others = Object.entries(CASES).filter(([k]) => k !== S.case).map(([k,c]) => {
-    const r = S.results[S.scenario + "/" + k];
+    const r = S.results[KEY(k)];
     if (!r || !r.flow) return `<span class="o">${c.label} —</span>`;
     const sp = r.flow.A.carried+r.flow.A.meaning+r.flow.A.grammar + r.flow.B.carried+r.flow.B.meaning+r.flow.B.grammar;
     const ca = r.flow.A.carried + r.flow.B.carried;
@@ -2096,6 +2200,69 @@ function renderFlow(){
 }
 
 /* ── what each of them believes the other wants, against what it does ── */
+function renderTemper(){
+  const host = document.getElementById("temper");
+  const cell = (ta, tb) => {
+    const d = dist(KEY(S.case, ta, tb));
+    if (!d) return `<div class="cell"><span class="m">not run</span></div>`;
+    const mine = S.temper.A === ta && S.temper.B === tb;
+    const what = CASES[S.case].solo ? `${NAME(d.built[0][0])} · ${NAME(d.builtB[0][0]).toLowerCase()}`
+                                    : NAME(d.built[0][0]);
+    const most = n => n === d.n ? "" : ` <i class="freq">${n} of ${d.n}</i>`;
+    const who = !d.hitA && !d.hitB ? "neither got what they came for"
+      : [d.hitA ? `role 1${most(d.hitA)}` : null, d.hitB ? `role 2${most(d.hitB)}` : null]
+          .filter(Boolean).join(" and ") + " got what they came for";
+    const conf = CASES[S.case].confer;
+    return `<div class="cell${mine ? " won" : ""}"><b>${what}</b>
+      <span class="m">${who}<br>
+      ${conf ? (d.yielded ? `one of them gave way on ${d.yielded}, so the machine heard it`
+                          : `${d.dropped} dropped in order to agree`)
+        : d.gave ? `${d.gave} demand${d.gave === 1 ? "" : "s"} given up${
+            d.misgiven ? ` · <span class="bad">${d.misgiven} of them to a misreading</span>` : " · all warranted"}`
+        : "nothing given up"}</span></div>`;
+  };
+  const D = (a, b) => dist(KEY(S.case, a, b));
+  const ff = D("firm","firm"), fg = D("firm","giving"), gf = D("giving","firm"), gg = D("giving","giving");
+  const all = [ff, fg, gf, gg].filter(Boolean);
+  const same = all.length === 4 && new Set(all.map(d => d.built[0][0])).size === 1;
+  // The diagonal is the interesting one: deadlock and mutual deference are the
+  // same shape from the machine's side.
+  const mirrored = !same && ff && gg && ff.built[0][0] === gg.built[0][0]
+                   && (!fg || fg.built[0][0] !== ff.built[0][0] || !gf || gf.built[0][0] !== ff.built[0][0]);
+  const misgiven = all.reduce((n, d) => n + d.misgiven, 0);
+  const given    = all.reduce((n, d) => n + d.gave, 0);
+
+  host.innerHTML = `
+    <p class="sub" style="margin:0 0 10px;font-size:12.5px;color:var(--muted);max-width:84ch">
+      ${split() ? `<b>They cannot hear each other in this case</b>, so there is nothing to give ground to.
+        All four cells below are the same run. That is why it is worth showing: a temperament needs
+        somebody in the room to be a temperament <i>toward</i>.`
+      : `Four ways of running <b>${CASES[S.case].label.toLowerCase()}</b>, ${RUNS} times each. Down the side is how
+         Role 1 argues; across the top is how Role 2 argues. The outlined cell is the pair set above.`}</p>
+    <div class="grid2">
+      <span></span><span class="hd">Role 2 holds firm</span><span class="hd">Role 2 gives ground</span>
+      <span class="rw">Role 1 holds firm</span>${cell("firm","firm")}${cell("firm","giving")}
+      <span class="rw">Role 1 gives ground</span>${cell("giving","firm")}${cell("giving","giving")}
+    </div>
+    ${split() ? "" : `<section class="an-sec" style="margin-top:12px">
+      <h4>What it buys</h4>
+      <p>${same
+        ? `<b>Nothing, here.</b> All four temperaments end at the same structure. Giving ground changes what
+           gets said and what gets taken back, and the machine arrives at the same place regardless — the
+           weighting that lets one refusal outlast several requests is doing the deciding, not the manners.`
+        : `The four end differently, so <b>how they argue decides what gets built</b>, not only what they came
+           for.`}${mirrored ? ` <b>Look at the diagonal.</b> Both holding firm and both giving way come out at
+           the same place — a point only survives if <i>one</i> of them stops arguing about it. Two people
+           deferring to each other lose exactly what two people refusing to budge lose, and the machine
+           cannot tell the difference between deadlock and mutual courtesy.` : ""}
+        ${given ? ` Across the four, <b>${given} demands were given up</b>${
+          misgiven ? `, and <b class="bad">${misgiven} of them went to something the other never objected to</b>.
+            That is what being accommodating costs down a channel that loses things: the giver pays, and the
+            other is not helped, because the concession was made to somebody who was never there.`
+          : `, every one to something the other had actually objected to.`}` : ``}</p>
+    </section>`}`;
+}
+
 function renderPicture(){
   const host = document.getElementById("picture");
   if (split()){
@@ -2148,7 +2315,7 @@ function renderPicture(){
 
 function renderBadges(){
   document.querySelectorAll(".case .res").forEach(el => {
-    const key = S.scenario + '/' + el.dataset.res;
+    const key = KEY(el.dataset.res);
     const d = dist(key), r = S.results[key];
     el.classList.toggle("done", !!(d || r));
     if (!d && !r){ el.textContent = "not run"; return; }
@@ -2163,7 +2330,7 @@ function renderBadges(){
 }
 function renderCmp(){
   const rows = Object.entries(CASES).map(([key, c]) => {
-    const d = dist(S.scenario + '/' + key), r = S.results[S.scenario + '/' + key];
+    const d = dist(KEY(key)), r = S.results[KEY(key)];
     if (!d && !r) return `<tr><td class="k">${c.label}</td><td colspan="5" class="pending">not run yet</td></tr>`;
     if (!d){    // a case watched before the sweep finished
       const who = r.hitA && r.hitB ? "both reached it" : r.hitA ? "role 1 only" : r.hitB ? "role 2 only" : "neither";
@@ -2190,7 +2357,7 @@ function renderCmp(){
       <td class="k">${between}</td></tr>`;
   }).join("");
 
-  const D = k => dist(S.scenario + "/" + k);
+  const D = k => dist(KEY(k));
   const g = D("given"), w = D("swapped"), a = D("separate"), al = D("alone");
   let caption = `Run the cases. ${SC().blurb}`;
   if (g && w && a && al){
@@ -2218,6 +2385,7 @@ function renderCmp(){
    ═══════════════════════════════════════════════════════════ */
 const VNOTE = {
   scene: "The crossing as it stands. Neither of them may name a structure, so everything here is the machine's reading of a described need. When they can hear each other they answer the last thing first — and what they answer is <b>what they took it to mean</b>, which is not always what was meant.",
+  temper: "The same case run four ways. Each of them either <b>holds firm</b> — pressing its own point, and pressing hardest exactly where the other objects — or <b>gives ground</b>, stopping short of what it believes the other has refused and taking its own demands back. It concedes to its <b>picture</b> of the other, which it built by reading sentences through its own lexicon. So a concession can land on something the other never asked for.",
   picture: "Reddy's actual claim, which the other views do not show: the listener does not receive a meaning, it <b>rebuilds</b> one out of its own materials. These two do not share a lexicon. Each reads the other through its own associations, and this is what each ends up believing.",
   flow: "Where every word of <b>this</b> case went. It fills in as the run proceeds; switch case above to see another. The figures for the other three are underneath, so you can compare without four diagrams at once.",
   dropped: "The same run, counted. <b>Carried</b> is every word that let the machine infer something — none of them the name of a structure. <b>Discarded · meaning</b> is the part worth arguing about. Answering each other costs words and carries none: every reaction here is pure loss to the machine, and it is most of what makes them sound like people.",
@@ -2229,12 +2397,14 @@ function setView(v){
   document.getElementById("analysis").hidden = v !== "dropped";
   document.getElementById("flow").hidden = v !== "flow";
   document.getElementById("picture").hidden = v !== "picture";
-  const hide = (v === "dropped" || v === "flow" || v === "picture");
+  document.getElementById("temper").hidden = v !== "temper";
+  const hide = (v === "dropped" || v === "flow" || v === "picture" || v === "temper");
   document.getElementById("scene").hidden = hide;
   document.querySelector(".badge").hidden = hide;
   if (v === "dropped") renderAnalysis();
   if (v === "flow") renderFlow();
   if (v === "picture") renderPicture();
+  if (v === "temper") renderTemper();
   document.getElementById("vnote").innerHTML = VNOTE[v]
     + (v === "said" && CASES[S.case].split
         ? " <b>Apart, they never hear one another — and their words still land in the same store.</b>" : "");
@@ -2288,9 +2458,9 @@ function reset(){
     words:[], spoken:0, taken:0, asked:{A:0, B:0}, dodged:0,
     askedFeats:{A:new Set(), B:new Set()},
     goalNow:{...SC().goal}, revised:{A:0, B:0}, revisedAt:{A:0, B:0}, hitNow:{A:0, B:0},
-    recent:{A:[], B:[]}, spent:{A:false, B:false}, lastSaid:{A:[], B:[]}, lastHeard:{A:[], B:[]}, lastUp:{A:"", B:""},
+    recent:{A:[], B:[]}, spent:{A:false, B:false}, lastSaid:{A:[], B:[]}, lastHeard:{A:[], B:[]}, lastUp:{A:"", B:""}, gave:{A:[], B:[]},
     picture:{A:{wants:new Map(), avoids:new Map()}, B:{wants:new Map(), avoids:new Map()}}, readings:[],
-    phase: CASES[S.case].confer ? "confer" : "machine", dropped:[],
+    phase: CASES[S.case].confer ? "confer" : "machine", dropped:[], yielded:[],
     pact:{A:{want:new Set(), avoid:new Set()}, B:{want:new Set(), avoid:new Set()}}});
   S.shared = mkCtx(); S.side = {A: mkCtx(), B: mkCtx()};
   S.mem = {A: mkMem(), B: mkMem()};
@@ -2322,6 +2492,23 @@ function paintScenarios(){
   document.querySelector(".goalline .g.a b").nextSibling.textContent = " " + sc.want.A + " ";
   document.querySelector(".goalline .g.b b").nextSibling.textContent = " " + sc.want.B + " ";
 }
+function paintTemper(){
+  ["A","B"].forEach(r => {
+    const b = document.getElementById("temp" + r);
+    b.textContent = TEMPERS[S.temper[r]];
+    b.classList.toggle("giving", S.temper[r] === "giving");
+    b.title = S.temper[r] === "firm"
+      ? "presses its own point, hardest where the other objects — click to soften"
+      : "stops short of what it believes the other refuses, and takes demands back — click to harden";
+  });
+}
+["A","B"].forEach(r => {
+  document.getElementById("temp" + r).onclick = () => {
+    S.temper[r] = S.temper[r] === "firm" ? "giving" : "firm";
+    paintTemper(); settleNow();
+  };
+});
+
 function paintCaseLabels(){
   const c = CASES[S.case];
   document.querySelectorAll(".case").forEach(b => b.querySelector("span").textContent = CASES[b.dataset.c].note);
@@ -2340,26 +2527,29 @@ new MutationObserver(() => { readPalette(); paint(); })
 // arrives with its results already in it. Press Play to watch any of them
 // happen again — the phrasings are sampled fresh, so it will not be identical.
 function precompute(){
-  const wasScenario = S.scenario, wasCase = S.case;
+  const wasScenario = S.scenario, wasCase = S.case, wasTemper = {...S.temper};
   S.silent = true; S.runs = {};
   for (const sc of Object.keys(SCENARIOS)){
     S.scenario = sc;
     for (const c of Object.keys(CASES)){
       S.case = c;
-      for (let i = 0; i < RUNS; i++){
-        reset();
-        let n = 0;
-        while (!S.done && n < 90){ takeTurn(); n++; }
+      for (const [ta, tb] of PAIRS){
+        S.temper = {A:ta, B:tb};
+        for (let i = 0; i < RUNS; i++){
+          reset();
+          let n = 0;
+          while (!S.done && n < 90){ takeTurn(); n++; }
+        }
       }
     }
   }
   S.silent = false;
-  S.scenario = wasScenario; S.case = wasCase;
+  S.scenario = wasScenario; S.case = wasCase; S.temper = wasTemper;
   reset();
 }
 
 precompute();
-paintScenarios(); paintCaseLabels(); renderCmp(); renderBadges();
+paintScenarios(); paintCaseLabels(); paintTemper(); renderCmp(); renderBadges();
 S.view = "scene"; settleNow();
 })();
 </script>
