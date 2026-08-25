@@ -148,8 +148,9 @@ const PLAYERS = { claude: askClaude, openai: askOpenAI };
 
 // The machine, when it reads with a model. Deliberately a separate call with no
 // memory of the conversation: a builder parsing one request, not a third party
-// following the argument.
-async function askMachine(system, user) {
+// following the argument. Either provider can play it, so one key is enough to
+// run the whole thing.
+async function machineClaude(system, user) {
   // Structured output lives under `beta` in SDK 0.71.
   const res = await anthropic.beta.messages.parse({
     model: MACHINE_MODEL,
@@ -162,6 +163,22 @@ async function askMachine(system, user) {
   if (!res.parsed_output) throw new Error("the machine returned nothing parsable");
   return res.parsed_output;
 }
+
+async function machineOpenAI(system, user) {
+  const res = await openai.chat.completions.create({
+    model: OPENAI_MODEL,
+    response_format: { type: "json_object" },
+    messages: [
+      { role: "system", content: system + `\n\nReply with JSON only: {"needs": ["key", ...]}` },
+      { role: "user", content: user },
+    ],
+  });
+  const raw = res.choices?.[0]?.message?.content;
+  if (!raw) throw new Error("the machine returned no content");
+  return ReadSchema.parse(JSON.parse(raw));
+}
+
+const MACHINES = { claude: machineClaude, openai: machineOpenAI };
 
 /* ── constraint enforcement ───────────────────────────────────────────── */
 function violations(turn, act) {
@@ -204,8 +221,10 @@ const caseKey = argv.case || "given";
 const maxTurns = Number(argv.turns || 16);
 const playerA = argv.a || "openai";
 const playerB = argv.b || "claude";
-const reader = argv.machine || "llm";
-if (!READERS[reader]) throw new Error(`unknown machine: ${reader} (keyword | llm)`);
+// `llm` stays as an alias for the Anthropic reader, which is what it used to mean.
+const reader = ({ llm: "claude" })[argv.machine] || argv.machine || "claude";
+if (!READERS[reader]) throw new Error(`unknown machine: ${reader} (keyword | claude | openai)`);
+const byModelUsed = reader !== "keyword";
 
 if (!SCENARIOS[scenarioKey]) throw new Error(`unknown scenario: ${scenarioKey}`);
 if (!CASES[caseKey]) throw new Error(`unknown case: ${caseKey} (given | swapped | separate)`);
@@ -232,8 +251,8 @@ for (let i = 0; i < maxTurns; i++) {
 
   // Both readers see the sentence. Only the chosen one gets to build with it.
   const byWord = readKeyword(sentence);
-  const byModel = reader === "llm" ? await readLLM(sentence, askMachine) : null;
-  const taken = reader === "llm" ? byModel : byWord;
+  const byModel = byModelUsed ? await readLLM(sentence, MACHINES[reader]) : null;
+  const taken = byModel || byWord;
 
   hear(ctx, role, act, taken);
   const before = ctx.design?.id ?? null;
@@ -270,21 +289,21 @@ console.log(`\n  ${NAME(ctx.design.id)} is standing, over ${groundOf(ctx)}.`);
 console.log(`  The machine took ${caughtN} of ${said.length} sentences as they were meant.`);
 if (deafN) console.log(`  ${deafN} passed it by entirely.`);
 if (inventedN) console.log(`  It credited them with ${inventedN} need${inventedN === 1 ? "" : "s"} neither of them stated.`);
-if (reader === "llm") console.log(`  The word list would have agreed with it on ${agreed} of ${said.length}.`);
+if (byModelUsed) console.log(`  The word list would have agreed with it on ${agreed} of ${said.length}.`);
 console.log(`  ${unspoken} of ${prov.total} of its properties were never put into words by either of them.`);
 console.log(`  ${led.spoken} words spoken; the machine's whole vocabulary for this run was ${ctx.wants.size + ctx.avoids.size} features.`);
 if (state.violations.length) console.log(`  ${state.violations.length} turns broke the rules and were sent back.`);
 
 const session = {
   meta: { scenario: scenarioKey, case: caseKey, label: CASES[caseKey].label,
-          players: { A: playerA, B: playerB }, machine: reader,
+          players: { A: playerA, B: playerB }, machine: reader, machineIsModel: byModelUsed,
           models: { claude: CLAUDE_MODEL, openai: OPENAI_MODEL, machine: MACHINE_MODEL },
           turns: state.turn, ranAt: new Date().toISOString() },
   goals: { A: SCENARIOS[scenarioKey].A.goal, B: SCENARIOS[scenarioKey].B.goal },
   transcript,
   outcome: { built: ctx.design.id, name: NAME(ctx.design.id), ground: groundOf(ctx) },
   reading: { said: said.length, caught: caughtN, invented: inventedN, deaf: deafN,
-             wordListAgreed: reader === "llm" ? agreed : null },
+             wordListAgreed: byModelUsed ? agreed : null },
   provenance: prov,
   ledger: led,
   violations: state.violations,

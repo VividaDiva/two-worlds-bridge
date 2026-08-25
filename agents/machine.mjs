@@ -56,4 +56,8 @@ export async function readLLM(text, ask) {
   return keys.filter(k => k in FEATURES).slice(0, 2);
 }
 
-export const READERS = { keyword: "the word list", llm: "a language model" };
+export const READERS = {
+  keyword: "the word list",
+  claude:  "a language model (Claude)",
+  openai:  "a language model (OpenAI)",
+};

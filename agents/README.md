@@ -28,7 +28,7 @@ node --env-file=.env run.mjs --scenario places --case given --machine llm
 |---|---|---|
 | `--scenario` | `places` · `loads` · `refs` | `places` |
 | `--case` | `given` · `swapped` · `separate` | `given` |
-| `--machine` | `llm` · `keyword` — how the builder reads what it is told | `llm` |
+| `--machine` | `claude` · `openai` · `keyword` — who reads what the builder is told | `claude` |
 | `--turns` | how many turns to run | `16` |
 | `--a` / `--b` | `openai` · `claude` — who plays which role | `openai` / `claude` |
 
@@ -39,13 +39,25 @@ to one provider's habits:
 node --env-file=.env run.mjs --case given --a claude --b openai
 ```
 
+**One key is enough.** Every part can be played by either provider, so with only
+an OpenAI key:
+
+```bash
+node --env-file=.env run.mjs --a openai --b openai --machine openai
+```
+
+That is a complete run — two model participants and a model reading them. It is
+weaker evidence than two providers, because both arguers share a set of habits
+and a way of hearing, so a misreading they agree on might be a house style rather
+than a property of the channel. Worth knowing, not worth waiting for.
+
 ## What is fixed and what is not
 
 **The kit is fixed.** Six structures, fourteen features, one scoring rule. If
 the builder were a model too, nothing in the run would be measurable.
 
 **How the builder reads is not.** `--machine keyword` gives it the word list the
-browser page uses. `--machine llm` gives it a language model that sees one
+browser page uses. `--machine claude` or `--machine openai` gives it a model that sees one
 sentence at a time, with no memory of the conversation and no idea who is
 speaking — a builder parsing a request, not a third party following an argument.
 Both readings are computed and recorded every turn, whichever one is driving, so
