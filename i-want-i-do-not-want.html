@@ -1262,7 +1262,24 @@ const LEAD = {want:"I want ", avoid:"I do not want "};
 // So when the reading was wrong, the wrongness is audible in the room instead
 // of sitting in a footnote underneath. They may not name a structure or a
 // ground here either.
-const pick = a => a[Math.floor(Math.random() * a.length)];
+// ── One run per case, and the same one every time you come back ──────
+// Every phrasing here is drawn at random, and the margin between the top two
+// structures is two points, so resampling can change what gets built. That is a
+// finding when it is reported as "18 of 24" and a nuisance when clicking away
+// from a case and back again silently rebuilds it into something else. So the
+// draws come from a seeded generator: navigating to a case always replays the
+// same run of it, and "Run it again" asks for a different one on purpose.
+let RSEED = 1;
+function seedRun(n){ RSEED = (n >>> 0) || 1; }
+function rnd(){                       // mulberry32
+  RSEED |= 0; RSEED = (RSEED + 0x6D2B79F5) | 0;
+  let t = Math.imul(RSEED ^ (RSEED >>> 15), 1 | RSEED);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+const hashOf = str => { let h = 2166136261; for (let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
+
+const pick = a => a[Math.floor(rnd() * a.length)];
 // One of them is asking for these and the other is refusing them, so every
 // reaction comes in both directions. An answer that gets the direction wrong
 // is not clumsy, it is nonsense — and neither may name a structure or a ground
@@ -1374,22 +1391,22 @@ function say(role, phrase, plain){
   S.lastUp[role] = phrase;
   // Conceding the point and then not conceding it is how people actually talk —
   // but not in the same breath as taking the point up.
-  return !plain && Math.random() < .45 ? `${phrase} — ${pick(MARK[S.temper[role]])}, ` : `${phrase} — `;
+  return !plain && rnd() < .45 ? `${phrase} — ${pick(MARK[S.temper[role]])}, ` : `${phrase} — `;
 }
 function uptakeFor(role, plain){
   const heard = (S.lastHeard && S.lastHeard[role]) || [];
-  if (!heard.length) return Math.random() < .32 ? pick(OPENERS) + " — " : "";
-  if (!plain && Math.random() > .72) return "";       // sometimes you just answer
+  if (!heard.length) return rnd() < .32 ? pick(OPENERS) + " — " : "";
+  if (!plain && rnd() > .72) return "";       // sometimes you just answer
   const other = role === "A" ? "B" : "A";
   const asking = CASES[S.case][other] === "want";
   const held = asking ? S.picture[role].wants : S.picture[role].avoids;
   const f = heard.slice().sort((x, y) => (held.get(y) || 0) - (held.get(x) || 0))[0];
-  if (!plain && (held.get(f) || 0) >= 3 && Math.random() < .55) return say(role, pick(AGAIN), plain);
+  if (!plain && (held.get(f) || 0) >= 3 && rnd() < .55) return say(role, pick(AGAIN), plain);
   const bank = (asking ? UPTAKE : REFUSE)[f];
   return bank ? say(role, pick(bank), plain) : "";
 }
 // Each intent has several ways of being said. Nobody says it the same way twice.
-const voice = l => l.says[Math.floor(Math.random() * l.says.length)];
+const voice = l => l.says[Math.floor(rnd() * l.says.length)];
 const SC = () => SCENARIOS[S.scenario];
 const linesFor = role => SC().speech[role][CASES[S.case][role]];
 
@@ -1663,8 +1680,8 @@ function eject(who, text, inferred){
     const took = who !== "AI" && carriers.has(lower);
     S.words.push({w, who, took, feat: took ? carriers.get(lower) : null,
       grammar: GRAMMAR.has(lower),
-      x: home + (Math.random() - .5) * (who === "AI" ? 760 : 480),
-      yn: Math.random(), phase: Math.random() * 6.28});
+      x: home + (rnd() - .5) * (who === "AI" ? 760 : 480),
+      yn: rnd(), phase: rnd() * 6.28});
     if (who !== "AI"){ S.spoken++; if (took) S.taken++; }
   });
   if (S.words.length > 1200) S.words.splice(0, S.words.length - 1200);
@@ -3173,7 +3190,7 @@ function stop(){
 }
 document.getElementById("playBtn").onclick = () => {
   if (S.playing) return stop();
-  if (S.done){ reset(); play(); return; }   // run it again, slowly, from the top
+  if (S.done){ seedRun(Date.now() & 0x7fffffff); reset(); play(); return; }   // a different draw, slowly
   play();
 };
 document.getElementById("stepBtn").onclick = () => { stop(); takeTurn(); };
@@ -3185,7 +3202,9 @@ document.getElementById("speedBtn").onclick = e => {
 // Play the case through at once, drawing everything, so a case you have not
 // watched still arrives finished — transcript, ledger, conduit and pictures all
 // filled in. Watching is then a choice rather than the price of admission.
-function settleNow(){
+function settleNow(fresh){
+  // the same seed for the same case, so coming back to it shows what it showed
+  seedRun(fresh ? (Date.now() & 0x7fffffff) : hashOf(S.scenario + "/" + S.case + "/" + S.temper.A + S.temper.B));
   reset();
   let n = 0;
   while (!S.done && n < 90){ takeTurn(); n++; }
@@ -3216,8 +3235,11 @@ function reset(){
   paint(); hud();
   if (S.view === "dropped") renderAnalysis();
 }
-document.getElementById("resetBtn").onclick = reset;
-document.getElementById("againBtn").onclick = () => { reset(); play(); };
+document.getElementById("resetBtn").onclick = () => settleNow();   // back to this case's own run
+document.getElementById("againBtn").onclick = () => {
+  seedRun(Date.now() & 0x7fffffff);   // a different draw, asked for
+  reset(); play();
+};
 document.querySelectorAll(".case").forEach(btn => btn.onclick = () => {
   S.case = btn.dataset.c;
   document.querySelectorAll(".case").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
@@ -3281,6 +3303,7 @@ function precompute(){
       for (const [ta, tb] of PAIRS){
         S.temper = {A:ta, B:tb};
         for (let i = 0; i < RUNS; i++){
+          seedRun(hashOf(sc + "/" + c + "/" + ta + tb) + i * 2654435761);
           reset();
           let n = 0;
           while (!S.done && n < 90){ takeTurn(); n++; }
