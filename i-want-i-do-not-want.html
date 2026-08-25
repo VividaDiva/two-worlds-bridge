@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I Want, I Do Not Want</title>
-<meta name="description" content="Two people argue about a crossing, and a machine shows what it took them to mean and which matches it laid and took up.">
+<meta name="description" content="A run you can read at a glance: what got built turn by turn, and the two ways every sentence in it could go wrong.">
 <link rel="icon" href="data:,">
 </head>
 <body>
@@ -325,6 +325,47 @@
   .goalline .g i.yes{color:var(--signal)} .goalline .g i.no{color:var(--muted)}
 
   /* two rooms, no channel between them */
+  /* The run, before you read any of it. One column per turn: how big the thing
+     was after it, who caused it, and whether that turn's sentence went wrong in
+     either of the two ways it can. The oscillation is the finding — in two
+     loads it builds and tears down five times and ends where it started. */
+  .trace{
+    flex:none; padding:9px 14px 8px; border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg, var(--panel), var(--surface));
+  }
+  .trace-head{
+    display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+    font-family:var(--mono); font-size:8.5px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--muted); margin-bottom:6px; flex-wrap:wrap;
+  }
+  .trace-head .lg{display:flex; gap:11px; align-items:center}
+  .trace-head .lg i{
+    display:inline-block; width:5px; height:5px; border-radius:50%; margin-right:4px;
+    vertical-align:1px;
+  }
+  .trace-head .lg i.mis{background:var(--fault)}
+  .trace-head .lg i.mch{background:var(--signal)}
+  .bars{display:flex; align-items:flex-end; gap:2px; height:44px; border-bottom:1px solid var(--line)}
+  .trk{
+    flex:1; min-width:4px; padding:0; border:0; background:transparent; cursor:pointer;
+    height:100%; display:flex; flex-direction:column; justify-content:flex-end; align-items:stretch;
+    position:relative;
+  }
+  .trk b{display:block; height:var(--h); min-height:5px; border-radius:2px 2px 0 0; transition:filter .12s}
+  .trk.a b{background:var(--roleA)} .trk.b b{background:var(--roleB)}
+  .trk.gone b{opacity:.35}
+  .trk:hover b{filter:brightness(1.35)}
+  .trk .fl{display:flex; gap:2px; justify-content:center; height:6px; margin-bottom:2px}
+  .trk .fl i{width:4px; height:4px; border-radius:50%}
+  .trk i.mis{background:var(--fault)}
+  .trk i.mch{background:var(--signal)}
+  .trk.here b{outline:1px solid var(--ink); outline-offset:1px}
+  .trace .none{margin:0; font-size:12.5px; color:var(--muted); line-height:1.5; max-width:60ch}
+  .trace .axis{
+    display:flex; justify-content:space-between; margin-top:5px;
+    font-family:var(--mono); font-size:8.5px; letter-spacing:.1em; color:var(--dim, var(--muted)); opacity:.7;
+  }
+
   .threads{flex:1; min-height:0; display:flex; flex-direction:column}
   .rooms{flex:1; min-height:0; display:grid; grid-template-columns:1fr 1fr}
   .room{display:flex; flex-direction:column; min-height:0; min-width:0}
@@ -436,7 +477,8 @@
     font-family:var(--mono); font-size:9.5px; letter-spacing:.09em; text-transform:uppercase;
     color:var(--muted);
   }
-  .ai .mvoice{font-size:13px; margin:5px 0 0; line-height:1.5}
+  .ai > p{font-size:12.5px; color:var(--muted); line-height:1.5}
+  .ai .mvoice{font-size:13px; margin:5px 0 0; line-height:1.5; color:var(--ink)}
   .ai .mread{font-size:11.5px; color:var(--muted); margin:0 0 5px}
   .ai .mread.off{color:var(--signal)}
   .tmp{font:inherit; font-size:10.5px; letter-spacing:.04em; text-transform:uppercase;
@@ -455,10 +497,20 @@
   .cell.won{border-color:color-mix(in srgb,var(--signal) 45%,transparent)}
   .cell .bad{color:var(--signal)}
   .turn.spent .who{color:var(--muted)}
+  /* what was meant, then what the other one took from it. The two words that
+     used to introduce them are in the legend now, once, instead of on every
+     turn of every run. */
   .reading{
-    font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.02em;
-    border-left:2px solid var(--line); padding-left:7px;
+    display:flex; flex-wrap:wrap; align-items:center; gap:3px;
+    font-family:var(--mono); font-size:9px; letter-spacing:.04em;
   }
+  .reading i{
+    font-style:normal; border:1px solid var(--line); border-radius:3px; padding:1px 5px;
+    color:var(--muted); white-space:nowrap;
+  }
+  .reading b{color:var(--line); font-weight:400; margin:0 1px}
+  .reading.off i:last-child, .reading.off b{color:var(--fault); border-color:color-mix(in srgb,var(--fault) 40%,transparent)}
+  .turn.b .reading{justify-content:flex-end}
   .reading.ok{color:var(--muted)}
   .reading.off{color:var(--fault); border-left-color:var(--fault)}
   .turn.b .reading{border-left:none; border-right:2px solid var(--line); padding:0 7px 0 0; text-align:right}
@@ -640,6 +692,7 @@
   </section>
 
   <aside class="side">
+    <div class="trace" id="trace" hidden></div>
     <div class="threads">
       <div class="log" id="log" aria-live="polite"></div>
       <div class="rooms" id="rooms" hidden>
@@ -1750,6 +1803,13 @@ function takeTurn(){
         (before !== after ? "taken apart and rebuilt" : "nothing changed what it heard was already true of this"), []);
   pushSaid(role, line, repeat, pressing, answering, spoken, false, {meant:line.infer, heard}, up);
   if (gaveUp) pushGave(role, gaveUp);
+  if (!S.silent){
+    const prev = S.trace.length ? S.trace[S.trace.length - 1].matches : 0;
+    S.trace.push({t:S.turn, role, matches:c.matches, built:after, down:c.matches < prev,
+      misheard: !split() && heard.length > 0 && !line.infer.every(f => heard.includes(f)),
+      missed: !(taken.length && line.infer.every(f => taken.includes(f)))});
+    renderTrace();
+  }
   pushBuild(before, after, best, role, split() ? drifted : null, seenBefore, c, taken, line.infer,
             {again: taken.filter(f => heldBefore.has(f)), fresh: taken.filter(f => !heldBefore.has(f)),
              act: CASES[S.case][role], wasMatches});
@@ -1790,10 +1850,10 @@ function pushSaid(role, line, repeat, pressing, answering, spoken, confer, readi
     <div class="bub">${up ? `<span class="up"></span>` : ""}<span class="lead">${LEAD[CASES[S.case][role]]}</span><span class="body"></span></div>
     ${line.meant ? `<span class="meant">pictured: ${line.meant}</span>` : ""}
     ${reading && reading.heard && reading.heard.length ? `<span class="reading${
-        reading.meant.every(f => reading.heard.includes(f)) ? " ok" : " off"}">meant ${
-        reading.meant.map(f => FEATLABEL[f] || f).join(", ")} &nbsp;·&nbsp; heard as ${
-        reading.heard.map(f => FEATLABEL[f] || f).join(", ")}</span>` : ""}
-    <span class="why">${line.why}</span>`;
+        reading.meant.every(f => reading.heard.includes(f)) ? " ok" : " off"}">${
+        reading.meant.map(f => `<i>${FEATLABEL[f] || f}</i>`).join("")}<b>&rarr;</b>${
+        reading.heard.map(f => `<i>${FEATLABEL[f] || f}</i>`).join("")}</span>` : ""}`;
+  el.title = line.why;
   el.querySelector(".body").textContent = spoken || voice(line);
   if (up) el.querySelector(".up").textContent = up;
   if (answering) el.classList.add("answering");
@@ -1953,6 +2013,49 @@ function miniDiff(beforeId, afterId, world){
     </svg>
     <figcaption>${tally}</figcaption>
   </figure>`;
+}
+
+// One column per turn. Two failure marks above it, because a sentence can go
+// wrong in two unrelated ways here — the other person can take it for something
+// else, and the machine can — and a run where both happen constantly still
+// produces a crossing that looks perfectly reasonable.
+function renderTrace(){
+  const host = document.getElementById("trace");
+  // Conferring has no trace to draw and that is the point of it: they settle it
+  // between themselves and the machine builds once, at the end, from what is
+  // left. An empty strip says that rather than disappearing.
+  if (!S.trace.length){
+    if (!CASES[S.case].confer){ host.hidden = true; return; }
+    host.hidden = false;
+    host.innerHTML = `<div class="trace-head"><span>the run</span></div>
+      <p class="none">They settle it between themselves first, out of the machine&rsquo;s hearing. It builds
+      once, at the end, from whatever they did not drop — so there is nothing to trace turn by turn.</p>`;
+    return;
+  }
+  host.hidden = false;
+  const top = Math.max(6, ...S.trace.map(t => t.matches));
+  const bars = S.trace.map((t, i) => {
+    const pct = Math.round(100 * t.matches / top);
+    const note = `turn ${t.t} · role ${t.role === "A" ? 1 : 2} · ${NAME(t.built).toLowerCase()} · ${t.matches} matches`
+      + (t.misheard ? " · the other one took it for something else" : "")
+      + (t.missed ? " · the machine did not catch what was asked" : "");
+    return `<button type="button" class="trk ${t.role.toLowerCase()}${t.down ? " gone" : ""}${
+      i === S.trace.length - 1 ? " here" : ""}" data-t="${i}" title="${note}">
+      <span class="fl">${t.misheard ? `<i class="mis"></i>` : ""}${t.missed ? `<i class="mch"></i>` : ""}</span>
+      <b style="--h:${pct}%"></b></button>`;
+  }).join("");
+  const mis = S.trace.filter(t => t.misheard).length, mch = S.trace.filter(t => t.missed).length;
+  host.innerHTML = `
+    <div class="trace-head">
+      <span>the run · ${S.trace.length} turns · ${top} matches at most</span>
+      <span class="lg"><span><i class="mis"></i>${mis} misheard</span><span><i class="mch"></i>${mch} not caught</span></span>
+    </div>
+    <div class="bars">${bars}</div>
+    <div class="axis"><span>turn 1</span><span>turn ${S.trace[S.trace.length - 1].t}</span></div>`;
+  host.querySelectorAll(".trk").forEach(b => b.onclick = () => {
+    const el = (target(S.trace[+b.dataset.t].role) || logEl).querySelectorAll(".ai")[+b.dataset.t];
+    if (el) el.scrollIntoView({block:"center", behavior:"smooth"});
+  });
 }
 
 function pushBuild(before, after, best, role, drifted, seenBefore, c, taken, meant, why){
@@ -2949,7 +3052,7 @@ function reset(){
     words:[], spoken:0, taken:0, asked:{A:0, B:0}, dodged:0,
     askedFeats:{A:new Set(), B:new Set()},
     goalNow:{...SC().goal}, revised:{A:0, B:0}, revisedAt:{A:0, B:0}, hitNow:{A:0, B:0},
-    recent:{A:[], B:[]}, spent:{A:false, B:false}, lastSaid:{A:[], B:[]}, lastHeard:{A:[], B:[]}, lastUp:{A:"", B:""}, gave:{A:[], B:[]}, mRead:[], adopted:{A:new Set(), B:new Set()}, took:{A:[], B:[]},
+    recent:{A:[], B:[]}, spent:{A:false, B:false}, lastSaid:{A:[], B:[]}, lastHeard:{A:[], B:[]}, lastUp:{A:"", B:""}, gave:{A:[], B:[]}, mRead:[], trace:[], adopted:{A:new Set(), B:new Set()}, took:{A:[], B:[]},
     picture:{A:{wants:new Map(), avoids:new Map()}, B:{wants:new Map(), avoids:new Map()}}, readings:[],
     phase: CASES[S.case].confer ? "confer" : "machine", dropped:[], yielded:[],
     pact:{A:{want:new Set(), avoid:new Set()}, B:{want:new Set(), avoid:new Set()}}});
@@ -2959,6 +3062,7 @@ function reset(){
     [S.shared, S.side.A, S.side.B, S.mem.A, S.mem.B].forEach(c => { c.world[SC().ground] = true; });
   }
   logEl.innerHTML = ""; logs.A.innerHTML = ""; logs.B.innerHTML = ""; vhost.innerHTML = "";
+  if (!S.silent) renderTrace();      // empty, so it hides — or explains itself when conferring
   roomsEl.hidden = !split(); logEl.hidden = split();
   document.getElementById("playBtn").textContent = "Play";
   paint(); hud();
