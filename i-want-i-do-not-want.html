@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I Want, I Do Not Want</title>
-<meta name="description" content="Two people who do not share a lexicon rebuild each other's meaning out of their own associations.">
+<meta name="description" content="Two people who do not share a lexicon rebuild each other's meaning out of their own associations. Every case arrives already run.">
 <link rel="icon" href="data:,">
 </head>
 <body>
@@ -376,15 +376,17 @@
     .stage{height:74dvh}
   }
   @media (prefers-reduced-motion:reduce){ *{transition:none !important} }
+.bar .pre{display:block; margin-top:6px; color:var(--dim); font-size:12px; max-width:62ch}
 </style>
 
 <header class="bar">
   <div>
     <h1>I Want, I Do Not Want</h1>
-    <p>Two people at odds over one crossing, one kind of sentence each, and a machine that builds from what it infers.</p>
+    <p>Two people at odds over one crossing, one kind of sentence each, and a machine that builds from what it infers.
+       <span class="pre">Every case below has already been played through &mdash; switch between them to read the results. Watching one happen is optional.</span></p>
   </div>
   <div class="tools">
-    <button class="ghost primary" id="playBtn">Play</button>
+    <button class="ghost primary" id="playBtn">Watch it happen</button>
     <button class="ghost" id="stepBtn">Step</button>
     <button class="ghost" id="speedBtn">1×</button>
     <button class="ghost" id="resetBtn">Reset</button>
@@ -1361,7 +1363,7 @@ const logEl = document.getElementById("log");
 const roomsEl = document.getElementById("rooms"), vhost = document.getElementById("vhost");
 const logs = {A: document.getElementById("logA"), B: document.getElementById("logB")};
 function target(role){ return split() ? logs[role] : logEl; }
-function drop(el, host){ host.appendChild(el); host.scrollTop = host.scrollHeight; }
+function drop(el, host){ if (S.silent) return; host.appendChild(el); host.scrollTop = host.scrollHeight; }
 
 function pushSaid(role, line, repeat, pressing, answering, spoken, confer, reading){
   const host = target(role);
@@ -1506,6 +1508,7 @@ function record(){
 }
 
 function pushVerdict(){
+  if (S.silent) return;
   vhost.innerHTML = "";
   const solo = !!CASES[S.case].solo, cc = solo ? S.side.A : S.shared;
   const r = S.results[S.scenario + '/' + S.case] || {};
@@ -1629,6 +1632,7 @@ function assemble(c){
    ═══════════════════════════════════════════════════════════ */
 const cv = document.getElementById("scene"), ctx = cv.getContext("2d");
 function paint(){
+  if (S.silent) return;
   const r = cv.getBoundingClientRect(); if (!r.width) return;
   const dpr = Math.min(devicePixelRatio||1, 2);
   cv.width = Math.round(r.width*dpr); cv.height = Math.round(r.height*dpr);
@@ -1752,6 +1756,7 @@ function paintSaid(ctx){
 const groundName = c => c.world.water && c.world.rock ? "stream and cleft, both described"
   : c.world.water ? "a stream" : c.world.rock ? "a cleft" : "no ground described";
 function hud(){
+  if (S.silent) return;
   if (CASES[S.case].solo){
     const a = S.side.A, b = S.side.B;
     document.getElementById("bBuilt").textContent =
@@ -2097,16 +2102,30 @@ function play(){
   timer = setInterval(takeTurn, (reduced ? 1400 : 2300) / S.speed);
 }
 function stop(){
-  S.playing = false; document.getElementById("playBtn").textContent = S.done ? "Finished" : "Play";
+  S.playing = false; document.getElementById("playBtn").textContent = S.done ? "Watch it happen" : "Play";
   clearInterval(timer); timer = null;
 }
-document.getElementById("playBtn").onclick = () => S.playing ? stop() : play();
+document.getElementById("playBtn").onclick = () => {
+  if (S.playing) return stop();
+  if (S.done){ reset(); play(); return; }   // run it again, slowly, from the top
+  play();
+};
 document.getElementById("stepBtn").onclick = () => { stop(); takeTurn(); };
 document.getElementById("speedBtn").onclick = e => {
   S.speed = S.speed === 1 ? 2 : S.speed === 2 ? 4 : 1;
   e.currentTarget.textContent = S.speed + "×";
   if (S.playing) play();
 };
+// Play the case through at once, drawing everything, so a case you have not
+// watched still arrives finished — transcript, ledger, conduit and pictures all
+// filled in. Watching is then a choice rather than the price of admission.
+function settleNow(){
+  reset();
+  let n = 0;
+  while (!S.done && n < 90){ takeTurn(); n++; }
+  setView(S.view);
+}
+
 function reset(){
   stop();
   Object.assign(S, {turn:0, speaker:"A", said:{A:new Set(), B:new Set()},
@@ -2135,14 +2154,14 @@ document.getElementById("againBtn").onclick = () => { reset(); play(); };
 document.querySelectorAll(".case").forEach(btn => btn.onclick = () => {
   S.case = btn.dataset.c;
   document.querySelectorAll(".case").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
-  reset(); paintCaseLabels(); setView(S.view); play();
+  paintCaseLabels(); settleNow();
 });
 function paintScenarios(){
   document.getElementById("scen").innerHTML = Object.entries(SCENARIOS)
     .map(([k,v]) => `<button type="button" data-s="${k}" aria-pressed="${k===S.scenario}">${v.label}</button>`).join("");
   document.querySelectorAll("#scen button").forEach(b => b.onclick = () => {
     S.scenario = b.dataset.s;
-    paintScenarios(); reset(); paintCaseLabels(); setView(S.view); play();
+    paintScenarios(); paintCaseLabels(); settleNow();
   });
   const sc = SC();
   document.getElementById("scenNote").innerHTML = `${sc.blurb} Here ${sc.at}.`;
@@ -2163,8 +2182,29 @@ new ResizeObserver(() => paint()).observe(cv.parentElement);
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { readPalette(); paint(); });
 new MutationObserver(() => { readPalette(); paint(); })
   .observe(document.documentElement, {attributes:true, attributeFilter:["data-theme"]});
-paintScenarios(); paintCaseLabels(); renderCmp(); renderBadges(); setView("scene"); paint(); hud();
-setTimeout(play, 600);
+// Every scenario and every case, played through once at load, so the page
+// arrives with its results already in it. Press Play to watch any of them
+// happen again — the phrasings are sampled fresh, so it will not be identical.
+function precompute(){
+  const wasScenario = S.scenario, wasCase = S.case;
+  S.silent = true;
+  for (const sc of Object.keys(SCENARIOS)){
+    S.scenario = sc;
+    for (const c of Object.keys(CASES)){
+      S.case = c;
+      reset();
+      let n = 0;
+      while (!S.done && n < 90){ takeTurn(); n++; }
+    }
+  }
+  S.silent = false;
+  S.scenario = wasScenario; S.case = wasCase;
+  reset();
+}
+
+precompute();
+paintScenarios(); paintCaseLabels(); renderCmp(); renderBadges();
+S.view = "scene"; settleNow();
 })();
 </script>
 </body>
