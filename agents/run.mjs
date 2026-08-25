@@ -25,7 +25,7 @@ import { z } from "zod";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import OpenAI from "openai";
 import { KIT, NAME, FEATURES, FORBIDDEN, mkCtx, hear, build, provenance, groundOf, ledger } from "./engine.mjs";
-import { readKeyword, readLLM, READERS } from "./machine.mjs";
+import { readKeyword, readLLM, speakLLM, READERS } from "./machine.mjs";
 
 /* ── what each of them came for, and what it is allowed to do ─────────── */
 const SCENARIOS = {
@@ -69,6 +69,11 @@ const TurnSchema = z.object({
 // What the machine returns when it is a model rather than a word list.
 const ReadSchema = z.object({
   needs: z.array(z.string()).describe("The feature keys the sentence states. One or two, or none at all."),
+});
+
+// And what it returns when it is saying something rather than reading.
+const SaySchema = z.object({
+  say: z.string().describe("One or two plain sentences. What you made of it and what you did."),
 });
 
 function systemPrompt(role, act, scenario, situation, goal) {
@@ -160,32 +165,33 @@ const PLAYERS = { claude: askClaude, openai: askOpenAI };
 // memory of the conversation: a builder parsing one request, not a third party
 // following the argument. Either provider can play it, so one key is enough to
 // run the whole thing.
-async function machineClaude(system, user) {
+async function machineClaude(system, user, schema = ReadSchema) {
   // Structured output lives under `beta` in SDK 0.71.
   const res = await anthropic.beta.messages.parse({
     model: MACHINE_MODEL,
     max_tokens: 1024,
     system,
     messages: [{ role: "user", content: user }],
-    output_config: { format: betaZodOutputFormat(ReadSchema) },
+    output_config: { format: betaZodOutputFormat(schema) },
   });
   if (res.stop_reason === "refusal") throw new Error("the machine declined to read a sentence");
   if (!res.parsed_output) throw new Error("the machine returned nothing parsable");
   return res.parsed_output;
 }
 
-async function machineOpenAI(system, user) {
+async function machineOpenAI(system, user, schema = ReadSchema) {
+  const shape = schema === SaySchema ? `{"say": "..."}` : `{"needs": ["key", ...]}`;
   const res = await openai.chat.completions.create({
     model: OPENAI_MODEL,
     response_format: { type: "json_object" },
     messages: [
-      { role: "system", content: system + `\n\nReply with JSON only: {"needs": ["key", ...]}` },
+      { role: "system", content: system + `\n\nReply with JSON only: ${shape}` },
       { role: "user", content: user },
     ],
   });
   const raw = res.choices?.[0]?.message?.content;
   if (!raw) throw new Error("the machine returned no content");
-  return ReadSchema.parse(JSON.parse(raw));
+  return schema.parse(JSON.parse(raw));
 }
 
 const MACHINES = { claude: machineClaude, openai: machineOpenAI };
@@ -235,6 +241,10 @@ const playerB = argv.b || "claude";
 const reader = ({ llm: "claude" })[argv.machine] || argv.machine || "claude";
 if (!READERS[reader]) throw new Error(`unknown machine: ${reader} (keyword | claude | openai)`);
 const byModelUsed = reader !== "keyword";
+// The machine says its piece unless told not to. It is a second call per turn,
+// so --voice off halves what a run costs when only the numbers are wanted.
+const voiced = byModelUsed && argv.voice !== "off";
+let saidGroundUnknown = false;   // it should say that once, not every turn
 
 if (!SCENARIOS[scenarioKey]) throw new Error(`unknown scenario: ${scenarioKey}`);
 if (!CASES[caseKey]) throw new Error(`unknown case: ${caseKey} (given | swapped | separate)`);
@@ -280,7 +290,23 @@ for (let i = 0; i < maxTurns; i++) {
   console.log(`     machine took [${taken.join(", ") || "nothing"}]${caught ? "" : "   ← not what was meant"}`);
   if (byModel && byWord.join() !== byModel.join()) console.log(`     the word list would have taken [${byWord.join(", ") || "nothing"}]`);
   if (before !== after) console.log(`     → the machine rebuilds: ${NAME(after)}`);
-  transcript.push({ who: "machine", turn: state.turn, text: NAME(after), changed: before !== after, taken });
+  // Only now, with the reading committed and the thing rebuilt, does it speak.
+  let saidByMachine = "";
+  if (voiced) {
+    const groundKnown = ctx.world.water || ctx.world.rock;
+    const tellGround = !groundKnown && !saidGroundUnknown;
+    saidByMachine = await speakLLM({
+      said: sentence, took: taken, before: before ? NAME(before) : null, after: NAME(after),
+      changed: before !== after,
+      props: KIT.find(k => k.id === after)?.has ?? [],
+      wants: [...ctx.wants.keys()], avoids: [...ctx.avoids.keys()],
+      tellGround,
+    }, (sys, usr) => MACHINES[reader](sys, usr, SaySchema));
+    if (tellGround) saidGroundUnknown = true;
+    if (saidByMachine) console.log(`     "${saidByMachine}"`);
+  }
+  transcript.push({ who: "machine", turn: state.turn, text: NAME(after), say: saidByMachine,
+                    changed: before !== after, taken });
 }
 
 /* ── what it came to ──────────────────────────────────────────────────── */

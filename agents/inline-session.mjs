@@ -33,11 +33,13 @@ const keep = s => ({
   meta: s.meta,
   outcome: s.outcome,
   reading: s.reading,
-  transcript: (s.transcript || []).filter(t => t.who === "A" || t.who === "B").map(t => ({
-    turn: t.turn, who: t.who, player: t.player, text: t.text,
-    meant: t.meant || t.asserts || [], taken: t.taken || [],
-    byWord: t.byWord || null, byModel: t.byModel || null,
-  })),
+  transcript: (s.transcript || [])
+    .filter(t => t.who === "A" || t.who === "B" || (t.who === "machine" && t.say))
+    .map(t => t.who === "machine"
+      ? { turn: t.turn, who: "machine", text: t.text, say: t.say, changed: !!t.changed }
+      : { turn: t.turn, who: t.who, player: t.player, text: t.text,
+          meant: t.meant || t.asserts || [], taken: t.taken || [],
+          byWord: t.byWord || null, byModel: t.byModel || null }),
 });
 
 let sessions = [];

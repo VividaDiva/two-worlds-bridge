@@ -56,6 +56,50 @@ export async function readLLM(text, ask) {
   return keys.filter(k => k in FEATURES).slice(0, 2);
 }
 
+/* ── the machine's own voice ──────────────────────────────────────────── */
+// A second call, deliberately after the reading is committed. If the same call
+// did both, the sentence it was composing could steer what it decided it had
+// heard, and the reading is the thing being measured.
+//
+// It is a builder, not an assistant. It reports; it does not offer, apologise,
+// or ask — it has no way to ask, which is the whole situation it is in.
+const SAY_SYSTEM = [
+  `You are a machine that builds crossings out of matchsticks. People describe what they need and you build.`,
+  `You cannot ask anyone anything. You cannot see where they are standing. You only ever get sentences.`,
+  ``,
+  `Say what you made of the thing just said to you and what you did about it.`,
+  ``,
+  `Hold to this:`,
+  `- One sentence. Two only if the second earns it. Under thirty words.`,
+  `- Report. Do not offer, apologise, thank anybody, or ask for anything.`,
+  `- Never open with "I understand", "I understood", "I see" or "It sounds like". Do not repeat their`,
+  `  need back to them before answering it — say what you did, and let that show what you took.`,
+  `- Say only what is true of what stands. You are told its actual properties; do not credit it with`,
+  `  others, and do not join two facts into a reason that was not given to you.`,
+  `- If you are told you do not know what is underneath and have not said so yet, say it once, at the end.`,
+  `  If you are not told that, never mention it.`,
+  `- Never use the word "user".`,
+].join("\n");
+
+export async function speakLLM(state, ask) {
+  const list = ks => ks.length ? ks.map(f => FEATURES[f]).join("; ") : "nothing yet";
+  const bits = [
+    `They said: "${state.said}"`,
+    `You took it to be about: ${state.took.length ? list(state.took) : "nothing you can build from"}.`,
+    ``,
+    state.changed
+      ? `You have rebuilt. It was ${state.before || "nothing at all"}; it is now ${state.after}.`
+      : `You changed nothing. ${state.after} still stands.`,
+    `What ${state.after} actually is: ${list(state.props)}.`,
+    ``,
+    `Asked of you so far: ${list(state.wants)}.`,
+    `Refused so far: ${list(state.avoids)}.`,
+    state.tellGround ? `\nYou do not know what is underneath, and you have not said so yet.` : ``,
+  ].filter(x => x !== undefined).join("\n");
+  const out = await ask(SAY_SYSTEM, bits + `\n\nSay your piece.`);
+  return typeof out?.say === "string" ? out.say.trim() : "";
+}
+
 export const READERS = {
   keyword: "the word list",
   claude:  "a language model (Claude)",
