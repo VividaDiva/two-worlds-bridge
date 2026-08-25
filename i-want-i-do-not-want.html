@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I Want, I Do Not Want</title>
-<meta name="description" content="Two people argue about a crossing, and a machine says what it took them to mean and what it does with the matches.">
+<meta name="description" content="Two people argue about a crossing, and a machine shows what it took them to mean and which matches it laid and took up.">
 <link rel="icon" href="data:,">
 </head>
 <body>
@@ -418,6 +418,18 @@
         border:1px solid var(--line); background:var(--panel)}
   .miss .said{font-size:12.5px}
   .miss .as{font-size:11px; color:var(--signal); font-family:var(--mono,ui-monospace,monospace)}
+  /* what it did, in matches. Same frame every turn so two of them can be compared. */
+  .mini{margin:6px 0 0; display:flex; align-items:center; gap:9px}
+  .mini svg{width:154px; height:auto; flex:none; display:block; overflow:visible}
+  .mini .bank{fill:none; stroke:var(--line); stroke-width:3}
+  .mini line{stroke-linecap:round}
+  .mini .kept{stroke:var(--muted); stroke-width:4; opacity:.5}
+  .mini .gone{stroke:var(--fault); stroke-width:3.5; opacity:.5; stroke-dasharray:5 6}
+  .mini .added{stroke:var(--signal); stroke-width:5.5}
+  .mini figcaption{
+    font-family:var(--mono); font-size:9.5px; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--muted);
+  }
   .ai .mvoice{font-size:13px; margin:5px 0 0; line-height:1.5}
   .ai .mread{font-size:11.5px; color:var(--muted); margin:0 0 5px}
   .ai .mread.off{color:var(--signal)}
@@ -1874,7 +1886,52 @@ function stoodStill(after, taken, why){
   return "it weighed that against the rest and left it standing";
 }
 
+// The same matchsticks the scene is drawn from, laid out for one design without
+// touching the run. Two of these differenced gives exactly what the machine
+// picked up and what it put down on this turn.
+function segsFor(id, world){
+  const k = KIT.find(x => x.id === id);
+  return k ? assemble({design:k, world}) : [];
+}
+const segKey = m => `${Math.round(m.x1)},${Math.round(m.y1)},${Math.round(m.x2)},${Math.round(m.y2)}`;
+
+// One frame for every one of these, so a diagram five turns apart is at the same
+// scale as this one and the two can be compared by eye. The hanging span is the
+// only thing in the kit that reaches above the banks, and giving every diagram
+// headroom for a structure that almost never gets built would waste half the
+// height of all the others — so it gets a taller frame of its own, and the
+// low structures, which are what actually get compared, all share one.
+const MINI_LOW  = {x:352, y:314, w:496, h:218};
+const MINI_HIGH = {x:352, y:150, w:496, h:382};
+function miniDiff(beforeId, afterId, world){
+  const tall = beforeId === "hang" || afterId === "hang";
+  const MINI = tall ? MINI_HIGH : MINI_LOW;
+  const A = segsFor(beforeId, world), B = segsFor(afterId, world);
+  const inA = new Set(A.map(segKey)), inB = new Set(B.map(segKey));
+  const gone  = A.filter(m => !inB.has(segKey(m)));
+  const kept  = B.filter(m =>  inA.has(segKey(m)));
+  const added = B.filter(m => !inA.has(segKey(m)));
+  // A cleft goes down a long way. Rather than stretch every diagram to fit the
+  // deepest ground any of them might stand over, the banks run off the bottom
+  // edge — which is what a drop looks like anyway.
+  const bed = Math.min(world.rock ? BED_CLEFT : world.water ? BED_STREAM : GROUND_Y + 96,
+                       MINI.y + MINI.h - 4);
+  const seg = (m, cls) => `<line x1="${m.x1.toFixed(1)}" y1="${m.y1.toFixed(1)}" x2="${m.x2.toFixed(1)}" y2="${m.y2.toFixed(1)}" class="${cls}"/>`;
+  const tally = !added.length && !gone.length ? "nothing moved"
+    : [added.length ? `${added.length} laid` : "", gone.length ? `${gone.length} taken up` : ""].filter(Boolean).join(" · ");
+  return `<figure class="mini">
+    <svg viewBox="${MINI.x} ${MINI.y} ${MINI.w} ${MINI.h}" aria-hidden="true">
+      <path class="bank" d="M${MINI.x} ${GROUND_Y} H${GAP_L} L${GAP_L} ${bed} H${GAP_R} L${GAP_R} ${GROUND_Y} H${MINI.x + MINI.w}"/>
+      ${gone.map(m => seg(m, "gone")).join("")}
+      ${kept.map(m => seg(m, "kept")).join("")}
+      ${added.map(m => seg(m, "added")).join("")}
+    </svg>
+    <figcaption>${tally}</figcaption>
+  </figure>`;
+}
+
 function pushBuild(before, after, best, role, drifted, seenBefore, c, taken, meant, why){
+  if (S.silent) return;          // 21,600 of these during the sweep, none of them seen
   const el = document.createElement("div");
   el.className = "ai";
   const changed = before !== after;
@@ -1895,6 +1952,7 @@ function pushBuild(before, after, best, role, drifted, seenBefore, c, taken, mea
   el.innerHTML = `<span class="who">the machine</span>
     ${read}
     <div class="made">${after ? NAME(after) : "nothing it can make"}<small>${c.matches} matches</small></div>
+    ${after ? miniDiff(before, after, c.world) : ""}
     <p class="${solo && drifted ? "drift" : ""}">${solo !== null ? solo
       : changed ? action(before, after, c.matches, (why && why.wasMatches) || 0)
                 : stoodStill(after, taken, why)}</p>
