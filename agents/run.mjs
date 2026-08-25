@@ -18,8 +18,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
+// Zod 4. The SDK's schema helper calls z.toJSONSchema and resolves its own copy
+// of zod, so the v4 subpath of a v3 install does not reach it — it has to be v4
+// at the root.
 import { z } from "zod";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
+import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import OpenAI from "openai";
 import { KIT, NAME, FEATURES, FORBIDDEN, mkCtx, hear, build, provenance, groundOf, ledger } from "./engine.mjs";
 import { readKeyword, readLLM, READERS } from "./machine.mjs";
@@ -108,12 +111,13 @@ const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o";
 
 async function askClaude(system, user) {
   // Opus 5 runs adaptive thinking when `thinking` is omitted.
-  const res = await anthropic.messages.parse({
+  // Structured output lives under `beta` in SDK 0.71.
+  const res = await anthropic.beta.messages.parse({
     model: CLAUDE_MODEL,
     max_tokens: 2048,
     system,
     messages: [{ role: "user", content: user }],
-    output_config: { format: zodOutputFormat(TurnSchema) },
+    output_config: { format: betaZodOutputFormat(TurnSchema) },
   });
   // A refusal is surfaced, never quietly rerouted — a silent fallback to another
   // model would mean comparing two different players without knowing it.
@@ -146,12 +150,13 @@ const PLAYERS = { claude: askClaude, openai: askOpenAI };
 // memory of the conversation: a builder parsing one request, not a third party
 // following the argument.
 async function askMachine(system, user) {
-  const res = await anthropic.messages.parse({
+  // Structured output lives under `beta` in SDK 0.71.
+  const res = await anthropic.beta.messages.parse({
     model: MACHINE_MODEL,
     max_tokens: 1024,
     system,
     messages: [{ role: "user", content: user }],
-    output_config: { format: zodOutputFormat(ReadSchema) },
+    output_config: { format: betaZodOutputFormat(ReadSchema) },
   });
   if (res.stop_reason === "refusal") throw new Error("the machine declined to read a sentence");
   if (!res.parsed_output) throw new Error("the machine returned nothing parsable");

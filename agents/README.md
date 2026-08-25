@@ -114,17 +114,27 @@ its source, or the sessions go with it.
 
 ## Status
 
-The engine is tested and matches the browser build: given the same features it
-reaches the same structures and the same provenance. `read-check.mjs` and
-`inline-session.mjs` have both been run. **The three API calls are untested** —
-writing them needed no keys, running them does, and the keys are yours. Expect
-to fix small things on first run.
+The engine matches the browser build: given the same features it reaches the
+same structures and the same provenance. `read-check.mjs` and
+`inline-session.mjs` have both been run, and the replay path has been checked
+end to end with a fixture.
 
-The Anthropic halves — Role B and the machine — are written against the current
-SDK (`messages.parse` with a Zod output format; Opus 5 runs adaptive thinking
-when `thinking` is omitted). A refusal is surfaced as an error rather than
-quietly rerouted: a silent fallback would mean comparing two different players
-without knowing it.
+`run.mjs` runs as far as the first API call and is stopped there by a 401 —
+`.env` still holds the example's placeholder values. **Put real keys in it and
+the run proceeds.** Three things had to be fixed to get that far, and they are
+worth knowing about if you upgrade anything:
+
+- Structured output is under `beta` in SDK 0.71: `client.beta.messages.parse`,
+  not `client.messages.parse`.
+- The Zod helper is `@anthropic-ai/sdk/helpers/beta/zod`, exporting
+  `betaZodOutputFormat`.
+- That helper calls `z.toJSONSchema`, which is Zod 4, and it resolves its own
+  copy of `zod` — so the `zod/v4` subpath of a Zod 3 install does not reach it.
+  This package now depends on `zod@^4`.
+
+Opus 5 runs adaptive thinking when `thinking` is omitted. A refusal is surfaced
+as an error rather than quietly rerouted: a silent fallback would mean comparing
+two different players without knowing it.
 
 The OpenAI half is written from general knowledge of that SDK rather than from a
 bundled specification. Check the call shape and the model name against their
