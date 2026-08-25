@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I Want, I Do Not Want</title>
-<meta name="description" content="Two people argue about a crossing through a machine that reads their sentences rather than their intentions — with recorded runs from real models.">
+<meta name="description" content="Two people argue about a crossing through a machine that reads their sentences rather than their intentions, and says why it left the thing standing.">
 <link rel="icon" href="data:,">
 </head>
 <body>
@@ -1594,6 +1594,12 @@ function takeTurn(){
   S.lastHeard = S.lastHeard || {A:[], B:[]};
   S.lastHeard[other] = heard;                 // what the other one actually took from it
   const taken = machineReads(spoken);
+  // What it was already holding, so that when nothing changes it can say which
+  // of the two reasons that is: it has heard this before, or it has heard it for
+  // the first time and it makes no difference.
+  const cx0 = CX(role);
+  const heldBefore = new Set([...cx0.wants.keys(), ...cx0.avoids.keys(),
+                              ...Object.keys(cx0.world).filter(k => cx0.world[k])]);
   S.mRead.push({turn:S.turn + 1, role, spoken, meant:line.infer.slice(), taken,
                 got: line.infer.filter(f => taken.includes(f)).length,
                 invented: taken.filter(f => !line.infer.includes(f)).length});
@@ -1614,7 +1620,9 @@ function takeTurn(){
         (before !== after ? "taken apart and rebuilt" : "nothing changed what it heard was already true of this"), []);
   pushSaid(role, line, repeat, pressing, answering, spoken, false, {meant:line.infer, heard}, up);
   if (gaveUp) pushGave(role, gaveUp);
-  pushBuild(before, after, best, role, split() ? drifted : null, seenBefore, c, taken, line.infer);
+  pushBuild(before, after, best, role, split() ? drifted : null, seenBefore, c, taken, line.infer,
+            {again: taken.filter(f => heldBefore.has(f)), fresh: taken.filter(f => !heldBefore.has(f)),
+             act: CASES[S.case][role]});
   S.seen[role] = after;
 
   // a goal is only reached if the object AND its ground are right
@@ -1718,7 +1726,30 @@ function pushNote(text, role){
   el.querySelector("p").textContent = text;
   drop(el, target(role || S.speaker));
 }
-function pushBuild(before, after, best, role, drifted, seenBefore, c, taken, meant){
+// Why nothing moved. It always had a reason and always gave the same sentence,
+// which read as a machine with one thing to say rather than a machine that had
+// weighed something. Each of these is true of the turn it appears on.
+function stoodStill(after, taken, why){
+  if (!taken || !taken.length) return "nothing in that it could use, so nothing to do";
+  const design = KIT.find(k => k.id === after);
+  const label = (fs, j) => fs.map(f => FEATLABEL[f] || f).join(j || " and ");
+  const act = (why && why.act) || "want";
+  const again = (why && why.again) || [], fresh = (why && why.fresh) || [];
+  // A refusal of something that is not there, or a request for something that is,
+  // is already answered by what stands.
+  const met = taken.filter(f => design && (act === "avoid" ? !design.has.includes(f) : design.has.includes(f)));
+  if (met.length === taken.length)
+    return act === "avoid"
+      ? `nothing standing has ${label(met, " or ")}, so there was nothing to undo`
+      : `it already has ${label(met)}`;
+  if (again.length && !fresh.length)
+    return `it has been told ${label(again)} before, and has not changed its mind`;
+  if (fresh.length)
+    return `${label(fresh)} is new to it, and this is still the best it can do with everything else it has been told`;
+  return "it weighed that against the rest and left it standing";
+}
+
+function pushBuild(before, after, best, role, drifted, seenBefore, c, taken, meant, why){
   const el = document.createElement("div");
   el.className = "ai";
   const changed = before !== after;
@@ -1741,7 +1772,7 @@ function pushBuild(before, after, best, role, drifted, seenBefore, c, taken, mea
     <div class="made">${after ? NAME(after) : "nothing it can make"}<small>${c.matches} matches</small></div>
     <p class="${solo && drifted ? "drift" : ""}">${solo !== null ? solo
       : changed ? (before ? `taken apart and rebuilt — it was ${NAME(before).toLowerCase()}` : "first thing it could stand up")
-                : "nothing changed; what it heard was already true of this"}</p>
+                : stoodStill(after, taken, why)}</p>
     ${inferred.length ? `<div class="ruled">${inferred.map(r => `<span style="text-decoration:none">${r}</span>`).join("")}</div>` : ""}`;
   drop(el, target(role));
 }
