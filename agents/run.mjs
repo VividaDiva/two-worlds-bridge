@@ -87,7 +87,17 @@ function systemPrompt(role, act, scenario, situation, goal) {
     `   Describe your situation and what you need from it. Say what would happen to you, not what should be built.`,
     `4. Speak like a person, not a specification. Contractions, plain words, one thought.`,
     ``,
-    `Return the sentence, and the feature keys it means, from this list only:`,
+    // A refuser kept declaring the need it would prefer instead of the one it
+    // was naming — "I do not want it to sway" filed as steady, not sways. That
+    // is the double negative arriving through the back door, in the answer key
+    // rather than in the sentence, and it made every measurement of the machine
+    // partly a measurement of this.
+    act === "want"
+      ? `Return the sentence, and the keys for what you are ASKING FOR.`
+      : `Return the sentence, and the keys for what you are REFUSING — the thing your sentence names, ` +
+        `not the thing you would rather have. "I do not want to feel it sway" refuses "sways"; it does not ask for "steady". ` +
+        `"I do not want to climb up to it" refuses "high"; it does not ask for "low".`,
+    `Use this list only:`,
     ...Object.entries(FEATURES).map(([k, v]) => `   ${k} — ${v}`),
   ].join("\n");
 }
