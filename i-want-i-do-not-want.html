@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I Want, I Do Not Want</title>
-<meta name="description" content="A machine that answers with what it understood and what it did with the matches, and two people who cannot say what they want built.">
+<meta name="description" content="Two people argue about a crossing through a machine that reads their sentences rather than their intentions — and what gets built follows whoever is allowed to ask.">
 <link rel="icon" href="data:,">
 </head>
 <body>
@@ -138,6 +138,11 @@
   }
   .find p{margin:0; font-size:14px; line-height:1.55; color:var(--muted)}
   .find p b{color:var(--ink); font-weight:600}
+  .find code{
+    font-family:var(--mono); font-size:11.5px; background:var(--surface);
+    border:1px solid var(--line); border-radius:4px; padding:0 4px; white-space:nowrap;
+  }
+  .finds{min-width:0} .find{min-width:0; overflow-wrap:anywhere}
   .find.quiet{border-left-color:var(--line)}
   .find.quiet h5{color:var(--muted)}
 
@@ -1378,12 +1383,49 @@ const voice = l => l.says[Math.floor(Math.random() * l.says.length)];
 const SC = () => SCENARIOS[S.scenario];
 const linesFor = role => SC().speech[role][CASES[S.case][role]];
 
+// ── How much room they get ───────────────────────────────────────────
+// Until now the run ended when both of them had said everything, which made the
+// channel infinite: whatever either of them came to say, it eventually landed.
+// That is why being in one room and being in separate rooms came out the same —
+// everything got through either way, so it could not matter what happened in
+// between. A run now has a fixed number of turns. One unit is exactly enough for
+// each of them to say all of it once; anything spent on the other person is a
+// need that never reaches the machine.
+// It is off by default, because it does not do what it was built to do, and
+// that turned out to be the useful part. Capping turns truncates the TAIL of
+// what each of them says — and the machine has already made its choice by then.
+// The ranking is settled by the first few things it hears; everything after is
+// people repeating themselves in different words. So a tight budget starves the
+// conferring case of the turns it needs to agree on anything and leaves the
+// other four exactly as they were.
+// Left in as a knob worth turning in front of an examiner:
+//   ?bk=1 tight · ?bk=1.5 · ?bk=2 roomy · ?bk=0 uncapped (the default)
+const BK = (() => {
+  const q = new URLSearchParams(location.search).get("bk");
+  const v = q === null ? 0 : parseFloat(q);
+  return Number.isFinite(v) && v >= 0 ? v : 0;
+})();
+const budget = () => BK <= 0 ? Infinity
+  : Math.max(4, Math.round(BK * (linesFor("A").length + linesFor("B").length)));
+
 /* ═══════════════════════════════════════════════════════════
    4 · THE MACHINE
    A want adds weight to a property. A refusal takes more away
    than a want adds, so one fear can outlast several requests.
    ═══════════════════════════════════════════════════════════ */
-const W_WANT = 2, W_AVOID = 4;
+// How much a refusal outweighs a request. This one number decides more of what
+// gets built than anything either of them says: at 4 to 2 a thing feared cancels
+// two things wanted, so the crossing that survives is the one with the fewest
+// properties left to object to — which is why so many runs end at a bare log
+// whatever route they took to get there. It is a choice, not a law, and the
+// whole argument of this piece is that such choices participate in the result.
+//   ?avoid=2 to weigh a refusal the same as a request · ?avoid=6 to make it louder
+const W_WANT = 2;
+const W_AVOID = (() => {
+  const q = new URLSearchParams(location.search).get("avoid");
+  const v = q === null ? 4 : parseFloat(q);
+  return Number.isFinite(v) && v >= 0 ? v : 4;
+})();
 
 const S = {
   scenario:"places", case:"given", results:{}, runs:{}, tick:0,
@@ -1528,7 +1570,6 @@ function choose(role){
   // Apart, you know only what you have said yourself. In one room you heard them too.
   const know = split() ? S.mem[role] : c;
   const fresh = lines.filter((l,i) => !said.has(i));
-  const pool = fresh.length ? fresh : lines;
   const act = CASES[S.case][role];
 
   // what is standing is visible to both of them in every case — the machine shows it
@@ -1546,9 +1587,28 @@ function choose(role){
   const pic = (S.picture && S.picture[role]) || {wants:new Map(), avoids:new Map()};
   const clash = f => act === "want" ? pic.avoids.has(f) : pic.wants.has(f);
   const soft = giving(role), press = soft ? 1 : 6;
-  let best = pool[0], bestGain = -1e9, pressing = false, answering = false;
+
+  // ── Saying it again, harder ──────────────────────────────────────────
+  // Being contradicted makes people repeat themselves, and the machine counts
+  // every time a thing is put to it — so a point made twice weighs twice, and a
+  // fear repeated is worth four each time. That is the one thing that can change
+  // what gets built without anybody saying anything new, and it can only happen
+  // where there is somebody to be contradicted by. Alone with the machine there
+  // is nothing to push back against and every need is put exactly once.
+  // Once each. People do say a thing twice when contradicted; they do not say it
+  // eleven times, and a run where seven turns in ten are repetitions is not an
+  // argument, it is a stuck record.
+  const pushBack = !soft && !split() && heard.some(clash);
+  const again = pushBack
+    ? lines.filter((l, i) => said.has(i) && l.infer.some(f =>
+        clash(f) && !S.pressed[role].has(f) && (know.wants.has(f) || know.avoids.has(f))))
+    : [];
+  const pool = fresh.length || again.length ? fresh.concat(again) : lines;
+  let best = pool[0], bestGain = -1e9, pressing = false, answering = false, harder = false;
   pool.forEach(l => {
-    let gain = recent.includes(lines.indexOf(l)) ? (soft ? -6 : -4) : 0;   // you just said that
+    const isAgain = again.includes(l);
+    // pressing a contested point again outweighs the usual reluctance to repeat
+    let gain = isAgain ? 6 : (recent.includes(lines.indexOf(l)) ? (soft ? -6 : -4) : 0);
     let presses = false;
     const answers = !!(l.counters && l.counters.some(f => heard.includes(f)));
     if (answers) gain += 7;                                  // that is worth answering now
@@ -1566,9 +1626,10 @@ function choose(role){
       // one of them backs off the contested point; the other goes straight at it
       if (!split() && clash(f)) gain += soft ? -6 : 2;
     });
-    if (gain > bestGain){ bestGain = gain; best = l; pressing = presses; answering = answers; }
+    if (gain > bestGain){ bestGain = gain; best = l; pressing = presses; answering = answers; harder = isAgain; }
   });
-  return {line:best, index:lines.indexOf(best), repeat:!fresh.length, pressing, answering};
+  if (harder) best.infer.forEach(f => { if (clash(f)) S.pressed[role].add(f); });
+  return {line:best, index:lines.indexOf(best), repeat:!fresh.length || harder, pressing, answering, harder};
 }
 
 // Reddy's idea space: everything said is ejected into the gap and stays there.
@@ -1712,6 +1773,12 @@ function settle(){
 function takeTurn(){
   if (S.done) return;
   const role = S.speaker;
+  // out of turns: whatever has not been said is not going to be
+  if (S.turn >= budget()){
+    S.ranOut = true; S.spent.A = S.spent.B = true;
+    S.done = true; record(); pushVerdict(); stop(); paint(); hud();
+    return;
+  }
   if (CASES[S.case].confer && S.phase === "confer") return conferTurn(role);
   // after the pact they put nothing further of their own — they may only ask
   if (CASES[S.case].confer && S.phase === "machine"){
@@ -1756,8 +1823,8 @@ function takeTurn(){
     return;
   }
   const took = adoptFor(role);
-  const {line, index, repeat, pressing, answering} = took
-    ? {line:took, index:-1, repeat:false, pressing:false, answering:false}
+  const {line, index, repeat, pressing, answering, harder} = took
+    ? {line:took, index:-1, repeat:false, pressing:false, answering:false, harder:false}
     : choose(role);
   const spoken = (answering && line.alt) ? line.alt : voice(line);
   const act = CASES[S.case][role], other = role === "A" ? "B" : "A";
@@ -1811,7 +1878,7 @@ function takeTurn(){
 
   eject("AI", `${NAME(after)} ${c.matches} matches ` +
         (before !== after ? "taken apart and rebuilt" : "nothing changed what it heard was already true of this"), []);
-  pushSaid(role, line, repeat, pressing, answering, spoken, false, {meant:line.infer, heard}, up);
+  pushSaid(role, line, repeat, pressing, answering, spoken, false, {meant:line.infer, heard}, up, harder);
   if (gaveUp) pushGave(role, gaveUp);
   if (!S.silent){
     const prev = S.trace.length ? S.trace[S.trace.length - 1].matches : 0;
@@ -1852,11 +1919,11 @@ const logs = {A: document.getElementById("logA"), B: document.getElementById("lo
 function target(role){ return split() ? logs[role] : logEl; }
 function drop(el, host){ if (S.silent) return; host.appendChild(el); host.scrollTop = host.scrollHeight; }
 
-function pushSaid(role, line, repeat, pressing, answering, spoken, confer, reading, up){
+function pushSaid(role, line, repeat, pressing, answering, spoken, confer, reading, up, harder){
   const host = target(role);
   const el = document.createElement("div");
   el.className = "turn " + role.toLowerCase() + (confer ? " confer" : "");
-  el.innerHTML = `<span class="who">${role === "A" ? "Role 1" : "Role 2"}${confer ? " · to the other, not the machine" : ""}${line.adopted ? " · taking up the other one's need" : ""}${answering ? ` · answering Role ${role === "A" ? "2" : "1"}` : repeat ? (pressing ? " · pressing it again" : " · saying it again") : ""}</span>
+  el.innerHTML = `<span class="who">${role === "A" ? "Role 1" : "Role 2"}${confer ? " · to the other, not the machine" : ""}${line.adopted ? " · taking up the other one's need" : ""}${harder ? " · saying it again, harder" : answering ? ` · answering Role ${role === "A" ? "2" : "1"}` : repeat ? (pressing ? " · pressing it again" : " · saying it again") : ""}</span>
     <div class="bub">${up ? `<span class="up"></span>` : ""}<span class="lead">${LEAD[CASES[S.case][role]]}</span><span class="body"></span></div>
     ${line.meant ? `<span class="meant">pictured: ${line.meant}</span>` : ""}
     ${reading && reading.heard && reading.heard.length ? `<span class="reading${
@@ -2150,6 +2217,10 @@ function record(){
     prov: provenance(c), provB: solo ? provenance(S.side.B) : null,
     groundOf: groundPhrase(c),
     confer: !!CASES[S.case].confer, droppedN: (S.dropped || []).length,
+    ranOut: !!S.ranOut, budget: budget(),
+    // what each of them came to say, and how much of it ever got put
+    saidA: S.said.A.size, saidB: S.said.B.size,
+    hadA: linesFor("A").length, hadB: linesFor("B").length,
     yieldedN: (S.yielded || []).length,
     unexplained: S.unexplained.A + S.unexplained.B,
     flow: flowOf(),
@@ -2201,10 +2272,13 @@ const showSpan = sp => sp.min === sp.max ? `${sp.med}` : `${sp.min}–${sp.max}`
 function dist(key){
   const list = S.runs[key] || [];
   if (!list.length) return null;
-  const modal = modeOf(list, r => r.built)[0][0];
+  // A run can end with nothing standing — a tight turn budget will do it — and
+  // then there is no modal structure to key the rest of the figures to.
+  const builtBy = modeOf(list, r => r.built);
+  const modal = builtBy.length ? builtBy[0][0] : null;
   return { n: list.length,
-    built:  modeOf(list, r => r.built),
-    builtB: modeOf(list, r => r.builtB),
+    built:  builtBy.length ? builtBy : [[null, list.length]],
+    builtB: (b => b.length ? b : [[null, list.length]])(modeOf(list, r => r.builtB)),
     ground: modeOf(list, r => r.groundOf),
     who:    modeOf(list, r => r.hitA && r.hitB ? "both reached it" : r.hitA ? "role 1 only" : r.hitB ? "role 2 only" : "neither"),
     turns:  medOf(list, r => r.turns),
@@ -2223,13 +2297,15 @@ function dist(key){
     dropped:medOf(list, r => r.droppedN),
     asked:  medOf(list, r => r.asked), dodged: medOf(list, r => r.dodged),
     gave:   medOf(list, r => r.gaveA + r.gaveB), misgiven: medOf(list, r => r.misgiven),
+    unsaid: medOf(list, r => (r.hadA - r.saidA) + (r.hadB - r.saidB)),
+    ranOut: list.filter(r => r.ranOut).length,
     yielded:medOf(list, r => r.yieldedN || 0),
     took:   medOf(list, r => r.tookN || 0), tookIdle: medOf(list, r => r.tookIdle || 0),
     mSaid:  medOf(list, r => r.mSaid || 0), mCaught: medOf(list, r => r.mCaught || 0),
     mInvented: medOf(list, r => r.mInvented || 0), mDeaf: medOf(list, r => r.mDeaf || 0),
     hitA:   list.filter(r => r.hitA).length, hitB: list.filter(r => r.hitB).length,
     missSpan: spanOf(list, r => r.missN), heardSpan: spanOf(list, r => r.heardN),
-    firm: modeOf(list, r => r.built)[0][1] === list.length,
+    firm: builtBy.length ? builtBy[0][1] === list.length : true,
   };
 }
 
@@ -2973,6 +3049,19 @@ function renderCmp(){
                no longer <i>certain</i> of it: it moves with phrasing, and the separated one does not.`))
       + ` Hearing somebody changes what you ask for, and what you ask for is the only thing the machine reads.`]);
 
+    // The answer to why so many of these cells look alike.
+    finds.push(["What decides it is who may ask",
+      `Only somebody <i>asking</i> can put a property into the world; refusing rules things out and brings
+       nothing into being. So the result follows the affirming voice more than it follows the room — which is
+       why case 2, the only one that changes <b>who may ask</b>, is the case that moves furthest, and why
+       moving the same two people into separate rooms can leave the crossing exactly where it was.
+       ${g.built[0][0] === a.built[0][0]
+         ? `Here cases 1 and 3 both end at <b>${NAME(g.built[0][0]).toLowerCase()}</b> for that reason.`
+         : `Here it is not enough to hold them together: 1 and 3 come apart anyway.`}
+       And it turns on one number — a refusal weighs <b>${W_AVOID}</b> against a request's ${W_WANT}, so the
+       thing with the fewest properties left to object to tends to survive. Add <code>?avoid=2</code> to the
+       address to weigh them the same and watch the cases separate.`]);
+
     finds.push([`${g.n} runs a cell, not one`, (
       firm === cases.length
         ? `Across ${cases.length * g.n} runs of this scenario the machine built the same thing every time — and the
@@ -3076,9 +3165,9 @@ function reset(){
     words:[], spoken:0, taken:0, asked:{A:0, B:0}, dodged:0,
     askedFeats:{A:new Set(), B:new Set()},
     goalNow:{...SC().goal}, revised:{A:0, B:0}, revisedAt:{A:0, B:0}, hitNow:{A:0, B:0},
-    recent:{A:[], B:[]}, spent:{A:false, B:false}, lastSaid:{A:[], B:[]}, lastHeard:{A:[], B:[]}, lastUp:{A:"", B:""}, gave:{A:[], B:[]}, mRead:[], trace:[], adopted:{A:new Set(), B:new Set()}, took:{A:[], B:[]},
+    recent:{A:[], B:[]}, spent:{A:false, B:false}, lastSaid:{A:[], B:[]}, lastHeard:{A:[], B:[]}, lastUp:{A:"", B:""}, gave:{A:[], B:[]}, mRead:[], trace:[], pressed:{A:new Set(), B:new Set()}, adopted:{A:new Set(), B:new Set()}, took:{A:[], B:[]},
     picture:{A:{wants:new Map(), avoids:new Map()}, B:{wants:new Map(), avoids:new Map()}}, readings:[],
-    phase: CASES[S.case].confer ? "confer" : "machine", dropped:[], yielded:[],
+    phase: CASES[S.case].confer ? "confer" : "machine", dropped:[], yielded:[], ranOut:false,
     pact:{A:{want:new Set(), avoid:new Set()}, B:{want:new Set(), avoid:new Set()}}});
   S.shared = mkCtx(); S.side = {A: mkCtx(), B: mkCtx()};
   S.mem = {A: mkMem(), B: mkMem()};
