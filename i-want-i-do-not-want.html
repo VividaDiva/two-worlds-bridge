@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I Want, I Do Not Want</title>
-<meta name="description" content="Every case played twenty-four times before the page appears. The machine builds the same thing every run; what the two of them understood of each other does not.">
+<meta name="description" content="Two people argue about a crossing, answering what they took each other to mean rather than what was said, while a machine builds from what it hears.">
 <link rel="icon" href="data:,">
 </head>
 <body>
@@ -307,6 +307,7 @@
   .turn.b .who{color:var(--roleB)}
   .turn.b .bub{background:var(--roleB-tint); color:var(--roleB-ink); border-bottom-right-radius:4px}
   .bub .lead{font-weight:600; opacity:.75}
+  .bub .up{opacity:.72}
   .why{font-size:11px; color:var(--muted); font-style:italic}
   .turn.b .why{text-align:right}
   .dbl{
@@ -1018,6 +1019,75 @@ const CASES = {
             note:"separate rooms and a crossing each — what each would get if the other did not exist"},
 };
 const LEAD = {want:"I want ", avoid:"I do not want "};
+
+// ── Answering the last thing, before making your own case ────────────
+// Nobody in an argument speaks in free-standing declarations. Each of these is
+// what one of them says back before its own sentence, and it is built out of
+// what it *took* from the last thing it heard — never out of what was meant.
+// So when the reading was wrong, the wrongness is audible in the room instead
+// of sitting in a footnote underneath. They may not name a structure or a
+// ground here either.
+const pick = a => a[Math.floor(Math.random() * a.length)];
+// One of them is asking for these and the other is refusing them, so every
+// reaction comes in both directions. An answer that gets the direction wrong
+// is not clumsy, it is nonsense — and neither may name a structure or a ground
+// here any more than anywhere else.
+const UPTAKE = {
+  water:  ["So it's the wet", "The wet, then", "It's getting soaked you mind"],
+  rock:   ["So it's what's underneath", "It's the going down, then", "It's how far it falls away"],
+  minimal:["You want it small", "As little as possible, then", "Barely anything, you mean"],
+  low:    ["Level, then", "So, nothing to climb", "Straight across, you mean"],
+  open:   ["You want to see out", "Open, then", "Nothing closing you in, you mean"],
+  light:  ["Only you on it, then", "One at a time, then", "Just yourself, you mean"],
+  heavy:  ["You've a load to get over", "Something heavy, then", "It's the weight, then"],
+  guarded:["Something at your hand, then", "You want something to hold", "Held in, you mean"],
+  steady: ["You want it firm underfoot", "Nothing shifting, then", "Solid, you mean"],
+  exposed:["It's being out over it that worries you", "Out in the open over it, then"],
+  sways:  ["You think it'll move", "You're afraid it'll shift", "In the wind, you mean"],
+  inGap:  ["Something standing in the middle, then", "Something set down in it, you mean"],
+  high:   ["Above where we're standing, then", "Raised up, you mean", "Climbing, then"],
+  many:   ["You think it's too much", "Too much of it, then", "It's the cost, then"],
+};
+const REFUSE = {
+  water:  ["You'll not go in the wet, then", "You want no part of the wet"],
+  rock:   ["It's the going down you won't have", "You'll not have what's underneath"],
+  minimal:["You don't want it skimped, then", "Not something thrown together, then"],
+  low:    ["Not flat across, then", "You'll not have it level, then"],
+  open:   ["You don't want it left open, then", "Not out in the open, then"],
+  light:  ["Not just for one, then", "You'll not have it for one only"],
+  heavy:  ["No carts on it, then", "Not built for weight, then", "You'll not have it take a load"],
+  guarded:["You don't want to be hemmed in", "Not shut in at the sides, then"],
+  steady: ["You'll not have it fixed down", "Not planted solid, then"],
+  exposed:["Not with nothing at your hand, then", "You'll not be out over it with nothing"],
+  sways:  ["Nothing that shifts, then", "You'll not have it moving about", "Not swaying, then"],
+  inGap:  ["Nothing standing in the middle, then", "You'll not have anything set down in it"],
+  high:   ["No climbing, then", "You'll not have to reach up to it", "Not raised up, then"],
+  many:   ["Not a great deal of it, then", "Nothing costly, then", "You'll not have much of it"],
+};
+// When they have heard it three times already they stop translating and say so.
+const AGAIN = ["You've said that", "I know — you keep saying it", "You've told me", "Yes, you've been clear"];
+// And when there is nothing to answer, an ordinary way of starting to talk.
+const OPENERS = ["Look", "See", "Right", "Well", "Honestly", "The thing is", "All right"];
+
+// Nobody says the same thing back twice running. One re-draw is enough.
+function say(role, phrase){
+  S.lastUp = S.lastUp || {A:"", B:""};
+  if (phrase === S.lastUp[role]) return "";
+  S.lastUp[role] = phrase;
+  return phrase + " — ";
+}
+function uptakeFor(role){
+  const heard = (S.lastHeard && S.lastHeard[role]) || [];
+  if (!heard.length) return Math.random() < .32 ? pick(OPENERS) + " — " : "";
+  if (Math.random() > .72) return "";                 // sometimes you just answer
+  const other = role === "A" ? "B" : "A";
+  const asking = CASES[S.case][other] === "want";
+  const held = asking ? S.picture[role].wants : S.picture[role].avoids;
+  const f = heard.slice().sort((x, y) => (held.get(y) || 0) - (held.get(x) || 0))[0];
+  if ((held.get(f) || 0) >= 3 && Math.random() < .55) return say(role, pick(AGAIN));
+  const bank = (asking ? UPTAKE : REFUSE)[f];
+  return bank ? say(role, pick(bank)) : "";
+}
 // Each intent has several ways of being said. Nobody says it the same way twice.
 const voice = l => l.says[Math.floor(Math.random() * l.says.length)];
 const SC = () => SCENARIOS[S.scenario];
@@ -1213,13 +1283,26 @@ function answerFor(role, f){
 function conferTurn(role){
   const {line, index, repeat, pressing, answering} = choose(role);
   const spoken = (answering && line.alt) ? line.alt : voice(line);
+  const act = CASES[S.case][role], other = role === "A" ? "B" : "A";
+  const up = uptakeFor(role);
+  // They are face to face here with nobody else in the room, so this is the
+  // case where reading each other matters most — and it was the one case that
+  // did none of it.
+  const heard = readAs(spoken, other);
+  const pic = S.picture[other];
+  heard.forEach(f => { const m = act === "want" ? pic.wants : pic.avoids;
+                       m.set(f, (m.get(f) || 0) + 1); });
+  S.readings.push({turn:S.turn + 1, role, spoken, meant:line.infer.slice(), heard,
+                   agreed: line.infer.every(f => heard.includes(f)) && heard.length > 0});
   S.said[role].add(index);
   S.recent[role] = [index, ...(S.recent[role] || [])].slice(0, 2);
   S.lastSaid[role] = line.infer.slice();
-  const act = CASES[S.case][role];
+  S.lastHeard = S.lastHeard || {A:[], B:[]};
+  S.lastHeard[other] = heard;
   line.infer.forEach(f => S.pact[role][act].add(f));
+  if (up) eject(role, up, []);
   eject(role, LEAD[act] + spoken, line.infer);
-  pushSaid(role, line, repeat, pressing, answering, spoken, true);
+  pushSaid(role, line, repeat, pressing, answering, spoken, true, {meant:line.infer, heard}, up);
   S.turn++;
   S.speaker = role === "A" ? "B" : "A";
   if (S.said.A.size >= linesFor("A").length && S.said.B.size >= linesFor("B").length) settle();
@@ -1318,6 +1401,10 @@ function takeTurn(){
   }
   S.readings.push({turn:S.turn + 1, role, spoken, meant:line.infer.slice(), heard,
                    agreed: line.infer.every(f => heard.includes(f)) && heard.length > 0});
+  // The reaction is spoken aloud and asserts nothing, so every word of it is
+  // heard by the machine and carried by none of it.
+  const up = split() ? "" : uptakeFor(role);
+  if (up) eject(role, up, []);
   eject(role, LEAD[CASES[S.case][role]] + spoken, line.infer);
   S.said[role].add(index);
   S.recent[role] = [index, ...(S.recent[role] || [])].slice(0, 2);
@@ -1338,7 +1425,7 @@ function takeTurn(){
 
   eject("AI", `${NAME(after)} ${c.matches} matches ` +
         (before !== after ? "taken apart and rebuilt" : "nothing changed what it heard was already true of this"), []);
-  pushSaid(role, line, repeat, pressing, answering, spoken, false, {meant:line.infer, heard});
+  pushSaid(role, line, repeat, pressing, answering, spoken, false, {meant:line.infer, heard}, up);
   pushBuild(before, after, best, role, split() ? drifted : null, seenBefore, c);
   S.seen[role] = after;
 
@@ -1369,12 +1456,12 @@ const logs = {A: document.getElementById("logA"), B: document.getElementById("lo
 function target(role){ return split() ? logs[role] : logEl; }
 function drop(el, host){ if (S.silent) return; host.appendChild(el); host.scrollTop = host.scrollHeight; }
 
-function pushSaid(role, line, repeat, pressing, answering, spoken, confer, reading){
+function pushSaid(role, line, repeat, pressing, answering, spoken, confer, reading, up){
   const host = target(role);
   const el = document.createElement("div");
   el.className = "turn " + role.toLowerCase() + (confer ? " confer" : "");
   el.innerHTML = `<span class="who">${role === "A" ? "Role 1" : "Role 2"}${confer ? " · to the other, not the machine" : ""}${answering ? ` · answering Role ${role === "A" ? "2" : "1"}` : repeat ? (pressing ? " · pressing it again" : " · saying it again") : ""}</span>
-    <div class="bub"><span class="lead">${LEAD[CASES[S.case][role]]}</span><span class="body"></span></div>
+    <div class="bub">${up ? `<span class="up"></span>` : ""}<span class="lead">${LEAD[CASES[S.case][role]]}</span><span class="body"></span></div>
     ${line.meant ? `<span class="meant">pictured: ${line.meant}</span>` : ""}
     ${reading && reading.heard && reading.heard.length ? `<span class="reading${
         reading.meant.every(f => reading.heard.includes(f)) ? " ok" : " off"}">meant ${
@@ -1382,6 +1469,7 @@ function pushSaid(role, line, repeat, pressing, answering, spoken, confer, readi
         reading.heard.map(f => FEATLABEL[f] || f).join(", ")}</span>` : ""}
     <span class="why">${line.why}</span>`;
   el.querySelector(".body").textContent = spoken || voice(line);
+  if (up) el.querySelector(".up").textContent = up;
   if (answering) el.classList.add("answering");
   drop(el, host);
 }
@@ -2129,10 +2217,10 @@ function renderCmp(){
    11 · VIEWS + TRANSPORT
    ═══════════════════════════════════════════════════════════ */
 const VNOTE = {
-  scene: "The crossing as it stands. Neither of them may name a structure, so everything here is the machine's reading of a described need.",
+  scene: "The crossing as it stands. Neither of them may name a structure, so everything here is the machine's reading of a described need. When they can hear each other they answer the last thing first — and what they answer is <b>what they took it to mean</b>, which is not always what was meant.",
   picture: "Reddy's actual claim, which the other views do not show: the listener does not receive a meaning, it <b>rebuilds</b> one out of its own materials. These two do not share a lexicon. Each reads the other through its own associations, and this is what each ends up believing.",
   flow: "Where every word of <b>this</b> case went. It fills in as the run proceeds; switch case above to see another. The figures for the other three are underneath, so you can compare without four diagrams at once.",
-  dropped: "The same run, counted. <b>Carried</b> is every word that let the machine infer something — none of them the name of a structure. <b>Discarded · meaning</b> is the part worth arguing about.",
+  dropped: "The same run, counted. <b>Carried</b> is every word that let the machine infer something — none of them the name of a structure. <b>Discarded · meaning</b> is the part worth arguing about. Answering each other costs words and carries none: every reaction here is pure loss to the machine, and it is most of what makes them sound like people.",
   said: "Every word either of them has said, ejected into the space between them and left there — Reddy’s <b>idea space</b>, made literal. The words in colour are the few the machine could do anything with. Everything faint is still in the air: said, reified, and inert. Grey is the machine, ejecting into the same space, with none of it picked up either.",
 };
 function setView(v){
@@ -2200,7 +2288,7 @@ function reset(){
     words:[], spoken:0, taken:0, asked:{A:0, B:0}, dodged:0,
     askedFeats:{A:new Set(), B:new Set()},
     goalNow:{...SC().goal}, revised:{A:0, B:0}, revisedAt:{A:0, B:0}, hitNow:{A:0, B:0},
-    recent:{A:[], B:[]}, spent:{A:false, B:false}, lastSaid:{A:[], B:[]},
+    recent:{A:[], B:[]}, spent:{A:false, B:false}, lastSaid:{A:[], B:[]}, lastHeard:{A:[], B:[]}, lastUp:{A:"", B:""},
     picture:{A:{wants:new Map(), avoids:new Map()}, B:{wants:new Map(), avoids:new Map()}}, readings:[],
     phase: CASES[S.case].confer ? "confer" : "machine", dropped:[],
     pact:{A:{want:new Set(), avoid:new Set()}, B:{want:new Set(), avoid:new Set()}}});
