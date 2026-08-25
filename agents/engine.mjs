@@ -2,14 +2,23 @@
 // and deliberately deterministic: if the two participants are models and the
 // builder is too, nothing in the run is measurable.
 
+// `made` is what it does with the matches. A builder that can name the finished
+// thing but not the act of making it is leaving out the whole of its work.
 export const KIT = [
-  { id: "log",     name: "A single log",          has: ["minimal","low","open","light","exposed"],   members: 1 },
-  { id: "rail",    name: "A log with a handrail", has: ["low","light","guarded"],                    members: 2 },
-  { id: "braced",  name: "A braced walkway",      has: ["low","light","guarded","steady","many"],    members: 3 },
-  { id: "prop",    name: "A log on a prop",       has: ["low","open","heavy","inGap","steady"],      members: 2 },
-  { id: "trestle", name: "A timber trestle",      has: ["heavy","inGap","steady","many","guarded"],  members: 6 },
-  { id: "hang",    name: "A hanging span",        has: ["high","open","light","sways","exposed"],    members: 4 },
+  { id: "log",     name: "A single log",          has: ["minimal","low","open","light","exposed"],   members: 1,
+    made: "one length flat across, bank to bank" },
+  { id: "rail",    name: "A log with a handrail", has: ["low","light","guarded"],                    members: 2,
+    made: "a length flat across, and a rail beside it on three uprights" },
+  { id: "braced",  name: "A braced walkway",      has: ["low","light","guarded","steady","many"],    members: 3,
+    made: "a length flat across, a rail beside it, and two struts driven down into the banks" },
+  { id: "prop",    name: "A log on a prop",       has: ["low","open","heavy","inGap","steady"],      members: 2,
+    made: "a length flat across, carried in the middle on a post standing in the gap" },
+  { id: "trestle", name: "A timber trestle",      has: ["heavy","inGap","steady","many","guarded"],  members: 6,
+    made: "a framed tower standing in the gap, with the walk carried over the top of it" },
+  { id: "hang",    name: "A hanging span",        has: ["high","open","light","sways","exposed"],    members: 4,
+    made: "two towers, a cable slung between them, and the walk hung off it" },
 ];
+export const MADE = id => (KIT.find(k => k.id === id) || { made: "nothing" }).made;
 export const NAME = id => (KIT.find(k => k.id === id) || { name: "nothing" }).name;
 
 // The only vocabulary the machine has. A participant may assert these; it may

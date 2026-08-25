@@ -24,7 +24,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import OpenAI from "openai";
-import { KIT, NAME, FEATURES, FORBIDDEN, mkCtx, hear, build, provenance, groundOf, ledger } from "./engine.mjs";
+import { KIT, NAME, MADE, FEATURES, FORBIDDEN, mkCtx, hear, build, provenance, groundOf, ledger } from "./engine.mjs";
 import { readKeyword, readLLM, speakLLM, READERS } from "./machine.mjs";
 
 /* ── what each of them came for, and what it is allowed to do ─────────── */
@@ -298,7 +298,7 @@ for (let i = 0; i < maxTurns; i++) {
     saidByMachine = await speakLLM({
       said: sentence, took: taken, before: before ? NAME(before) : null, after: NAME(after),
       changed: before !== after,
-      props: KIT.find(k => k.id === after)?.has ?? [],
+      props: KIT.find(k => k.id === after)?.has ?? [], made: MADE(after),
       wants: [...ctx.wants.keys()], avoids: [...ctx.avoids.keys()],
       tellGround,
     }, (sys, usr) => MACHINES[reader](sys, usr, SaySchema));

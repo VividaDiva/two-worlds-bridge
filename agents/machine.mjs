@@ -76,6 +76,8 @@ const SAY_SYSTEM = [
   `  need back to them before answering it — say what you did, and let that show what you took.`,
   `- Say only what is true of what stands. You are told its actual properties; do not credit it with`,
   `  others, and do not join two facts into a reason that was not given to you.`,
+  `- You work in matchsticks. When you rebuild, say what you are laying and what you are taking apart,`,
+  `  in the terms you are given. When you do not rebuild, do not describe building.`,
   `- If you are told you do not know what is underneath and have not said so yet, say it once, at the end.`,
   `  If you are not told that, never mention it.`,
   `- Never use the word "user".`,
@@ -88,8 +90,8 @@ export async function speakLLM(state, ask) {
     `You took it to be about: ${state.took.length ? list(state.took) : "nothing you can build from"}.`,
     ``,
     state.changed
-      ? `You have rebuilt. It was ${state.before || "nothing at all"}; it is now ${state.after}.`
-      : `You changed nothing. ${state.after} still stands.`,
+      ? `You have rebuilt. It was ${state.before || "nothing at all"}. You have laid: ${state.made}.`
+      : `You changed nothing. ${state.after} still stands: ${state.made}.`,
     `What ${state.after} actually is: ${list(state.props)}.`,
     ``,
     `Asked of you so far: ${list(state.wants)}.`,
