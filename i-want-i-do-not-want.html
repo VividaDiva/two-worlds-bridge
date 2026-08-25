@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I Want, I Do Not Want</title>
-<meta name="description" content="Two people argue about a crossing through a machine that reads their sentences rather than their intentions — and what gets built follows whoever is allowed to ask.">
+<meta name="description" content="Every crossing here is decided by a margin of nought to four, in a scheme where one misheard word is worth two.">
 <link rel="icon" href="data:,">
 </head>
 <body>
@@ -569,6 +569,12 @@
       border:1px solid var(--line); border-radius:999px; padding:1px 6px; margin-left:4px; white-space:nowrap}
 .freq.all{opacity:.6}
 #cmp td.q{opacity:.55}
+  .marg{
+    display:block; margin-top:3px; font-family:var(--mono); font-size:9.5px;
+    letter-spacing:.05em; color:var(--muted); font-weight:400; text-transform:none;
+  }
+  .marg.tight{color:var(--fault)}
+  .marg.tied{color:var(--fault); font-style:italic}
 .bar .pre{display:block; margin-top:6px; color:var(--dim); font-size:12px; max-width:62ch}
 </style>
 
@@ -1522,7 +1528,12 @@ function build(c){
     return {k, s, ruled};
   });
   scored.sort((x,y) => y.s - x.s || KIT.indexOf(x.k) - KIT.indexOf(y.k));
-  const best = scored[0];
+  const best = scored[0], next = scored[1];
+  // An argmax with no margin reported is a claim with no error bar. Two of these
+  // are usually within a point or two of each other, and the gap between them is
+  // made of things the machine misheard — so the gap is worth printing.
+  c.margin = next ? best.s - next.s : null;
+  c.runnerUp = next ? next.k.id : null;
   c.design = best && best.s > -Infinity ? best.k : null;
   c.ruledOut = scored.filter(x => x.s < best.s).map(x => x.k.id);
   c.blocked = [];
@@ -2222,6 +2233,7 @@ function record(){
     groundOf: groundPhrase(c),
     confer: !!CASES[S.case].confer, droppedN: (S.dropped || []).length,
     ranOut: !!S.ranOut, budget: budget(),
+    margin: c.margin, runnerUp: c.runnerUp,
     // what each of them came to say, and how much of it ever got put
     saidA: S.said.A.size, saidB: S.said.B.size,
     hadA: linesFor("A").length, hadB: linesFor("B").length,
@@ -2291,6 +2303,8 @@ function dist(key){
     // none of them: it was printing "a single log · 12 matches" for a thing made
     // of five.
     matches:medOf(list.filter(r => r.built === modal), r => r.matches),
+    margin: medOf(list.filter(r => r.built === modal), r => r.margin),
+    runnerUp: (u => u.length ? u[0][0] : null)(modeOf(list.filter(r => r.built === modal), r => r.runnerUp)),
     // Both halves of "n of m unspoken" must come from the same structure. Once
     // a case stopped landing on one structure every time, a median taken across
     // all runs was being printed over a total taken from whichever run came first.
@@ -3006,8 +3020,15 @@ function renderCmp(){
                   : c.split  ? `<span class="q">neither hears a word</span>`
                   : `${showSpan(d.missSpan)} of ${showSpan(d.heardSpan)} sentences misread${
                       d.took ? ` · <b>${d.took} need${d.took === 1 ? "" : "s"} taken up</b>` : ""}`;
+    // A margin of nothing is a tie, and a tie is settled by the order the six
+    // structures happen to be written in. Saying "by 0" would hide that behind a
+    // number; it is a limit of the model and it belongs on the face of it.
+    const close = !d.runnerUp ? ""
+      : d.margin === 0
+        ? `<span class="marg tied">tied with ${NAME(d.runnerUp).toLowerCase()} — settled by kit order</span>`
+        : `<span class="marg${d.margin <= 2 ? " tight" : ""}">by ${d.margin} over ${NAME(d.runnerUp).toLowerCase()}</span>`;
     return `<tr><td class="k">${c.label}</td>
-      <td class="win">${NAME(d.built[0][0])} · ${d.matches} matches${often(d.built, d.n)}</td>
+      <td class="win">${NAME(d.built[0][0])} · ${d.matches} matches${often(d.built, d.n)}${close}</td>
       <td class="k">over ${d.ground[0][0]}${often(d.ground, d.n)}</td>${goal}
       <td class="k">${d.unspoken}/${d.total} unspoken</td>
       <td class="k">${between}</td></tr>`;
@@ -3053,7 +3074,17 @@ function renderCmp(){
                no longer <i>certain</i> of it: it moves with phrasing, and the separated one does not.`))
       + ` Hearing somebody changes what you ask for, and what you ask for is the only thing the machine reads.`]);
 
-    // The answer to why so many of these cells look alike.
+    // The answer to why so many of these cells look alike, and it is a number.
+    const margins = cases.map(d => d.margin).filter(m => m != null);
+    if (margins.length) finds.push(["Every one of these was close",
+      `The gap between what got built and the next thing down is
+       <b>${Math.min(...margins)} to ${Math.max(...margins)}</b> points, in a scheme where one word taken as a
+       request is worth ${W_WANT} and one taken as a refusal is worth ${W_AVOID}. <b>A single misheard word
+       decides the crossing.</b> That is why so many cases land on the same structure — they are not
+       agreeing, they are tied, and the winner is whichever side accumulated one more misreading${
+        margins.some(m => m === 0) ? `. Where the margin is nothing at all, it is settled by the order the six
+        structures happen to be written in — a fact about this program, not about anybody's argument` : ""}.`]);
+
     finds.push(["What decides it is who may ask",
       `Only somebody <i>asking</i> can put a property into the world; refusing rules things out and brings
        nothing into being. So the result follows the affirming voice more than it follows the room — which is
