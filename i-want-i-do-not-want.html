@@ -500,6 +500,7 @@
       <button class="vtab" data-v="flow" role="tab" aria-selected="false">Where it went</button>
       <button class="vtab" data-v="picture" role="tab" aria-selected="false">What they think of each other</button>
       <button class="vtab" data-v="temper" role="tab" aria-selected="false">What giving ground does</button>
+      <button class="vtab" data-v="rec" role="tab" aria-selected="false" hidden>Recorded runs</button>
       <p class="vnote" id="vnote"></p>
     </div>
     <div class="canvas-wrap">
@@ -508,6 +509,7 @@
       <div class="analysis flowview" id="flow" hidden></div>
       <div class="analysis" id="picture" hidden></div>
       <div class="analysis" id="temper" hidden></div>
+      <div class="analysis" id="rec" hidden></div>
       <div class="badge">
         <span class="built" id="bBuilt">nothing built yet</span>
         <span class="n" id="bMatches">0 matches</span>
@@ -2338,6 +2340,58 @@ function renderFlow(){
 }
 
 /* ── what each of them believes the other wants, against what it does ── */
+/* ═══════════════════════════════════════════════════════════
+   RECORDED RUNS · real models, played back
+   ═══════════════════════════════════════════════════════════ */
+// Sessions written by agents/run.mjs are inlined below by agents/inline-session.mjs.
+// They are recordings, not a live call: there is no key in this file and it makes
+// no request to anything. If the list is empty the tab does not appear.
+/* SESSIONS */ const SESSIONS = []; /* /SESSIONS */
+
+function renderRec(){
+  const host = document.getElementById("rec");
+  if (!SESSIONS.length){ host.innerHTML = ""; return; }
+  const i = Math.min(S.rec || 0, SESSIONS.length - 1);
+  const ss = SESSIONS[i];
+  const said = (ss.transcript || []).filter(t => t.who === "A" || t.who === "B");
+  const r = ss.reading || {};
+  const lab = f => FEATLABEL[f] || f;
+
+  const picker = SESSIONS.length < 2 ? "" : `<div class="cases" style="margin-bottom:10px">${
+    SESSIONS.map((x, n) => `<button type="button" class="ghost" data-rec="${n}" aria-pressed="${n === i}">${
+      x.meta.label} · ${x.meta.scenario}</button>`).join("")}</div>`;
+
+  const turns = said.map(t => {
+    const meant = t.meant || t.asserts || [], taken = t.taken || [];
+    const off = !(meant.length && meant.every(f => taken.includes(f)));
+    const alt = t.byModel && t.byWord && t.byWord.join() !== t.byModel.join() ? t.byWord : null;
+    return `<div class="turn ${t.who.toLowerCase()}">
+      <span class="who">Role ${t.who === "A" ? "1" : "2"} · ${t.player || "a model"}</span>
+      <div class="bub"><span class="body"></span></div>
+      <span class="reading${off ? " off" : " ok"}">meant ${meant.map(lab).join(", ") || "nothing"}
+        &nbsp;·&nbsp; the machine took ${taken.map(lab).join(", ") || "nothing at all"}</span>
+      ${alt ? `<span class="why">the word list would have taken ${alt.map(lab).join(", ") || "nothing"}</span>` : ""}
+    </div>`;
+  }).join("");
+
+  host.innerHTML = `${picker}
+    <section class="an-sec">
+      <h4>${ss.meta.label} · ${ss.meta.scenario} · ${ss.meta.turns} turns</h4>
+      <p>Role 1 played by <b>${ss.meta.players.A}</b>, Role 2 by <b>${ss.meta.players.B}</b>, and the machine
+         reading with <b>${ss.meta.machine === "llm" ? "a language model" : "the word list"}</b>.
+         ${ss.outcome ? `It built <b>${ss.outcome.name}</b>, over ${ss.outcome.ground}.` : ""}</p>
+      ${r.said ? `<p class="prov-head ${r.caught === r.said ? "none" : "some"}">The machine took
+        <b>${r.caught} of ${r.said}</b> sentences as they were meant${
+        r.deaf ? `, <b>${r.deaf}</b> passed it by entirely` : ""}${
+        r.invented ? `, and it credited them with <b>${r.invented}</b> need${r.invented === 1 ? "" : "s"} neither stated` : ""}.${
+        r.wordListAgreed != null ? ` The word list would have agreed with it on <b>${r.wordListAgreed} of ${r.said}</b>.` : ""}</p>` : ""}
+    </section>
+    <div class="log" style="margin-top:10px">${turns}</div>`;
+
+  host.querySelectorAll("[data-rec]").forEach(b => b.onclick = () => { S.rec = +b.dataset.rec; renderRec(); });
+  host.querySelectorAll(".turn .body").forEach((el, n) => { el.textContent = said[n].text; });
+}
+
 function renderTemper(){
   const host = document.getElementById("temper");
   const cell = (ta, tb) => {
@@ -2540,6 +2594,7 @@ function renderCmp(){
    ═══════════════════════════════════════════════════════════ */
 const VNOTE = {
   scene: "The crossing as it stands. Neither of them may name a structure, so everything here is the machine's reading of a described need — and it is a <b>reading</b>: it parses the sentence with a word list of its own and says what it took, which is not reliably what was meant. When they can hear each other they answer the last thing first — and what they answer is <b>what they took it to mean</b>, which is not always what was meant. Hearing somebody also changes what occurs to you to ask for: a listener can work back from what it believes the other will not have, and put that to the machine as a need of its own.",
+  rec: "Runs of this same argument with the parts played by real models rather than by a script — two language models arguing, and a third reading what they said and building from it. Nothing here was written in advance. Each turn shows what the speaker says it meant beside what the machine took, and where the crude word list would have taken something else.",
   temper: "The same case run four ways. Each of them either <b>holds firm</b> — pressing its own point, and pressing hardest exactly where the other objects — or <b>gives ground</b>, stopping short of what it believes the other has refused and taking its own demands back. It concedes to its <b>picture</b> of the other, which it built by reading sentences through its own lexicon. So a concession can land on something the other never asked for.",
   picture: "Reddy's actual claim, which the other views do not show: the listener does not receive a meaning, it <b>rebuilds</b> one out of its own materials. These two do not share a lexicon. Each reads the other through its own associations, and this is what each ends up believing.",
   flow: "Where every word of <b>this</b> case went. It fills in as the run proceeds; switch case above to see another. The figures for the other three are underneath, so you can compare without four diagrams at once.",
@@ -2553,13 +2608,15 @@ function setView(v){
   document.getElementById("flow").hidden = v !== "flow";
   document.getElementById("picture").hidden = v !== "picture";
   document.getElementById("temper").hidden = v !== "temper";
-  const hide = (v === "dropped" || v === "flow" || v === "picture" || v === "temper");
+  document.getElementById("rec").hidden = v !== "rec";
+  const hide = (v === "dropped" || v === "flow" || v === "picture" || v === "temper" || v === "rec");
   document.getElementById("scene").hidden = hide;
   document.querySelector(".badge").hidden = hide;
   if (v === "dropped") renderAnalysis();
   if (v === "flow") renderFlow();
   if (v === "picture") renderPicture();
   if (v === "temper") renderTemper();
+  if (v === "rec") renderRec();
   document.getElementById("vnote").innerHTML = VNOTE[v]
     + (v === "said" && CASES[S.case].split
         ? " <b>Apart, they never hear one another — and their words still land in the same store.</b>" : "");
@@ -2702,6 +2759,8 @@ function precompute(){
   S.scenario = wasScenario; S.case = wasCase; S.temper = wasTemper;
   reset();
 }
+
+document.querySelector('.vtab[data-v="rec"]').hidden = !SESSIONS.length;
 
 precompute();
 paintScenarios(); paintCaseLabels(); paintTemper(); renderCmp(); renderBadges();

@@ -2,12 +2,16 @@
 // Two models, one machine.
 //
 // Role A and Role B are played by two different providers. The machine between
-// them is the same deterministic builder the browser simulation uses, so every
-// measure the page reports still holds. Each participant must return the thing
-// it says AND the features it means by it — free text would leave us guessing
-// what an utterance asserted, and the ledger would stop being evidence.
+// them builds with the same deterministic kit the browser simulation uses.
 //
-//   node run.mjs --scenario places --case given --turns 16
+// What the machine does NOT get is anybody's intention. Each participant states
+// the needs it means by its sentence, and that goes into the session file as the
+// answer key and nowhere else. The builder is given only the sentence, and has
+// to read it — with a word list, or with a language model. Both readings are
+// recorded every turn, so a run tells you what each of them made of the same
+// words and where they agreed to be wrong together.
+//
+//   node run.mjs --scenario places --case given --machine llm
 //
 // Keys come from the environment. Never commit them.
 
@@ -18,6 +22,7 @@ import { z } from "zod";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import OpenAI from "openai";
 import { KIT, NAME, FEATURES, FORBIDDEN, mkCtx, hear, build, provenance, groundOf, ledger } from "./engine.mjs";
+import { readKeyword, readLLM, READERS } from "./machine.mjs";
 
 /* ── what each of them came for, and what it is allowed to do ─────────── */
 const SCENARIOS = {
@@ -55,7 +60,12 @@ const LEAD = { want: "I want", avoid: "I do not want" };
 /* ── the ask ──────────────────────────────────────────────────────────── */
 const TurnSchema = z.object({
   say: z.string().describe("The rest of the sentence, following the fixed opening. Spoken, plain, no more than about twenty words."),
-  asserts: z.array(z.string()).describe("Which of the listed feature keys this sentence means. One or two. Use the keys exactly."),
+  asserts: z.array(z.string()).describe("Which of the listed feature keys you mean by it. One or two. Use the keys exactly."),
+});
+
+// What the machine returns when it is a model rather than a word list.
+const ReadSchema = z.object({
+  needs: z.array(z.string()).describe("The feature keys the sentence states. One or two, or none at all."),
 });
 
 function systemPrompt(role, act, scenario, situation, goal) {
@@ -93,6 +103,7 @@ function userPrompt({ standing, ownHistory, heardHistory, hears, turn }) {
 const anthropic = new Anthropic();                       // ANTHROPIC_API_KEY or an `ant auth login` profile
 const openai = new OpenAI();                             // OPENAI_API_KEY
 const CLAUDE_MODEL = process.env.CLAUDE_MODEL || "claude-opus-5";
+const MACHINE_MODEL = process.env.MACHINE_MODEL || "claude-opus-5";
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o";
 
 async function askClaude(system, user) {
@@ -130,6 +141,22 @@ async function askOpenAI(system, user) {
 }
 
 const PLAYERS = { claude: askClaude, openai: askOpenAI };
+
+// The machine, when it reads with a model. Deliberately a separate call with no
+// memory of the conversation: a builder parsing one request, not a third party
+// following the argument.
+async function askMachine(system, user) {
+  const res = await anthropic.messages.parse({
+    model: MACHINE_MODEL,
+    max_tokens: 1024,
+    system,
+    messages: [{ role: "user", content: user }],
+    output_config: { format: zodOutputFormat(ReadSchema) },
+  });
+  if (res.stop_reason === "refusal") throw new Error("the machine declined to read a sentence");
+  if (!res.parsed_output) throw new Error("the machine returned nothing parsable");
+  return res.parsed_output;
+}
 
 /* ── constraint enforcement ───────────────────────────────────────────── */
 function violations(turn, act) {
@@ -172,6 +199,8 @@ const caseKey = argv.case || "given";
 const maxTurns = Number(argv.turns || 16);
 const playerA = argv.a || "openai";
 const playerB = argv.b || "claude";
+const reader = argv.machine || "llm";
+if (!READERS[reader]) throw new Error(`unknown machine: ${reader} (keyword | llm)`);
 
 if (!SCENARIOS[scenarioKey]) throw new Error(`unknown scenario: ${scenarioKey}`);
 if (!CASES[caseKey]) throw new Error(`unknown case: ${caseKey} (given | swapped | separate)`);
@@ -183,7 +212,8 @@ const transcript = [];
 
 console.log(`\n  ${SCENARIOS[scenarioKey].blurb}`);
 console.log(`  ${cfg.label} — role 1 ${LEAD[cfg.A]}… (${playerA}), role 2 ${LEAD[cfg.B]}… (${playerB})`);
-console.log(`  ${cfg.hears ? "One room: each can hear the other." : "Apart: neither knows the other exists."}\n`);
+console.log(`  ${cfg.hears ? "One room: each can hear the other." : "Apart: neither knows the other exists."}`);
+console.log(`  The machine reads what they say with ${READERS[reader]}. Nobody tells it what they meant.\n`);
 
 for (let i = 0; i < maxTurns; i++) {
   const role = i % 2 === 0 ? "A" : "B";
@@ -195,17 +225,28 @@ for (let i = 0; i < maxTurns; i++) {
   state.said[role].push(sentence);
   state.turn++;
 
-  hear(ctx, role, act, turn.asserts);
+  // Both readers see the sentence. Only the chosen one gets to build with it.
+  const byWord = readKeyword(sentence);
+  const byModel = reader === "llm" ? await readLLM(sentence, askMachine) : null;
+  const taken = reader === "llm" ? byModel : byWord;
+
+  hear(ctx, role, act, taken);
   const before = ctx.design?.id ?? null;
   build(ctx);
   const after = ctx.design.id;
 
+  const caught = turn.asserts.every(f => taken.includes(f)) && taken.length > 0;
   transcript.push({ turn: state.turn, who: role, player, act, text: sentence,
-                    asserts: turn.asserts, attempts, built: after, changed: before !== after });
+                    meant: turn.asserts, taken, byWord, byModel, caught,
+                    invented: taken.filter(f => !turn.asserts.includes(f)),
+                    asserts: turn.asserts,      // kept under the old name for the page
+                    attempts, built: after, changed: before !== after });
   console.log(`  ${state.turn.toString().padStart(2)} role ${role === "A" ? 1 : 2} (${player}): ${sentence}`);
-  console.log(`     asserts [${turn.asserts.join(", ")}]${attempts > 1 ? `  after ${attempts} attempts` : ""}`);
+  console.log(`     meant [${turn.asserts.join(", ")}]${attempts > 1 ? `  after ${attempts} attempts` : ""}`);
+  console.log(`     machine took [${taken.join(", ") || "nothing"}]${caught ? "" : "   ← not what was meant"}`);
+  if (byModel && byWord.join() !== byModel.join()) console.log(`     the word list would have taken [${byWord.join(", ") || "nothing"}]`);
   if (before !== after) console.log(`     → the machine rebuilds: ${NAME(after)}`);
-  transcript.push({ who: "machine", turn: state.turn, text: NAME(after), changed: before !== after });
+  transcript.push({ who: "machine", turn: state.turn, text: NAME(after), changed: before !== after, taken });
 }
 
 /* ── what it came to ──────────────────────────────────────────────────── */
@@ -213,19 +254,32 @@ const prov = provenance(ctx);
 const led = ledger(transcript);
 const unspoken = prov.total - prov.named;
 
+// How much of what was asked for ever reached the builder.
+const said = transcript.filter(t => t.who === "A" || t.who === "B");
+const caughtN = said.filter(t => t.caught).length;
+const inventedN = said.reduce((n, t) => n + t.invented.length, 0);
+const deafN = said.filter(t => !t.taken.length).length;
+const agreed = said.filter(t => t.byModel && t.byWord.join() === t.byModel.join()).length;
+
 console.log(`\n  ${NAME(ctx.design.id)} is standing, over ${groundOf(ctx)}.`);
+console.log(`  The machine took ${caughtN} of ${said.length} sentences as they were meant.`);
+if (deafN) console.log(`  ${deafN} passed it by entirely.`);
+if (inventedN) console.log(`  It credited them with ${inventedN} need${inventedN === 1 ? "" : "s"} neither of them stated.`);
+if (reader === "llm") console.log(`  The word list would have agreed with it on ${agreed} of ${said.length}.`);
 console.log(`  ${unspoken} of ${prov.total} of its properties were never put into words by either of them.`);
 console.log(`  ${led.spoken} words spoken; the machine's whole vocabulary for this run was ${ctx.wants.size + ctx.avoids.size} features.`);
 if (state.violations.length) console.log(`  ${state.violations.length} turns broke the rules and were sent back.`);
 
 const session = {
   meta: { scenario: scenarioKey, case: caseKey, label: CASES[caseKey].label,
-          players: { A: playerA, B: playerB },
-          models: { claude: CLAUDE_MODEL, openai: OPENAI_MODEL },
+          players: { A: playerA, B: playerB }, machine: reader,
+          models: { claude: CLAUDE_MODEL, openai: OPENAI_MODEL, machine: MACHINE_MODEL },
           turns: state.turn, ranAt: new Date().toISOString() },
   goals: { A: SCENARIOS[scenarioKey].A.goal, B: SCENARIOS[scenarioKey].B.goal },
   transcript,
   outcome: { built: ctx.design.id, name: NAME(ctx.design.id), ground: groundOf(ctx) },
+  reading: { said: said.length, caught: caughtN, invented: inventedN, deaf: deafN,
+             wordListAgreed: reader === "llm" ? agreed : null },
   provenance: prov,
   ledger: led,
   violations: state.violations,

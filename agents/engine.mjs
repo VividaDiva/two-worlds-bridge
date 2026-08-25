@@ -112,3 +112,31 @@ export function ledger(transcript) {
   }
   return { spoken, carried, grammar, meaning };
 }
+
+// The machine's own vocabulary: the words it watches for, and what each one
+// makes it think of. This is the whole of its understanding — it has no access
+// to anybody's intention, only to the sentence.
+export const NEEDWORDS = {
+  water:   ["soaked","running","knees","past","underneath","current","wet","dry","feet"],
+  rock:    ["down","up","side","bottom","way","round","other"],
+  minimal: ["smallest","paces","project","trees","plain","little","small","today","thin","cheap","again","slight","least"],
+  low:     ["step","level","standing","over","onto","feet","walks","walk"],
+  open:    ["look","see","sky","hemmed","shut","hear","plain","closed","side"],
+  light:   ["myself","person","weight","one","alone","unload","full","hand","own"],
+  heavy:   ["cart","carts","carting","loaded","wheels","laden","road","hauling","pass","lot","heavy","carry","load"],
+  guarded: ["hand","hold","hemmed","edge","edges","lean","view"],
+  steady:  ["put","wind","funnels","shifting","give","winter","still","dead","rebuilding"],
+  exposed: ["out","nothing","that"],
+  sways:   ["swaying","shifting","moving","bounce","give","gives","alive"],
+  inGap:   ["driven","bottom","standing","bed"],
+  high:    ["climb","climbing","up","onto","grand","stair"],
+  many:    ["half","cut","great","deal","taken","twenty","years","grand","postcards","photographs","two"],
+};
+
+// Words that mean nothing on their own. The list above was written to mark which
+// words carried something, and half of it is grammar — watching "down" makes the
+// machine hear a drop in every second sentence — so parsing skips these.
+export const GRAMMAR = new Set(("a an the and or but is are be to of it in on at we i you this that for with as our my its " +
+  "do does so if no have has from by can will would need make just too very there here been was were they them " +
+  "he she his her us me then than what when how all any out up down over under about into also still more most " +
+  "only own same such other some each one two both am not want").split(" "));
