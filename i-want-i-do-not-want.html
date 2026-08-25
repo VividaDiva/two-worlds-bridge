@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I Want, I Do Not Want</title>
-<meta name="description" content="Every crossing here is decided by a margin of nought to four, in a scheme where one misheard word is worth two.">
+<meta name="description" content="Every structure, scored, beside the one that got built — so you can see how close it was.">
 <link rel="icon" href="data:,">
 </head>
 <body>
@@ -575,6 +575,27 @@
   }
   .marg.tight{color:var(--fault)}
   .marg.tied{color:var(--fault); font-style:italic}
+
+  /* the badge already owns the bottom-left corner */
+  .standing{
+    position:absolute; right:12px; top:12px; z-index:2; width:206px;
+    background:color-mix(in srgb, var(--surface) 92%, transparent);
+    border:1px solid var(--line); border-radius:10px; padding:8px 10px 9px;
+    backdrop-filter:blur(3px);
+  }
+  .st-head{
+    font-family:var(--mono); font-size:8.5px; letter-spacing:.11em; text-transform:uppercase;
+    color:var(--muted); margin-bottom:6px;
+  }
+  .st-rows{display:flex; flex-direction:column; gap:3px}
+  .st-row{display:grid; grid-template-columns:1fr 46px 26px; gap:6px; align-items:center;
+          font-family:var(--mono); font-size:9px; color:var(--muted)}
+  .st-row.won{color:var(--ink)}
+  .st-n{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .st-bar{height:4px; background:var(--line-soft); border-radius:99px; overflow:hidden}
+  .st-bar i{display:block; height:100%; background:var(--line)}
+  .st-row.won .st-bar i{background:var(--signal)}
+  .st-s{text-align:right; font-variant-numeric:tabular-nums}
 .bar .pre{display:block; margin-top:6px; color:var(--dim); font-size:12px; max-width:62ch}
 </style>
 
@@ -687,6 +708,7 @@
         <table class="cmp" id="cmp"></table>
         <div class="finds" id="finds"></div>
       </div>
+      <div class="standing" id="standing"></div>
       <div class="badge">
         <span class="built" id="bBuilt">nothing built yet</span>
         <span class="n" id="bMatches">0 matches</span>
@@ -1551,6 +1573,7 @@ function build(c){
   // made of things the machine misheard — so the gap is worth printing.
   c.margin = next ? best.s - next.s : null;
   c.runnerUp = next ? next.k.id : null;
+  c.ranked = scored.map(x => ({id:x.k.id, s:x.s}));
   c.design = best && best.s > -Infinity ? best.k : null;
   c.ruledOut = scored.filter(x => x.s < best.s).map(x => x.k.id);
   c.blocked = [];
@@ -1919,6 +1942,7 @@ function takeTurn(){
       missed: !(taken.length && line.infer.every(f => taken.includes(f)))});
     renderTrace();
   }
+  if (!S.silent && S.view === "scene") renderStanding();
   pushBuild(before, after, best, role, split() ? drifted : null, seenBefore, c, taken, line.infer,
             {again: taken.filter(f => heldBefore.has(f)), fresh: taken.filter(f => !heldBefore.has(f)),
              act: CASES[S.case][role], wasMatches});
@@ -2128,6 +2152,26 @@ function miniDiff(beforeId, afterId, world){
 // wrong in two unrelated ways here — the other person can take it for something
 // else, and the machine can — and a run where both happen constantly still
 // produces a crossing that looks perfectly reasonable.
+// How close the six were. The question this answers keeps being asked of the
+// scenarios rather than of the arithmetic: two places looks uniform because both
+// of them came for the same object, and two loads looks uniform because four
+// structures are within four points and the winner changes with a word.
+function renderStanding(){
+  const host = document.getElementById("standing");
+  if (!host) return;
+  const c = CASES[S.case].solo ? S.side.A : S.shared;
+  if (!c.ranked || !c.design){ host.innerHTML = ""; return; }
+  const ss = c.ranked.map(r => r.s), lo = Math.min(...ss), hi = Math.max(...ss);
+  const span = Math.max(1, hi - lo);
+  host.innerHTML = `<div class="st-head">how close it was &nbsp;·&nbsp; every structure, scored</div>
+    <div class="st-rows">${c.ranked.map(r => `
+      <div class="st-row${r.id === c.design.id ? " won" : ""}">
+        <span class="st-n">${NAME(r.id).replace(/^An? /, "")}</span>
+        <span class="st-bar"><i style="width:${Math.round(100 * (r.s - lo) / span)}%"></i></span>
+        <span class="st-s">${r.s > 0 ? "+" : ""}${r.s}</span>
+      </div>`).join("")}</div>`;
+}
+
 function renderTrace(){
   const host = document.getElementById("trace");
   // Conferring has no trace to draw and that is the point of it: they settle it
@@ -3158,12 +3202,16 @@ function setView(v){
   const hide = (v === "dropped" || v === "flow" || v === "picture" || v === "temper" || v === "rec" || v === "compare");
   document.getElementById("scene").hidden = hide;
   document.querySelector(".badge").hidden = hide;
+  // the idea-space view shares this canvas, and a score table has no business
+  // sitting on top of the words
+  document.getElementById("standing").hidden = v !== "scene";
   if (v === "dropped") renderAnalysis();
   if (v === "flow") renderFlow();
   if (v === "picture") renderPicture();
   if (v === "temper") renderTemper();
   if (v === "rec") renderRec();
   if (v === "compare") renderCmp();
+  if (v === "scene") renderStanding();
   document.getElementById("vnote").innerHTML = VNOTE[v]
     + (v === "said" && CASES[S.case].split
         ? " <b>Apart, they never hear one another — and their words still land in the same store.</b>" : "");
