@@ -2208,7 +2208,11 @@ function dist(key){
     ground: modeOf(list, r => r.groundOf),
     who:    modeOf(list, r => r.hitA && r.hitB ? "both reached it" : r.hitA ? "role 1 only" : r.hitB ? "role 2 only" : "neither"),
     turns:  medOf(list, r => r.turns),
-    matches:medOf(list, r => r.matches),
+    // From the runs that reached the modal structure, not from all of them. A
+    // median match count taken across runs that built different things describes
+    // none of them: it was printing "a single log · 12 matches" for a thing made
+    // of five.
+    matches:medOf(list.filter(r => r.built === modal), r => r.matches),
     // Both halves of "n of m unspoken" must come from the same structure. Once
     // a case stopped landing on one structure every time, a median taken across
     // all runs was being printed over a total taken from whichever run came first.
