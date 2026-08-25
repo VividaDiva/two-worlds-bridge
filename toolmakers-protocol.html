@@ -10,7 +10,7 @@
 <body>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..500&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 
 <style>
   :root{
@@ -49,10 +49,11 @@
   *{box-sizing:border-box}
   body{
     margin:0; background:var(--ground); color:var(--ink);
-    font-family:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-family:"Newsreader", Georgia, serif; font-optical-sizing:auto;
     font-size:14px; line-height:1.55; -webkit-font-smoothing:antialiased;
   }
-  h1,h2,h3{font-family:Archivo, ui-sans-serif, system-ui, sans-serif; margin:0; text-wrap:balance; letter-spacing:-.015em}
+  h1,h2,h3{font-family:"Instrument Serif", Georgia, serif; font-weight:400; margin:0; text-wrap:balance; letter-spacing:0}
+  p{text-wrap:pretty}
   button, input, textarea{font:inherit; color:inherit}
   :focus-visible{outline:2px solid var(--signal); outline-offset:2px}
   .mono{font-family:"IBM Plex Mono", ui-monospace, monospace}
@@ -162,7 +163,7 @@
     font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.12em; text-transform:uppercase;
     color:var(--muted); margin-bottom:6px;
   }
-  .q > .qt{font-size:15px; font-weight:600; margin-bottom:8px; font-family:Archivo,sans-serif}
+  .q > .qt{font-size:15px; font-weight:600; margin-bottom:8px; font-family:"Instrument Serif", Georgia, serif}
   .draw-wrap{border:1px solid var(--line); border-radius:10px; overflow:hidden; background:var(--surface)}
   .draw-wrap canvas{display:block; width:100%; height:270px; cursor:crosshair; touch-action:none}
   .quiz{display:flex; flex-direction:column; gap:7px}
@@ -184,7 +185,7 @@
     font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase;
     color:var(--muted); margin-bottom:4px;
   }
-  .metric dd{margin:0; font-family:Archivo,sans-serif; font-weight:600; font-size:24px; font-variant-numeric:tabular-nums}
+  .metric dd{margin:0; font-family:"Instrument Serif", Georgia, serif; font-weight:600; font-size:24px; font-variant-numeric:tabular-nums}
   .metric dd small{font-size:12px; font-weight:500; color:var(--muted); display:block; letter-spacing:0}
   .metric.flag dd{color:var(--fault)}
   .answers{display:grid; grid-template-columns:1fr 1fr; gap:12px}

@@ -12,7 +12,20 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..500&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
+  /* Two registers, held apart on purpose.
+     PROSE is Newsreader and never wider than 64ch: anything that is an argument.
+     INSTRUMENT is IBM Plex Mono, small and letterspaced: anything that is a
+     control, a label or a measurement. If you cannot tell which of the two a
+     line is, it is in the wrong one. */
+  :root{
+    --serif:"Instrument Serif", Georgia, serif;
+    --read:"Newsreader", Georgia, serif;
+    --mono:"IBM Plex Mono", ui-monospace, monospace;
+  }
   :root{
     --ground:#E5E9E6; --surface:#F4F7F4; --panel:#FCFDFC;
     --ink:#15201B; --muted:#5F7168; --line:#C8D2CC; --line-soft:#DEE6E1;
@@ -50,11 +63,17 @@
   [hidden]{display:none !important}   /* author display rules otherwise beat the UA [hidden] rule */
   body{
     margin:0; background:var(--ground); color:var(--ink);
-    font-family:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-    font-size:14px; line-height:1.55; -webkit-font-smoothing:antialiased;
+    font-family:var(--read); font-optical-sizing:auto;
+    font-size:15px; line-height:1.6; -webkit-font-smoothing:antialiased;
     display:flex; flex-direction:column; min-height:100dvh;
   }
-  h1,h2,h3{font-family:Archivo, ui-sans-serif, system-ui, sans-serif; margin:0; text-wrap:balance; letter-spacing:-.015em}
+  h1,h2,h3{font-family:var(--serif); font-weight:400; margin:0; text-wrap:balance; letter-spacing:0}
+  p{text-wrap:pretty}
+  /* the instrument register */
+  .m, .scen button, .case b, .case .res, .key, .vtab, .ghost, .tmp, .freq,
+  .goalline em, .goalline i, th, .badge, .who, .an-stat dt{
+    font-family:var(--mono); font-variant-ligatures:none;
+  }
   button{font:inherit; color:inherit}
   :focus-visible{outline:2px solid var(--signal); outline-offset:2px}
 
@@ -62,8 +81,10 @@
     flex:none; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
     padding:11px 20px; border-bottom:1px solid var(--line); background:var(--surface);
   }
-  .bar h1{font-size:16px; font-weight:700}
-  .bar p{margin:0; font-size:12.5px; color:var(--muted)}
+  .bar h1{font-size:25px; line-height:1; letter-spacing:.005em}
+  .bar h1 em{font-style:italic; opacity:.72}
+  .bar p{margin:3px 0 0; font-size:13.5px; color:var(--muted); max-width:64ch; line-height:1.45}
+  .bar .pre{display:none}   /* moved into the notes at the foot of the stage */
   .tools{display:flex; gap:7px; align-items:center; flex-wrap:wrap}
   .ghost{
     background:transparent; border:1px solid var(--line); border-radius:999px; padding:5px 13px;
@@ -93,6 +114,33 @@
   }
   .scen-note{margin:-2px 0 0; font-size:12.5px; color:var(--muted); max-width:88ch}
   .scen-note b{color:var(--ink); font-weight:600}
+  .notes{
+    margin-top:2px; border-top:1px solid var(--line-soft); padding-top:9px;
+  }
+  .notes summary{
+    font-family:var(--mono); font-size:9.5px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--muted); cursor:pointer; list-style:none; padding:2px 0;
+  }
+  .notes summary::-webkit-details-marker{display:none}
+  .notes summary::before{content:"+ "; color:var(--signal)}
+  .notes[open] summary::before{content:"– "}
+  .notes summary:hover{color:var(--ink)}
+  .notes .body{padding:7px 0 2px; display:flex; flex-direction:column; gap:9px}
+  .notes p{margin:0; font-size:14px; color:var(--muted); max-width:64ch; line-height:1.55}
+
+  /* findings: the caption was one 250-word block and is now this */
+  .finds{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:10px; margin-top:12px}
+  .find{border:1px solid var(--line); border-left:2px solid var(--signal); border-radius:0 10px 10px 0;
+        background:var(--panel); padding:11px 13px}
+  .find h5{
+    margin:0 0 4px; font-family:var(--mono); font-size:9.5px; letter-spacing:.13em;
+    text-transform:uppercase; color:var(--signal); font-weight:600;
+  }
+  .find p{margin:0; font-size:14px; line-height:1.55; color:var(--muted)}
+  .find p b{color:var(--ink); font-weight:600}
+  .find.quiet{border-left-color:var(--line)}
+  .find.quiet h5{color:var(--muted)}
+
   .caveat{
     margin:-4px 0 0; font-size:11.5px; color:var(--muted); max-width:88ch;
     border-left:2px solid var(--line); padding-left:9px;
@@ -103,13 +151,26 @@
   .turn.b .meant{text-align:right}
 
   /* cases */
+  .rail{
+    display:flex; flex-direction:column; gap:9px; padding:11px 13px 12px;
+    border:1px solid var(--line); border-radius:12px; background:var(--surface);
+  }
+  .rail-row{display:flex; gap:9px; align-items:center; flex-wrap:wrap}
+  .rail-row > .lbl{
+    font-family:var(--mono); font-size:9.5px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--muted); min-width:64px;
+  }
+  .caseline{
+    margin:0; font-size:14px; color:var(--muted); max-width:64ch; line-height:1.5;
+  }
+  .caseline b{color:var(--ink); font-weight:600}
   .cases{display:grid; grid-template-columns:repeat(5,1fr); gap:8px}
   @media (max-width:1320px){ .cases{grid-template-columns:repeat(3,1fr)} }
   @media (max-width:900px){ .cases{grid-template-columns:repeat(2,1fr)} }
   .case{
-    text-align:left; border:1px solid var(--line); border-radius:10px; padding:9px 11px;
+    text-align:left; border:1px solid var(--line); border-radius:10px; padding:7px 9px 6px;
     background:var(--panel); cursor:pointer; transition:border-color .15s, background .15s;
-    display:flex; flex-direction:column; gap:4px;
+    display:flex; flex-direction:column; gap:3px;
   }
   .case svg{width:100%; max-width:118px; height:auto; overflow:visible}
   .case svg rect{fill:none; stroke:var(--line); stroke-width:1.5}
@@ -119,7 +180,8 @@
   .case svg circle.rai{fill:none; stroke:var(--ink); stroke-width:1.8}
   .case svg text{font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; text-anchor:middle}
   .case svg text.ta{fill:var(--roleA)} .case svg text.tb{fill:var(--roleB)}
-  .case b{font-family:Archivo,sans-serif; font-size:13px; font-weight:600}
+  .case b{font-size:10.5px; font-weight:600; letter-spacing:.05em; text-transform:uppercase}
+  .case span{display:none}          /* the selected one's line is shown under the rail */
   .case > span{font-size:11.5px; color:var(--muted); line-height:1.4}
   .case .res{
     margin-top:auto; font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.07em;
@@ -213,14 +275,31 @@
   .an-sec.meaning .wchip{font-size:13px; padding:3px 9px}
   .an-sec.grammar .wchip, .an-sec.machine .wchip{opacity:.5; font-size:10.5px; padding:1px 6px}
 
-  .views{display:flex; gap:6px; align-items:center; flex-wrap:wrap}
-  .vtab{
-    background:transparent; border:1px solid var(--line); border-radius:8px; padding:5px 12px;
-    font-size:12.5px; cursor:pointer; color:var(--muted); transition:all .15s;
+  /* Tabs on their own line, the note underneath at a reading measure. Side by
+     side they competed for the same row and neither won. */
+  .views{display:flex; flex-direction:column; gap:7px}
+  .views .tabrow{
+    display:flex; gap:5px; overflow-x:auto; padding-bottom:2px; scrollbar-width:thin;
+    margin:0 -2px; padding-left:2px; padding-right:2px;
   }
-  .vtab:hover{border-color:var(--ink); color:var(--ink)}
-  .vtab[aria-selected="true"]{background:var(--panel); border-color:var(--ink); color:var(--ink); font-weight:600}
-  .vnote{margin:0; flex:1; min-width:240px; font-size:11.5px; color:var(--muted); line-height:1.45}
+  /* the row scrolls, so let the last tab fade rather than look truncated */
+  .views{position:relative}
+  .views::after{
+    content:""; position:absolute; top:0; right:0; width:34px; height:30px; pointer-events:none;
+    background:linear-gradient(90deg, transparent, var(--ground));
+  }
+  .views .tabrow::-webkit-scrollbar{height:4px}
+  .views .tabrow::-webkit-scrollbar-thumb{background:var(--line); border-radius:99px}
+  .vtab{
+    flex:none; white-space:nowrap;
+    background:transparent; border:1px solid transparent; border-bottom:1px solid var(--line);
+    border-radius:0; padding:5px 11px 6px;
+    font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+    cursor:pointer; color:var(--muted); transition:color .15s, border-color .15s;
+  }
+  .vtab:hover{color:var(--ink)}
+  .vtab[aria-selected="true"]{color:var(--ink); border-bottom-color:var(--signal); font-weight:600}
+  .vnote{margin:0; max-width:64ch; font-size:13.5px; color:var(--muted); line-height:1.5}
 
   .key{
     margin:-2px 0 0; font-size:11.5px; color:var(--muted); font-family:"IBM Plex Mono",monospace; letter-spacing:.02em;
@@ -410,9 +489,8 @@
 
 <header class="bar">
   <div>
-    <h1>I Want, I Do Not Want</h1>
-    <p>Two people at odds over one crossing, one kind of sentence each, and a machine that builds from what it infers.
-       <span class="pre">Every case was played twenty-four times in each of four temperament pairings before this page appeared, and the table reports how often each outcome came up. Switch between cases to read them; watching one happen is optional.</span></p>
+    <h1>I Want, <em>I Do Not Want</em></h1>
+    <p>Two people at odds over one crossing, one kind of sentence each, and a machine that builds from what it infers.</p>
   </div>
   <div class="tools">
     <button class="ghost primary" id="playBtn">Watch it happen</button>
@@ -424,9 +502,10 @@
 
 <main class="app">
   <section class="stage">
-    <div class="scen" id="scen"></div>
-    <p class="scen-note" id="scenNote"></p>
-    <p class="caveat">These two are scripted, not people. In one room they answer each other; separated, they question the machine instead, and can come to want what is standing once they are told — but they never lie, never invent a sentence outside their script, never learn a word from each other, and only ever give ground toward what is already built. Apart, each knows only what it has said itself and whatever the machine has put in front of it.</p>
+    <div class="rail">
+      <div class="rail-row"><span class="lbl">Argument</span><div class="scen" id="scen"></div></div>
+      <div class="rail-row"><span class="lbl">Case</span>
+
     <div class="cases" id="cases">
       <button class="case" data-c="given" aria-pressed="true">
         <svg viewBox="0 0 104 40" aria-hidden="true">
@@ -484,24 +563,26 @@
         <em class="res" data-res="alone">not run</em>
       </button>
     </div>
-    <p class="key"><span class="ka">+</span> may only say &ldquo;I want&hellip;&rdquo; &nbsp;·&nbsp;
-       <span class="kb">&minus;</span> may only say &ldquo;I do not want&hellip;&rdquo; &nbsp;·&nbsp;
-       <span class="km">○</span> the machine &nbsp;·&nbsp; boxes are rooms</p>
-    <div class="goalline">
+      </div>
+      <p class="caseline" id="caseNote"></p>
+      <div class="goalline">
       <span class="g a"><b>Role 1</b> a single log across the stream
         <em id="actA">may only ask</em><button type="button" class="tmp" id="tempA">holds firm</button><i class="hit no" id="hitA">not built</i></span>
       <span class="g b"><b>Role 2</b> a single log across the cleft
         <em id="actB">may only refuse</em><button type="button" class="tmp" id="tempB">holds firm</button><i class="hit no" id="hitB">not built</i></span>
+      </div>
     </div>
-    <table class="cmp" id="cmp"></table>
-    <div class="views" role="tablist" aria-label="What to show">
+    <div class="views">
+      <div class="tabrow" role="tablist" aria-label="What to show">
       <button class="vtab" data-v="scene" role="tab" aria-selected="true">What was built</button>
+      <button class="vtab" data-v="compare" role="tab" aria-selected="false">All five cases</button>
       <button class="vtab" data-v="said" role="tab" aria-selected="false">What was said</button>
       <button class="vtab" data-v="dropped" role="tab" aria-selected="false">What was dropped</button>
       <button class="vtab" data-v="flow" role="tab" aria-selected="false">Where it went</button>
       <button class="vtab" data-v="picture" role="tab" aria-selected="false">What they think of each other</button>
       <button class="vtab" data-v="temper" role="tab" aria-selected="false">What giving ground does</button>
       <button class="vtab" data-v="rec" role="tab" aria-selected="false" hidden>Recorded runs</button>
+      </div>
       <p class="vnote" id="vnote"></p>
     </div>
     <div class="canvas-wrap">
@@ -511,12 +592,33 @@
       <div class="analysis" id="picture" hidden></div>
       <div class="analysis" id="temper" hidden></div>
       <div class="analysis" id="rec" hidden></div>
+      <div class="analysis" id="compare" hidden>
+        <table class="cmp" id="cmp"></table>
+        <div class="finds" id="finds"></div>
+      </div>
       <div class="badge">
         <span class="built" id="bBuilt">nothing built yet</span>
         <span class="n" id="bMatches">0 matches</span>
         <span class="n" id="bWorld">no ground claimed</span>
       </div>
     </div>
+
+    <details class="notes">
+      <summary>How to read this</summary>
+      <div class="body">
+        <p><span class="ka">+</span> may only say &ldquo;I want&hellip;&rdquo; &nbsp;·&nbsp;
+           <span class="kb">&minus;</span> may only say &ldquo;I do not want&hellip;&rdquo; &nbsp;·&nbsp;
+           <span class="km">○</span> the machine &nbsp;·&nbsp; boxes are rooms.</p>
+        <p id="scenNote"></p>
+        <p>These two are scripted, not people. In one room they answer each other; separated, they question the machine
+           instead, and can come to want what is standing once they are told — but they never lie, never invent a
+           sentence outside their script, never learn a word from each other, and only ever give ground toward what is
+           already built. Apart, each knows only what it has said itself and whatever the machine has put in front of it.</p>
+        <p>Every case was played twenty-four times in each of four temperament pairings before this page appeared, and
+           <b>All five cases</b> reports how often each outcome came up. Watching one happen is optional — every case
+           arrives already run.</p>
+      </div>
+    </details>
   </section>
 
   <aside class="side">
@@ -2623,28 +2725,56 @@ function renderCmp(){
 
   const D = k => dist(KEY(k));
   const g = D("given"), w = D("swapped"), a = D("separate"), al = D("alone");
-  let caption = `Run the cases. ${SC().blurb}`;
+
+  // The caption used to be one block of about 250 words sitting between the
+  // table and everything else. Same findings, one to a card, each with the thing
+  // it is a finding about written at the top of it.
+  const finds = [];
   if (g && w && a && al){
     const cases = Object.keys(CASES).map(D).filter(Boolean);
     const firm = cases.filter(d => d.built[0][1] === d.n).length;
-    const grounds = SC().ground
-      ? `They are on agreed ground throughout, so nothing here turns on place.`
-      : `What separates them is not what got built but <b>whose ground it got built over</b>: ${g.ground[0][0]} in case 1, ${w.ground[0][0]} in case 2, ${a.ground[0][0]} in case 3, one each in case 5. Ground is established only by someone asking — refusing a thing you fear never puts a place into the world.`;
-    caption = `<b>${SC().blurb}</b> ${grounds}`
-      + `<br><br><b>Nothing was ever named.</b> Neither of them may say what they want built, so every property of every result is the machine&rsquo;s reading of a need, and in each shared case some of it traces back to nothing either of them said at all.`
-      + (a.asked ? `<br><br><b>Who asks, and what they are told.</b> In the same room they turn to each other — answering, rephrasing, pressing a point in different words. Nobody interrogates the machine, because there is somebody better to ask. It is only when they are separated that the machine becomes the one thing available to ask, and then the answer depends on whether there is anyone to protect. <b>Apart</b>, it must not reveal that another person exists: <b>${a.dodged} of ${a.asked} questions answered without disclosure</b>. <b>Alone</b>, there is nobody to shield, and the answer is the hardest of all — <i>you refused it yourself, and the crossing you have in mind is exactly that</i>.` : ``)
-      + `<br><br><b>Being in the room.</b> Cases 1 and 2 put them side by side and case 3 separates them, and all three have each of them addressing the machine — so it is fair to ask whether the first two are just the third with the chairs moved. ${
-          g.built[0][0] !== a.built[0][0]
-            ? `They are not: here the same two people in one room end at <b>${NAME(g.built[0][0]).toLowerCase()}</b> and apart at <b>${NAME(a.built[0][0]).toLowerCase()}</b>.`
-            : (g.who[0][0] !== a.who[0][0]
-                ? `The same thing gets built either way, but not for the same person — in the room <b>${g.who[0][0]}</b>, apart <b>${a.who[0][0]}</b>.`
-                : `Here they do come out at the same structure for the same person. What separates them is that the shared run is no longer certain of it — it varies with phrasing, and the separated one does not.`)
-        } Hearing somebody changes what you ask for, and what you ask for is the only thing the machine is reading.`
-      + `<br><br><b>Every figure here is ${g.n} runs, not one.</b> They pick fresh wording each time, so a result that held once might be an accident of phrasing. Each case was played ${g.n} times before this page appeared; a cell is marked <i class="freq">n of ${g.n}</i> only where the outcome moved.`
-      + (firm === cases.length
-          ? ` <b>None of them moved.</b> Across ${cases.length * g.n} runs of this scenario the machine built the same thing every time — and yet the last column keeps changing, because <b>what they understood of each other varied while what got built did not</b>. Phrasing is free to alter who feels understood without altering one matchstick. That is not a bug in the model; it is the claim.`
-          : ` <i class="freq">${cases.length - firm} of ${cases.length}</i> cases in this scenario came out differently between runs.`);
+
+    if (!SC().ground) finds.push(["Whose ground it got built over",
+      `Not what got built but <b>where</b>: ${g.ground[0][0]} in case 1, ${w.ground[0][0]} in case 2,
+       ${a.ground[0][0]} in case 3, one each in case 5. Ground is established only by someone <i>asking</i> —
+       refusing a thing you fear never puts a place into the world.`]);
+    else finds.push(["Agreed ground", `They are on agreed ground throughout, so nothing here turns on place.`, true]);
+
+    finds.push(["Nothing was ever named",
+      `Neither of them may say what they want built, so every property of every result is the machine&rsquo;s
+       reading of a described need — and in each shared case some of it traces back to <b>nothing either of
+       them said at all</b>.`]);
+
+    if (a.asked) finds.push(["Who asks, and what they are told",
+      `In one room they turn to each other and nobody interrogates the machine, because there is somebody better
+       to ask. Separated, it is the only thing left to ask — and <b>apart</b> it must not reveal that another
+       person exists: <b>${a.dodged} of ${a.asked} questions answered without disclosure</b>. <b>Alone</b>,
+       there is nobody to shield, and the answer is the hardest of all.`]);
+
+    finds.push(["Being in the room", (
+      g.built[0][0] !== a.built[0][0]
+        ? `Cases 1 and 3 both have each of them addressing the machine, so it is fair to ask whether the first is
+           the third with the chairs moved. It is not: in one room they end at <b>${NAME(g.built[0][0]).toLowerCase()}</b>,
+           apart at <b>${NAME(a.built[0][0]).toLowerCase()}</b>.`
+        : (g.who[0][0] !== a.who[0][0]
+            ? `The same thing gets built either way, but not for the same person — in the room <b>${g.who[0][0]}</b>,
+               apart <b>${a.who[0][0]}</b>.`
+            : `Here they reach the same structure for the same person. What separates them is that the shared run is
+               no longer <i>certain</i> of it: it moves with phrasing, and the separated one does not.`))
+      + ` Hearing somebody changes what you ask for, and what you ask for is the only thing the machine reads.`]);
+
+    finds.push([`${g.n} runs a cell, not one`, (
+      firm === cases.length
+        ? `Across ${cases.length * g.n} runs of this scenario the machine built the same thing every time — and the
+           last column kept changing, because <b>what they understood of each other varied while what got built did
+           not</b>. Phrasing is free to alter who feels understood without moving one matchstick.`
+        : `<b>${cases.length - firm} of ${cases.length}</b> cases came out differently between runs. A cell is marked
+           only where the outcome moved.`), true]);
   }
+  document.getElementById("finds").innerHTML = finds.map(([h, p, quiet]) =>
+    `<div class="find${quiet ? " quiet" : ""}"><h5>${h}</h5><p>${p}</p></div>`).join("");
+
+  const caption = g && w && a && al ? SC().blurb : `Run the cases. ${SC().blurb}`;
   document.getElementById("cmp").innerHTML =
     `<caption>${caption}</caption>
      <tr><th>case</th><th>what stands</th><th>ground</th><th>whose goal</th>
@@ -2655,14 +2785,16 @@ function renderCmp(){
    11 · VIEWS + TRANSPORT
    ═══════════════════════════════════════════════════════════ */
 const VNOTE = {
-  scene: "The crossing as it stands. Neither of them may name a structure, so everything here is the machine's reading of a described need — and it is a <b>reading</b>: it parses the sentence with a word list of its own and says what it took, which is not reliably what was meant. When they can hear each other they answer the last thing first — and what they answer is <b>what they took it to mean</b>, which is not always what was meant. Hearing somebody also changes what occurs to you to ask for: a listener can work back from what it believes the other will not have, and put that to the machine as a need of its own.",
-  rec: "Runs of this same argument with the parts played by real models rather than by a script — two language models arguing, and a third reading what they said, building from it, and saying what it made of them. Nothing here was written in advance, the machine's replies included: it is told what it took, what it built and what it is still missing, and puts that in its own words. Each turn shows what the speaker says it meant beside what the machine took, and where the crude word list would have taken something else.",
-  temper: "The same case run four ways. Each of them either <b>holds firm</b> — pressing its own point, and pressing hardest exactly where the other objects — or <b>gives ground</b>, stopping short of what it believes the other has refused and taking its own demands back. It concedes to its <b>picture</b> of the other, which it built by reading sentences through its own lexicon. So a concession can land on something the other never asked for.",
-  picture: "Reddy's actual claim, which the other views do not show: the listener does not receive a meaning, it <b>rebuilds</b> one out of its own materials. These two do not share a lexicon. Each reads the other through its own associations, and this is what each ends up believing.",
-  flow: "Where every word of <b>this</b> case went. It fills in as the run proceeds; switch case above to see another. The figures for the other three are underneath, so you can compare without four diagrams at once.",
-  dropped: "The same run, counted. <b>The machine reads the sentence, not the intention</b> — it watches for the words in its own list and commits to whichever reading has most behind it, so it can miss what was asked and hear things nobody said. <b>Carried</b> is every word that let the machine infer something — none of them the name of a structure. <b>Discarded · meaning</b> is the part worth arguing about. Answering each other costs words and carries none: every reaction here is pure loss to the machine, and it is most of what makes them sound like people.",
-  said: "Every word either of them has said, ejected into the space between them and left there — Reddy’s <b>idea space</b>, made literal. The words in colour are the few the machine could do anything with. Everything faint is still in the air: said, reified, and inert. Grey is the machine, ejecting into the same space, with none of it picked up either.",
+  scene:   "What stands, and what the machine made of each sentence on the way to it. Neither of them may name a structure; every property here is its reading of a described need.",
+  compare: "All five cases at once, each played twenty-four times. A cell is marked only where the outcome moved between runs.",
+  said:    "Every word either of them has said, ejected into the space between them and left there. Colour is the little the machine could use.",
+  dropped: "The same run, counted: what carried, what was heard and dropped, and what the machine took each sentence to be about.",
+  flow:    "Where each word of this case went, from the one who said it to the need it fed — or to nothing.",
+  picture: "Reddy's actual claim, which the other views do not show: the listener does not receive a meaning, it rebuilds one out of its own materials.",
+  temper:  "The same case run four ways, according to whether each of them presses its point or gives ground.",
+  rec:     "The same argument with all three parts played by real models, recorded and played back. Nothing here was written in advance.",
 };
+
 function setView(v){
   S.view = v;
   document.querySelectorAll(".vtab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.v === v)));
@@ -2671,7 +2803,8 @@ function setView(v){
   document.getElementById("picture").hidden = v !== "picture";
   document.getElementById("temper").hidden = v !== "temper";
   document.getElementById("rec").hidden = v !== "rec";
-  const hide = (v === "dropped" || v === "flow" || v === "picture" || v === "temper" || v === "rec");
+  document.getElementById("compare").hidden = v !== "compare";
+  const hide = (v === "dropped" || v === "flow" || v === "picture" || v === "temper" || v === "rec" || v === "compare");
   document.getElementById("scene").hidden = hide;
   document.querySelector(".badge").hidden = hide;
   if (v === "dropped") renderAnalysis();
@@ -2679,6 +2812,7 @@ function setView(v){
   if (v === "picture") renderPicture();
   if (v === "temper") renderTemper();
   if (v === "rec") renderRec();
+  if (v === "compare") renderCmp();
   document.getElementById("vnote").innerHTML = VNOTE[v]
     + (v === "said" && CASES[S.case].split
         ? " <b>Apart, they never hear one another — and their words still land in the same store.</b>" : "");
@@ -2786,6 +2920,8 @@ function paintTemper(){
 function paintCaseLabels(){
   const c = CASES[S.case];
   document.querySelectorAll(".case").forEach(b => b.querySelector("span").textContent = CASES[b.dataset.c].note);
+  // only the selected case explains itself; the other four are just tiles
+  document.getElementById("caseNote").innerHTML = `<b>${c.label}.</b> ${c.note}`;
   document.getElementById("actA").textContent = "“" + LEAD[c.A].trim() + "…” only";
   document.getElementById("actB").textContent = "“" + LEAD[c.B].trim() + "…” only";
 }

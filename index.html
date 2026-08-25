@@ -8,9 +8,12 @@
 <link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..500&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
   :root{
+    --serif:"Instrument Serif", Georgia, serif;
+    --read:"Newsreader", Georgia, serif;
+    --mono:"IBM Plex Mono", ui-monospace, monospace;
     --ground:#E4EAEA; --surface:#F4F8F8; --panel:#FBFDFD;
     --ink:#0E1B1B; --muted:#5D7171; --line:#C6D2D2; --line-soft:#DCE5E5;
     --roleA:#B26320; --roleB:#2F6288; --signal:#0C8478;
@@ -33,19 +36,21 @@
   *{box-sizing:border-box}
   body{
     margin:0; background:var(--ground); color:var(--ink);
-    font-family:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-    font-size:15px; line-height:1.6; -webkit-font-smoothing:antialiased;
+    font-family:var(--read); font-optical-sizing:auto;
+    font-size:16px; line-height:1.62; -webkit-font-smoothing:antialiased;
   }
-  h1,h2,h3{font-family:Archivo, ui-sans-serif, system-ui, sans-serif; margin:0; text-wrap:balance; letter-spacing:-.018em}
+  h1,h2,h3{font-family:var(--serif); font-weight:400; margin:0; text-wrap:balance; letter-spacing:0}
+  p{text-wrap:pretty}
   a{color:inherit}
   :focus-visible{outline:2px solid var(--signal); outline-offset:3px}
   .wrap{max-width:920px; margin:0 auto; padding:56px 26px 80px}
 
   .kicker{
-    font-family:"IBM Plex Mono", monospace; font-size:10.5px; letter-spacing:.17em;
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.17em;
     text-transform:uppercase; color:var(--muted); margin:0 0 14px;
   }
-  h1{font-size:clamp(34px,6vw,58px); font-weight:700; line-height:1.02; max-width:14ch}
+  h1{font-size:clamp(42px,7.5vw,76px); line-height:1; max-width:13ch}
+  h1 em{font-style:italic; opacity:.72}
   .lede{margin:20px 0 0; font-size:17px; max-width:62ch; color:var(--ink)}
   .lede b{font-weight:600; box-shadow:inset 0 -.5em 0 color-mix(in srgb, var(--signal) 17%, transparent)}
   .note{margin:14px 0 0; font-size:13.5px; color:var(--muted); max-width:62ch}
@@ -60,15 +65,26 @@
   }
   .card:hover{border-color:var(--ink); transform:translateY(-2px)}
   .card .n{
-    font-family:"IBM Plex Mono", monospace; font-size:10px; letter-spacing:.14em;
+    font-family:var(--mono); font-size:10px; letter-spacing:.14em;
     text-transform:uppercase; color:var(--muted);
   }
-  .card h2{font-size:22px; font-weight:600; margin:5px 0 7px}
+  .card h2{font-size:27px; margin:4px 0 6px; line-height:1.12}
   .card p{margin:0; color:var(--muted); font-size:14.5px; max-width:60ch}
   .card .go{
-    display:inline-block; margin-top:11px; font-family:"IBM Plex Mono", monospace;
+    display:inline-block; margin-top:11px; font-family:var(--mono);
     font-size:11px; letter-spacing:.08em; color:var(--signal);
   }
+
+  .found{margin:0; display:grid; gap:1px; background:var(--line); border:1px solid var(--line);
+         border-radius:13px; overflow:hidden}
+  .found div{background:var(--panel); padding:15px 18px; display:grid; gap:3px}
+  .found dt{font-family:var(--mono); font-size:10px; letter-spacing:.13em; text-transform:uppercase; color:var(--signal)}
+  .found dd{margin:0; font-size:15.5px; color:var(--ink); max-width:66ch}
+  .found dd b{font-weight:600}
+  .found dd span{display:block; margin-top:2px; font-size:13.5px; color:var(--muted)}
+  @media (min-width:760px){ .found{grid-template-columns:1fr 1fr} }
+  h2.sec{font-size:31px; margin:0 0 4px}
+  .sub{margin:0 0 18px; color:var(--muted); font-size:15px; max-width:64ch}
 
   footer{margin-top:46px; padding-top:22px; border-top:1px solid var(--line); color:var(--muted); font-size:13px}
   footer p{margin:0 0 7px; max-width:62ch}
@@ -78,12 +94,45 @@
 <body>
 <div class="wrap">
   <p class="kicker">Design engineering research · working prototypes</p>
-  <h1>Two Worlds,<br>One Bridge</h1>
+  <h1>Two Worlds,<br><em>One Bridge</em></h1>
   <p class="lede">Two people describe the same place in ways that cannot both be true. An AI in the middle has to build something anyway. These four simulations ask <b>what that machine does to the people talking through it</b> — and each one is a working instrument, not a mockup.</p>
-  <p class="note">Everything runs in the browser. Nothing is sent anywhere, and no account is needed.</p>
+  <p class="note">Harvard GSD, Master in Design Engineering. The premise is Michael Reddy&rsquo;s.</p>
 
   <hr class="rule">
 
+  <h2 class="sec">What the runs found</h2>
+  <p class="sub">Measured, not asserted. Every figure below comes out of a run you can reproduce by opening the piece it belongs to.</p>
+  <dl class="found">
+    <div><dt>A refusal outlasts a request</dt>
+      <dd>One thing feared outweighs several things asked for, so the crossing that gets built is shaped more by what nobody wants than by what anybody needs.
+        <span>And only somebody <i>asking</i> can bring a ground into being: refusing a thing you fear never puts a place into the world.</span></dd></div>
+    <div><dt>The artifact barely notices the conversation</dt>
+      <dd>Across <b>360 runs</b> the machine reached the same structure every time, while what the two of them understood of each other swung from <b>4 to 8</b> sentences misread.
+        <span>Phrasing is free to change how badly two people understand each other without moving one matchstick.</span></dd></div>
+    <div><dt>Deadlock and mutual courtesy look identical</dt>
+      <dd>Both holding firm and both giving way come out at the same place. A point survives only when <i>exactly one</i> of them stops arguing about it.
+        <span>Two people deferring to each other lose precisely what two people refusing to budge lose.</span></dd></div>
+    <div><dt>The inverse of a refusal is not a want</dt>
+      <dd>Of the needs one party took up on the other&rsquo;s behalf, <b>10 of 10</b> did nothing for the other&rsquo;s actual goal.
+        <span>&ldquo;Not cheap and done twice&rdquo; is a wish for something that lasts; the only opposite available is &ldquo;a great deal of it&rdquo;. The generosity is real and it arrives as bulk.</span></dd></div>
+    <div><dt>A word list loses the speaker&rsquo;s stance</dt>
+      <dd>Reading by keyword, the machine takes <b>77%</b> of sentences as meant and inverts a further <b>12%</b> — a refusal of climbing filed as a request for something level.
+        <span>It catches <i>what is being talked about</i> and drops <i>whether it is wanted or feared</i>.</span></dd></div>
+    <div><dt>A language model loses it less, not never</dt>
+      <dd>With real models on all three parts, the reader took <b>11 of 14</b> sentences as meant where the word list would have agreed with it on <b>2</b>.
+        <span>So the loss is a property of reading shallowly, not of putting a machine in the middle. The constraints are a design choice, not a law.</span></dd></div>
+    <div><dt>Nobody ever says where they are standing</dt>
+      <dd>In every recorded run with real models, fourteen turns of describing what they needed ended over <b>ground nobody had described</b>.
+        <span>It is the one thing the machine says, unprompted, that it does not know.</span></dd></div>
+    <div><dt>Agreeing costs what you disagree about</dt>
+      <dd>Made to speak with one voice, the two of them drop whatever they clash over before the machine hears any of it — and it builds from what is left.
+        <span>Apart, each gets what they came for. Together, a compromise that serves neither.</span></dd></div>
+  </dl>
+
+  <hr class="rule">
+
+  <h2 class="sec">The instruments</h2>
+  <p class="sub">Four working pieces. Everything runs in the browser; nothing is sent anywhere.</p>
   <div class="grid">
     <a class="card" href="two-worlds-bridge.html">
       <span class="n">01 · the simulation</span>
@@ -95,7 +144,7 @@
     <a class="card" href="i-want-i-do-not-want.html">
       <span class="n">02 · the experiment</span>
       <h2>I Want, I Do Not Want</h2>
-      <p>Both people are simulated. One may only say “I want…”, the other only “I do not want…”, and the machine builds what it hears out of matchsticks. Three cases: as given, voices swapped, and each of them alone in a room with the machine.</p>
+      <p>Both people are simulated. One may only say “I want…”, the other only “I do not want…”, and a machine reads their sentences — not their intentions — and builds from what it takes. Five cases, four temperament pairings, 1,440 runs before the page opens, and recorded sessions where all three parts are played by real models.</p>
       <span class="go">open →</span>
     </a>
 

@@ -10,7 +10,7 @@
 <body>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..500&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 
 <style>
   :root{
@@ -51,11 +51,12 @@
   body{
     margin:0; background:var(--ground); color:var(--ink);
     display:flex; flex-direction:column; min-height:100dvh;
-    font-family:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-family:"Newsreader", Georgia, serif; font-optical-sizing:auto;
     font-size:14px; line-height:1.5;
     -webkit-font-smoothing:antialiased;
   }
-  h1,h2,h3{font-family:Archivo, ui-sans-serif, system-ui, sans-serif; margin:0; text-wrap:balance; letter-spacing:-.015em}
+  h1,h2,h3{font-family:"Instrument Serif", Georgia, serif; font-weight:400; margin:0; text-wrap:balance; letter-spacing:0}
+  p{text-wrap:pretty}
   button, textarea{font:inherit; color:inherit}
   .mono{font-family:"IBM Plex Mono", ui-monospace, monospace}
 
@@ -144,7 +145,7 @@
     font-family:"IBM Plex Mono", monospace; font-size:9.5px; letter-spacing:.11em;
     text-transform:uppercase; color:var(--muted); margin:0 0 3px;
   }
-  .cell dd{margin:0; font-family:Archivo, sans-serif; font-weight:600; font-size:16px; font-variant-numeric:tabular-nums}
+  .cell dd{margin:0; font-family:"IBM Plex Mono", monospace; font-weight:600; font-size:16px; font-variant-numeric:tabular-nums}
   .cell dd span{font-size:10.5px; font-weight:500; color:var(--muted); margin-left:2px}
   .cell dd.warn{color:var(--fault)}
 
@@ -165,7 +166,7 @@
     flex:1; text-align:left; padding:8px 12px; border-radius:9px; cursor:pointer;
     border:1px solid var(--line); background:var(--panel); transition:all .15s;
   }
-  .role-btn strong{display:block; font-family:Archivo,sans-serif; font-size:13px; font-weight:600}
+  .role-btn strong{display:block; font-family:"Instrument Serif", Georgia, serif; font-size:13px; font-weight:600}
   .role-btn em{
     font-style:normal; font-family:"IBM Plex Mono",monospace; font-size:10px;
     letter-spacing:.08em; text-transform:uppercase; color:var(--muted);
@@ -209,7 +210,7 @@
   .ai .who{color:var(--muted); display:flex; justify-content:space-between; align-items:center}
   .ai p{margin:0; font-size:13.5px}
   .ai .pick{
-    font-family:Archivo,sans-serif; font-weight:600; font-size:15px;
+    font-family:"Instrument Serif", Georgia, serif; font-weight:600; font-size:15px;
     display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;
   }
   .ai .pick small{font-family:"IBM Plex Mono",monospace; font-weight:400; font-size:10.5px; color:var(--muted); letter-spacing:.05em}

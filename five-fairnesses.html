@@ -10,7 +10,7 @@
 <body>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..500&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 
 <style>
   :root{
@@ -49,10 +49,11 @@
   *{box-sizing:border-box}
   body{
     margin:0; background:var(--ground); color:var(--ink);
-    font-family:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-family:"Newsreader", Georgia, serif; font-optical-sizing:auto;
     font-size:14px; line-height:1.55; -webkit-font-smoothing:antialiased;
   }
-  h1,h2,h3{font-family:Archivo, ui-sans-serif, system-ui, sans-serif; margin:0; text-wrap:balance; letter-spacing:-.015em}
+  h1,h2,h3{font-family:"Instrument Serif", Georgia, serif; font-weight:400; margin:0; text-wrap:balance; letter-spacing:0}
+  p{text-wrap:pretty}
   button{font:inherit; color:inherit}
   :focus-visible{outline:2px solid var(--signal); outline-offset:2px}
   .wrap{max-width:1180px; margin:0 auto; padding:34px 26px 70px}
@@ -167,7 +168,7 @@
     font-family:"IBM Plex Mono", monospace; font-size:9px; letter-spacing:.1em;
     text-transform:uppercase; color:var(--muted);
   }
-  .facts dd{margin:0; font-family:Archivo, sans-serif; font-weight:600; font-size:15px; font-variant-numeric:tabular-nums}
+  .facts dd{margin:0; font-family:"IBM Plex Mono", monospace; font-weight:600; font-size:15px; font-variant-numeric:tabular-nums}
   .lost{
     margin:0; font-size:12px; color:var(--fault); border-top:1px solid var(--line-soft); padding-top:8px;
   }
@@ -584,7 +585,7 @@ function noCrossing(ctx, st){
   ctx.strokeStyle = C.fault; ctx.globalAlpha = .8; ctx.lineWidth = 2.4; ctx.setLineDash([10,10]);
   ctx.beginPath(); ctx.moveTo(GAP_L - 40, BANK_Y - 60); ctx.lineTo(GAP_R + 40, BANK_Y - 60); ctx.stroke();
   ctx.setLineDash([]); ctx.globalAlpha = 1;
-  ctx.fillStyle = C.fault; ctx.font = '600 26px Archivo, sans-serif'; ctx.textAlign = "center";
+  ctx.fillStyle = C.fault; ctx.font = '26px "Instrument Serif", Georgia, serif'; ctx.textAlign = "center";
   ctx.fillText("nothing is built", W/2, BANK_Y - 86);
   ctx.restore();
 }
