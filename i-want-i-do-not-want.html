@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I Want, I Do Not Want</title>
-<meta name="description" content="Hearing someone changes what you ask for — so being in the same room now builds a different crossing than being apart, and generosity arrives as the wrong thing.">
+<meta name="description" content="The machine reads the sentence instead of being handed the intention — so it mishears too, and says what it took.">
 <link rel="icon" href="data:,">
 </head>
 <body>
@@ -335,6 +335,12 @@
   .turn.spent .bub{background:transparent; border:1px dashed var(--line); color:var(--muted)}
   .turn.gave .bub{background:transparent; border:1px dashed var(--line); font-style:italic}
   .turn.took .bub{outline:1px dashed color-mix(in srgb,var(--signal) 55%,transparent); outline-offset:2px}
+  .miss{display:flex; flex-direction:column; gap:2px; padding:6px 9px; border-radius:8px;
+        border:1px solid var(--line); background:var(--panel)}
+  .miss .said{font-size:12.5px}
+  .miss .as{font-size:11px; color:var(--signal); font-family:var(--mono,ui-monospace,monospace)}
+  .ai .mread{font-size:11.5px; color:var(--muted); margin:0 0 5px}
+  .ai .mread.off{color:var(--signal)}
   .tmp{font:inherit; font-size:10.5px; letter-spacing:.04em; text-transform:uppercase;
        background:transparent; color:var(--dim); border:1px solid var(--line);
        border-radius:999px; padding:1px 7px; margin-left:6px; cursor:pointer}
@@ -1211,19 +1217,54 @@ S.side = {A: mkCtx(), B: mkCtx()};
 const CX = role => CASES[S.case].solo ? S.side[role] : S.shared;
 const split = () => !!CASES[S.case].split;
 
-function hear(line, role){
+// ── The machine's own reading ────────────────────────────────────────
+// It was being handed each speaker's intent directly, which made it the only
+// party here that never misunderstood anything — an odd thing in a piece about
+// misunderstanding. It has a lexicon of its own already: the words it watches
+// for. So let it use that on the sentence, like the other two do, and commit to
+// whichever reading has the most evidence behind it rather than hedging across
+// every word it recognised.
+// Its word list was written to mark which words carried something, and half of
+// it is grammar — "up", "down", "over", "out", "that". Watching those makes it
+// hear a cleft in every sentence containing the word "down". The ledger already
+// keeps a list of words that mean nothing on their own; the machine uses the
+// same one to decide what not to listen to.
+let MHEARS = null;
+function mlex(){
+  if (MHEARS) return MHEARS;
+  MHEARS = {};
+  for (const [f, ws] of Object.entries(NEEDWORDS))
+    for (const w of ws) if (!GRAMMAR.has(w)) (MHEARS[w] ||= []).push(f);
+  return MHEARS;
+}
+function machineReads(text){
+  const lex = mlex(), score = new Map();
+  text.toLowerCase().split(/\s+/).forEach(tok => {
+    const w = tok.replace(/[^a-z0-9'-]/g, "");
+    // a word that could mean four things is weaker evidence than one that means one
+    (lex[w] || []).forEach(f => score.set(f, (score.get(f) || 0) + 1 / lex[w].length));
+  });
+  if (!score.size) return [];
+  const top = Math.max(...score.values());
+  return [...score].filter(([, n]) => n > top - 1e-9).map(([f]) => f).slice(0, 2);
+}
+
+// meant — what the speaker was asking for, which only the speaker ever knows.
+// taken — what the machine made of the sentence, which is all it has to build on.
+function hear(meant, taken, role){
   const c = CX(role), act = CASES[S.case][role], m = S.mem[role];
-  line.infer.forEach(f => {
+  meant.forEach(f => {
+    if (f === "water" || f === "rock"){ if (act === "want") m.world[f] = true; return; }
+    if (act === "want") m.wants.set(f, 1); else m.avoids.set(f, 1);
+  });
+  taken.forEach(f => {
     if (!c.namedBy.has(f)) c.namedBy.set(f, new Set());
     c.namedBy.get(f).add(role);
     // Ground is established only by someone asking. Refusing an experience
     // says what you fear; it does not assert that the world contains it.
-    if (f === "water" || f === "rock"){
-      if (act === "want"){ c.world[f] = true; m.world[f] = true; }
-      return;
-    }
-    if (act === "want"){ c.wants.set(f, (c.wants.get(f) || 0) + 1); m.wants.set(f, 1); }
-    else { c.avoids.set(f, (c.avoids.get(f) || 0) + 1); m.avoids.set(f, 1); }
+    if (f === "water" || f === "rock"){ if (act === "want") c.world[f] = true; return; }
+    if (act === "want") c.wants.set(f, (c.wants.get(f) || 0) + 1);
+    else c.avoids.set(f, (c.avoids.get(f) || 0) + 1);
   });
 }
 
@@ -1549,7 +1590,11 @@ function takeTurn(){
   S.lastSaid[role] = line.infer.slice();
   S.lastHeard = S.lastHeard || {A:[], B:[]};
   S.lastHeard[other] = heard;                 // what the other one actually took from it
-  hear(line, role);
+  const taken = machineReads(spoken);
+  S.mRead.push({turn:S.turn + 1, role, spoken, meant:line.infer.slice(), taken,
+                got: line.infer.filter(f => taken.includes(f)).length,
+                invented: taken.filter(f => !line.infer.includes(f)).length});
+  hear(line.infer, taken, role);
   const gaveUp = withdraw(role);
 
   const c = CX(role);
@@ -1566,7 +1611,7 @@ function takeTurn(){
         (before !== after ? "taken apart and rebuilt" : "nothing changed what it heard was already true of this"), []);
   pushSaid(role, line, repeat, pressing, answering, spoken, false, {meant:line.infer, heard}, up);
   if (gaveUp) pushGave(role, gaveUp);
-  pushBuild(before, after, best, role, split() ? drifted : null, seenBefore, c);
+  pushBuild(before, after, best, role, split() ? drifted : null, seenBefore, c, taken, line.infer);
   S.seen[role] = after;
 
   // a goal is only reached if the object AND its ground are right
@@ -1670,7 +1715,7 @@ function pushNote(text, role){
   el.querySelector("p").textContent = text;
   drop(el, target(role || S.speaker));
 }
-function pushBuild(before, after, best, role, drifted, seenBefore, c){
+function pushBuild(before, after, best, role, drifted, seenBefore, c, taken, meant){
   const el = document.createElement("div");
   el.className = "ai";
   const changed = before !== after;
@@ -1681,7 +1726,15 @@ function pushBuild(before, after, best, role, drifted, seenBefore, c){
     : null;
   const inferred = (best && best.k ? best.k.has : []).filter(f => c.wants.has(f))
         .slice(0,3).map(f => FEATLABEL[f] || f);
+  // What it made of the sentence, in its own words, before what it did about it.
+  const missed = (meant || []).filter(f => !(taken || []).includes(f));
+  const read = !taken ? "" : !taken.length
+    ? `<p class="mread off">There is nothing in that it knows how to want.</p>`
+    : `<p class="mread${missed.length ? " off" : ""}">It takes that to be about
+        <b>${taken.map(f => FEATLABEL[f] || f).join(" and ")}</b>${
+        missed.length ? `, and does not catch ${missed.map(f => FEATLABEL[f] || f).join(" or ")}` : ""}.</p>`;
   el.innerHTML = `<span class="who">the machine</span>
+    ${read}
     <div class="made">${after ? NAME(after) : "nothing it can make"}<small>${c.matches} matches</small></div>
     <p class="${solo && drifted ? "drift" : ""}">${solo !== null ? solo
       : changed ? (before ? `taken apart and rebuilt — it was ${NAME(before).toLowerCase()}` : "first thing it could stand up")
@@ -1740,6 +1793,10 @@ function record(){
     cameFor: {...GOAL()}, leftWanting: {...S.goalNow},
     hitNowA: S.hitNow.A, hitNowB: S.hitNow.B,
     split: split(),
+    mSaid: S.mRead.length,
+    mCaught: S.mRead.filter(r => r.meant.every(f => r.taken.includes(f))).length,
+    mInvented: S.mRead.reduce((n, r) => n + r.invented, 0),
+    mDeaf: S.mRead.filter(r => !r.taken.length).length,
     tookN: S.took.A.length + S.took.B.length,
     tookIdle: S.took.A.concat(S.took.B).filter(t => !t.helps).length,
     gaveA: S.gave.A.length, gaveB: S.gave.B.length,
@@ -1799,6 +1856,8 @@ function dist(key){
     gave:   medOf(list, r => r.gaveA + r.gaveB), misgiven: medOf(list, r => r.misgiven),
     yielded:medOf(list, r => r.yieldedN || 0),
     took:   medOf(list, r => r.tookN || 0), tookIdle: medOf(list, r => r.tookIdle || 0),
+    mSaid:  medOf(list, r => r.mSaid || 0), mCaught: medOf(list, r => r.mCaught || 0),
+    mInvented: medOf(list, r => r.mInvented || 0), mDeaf: medOf(list, r => r.mDeaf || 0),
     hitA:   list.filter(r => r.hitA).length, hitB: list.filter(r => r.hitB).length,
     missSpan: spanOf(list, r => r.missN), heardSpan: spanOf(list, r => r.heardN),
     firm: modeOf(list, r => r.built)[0][1] === list.length,
@@ -2134,7 +2193,29 @@ function renderAnalysis(){
     </section>`;
   };
 
+  // What the machine made of each sentence, set against what was asked for.
+  const mr = S.mRead || [];
+  const caught = mr.filter(r => r.meant.every(f => r.taken.includes(f)));
+  const partial = mr.filter(r => !r.meant.every(f => r.taken.includes(f)) && r.taken.length);
+  const deaf = mr.filter(r => !r.taken.length);
+  const invented = mr.reduce((n, r) => n + r.invented, 0);
+  const worst = mr.filter(r => r.meant.length && !r.meant.some(f => r.taken.includes(f)) && r.taken.length).slice(0, 4);
+  const mblock = !mr.length ? "" : `<section class="an-sec meaning">
+    <h4>What the machine made of it · ${caught.length} of ${mr.length} sentences taken as meant</h4>
+    <p>It has no access to anybody's intention. It watches the sentence for words on a list of its own
+       and commits to whichever reading has the most behind it — so it can take a request for one thing
+       as a request for another, and it can hear things nobody asked for.
+       <b>${partial.length}</b> ${partial.length === 1 ? "sentence was" : "sentences were"} taken as
+       something other than what was meant${deaf.length ? `, <b>${deaf.length}</b> passed it by entirely` : ""},
+       and it credited the two of them with <b>${invented}</b> ${invented === 1 ? "need" : "needs"} neither of them stated.</p>
+    ${worst.length ? `<div style="display:flex;flex-direction:column;gap:6px">${worst.map(r => `
+      <div class="miss"><span class="said">&ldquo;${r.spoken}&rdquo;</span>
+        <span class="as">asked for ${r.meant.map(f => FEATLABEL[f] || f).join(", ")}
+        &nbsp;&rarr;&nbsp; built on ${r.taken.map(f => FEATLABEL[f] || f).join(", ")}</span></div>`).join("")}</div>` : ""}
+  </section>`;
+
   host.innerHTML = `
+    ${mblock}
     ${CASES[S.case].solo ? provBlock(S.side.A, "Role 1") + provBlock(S.side.B, "Role 2") : provBlock(S.shared, "")}
     <dl class="an-top">
       <div class="an-stat"><dt>Words spoken</dt><dd>${spoken}<small>by the two of them</small></dd></div>
@@ -2458,11 +2539,11 @@ function renderCmp(){
    11 · VIEWS + TRANSPORT
    ═══════════════════════════════════════════════════════════ */
 const VNOTE = {
-  scene: "The crossing as it stands. Neither of them may name a structure, so everything here is the machine's reading of a described need. When they can hear each other they answer the last thing first — and what they answer is <b>what they took it to mean</b>, which is not always what was meant. Hearing somebody also changes what occurs to you to ask for: a listener can work back from what it believes the other will not have, and put that to the machine as a need of its own.",
+  scene: "The crossing as it stands. Neither of them may name a structure, so everything here is the machine's reading of a described need — and it is a <b>reading</b>: it parses the sentence with a word list of its own and says what it took, which is not reliably what was meant. When they can hear each other they answer the last thing first — and what they answer is <b>what they took it to mean</b>, which is not always what was meant. Hearing somebody also changes what occurs to you to ask for: a listener can work back from what it believes the other will not have, and put that to the machine as a need of its own.",
   temper: "The same case run four ways. Each of them either <b>holds firm</b> — pressing its own point, and pressing hardest exactly where the other objects — or <b>gives ground</b>, stopping short of what it believes the other has refused and taking its own demands back. It concedes to its <b>picture</b> of the other, which it built by reading sentences through its own lexicon. So a concession can land on something the other never asked for.",
   picture: "Reddy's actual claim, which the other views do not show: the listener does not receive a meaning, it <b>rebuilds</b> one out of its own materials. These two do not share a lexicon. Each reads the other through its own associations, and this is what each ends up believing.",
   flow: "Where every word of <b>this</b> case went. It fills in as the run proceeds; switch case above to see another. The figures for the other three are underneath, so you can compare without four diagrams at once.",
-  dropped: "The same run, counted. <b>Carried</b> is every word that let the machine infer something — none of them the name of a structure. <b>Discarded · meaning</b> is the part worth arguing about. Answering each other costs words and carries none: every reaction here is pure loss to the machine, and it is most of what makes them sound like people.",
+  dropped: "The same run, counted. <b>The machine reads the sentence, not the intention</b> — it watches for the words in its own list and commits to whichever reading has most behind it, so it can miss what was asked and hear things nobody said. <b>Carried</b> is every word that let the machine infer something — none of them the name of a structure. <b>Discarded · meaning</b> is the part worth arguing about. Answering each other costs words and carries none: every reaction here is pure loss to the machine, and it is most of what makes them sound like people.",
   said: "Every word either of them has said, ejected into the space between them and left there — Reddy’s <b>idea space</b>, made literal. The words in colour are the few the machine could do anything with. Everything faint is still in the air: said, reified, and inert. Grey is the machine, ejecting into the same space, with none of it picked up either.",
 };
 function setView(v){
@@ -2532,7 +2613,7 @@ function reset(){
     words:[], spoken:0, taken:0, asked:{A:0, B:0}, dodged:0,
     askedFeats:{A:new Set(), B:new Set()},
     goalNow:{...SC().goal}, revised:{A:0, B:0}, revisedAt:{A:0, B:0}, hitNow:{A:0, B:0},
-    recent:{A:[], B:[]}, spent:{A:false, B:false}, lastSaid:{A:[], B:[]}, lastHeard:{A:[], B:[]}, lastUp:{A:"", B:""}, gave:{A:[], B:[]}, adopted:{A:new Set(), B:new Set()}, took:{A:[], B:[]},
+    recent:{A:[], B:[]}, spent:{A:false, B:false}, lastSaid:{A:[], B:[]}, lastHeard:{A:[], B:[]}, lastUp:{A:"", B:""}, gave:{A:[], B:[]}, mRead:[], adopted:{A:new Set(), B:new Set()}, took:{A:[], B:[]},
     picture:{A:{wants:new Map(), avoids:new Map()}, B:{wants:new Map(), avoids:new Map()}}, readings:[],
     phase: CASES[S.case].confer ? "confer" : "machine", dropped:[], yielded:[],
     pact:{A:{want:new Set(), avoid:new Set()}, B:{want:new Set(), avoid:new Set()}}});
