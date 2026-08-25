@@ -789,7 +789,11 @@ const NEEDWORDS = {
   heavy:["cart","carts","carting","loaded","wheels","laden","road","hauling","pass","lot","heavy","carry","load"],
   guarded:["hand","hold","hemmed","edge","edges","lean","view"],
   steady:["put","wind","funnels","shifting","give","winter","still","dead","rebuilding"],
-  exposed:["out","nothing","that"],
+  // "nothing" was the only word here that survived the grammar filter, so every
+  // sentence containing it read as a fear of the drop — and the drop is a
+  // property of the bare log, which is why so many runs ended at one. These
+  // three are words that occur in the sentences that mean it and nowhere else.
+  exposed:["stood","balancing","air"],
   sways:["swaying","shifting","moving","bounce","give","gives","alive"],
   inGap:["driven","bottom","standing","bed"],
   high:["climb","climbing","up","onto","grand","stair"],
@@ -938,9 +942,9 @@ const SCENARIOS = {
            counters:["open","minimal"],
            alt:"to be out over that with nothing to hold on to. You might enjoy the view. I'm the one who has to stand on it.",
            says:[
-            "to be out over that with nothing to hold on to.",
-            "to be stood out over it with nothing at all at my hand.",
-            "to be out there with nothing to take hold of."]},
+            "to be stood out over that with nothing to hold on to.",
+            "to be balancing over it with nothing at all at my hand.",
+            "to be out there over thin air with nothing to take hold of."]},
           {infer:["sways"], why:"refuses movement",
            counters:["minimal","light"],
            alt:"to feel it swaying about every time the wind gets up — and the slighter you make it, the more it will.",
