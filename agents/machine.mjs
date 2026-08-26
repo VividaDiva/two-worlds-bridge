@@ -106,4 +106,5 @@ export const READERS = {
   keyword: "the word list",
   claude:  "a language model (Claude)",
   openai:  "a language model (OpenAI)",
+  gemini:  "a language model (Gemini)",
 };

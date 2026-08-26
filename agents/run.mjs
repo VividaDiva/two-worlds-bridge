@@ -24,6 +24,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import OpenAI from "openai";
+import { GoogleGenAI } from "@google/genai";
 import { KIT, NAME, MADE, FEATURES, FORBIDDEN, mkCtx, hear, build, provenance, groundOf, ledger } from "./engine.mjs";
 import { readKeyword, readLLM, speakLLM, READERS } from "./machine.mjs";
 
@@ -120,9 +121,14 @@ function userPrompt({ standing, ownHistory, heardHistory, hears, turn }) {
 /* ── the two players ──────────────────────────────────────────────────── */
 const anthropic = new Anthropic();                       // ANTHROPIC_API_KEY or an `ant auth login` profile
 const openai = new OpenAI();                             // OPENAI_API_KEY
+// Only constructed when actually used, so a missing key is not an error for
+// anybody who never asks for it.
+let _gem = null;
+const gemini = () => (_gem ||= new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY }));
 const CLAUDE_MODEL = process.env.CLAUDE_MODEL || "claude-opus-5";
 const MACHINE_MODEL = process.env.MACHINE_MODEL || "claude-opus-5";
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o";
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
 async function askClaude(system, user) {
   // Opus 5 runs adaptive thinking when `thinking` is omitted.
@@ -158,7 +164,30 @@ async function askOpenAI(system, user) {
   return TurnSchema.parse(JSON.parse(raw));
 }
 
-const PLAYERS = { claude: askClaude, openai: askOpenAI };
+// Gemini, for either chair or for the reading. The two schemas here are small
+// enough to write out by hand rather than converting from Zod — responseJsonSchema
+// is fussier about what it accepts than a converter's output tends to be, and the
+// shapes are two fields between them.
+const JSON_SCHEMAS = new Map();
+function askGeminiWith(shape) {
+  return async (system, user) => {
+    const res = await gemini().models.generateContent({
+      model: GEMINI_MODEL,
+      contents: user,
+      config: { systemInstruction: system, responseMimeType: "application/json", responseJsonSchema: shape.json },
+    });
+    const text = (res.text || "").trim();
+    const m = text.match(/\{[\s\S]*\}/);
+    if (!m) throw new Error(`Gemini returned no JSON: ${text.slice(0, 120)}`);
+    return shape.zod.parse(JSON.parse(m[0]));
+  };
+}
+const TURN_JSON = { type:"object", properties:{ say:{type:"string"}, asserts:{type:"array", items:{type:"string"}} }, required:["say","asserts"] };
+const READ_JSON = { type:"object", properties:{ needs:{type:"array", items:{type:"string"}} }, required:["needs"] };
+const SAY_JSON  = { type:"object", properties:{ say:{type:"string"} }, required:["say"] };
+const askGemini = askGeminiWith({ json: TURN_JSON, zod: TurnSchema });
+
+const PLAYERS = { claude: askClaude, openai: askOpenAI, gemini: askGemini };
 
 // The SDK fills parsed_output only when the response comes back as a dedicated
 // structured-output block. Against claude-opus-5 today it does not: the model
@@ -221,7 +250,12 @@ async function machineOpenAI(system, user, schema = ReadSchema) {
   return schema.parse(JSON.parse(raw));
 }
 
-const MACHINES = { claude: machineClaude, openai: machineOpenAI };
+async function machineGemini(system, user, schema = ReadSchema) {
+  const shape = schema === SaySchema ? { json: SAY_JSON, zod: SaySchema } : { json: READ_JSON, zod: ReadSchema };
+  return askGeminiWith(shape)(system, user);
+}
+
+const MACHINES = { claude: machineClaude, openai: machineOpenAI, gemini: machineGemini };
 
 /* ── constraint enforcement ───────────────────────────────────────────── */
 function violations(turn, act) {
@@ -266,7 +300,7 @@ const playerA = argv.a || "openai";
 const playerB = argv.b || "claude";
 // `llm` stays as an alias for the Anthropic reader, which is what it used to mean.
 const reader = ({ llm: "claude" })[argv.machine] || argv.machine || "claude";
-if (!READERS[reader]) throw new Error(`unknown machine: ${reader} (keyword | claude | openai)`);
+if (!READERS[reader]) throw new Error(`unknown machine: ${reader} (keyword | claude | openai | gemini)`);
 const byModelUsed = reader !== "keyword";
 // The machine says its piece unless told not to. It is a second call per turn,
 // so --voice off halves what a run costs when only the numbers are wanted.
@@ -370,7 +404,7 @@ if (state.mute) console.log(`  ${state.mute} turns the machine had nothing to sa
 const session = {
   meta: { scenario: scenarioKey, case: caseKey, label: CASES[caseKey].label,
           players: { A: playerA, B: playerB }, machine: reader, machineIsModel: byModelUsed,
-          models: { claude: CLAUDE_MODEL, openai: OPENAI_MODEL, machine: MACHINE_MODEL },
+          models: { claude: CLAUDE_MODEL, openai: OPENAI_MODEL, gemini: GEMINI_MODEL, machine: MACHINE_MODEL },
           turns: state.turn, ranAt: new Date().toISOString() },
   goals: { A: SCENARIOS[scenarioKey].A.goal, B: SCENARIOS[scenarioKey].B.goal },
   transcript,

@@ -28,9 +28,9 @@ node --env-file=.env run.mjs --scenario places --case given --machine llm
 |---|---|---|
 | `--scenario` | `places` · `loads` · `refs` | `places` |
 | `--case` | `given` · `swapped` · `separate` | `given` |
-| `--machine` | `claude` · `openai` · `keyword` — who reads what the builder is told | `claude` |
+| `--machine` | `claude` · `openai` · `gemini` · `keyword` — who reads what the builder is told | `claude` |
 | `--turns` | how many turns to run | `16` |
-| `--a` / `--b` | `openai` · `claude` — who plays which role | `openai` / `claude` |
+| `--a` / `--b` | `openai` · `claude` · `gemini` — who plays which role | `openai` / `claude` |
 
 Swap the players to check that a finding belongs to the *speech act* rather than
 to one provider's habits:
@@ -56,8 +56,16 @@ than a property of the channel. Worth knowing, not worth waiting for.
 **The kit is fixed.** Six structures, fourteen features, one scoring rule. If
 the builder were a model too, nothing in the run would be measurable.
 
-**How the builder reads is not.** `--machine keyword` gives it the word list the
-browser page uses. `--machine claude` or `--machine openai` gives it a model that sees one
+**Three readers on the same sentences.** The claim this project rests on is that
+losing the speaker's stance is a property of reading shallowly, not of putting a
+machine in the middle. That is much harder to argue with when three models built
+by three companies agree with each other and disagree with the word list. So run
+the same case with `--machine claude`, `--machine openai` and `--machine gemini`
+and compare: where all three take a sentence the same way and the word list does
+not, the word list is the outlier, not the finding.
+
+**How the builder reads is not fixed.** `--machine keyword` gives it the word list the
+browser page uses. A provider name gives it a model that sees one
 sentence at a time, with no memory of the conversation and no idea who is
 speaking — a builder parsing a request, not a third party following an argument.
 Both readings are computed and recorded every turn, whichever one is driving, so
