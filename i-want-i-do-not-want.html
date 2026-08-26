@@ -1,12 +1,8 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I Want, I Do Not Want</title>
-<meta name="description" content="Ten conversations that actually happened between two models, and a scripted instrument you can take apart.">
-<link rel="icon" href="data:,">
-</head>
+<meta name="description" content="Conversations that actually happened between three language models, and everything on the page measured from them.">
+<link rel="icon" href="data:,"></head>
 <body>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -596,6 +592,16 @@
   .st-bar i{display:block; height:100%; background:var(--line)}
   .st-row.won .st-bar i{background:var(--signal)}
   .st-s{text-align:right; font-variant-numeric:tabular-nums}
+  .runs{display:flex; gap:5px; flex-wrap:wrap}
+  .runs button{
+    background:transparent; border:1px solid var(--line); border-radius:8px; padding:3px 9px 4px;
+    font-family:var(--mono); font-size:11px; cursor:pointer; color:var(--muted);
+    display:flex; flex-direction:column; align-items:flex-start; line-height:1.25; transition:all .15s;
+  }
+  .runs button i{font-style:normal; font-size:8.5px; letter-spacing:.05em; opacity:.75}
+  .runs button:hover{border-color:var(--ink); color:var(--ink)}
+  .runs button[aria-pressed="true"]{background:var(--ink); color:var(--ground); border-color:var(--ink)}
+  .runs .norun{font-family:var(--mono); font-size:10.5px; color:var(--muted); opacity:.7}
   .whichrun{
     margin:0 0 8px; font-size:13px; color:var(--muted);
     display:flex; align-items:center; gap:10px; flex-wrap:wrap;
@@ -681,24 +687,23 @@
       </button>
     </div>
       </div>
+      <div class="rail-row"><span class="lbl">Conversation</span><div class="runs" id="runs"></div></div>
       <p class="caseline" id="caseNote"></p>
       <div class="goalline">
       <span class="g a"><b>Role 1</b> a single log across the stream
-        <em id="actA">may only ask</em><button type="button" class="tmp" id="tempA">holds firm</button><i class="hit no" id="hitA">not built</i></span>
+        <em id="actA">may only ask</em><i class="hit no" id="hitA">not built</i></span>
       <span class="g b"><b>Role 2</b> a single log across the cleft
-        <em id="actB">may only refuse</em><button type="button" class="tmp" id="tempB">holds firm</button><i class="hit no" id="hitB">not built</i></span>
+        <em id="actB">may only refuse</em><i class="hit no" id="hitB">not built</i></span>
       </div>
     </div>
     <div class="views">
       <div class="tabrow" role="tablist" aria-label="What to show">
       <button class="vtab" data-v="scene" role="tab" aria-selected="true">What was built</button>
-      <button class="vtab" data-v="compare" role="tab" aria-selected="false">All five cases</button>
+      <button class="vtab" data-v="compare" role="tab" aria-selected="false">Every case</button>
       <button class="vtab" data-v="said" role="tab" aria-selected="false">What was said</button>
       <button class="vtab" data-v="dropped" role="tab" aria-selected="false">What was dropped</button>
       <button class="vtab" data-v="flow" role="tab" aria-selected="false">Where it went</button>
       <button class="vtab" data-v="picture" role="tab" aria-selected="false">What they think of each other</button>
-      <button class="vtab" data-v="temper" role="tab" aria-selected="false">What giving ground does</button>
-      <button class="vtab" data-v="rec" role="tab" aria-selected="false" hidden>Recorded runs</button>
       </div>
       <p class="vnote" id="vnote"></p>
     </div>
@@ -1995,7 +2000,7 @@ function pushSaid(role, line, repeat, pressing, answering, spoken, confer, readi
   const el = document.createElement("div");
   el.className = "turn " + role.toLowerCase() + (confer ? " confer" : "");
   el.innerHTML = `<span class="who">${role === "A" ? "Role 1" : "Role 2"}${confer ? " · to the other, not the builder" : ""}${line.adopted ? " · taking up the other one's need" : ""}${harder ? " · saying it again, harder" : answering ? ` · answering Role ${role === "A" ? "2" : "1"}` : repeat ? (pressing ? " · pressing it again" : " · saying it again") : ""}</span>
-    <div class="bub">${up ? `<span class="up"></span>` : ""}<span class="lead">${LEAD[CASES[S.case][role]]}</span><span class="body"></span></div>
+    <div class="bub">${up ? `<span class="up"></span>` : ""}${S.replay ? "" : `<span class="lead">${LEAD[CASES[S.case][role]]}</span>`}<span class="body"></span></div>
     ${line.meant ? `<span class="meant">pictured: ${line.meant}</span>` : ""}
     ${reading && reading.heard && reading.heard.length ? `<span class="reading${
         reading.meant.every(f => reading.heard.includes(f)) ? " ok" : " off"}">${
@@ -2258,7 +2263,7 @@ function pushBuild(before, after, best, role, drifted, seenBefore, c, taken, mea
     <div class="did">
       ${after ? miniDiff(before, after, c.world) : ""}
       <div class="didtext">
-        <p class="act ${solo && drifted ? "drift" : ""}">${act}</p>
+        <p class="act ${solo && drifted ? "drift" : ""}">${(why && why.said) || act}</p>
         <span class="std">${after ? NAME(after).toLowerCase() : "nothing it can make"} &nbsp;·&nbsp; ${c.matches} matches</span>
       </div>
     </div>
@@ -2889,71 +2894,115 @@ function renderFlow(){
 // to this page's language, not to data written by something else.
 const isBuilder = t => t.who === "builder" || t.who === "machine";
 
-function renderRec(){
-  const host = document.getElementById("rec");
-  if (!SESSIONS.length){ host.innerHTML = ""; return; }
-  // A different real conversation each time the page is opened. These are not
-  // variations on a script — they are separate arguments that happened, between
-  // models that had never seen each other's lines, and they went different ways.
-  // Picking one at random is the honest way to show that: come back later and
-  // two other people are arguing.
-  if (S.rec == null) S.rec = Math.floor(Math.random() * SESSIONS.length);
-  const i = Math.min(S.rec, SESSIONS.length - 1);
-  const ss = SESSIONS[i];
-  const said = (ss.transcript || []).filter(t => t.who === "A" || t.who === "B");
-  const all = ss.transcript || [];
-  const r = ss.reading || {};
-  const lab = f => FEATLABEL[f] || f;
+/* ═══════════════════════════════════════════════════════════
+   REPLAY · a recorded conversation driven through this same engine
+   ═══════════════════════════════════════════════════════════ */
+// Rather than rewrite six views to read session files, a recording is pushed
+// through the state the simulation fills — every word ejected, every reading
+// recorded, every build run — so the ledger, the conduit, the pictures and the
+// crossing are computed exactly as they always were, from real sentences. The
+// views cannot drift from each other because there is only one set of them.
+// Which recorded conversations exist, grouped the way the controls offer them.
+const RUNS_BY = () => {
+  const m = {};
+  SESSIONS.forEach((x, i) => {
+    const k = x.meta.scenario + "/" + x.meta.case;
+    (m[k] = m[k] || []).push(i);
+  });
+  return m;
+};
+const CASE_ORDER = ["given", "swapped", "separate", "together", "alone"];
 
-  const picker = SESSIONS.length < 2 ? "" : `
-    <p class="whichrun">${SESSIONS.length} conversations that actually happened, one picked at random.
-      <button type="button" class="ghost" id="anotherRun">Show me another</button></p>
-    <div class="cases" style="margin-bottom:10px">${
-    SESSIONS.map((x, n) => `<button type="button" class="ghost" data-rec="${n}" aria-pressed="${n === i}">${
-      x.meta.scenario} · ${x.outcome ? x.outcome.name.replace(/^An? /, "").toLowerCase() : x.meta.label}${
-      x.meta.turns ? ` · ${x.meta.turns} turns` : ""}</button>`).join("")}</div>`;
-
-  const turns = all.map(t => {
-    if (isBuilder(t)) return `<div class="ai">
-      <span class="who">the builder</span>
-      <div class="made">${t.text}${t.changed ? `<small>rebuilt</small>` : ``}</div>
-      <p class="mvoice"></p></div>`;
-    const meant = t.meant || t.asserts || [], taken = t.taken || [];
-    const off = !(meant.length && meant.every(f => taken.includes(f)));
-    const alt = t.byModel && t.byWord && t.byWord.join() !== t.byModel.join() ? t.byWord : null;
-    return `<div class="turn ${t.who.toLowerCase()}">
-      <span class="who">Role ${t.who === "A" ? "1" : "2"} · ${t.player || "a model"}</span>
-      <div class="bub"><span class="body"></span></div>
-      <span class="reading${off ? " off" : " ok"}">meant ${meant.map(lab).join(", ") || "nothing"}
-        &nbsp;·&nbsp; the builder took ${taken.map(lab).join(", ") || "nothing at all"}</span>
-      ${alt ? `<span class="why">the word list would have taken ${alt.map(lab).join(", ") || "nothing"}</span>` : ""}
-    </div>`;
-  }).join("");
-
-  host.innerHTML = `${picker}
-    <section class="an-sec">
-      <h4>${ss.meta.label} · ${ss.meta.scenario} · ${ss.meta.turns} turns</h4>
-      <p>Role 1 played by <b>${ss.meta.players.A}</b>, Role 2 by <b>${ss.meta.players.B}</b>, and the builder
-         reading with <b>${(ss.meta.builderIsModel ?? ss.meta.machineIsModel ?? ss.meta.machine === "llm") ? `a language model (${ss.meta.machine})` : "the word list"}</b>.
-         ${ss.outcome ? `It built <b>${ss.outcome.name}</b>, over ${ss.outcome.ground}.` : ""}</p>
-      ${r.said ? `<p class="prov-head ${r.caught === r.said ? "none" : "some"}">The builder took
-        <b>${r.caught} of ${r.said}</b> sentences as they were meant${
-        r.deaf ? `, <b>${r.deaf}</b> passed it by entirely` : ""}${
-        r.invented ? `, and it credited them with <b>${r.invented}</b> need${r.invented === 1 ? "" : "s"} neither stated` : ""}.${
-        r.wordListAgreed != null ? ` The word list would have agreed with it on <b>${r.wordListAgreed} of ${r.said}</b>.` : ""}</p>` : ""}
-    </section>
-    <div class="log" style="margin-top:10px">${turns}</div>`;
-
-  host.querySelectorAll("[data-rec]").forEach(b => b.onclick = () => { S.rec = +b.dataset.rec; renderRec(); });
-  const another = host.querySelector("#anotherRun");
-  if (another) another.onclick = () => {
-    let n = S.rec;
-    while (SESSIONS.length > 1 && n === S.rec) n = Math.floor(Math.random() * SESSIONS.length);
-    S.rec = n; renderRec();
+// Every recorded conversation for one case, replayed and tallied — the same
+// comparison the simulated version made, from arguments that happened.
+function recordedDist(scenario, cs){
+  const idx = SESSIONS.map((x, i) => [x, i])
+    .filter(([x]) => x.meta.scenario === scenario && x.meta.case === cs).map(([, i]) => i);
+  if (!idx.length) return null;
+  const tally = (get) => {
+    const m = new Map();
+    idx.forEach(i => { const v = get(SESSIONS[i]); if (v != null) m.set(v, (m.get(v) || 0) + 1); });
+    return [...m].sort((a, b) => b[1] - a[1]);
   };
-  host.querySelectorAll(".turn .body").forEach((el, n) => { el.textContent = said[n].text; });
-  const voices = all.filter(t => isBuilder(t));
-  host.querySelectorAll(".ai .mvoice").forEach((el, n) => { el.textContent = voices[n].say; });
+  const med = get => { const v = idx.map(i => get(SESSIONS[i])).filter(x => typeof x === "number").sort((a, b) => a - b);
+                       return v.length ? v[v.length >> 1] : 0; };
+  return { n: idx.length, idx,
+    built: tally(x => x.outcome && x.outcome.name),
+    ground: tally(x => x.outcome && x.outcome.ground),
+    turns: med(x => x.meta.turns),
+    caught: med(x => x.reading && x.reading.caught),
+    said: med(x => x.reading && x.reading.said),
+    invented: med(x => x.reading && x.reading.invented),
+    agreedWithList: med(x => x.reading && x.reading.wordListAgreed),
+  };
+}
+
+function replaySession(ss){
+  const t = (ss.transcript || []).filter(x => x.who === "A" || x.who === "B");
+  if (!t.length) return false;
+  const built = (ss.transcript || []).filter(x => isBuilder(x));
+
+  S.scenario = SCENARIOS[ss.meta.scenario] ? ss.meta.scenario : S.scenario;
+  S.case = CASES[ss.meta.case] ? ss.meta.case : "given";
+  S.replay = ss;
+  reset();
+  S.replay = ss;                          // reset clears it
+
+  t.forEach((turn, i) => {
+    const role = turn.who, other = role === "A" ? "B" : "A";
+    const spoken = turn.text || "";
+    const meant = (turn.meant || []).filter(f => f in FEATLABEL);
+    const taken = (turn.taken || []).filter(f => f in FEATLABEL);
+
+    // what the other one made of this line: their own report, on their next turn
+    const reply = t[i + 1];
+    const heard = (reply && reply.who === other ? (reply.tookThemToMean || []) : [])
+      .filter(f => f in FEATLABEL);
+
+    const cx0 = CX(role);
+    const heldBefore = new Set([...cx0.wants.keys(), ...cx0.avoids.keys(),
+      ...Object.keys(cx0.world).filter(k => cx0.world[k])]);
+
+    eject(role, spoken, meant);
+    S.mRead.push({turn:i + 1, role, spoken, meant, taken,
+                  got: meant.filter(f => taken.includes(f)).length,
+                  invented: taken.filter(f => !meant.includes(f)).length});
+
+    // their picture of each other, as each of them reported it
+    const act = CASES[S.case][role];
+    if (heard.length){
+      const pic = S.picture[other];
+      heard.forEach(f => { const m = act === "want" ? pic.wants : pic.avoids;
+                           m.set(f, (m.get(f) || 0) + 1); });
+    }
+    S.readings.push({turn:i + 1, role, spoken, meant, heard,
+                     agreed: meant.length > 0 && heard.length > 0 && meant.every(f => heard.includes(f))});
+
+    hear(meant, taken, role);
+    const c = CX(role);
+    const before = S.seen[role] !== undefined ? (c.design ? c.design.id : null) : null;
+    const wasMatches = c.matches || 0;
+    const prevId = c.design ? c.design.id : null;
+    const best = build(c);
+    const after = c.design ? c.design.id : null;
+    S.turn = i + 1;
+
+    const say = built.find(b => b.turn === turn.turn && b.say);
+    pushSaid(role, {infer:meant, why:"", says:[spoken]}, false, false, false, spoken, false,
+             {meant, heard}, "", false);
+    pushBuild(prevId, after, best, role, null, S.seen[role], c, taken, meant,
+              {again:taken.filter(f => heldBefore.has(f)), fresh:taken.filter(f => !heldBefore.has(f)),
+               act, wasMatches, said: say ? say.say : ""});
+    S.seen[role] = after;
+
+    S.trace.push({t:i + 1, role, matches:c.matches, built:after, down:c.matches < wasMatches,
+      misheard: heard.length > 0 && !meant.every(f => heard.includes(f)),
+      missed: !(taken.length && meant.every(f => taken.includes(f)))});
+  });
+
+  renderTrace();
+  S.done = true; record(); pushVerdict(); stop(); paint(); hud();
+  return true;
 }
 
 function renderTemper(){
@@ -3080,143 +3129,55 @@ function renderPicture(){
 
 function renderBadges(){
   document.querySelectorAll(".case .res").forEach(el => {
-    const key = KEY(el.dataset.res);
-    const d = dist(key), r = S.results[key];
-    el.classList.toggle("done", !!(d || r));
-    if (!d && !r){ el.textContent = "not run"; return; }
-    const strip = id => NAME(id).replace(/^An? /, "");
-    if (!d){ el.textContent = r.solo ? `${strip(r.built)} + ${strip(r.builtB).toLowerCase()}`
-                                     : `${strip(r.built)} · over ${r.groundOf}`; return; }
-    const head = CASES[el.dataset.res].solo
-      ? `${strip(d.built[0][0])} + ${strip(d.builtB[0][0]).toLowerCase()}`
-      : `${strip(d.built[0][0])} · over ${d.ground[0][0]}`;
-    el.innerHTML = head + (d.built[0][1] === d.n ? "" : ` <i class="freq">${d.built[0][1]}/${d.n}</i>`);
+    const d = recordedDist(S.scenario, el.dataset.res);
+    el.classList.toggle("done", !!d);
+    el.textContent = !d ? "not recorded"
+      : `${(d.built[0] ? d.built[0][0] : "nothing").replace(/^An? /, "")} · ${d.n} recorded`;
   });
 }
 function renderCmp(){
-  const rows = Object.entries(CASES).map(([key, c]) => {
-    const d = dist(KEY(key)), r = S.results[KEY(key)];
-    if (!d && !r) return `<tr><td class="k">${c.label}</td><td colspan="5" class="pending">not run yet</td></tr>`;
-    if (!d){    // a case watched before the sweep finished
-      const who = r.hitA && r.hitB ? "both reached it" : r.hitA ? "role 1 only" : r.hitB ? "role 2 only" : "neither";
-      return `<tr><td class="k">${c.label}</td><td class="win">${NAME(r.built)}</td>
-        <td class="k">over ${r.groundOf}</td><td class="win">${who}</td>
-        <td class="k">one run</td><td class="k">one run</td></tr>`;
-    }
-    const wcls = d.who[0][0] === "both reached it" ? "" : d.who[0][0] === "role 1 only" ? "a"
-               : d.who[0][0] === "role 2 only" ? "b" : "";
-    const goal = `<td class="win ${wcls}">${d.who[0][0]}${often(d.who, d.n)}</td>`;
-    if (c.solo) return `<tr><td class="k">${c.label}</td>
-      <td class="win">${NAME(d.built[0][0])} · ${NAME(d.builtB[0][0]).toLowerCase()}${often(d.built, d.n)}</td>
-      <td class="k">each over their own</td>${goal}
-      <td class="k">${d.unspoken}/${d.total} unspoken</td>
-      <td class="k q">there is no one to hear</td></tr>`;
-    // Column five is the builder's channel; column six is the one between them.
-    const between = c.confer ? `${d.dropped} dropped in order to agree`
-                  : c.split  ? `<span class="q">neither hears a word</span>`
-                  : `${showSpan(d.missSpan)} of ${showSpan(d.heardSpan)} sentences misread${
-                      d.took ? ` · <b>${d.took} need${d.took === 1 ? "" : "s"} taken up</b>` : ""}`;
-    // A margin of nothing is a tie, and a tie is settled by the order the six
-    // structures happen to be written in. Saying "by 0" would hide that behind a
-    // number; it is a limit of the model and it belongs on the face of it.
-    const close = !d.runnerUp ? ""
-      : d.margin === 0
-        ? `<span class="marg tied">tied with ${NAME(d.runnerUp).toLowerCase()} — settled by kit order</span>`
-        : `<span class="marg${d.margin <= 2 ? " tight" : ""}">by ${d.margin} over ${NAME(d.runnerUp).toLowerCase()}</span>`;
-    return `<tr><td class="k">${c.label}</td>
-      <td class="win">${NAME(d.built[0][0])} · ${d.matches} matches${often(d.built, d.n)}${close}</td>
-      <td class="k">over ${d.ground[0][0]}${often(d.ground, d.n)}</td>${goal}
-      <td class="k">${d.unspoken}/${d.total} unspoken</td>
-      <td class="k">${between}</td></tr>`;
+  // The same comparison as before, over conversations that happened instead of
+  // runs that were simulated. Fewer of each — three cases, a handful of runs —
+  // so every figure says how many it rests on.
+  const rows = CASE_ORDER.filter(k => CASES[k]).map(k => {
+    const d = recordedDist(S.scenario, k);
+    if (!d) return `<tr><td class="k">${CASES[k].label}</td><td colspan="4" class="pending">no conversation recorded</td></tr>`;
+    const often = pairs => pairs.length && pairs[0][1] < d.n ? ` <i class="freq">${pairs[0][1]} of ${d.n}</i>` : "";
+    return `<tr><td class="k">${CASES[k].label}</td>
+      <td class="win">${d.built[0] ? d.built[0][0] : "nothing"}${often(d.built)}</td>
+      <td class="k">over ${d.ground[0] ? d.ground[0][0] : "—"}${often(d.ground)}</td>
+      <td class="k">${d.caught} of ${d.said} taken as meant</td>
+      <td class="k">${d.invented} credited that nobody said</td></tr>`;
   }).join("");
 
-  const D = k => dist(KEY(k));
-  const g = D("given"), w = D("swapped"), a = D("separate"), al = D("alone");
-
-  // The caption used to be one block of about 250 words sitting between the
-  // table and everything else. Same findings, one to a card, each with the thing
-  // it is a finding about written at the top of it.
+  const g = recordedDist(S.scenario, "given"), a2 = recordedDist(S.scenario, "separate");
   const finds = [];
-  if (g && w && a && al){
-    const cases = Object.keys(CASES).map(D).filter(Boolean);
-    const firm = cases.filter(d => d.built[0][1] === d.n).length;
+  if (g) finds.push(["Nothing here was written in advance",
+    `Every line is a model's own. Role 1 is played by one company's, Role 2 by another's, and the builder
+     reads them with a third — none of them shown the others' instructions. Across the conversations recorded
+     for <b>${CASES.given.label.toLowerCase()}</b>, the builder took a median of <b>${g.caught} of ${g.said}</b>
+     sentences as they were meant${g.agreedWithList != null ? `, and a keyword reader would have agreed with it
+     on <b>${g.agreedWithList}</b>` : ""}.`]);
+  if (g && a2) finds.push(["Being in the room", (
+    (g.built[0] && a2.built[0] && g.built[0][0] !== a2.built[0][0])
+      ? `In one room they end at <b>${g.built[0][0].toLowerCase()}</b>, apart at <b>${a2.built[0][0].toLowerCase()}</b>.`
+      : `Both arrangements reached <b>${g.built[0] ? g.built[0][0].toLowerCase() : "the same thing"}</b> here.`)
+    + ` Apart, neither can hear the other at all — so whatever the builder gets, it gets from two people
+       who do not know the other is talking.`]);
+  const fh = document.getElementById("finds");
+  if (fh) fh.innerHTML = finds.map(([h, t]) => `<div class="find"><h5>${h}</h5><p>${t}</p></div>`).join("");
 
-    if (!SC().ground) finds.push(["Whose ground it got built over",
-      `Not what got built but <b>where</b>: ${g.ground[0][0]} in case 1, ${w.ground[0][0]} in case 2,
-       ${a.ground[0][0]} in case 3, one each in case 5. Ground is established only by someone <i>asking</i> —
-       refusing a thing you fear never puts a place into the world.`]);
-    else finds.push(["Agreed ground", `They are on agreed ground throughout, so nothing here turns on place.`, true]);
-
-    finds.push(["Nothing was ever named",
-      `Neither of them may say what they want built, so every property of every result is the builder&rsquo;s
-       reading of a described need — and in each shared case some of it traces back to <b>nothing either of
-       them said at all</b>.`]);
-
-    if (a.asked) finds.push(["Who asks, and what they are told",
-      `In one room they turn to each other and nobody interrogates the builder, because there is somebody better
-       to ask. Separated, it is the only thing left to ask — and <b>apart</b> it must not reveal that another
-       person exists: <b>${a.dodged} of ${a.asked} questions answered without disclosure</b>. <b>Alone</b>,
-       there is nobody to shield, and the answer is the hardest of all.`]);
-
-    finds.push(["Being in the room", (
-      g.built[0][0] !== a.built[0][0]
-        ? `Cases 1 and 3 both have each of them addressing the builder, so it is fair to ask whether the first is
-           the third with the chairs moved. It is not: in one room they end at <b>${NAME(g.built[0][0]).toLowerCase()}</b>,
-           apart at <b>${NAME(a.built[0][0]).toLowerCase()}</b>.`
-        : (g.who[0][0] !== a.who[0][0]
-            ? `The same thing gets built either way, but not for the same person — in the room <b>${g.who[0][0]}</b>,
-               apart <b>${a.who[0][0]}</b>.`
-            : `Here they reach the same structure for the same person. What separates them is that the shared run is
-               no longer <i>certain</i> of it: it moves with phrasing, and the separated one does not.`))
-      + ` Hearing somebody changes what you ask for, and what you ask for is the only thing the builder reads.`]);
-
-    // The answer to why so many of these cells look alike, and it is a number.
-    const margins = cases.map(d => d.margin).filter(m => m != null);
-    if (margins.length) finds.push(["Every one of these was close",
-      `The gap between what got built and the next thing down is
-       <b>${Math.min(...margins)} to ${Math.max(...margins)}</b> points, in a scheme where one word taken as a
-       request is worth ${W_WANT} and one taken as a refusal is worth ${W_AVOID}. <b>A single misheard word
-       decides the crossing.</b> That is why so many cases land on the same structure — they are not
-       agreeing, they are tied, and the winner is whichever side accumulated one more misreading${
-        margins.some(m => m === 0) ? `. Where the margin is nothing at all, it is settled by the order the six
-        structures happen to be written in — a fact about this program, not about anybody's argument` : ""}.`]);
-
-    finds.push(["What decides it is who may ask",
-      `Only somebody <i>asking</i> can put a property into the world; refusing rules things out and brings
-       nothing into being. So the result follows the affirming voice more than it follows the room — which is
-       why case 2, the only one that changes <b>who may ask</b>, is the case that moves furthest, and why
-       moving the same two people into separate rooms can leave the crossing exactly where it was.
-       ${g.built[0][0] === a.built[0][0]
-         ? `Here cases 1 and 3 both end at <b>${NAME(g.built[0][0]).toLowerCase()}</b> for that reason.`
-         : `Here it is not enough to hold them together: 1 and 3 come apart anyway.`}
-       And it turns on one number — a refusal weighs <b>${W_AVOID}</b> against a request's ${W_WANT}, so the
-       thing with the fewest properties left to object to tends to survive. Add <code>?avoid=2</code> to the
-       address to weigh them the same and watch the cases separate.`]);
-
-    finds.push([`${g.n} runs a cell, not one`, (
-      firm === cases.length
-        ? `Across ${cases.length * g.n} runs of this scenario the builder built the same thing every time — and the
-           last column kept changing, because <b>what they understood of each other varied while what got built did
-           not</b>. Phrasing is free to alter who feels understood without moving one matchstick.`
-        : `<b>${cases.length - firm} of ${cases.length}</b> cases came out differently between runs. A cell is marked
-           only where the outcome moved.`), true]);
-  }
-  document.getElementById("finds").innerHTML = finds.map(([h, p, quiet]) =>
-    `<div class="find${quiet ? " quiet" : ""}"><h5>${h}</h5><p>${p}</p></div>`).join("");
-
-  const caption = g && w && a && al ? SC().blurb : `Run the cases. ${SC().blurb}`;
   document.getElementById("cmp").innerHTML =
-    `<caption>${caption}</caption>
-     <tr><th>case</th><th>what stands</th><th>ground</th><th>whose goal</th>
-         <th>properties nobody spoke</th><th>what passed between them</th></tr>${rows}`;
+    `<caption>${SC().blurb} Every figure below is drawn from conversations that happened, not from a model of one.</caption>
+     <tr><th>case</th><th>what stands</th><th>ground</th><th>taken as meant</th><th>credited unasked</th></tr>${rows}`;
 }
 
 /* ═══════════════════════════════════════════════════════════
    11 · VIEWS + TRANSPORT
    ═══════════════════════════════════════════════════════════ */
 const VNOTE = {
-  scene:   "What stands, and what Role 3 made of each sentence on the way to it. Neither of the other two may name a structure, so every property here is what the builder took them to need — reconstructed out of their own materials, which is Reddy's claim exactly.",
-  compare: "All five cases at once, each played twenty-four times. A cell is marked only where the outcome moved between runs.",
+  scene:   "One conversation that happened, and what Role 3 made of each sentence in it. Neither of the other two may name a structure, so every property here is what the builder took them to need — reconstructed out of their own materials, which is Reddy's claim exactly.",
+  compare: "Every case at once, tallied over the conversations recorded for each. Two of the five have no model implementation yet — conferring and each-alone would need protocols of their own — so they sit empty rather than being filled with something simulated.",
   said:    "Every word the first two have said, ejected into the space between them and left there. Colour is the little of it the builder could use.",
   dropped: "The same run, counted: what carried, what was heard and dropped, and what the builder took each sentence to be about.",
   flow:    "Where each word of this case went, from the one who said it to the need it fed — or to nothing.",
@@ -3231,10 +3192,8 @@ function setView(v){
   document.getElementById("analysis").hidden = v !== "dropped";
   document.getElementById("flow").hidden = v !== "flow";
   document.getElementById("picture").hidden = v !== "picture";
-  document.getElementById("temper").hidden = v !== "temper";
-  document.getElementById("rec").hidden = v !== "rec";
   document.getElementById("compare").hidden = v !== "compare";
-  const hide = (v === "dropped" || v === "flow" || v === "picture" || v === "temper" || v === "rec" || v === "compare");
+  const hide = (v === "dropped" || v === "flow" || v === "picture" || v === "compare");
   document.getElementById("scene").hidden = hide;
   document.querySelector(".badge").hidden = hide;
   // the idea-space view shares this canvas, and a score table has no business
@@ -3243,8 +3202,6 @@ function setView(v){
   if (v === "dropped") renderAnalysis();
   if (v === "flow") renderFlow();
   if (v === "picture") renderPicture();
-  if (v === "temper") renderTemper();
-  if (v === "rec") renderRec();
   if (v === "compare") renderCmp();
   if (v === "scene") renderStanding();
   document.getElementById("vnote").innerHTML = VNOTE[v]
@@ -3318,7 +3275,7 @@ function reset(){
   paint(); hud();
   if (S.view === "dropped") renderAnalysis();
 }
-document.getElementById("resetBtn").onclick = () => settleNow();   // back to this case's own run
+document.getElementById("resetBtn").onclick = () => showRun(S.rec);
 document.getElementById("againBtn").onclick = () => {
   seedRun(Date.now() & 0x7fffffff);   // a different draw, asked for
   reset(); play();
@@ -3326,36 +3283,48 @@ document.getElementById("againBtn").onclick = () => {
 document.querySelectorAll(".case").forEach(btn => btn.onclick = () => {
   S.case = btn.dataset.c;
   document.querySelectorAll(".case").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
-  paintCaseLabels(); settleNow();
+  paintCaseLabels(); showRun(S.rec);
 });
 function paintScenarios(){
   document.getElementById("scen").innerHTML = Object.entries(SCENARIOS)
     .map(([k,v]) => `<button type="button" data-s="${k}" aria-pressed="${k===S.scenario}">${v.label}</button>`).join("");
   document.querySelectorAll("#scen button").forEach(b => b.onclick = () => {
     S.scenario = b.dataset.s;
-    paintScenarios(); paintCaseLabels(); settleNow();
+    paintScenarios(); paintCaseLabels(); showRun(S.rec);
   });
   const sc = SC();
   document.getElementById("scenNote").innerHTML = `${sc.blurb} Here ${sc.at}.`;
   document.querySelector(".goalline .g.a b").nextSibling.textContent = " " + sc.want.A + " ";
   document.querySelector(".goalline .g.b b").nextSibling.textContent = " " + sc.want.B + " ";
 }
-function paintTemper(){
-  ["A","B"].forEach(r => {
-    const b = document.getElementById("temp" + r);
-    b.textContent = TEMPERS[S.temper[r]];
-    b.classList.toggle("giving", S.temper[r] === "giving");
-    b.title = S.temper[r] === "firm"
-      ? "presses its own point, hardest where the other objects — click to soften"
-      : "stops short of what it believes the other refuses, and takes demands back — click to harden";
-  });
+
+// The recordings are the piece now, so the controls choose among them: an
+// argument, a case, and which of the conversations that actually happened.
+function paintRuns(){
+  const host = document.getElementById("runs");
+  if (!host) return;
+  const here = SESSIONS.map((x, i) => [x, i])
+    .filter(([x]) => x.meta.scenario === S.scenario && x.meta.case === S.case);
+  if (!here.length){
+    host.innerHTML = `<span class="norun">no conversation recorded for this one yet</span>`;
+    return;
+  }
+  host.innerHTML = here.map(([x, i], n) =>
+    `<button type="button" data-run="${i}" aria-pressed="${i === S.rec}">${n + 1}<i>${
+      x.outcome ? x.outcome.name.replace(/^An? /, "").toLowerCase() : "—"} · ${x.meta.turns}</i></button>`).join("");
+  host.querySelectorAll("[data-run]").forEach(b => b.onclick = () => showRun(+b.dataset.run));
 }
-["A","B"].forEach(r => {
-  document.getElementById("temp" + r).onclick = () => {
-    S.temper[r] = S.temper[r] === "firm" ? "giving" : "firm";
-    paintTemper(); settleNow();
-  };
-});
+
+// Land on a conversation: the one asked for, or the first recorded for this case.
+function showRun(i){
+  const here = SESSIONS.map((x, n) => [x, n])
+    .filter(([x]) => x.meta.scenario === S.scenario && x.meta.case === S.case).map(([, n]) => n);
+  const pick = here.includes(i) ? i : here[0];
+  if (pick == null){ S.rec = null; paintRuns(); return; }
+  S.rec = pick;
+  replaySession(SESSIONS[pick]);
+  paintRuns(); paintCaseLabels(); renderCmp(); renderBadges(); setView(S.view);
+}
 
 function paintCaseLabels(){
   const c = CASES[S.case];
@@ -3399,12 +3368,20 @@ function precompute(){
   reset();
 }
 
-document.querySelector('.vtab[data-v="rec"]').hidden = !SESSIONS.length;
-
-precompute();
-paintScenarios(); paintCaseLabels(); paintTemper(); renderCmp(); renderBadges();
-S.view = "scene"; settleNow();
+// No sweep to precompute: nothing here is simulated any more. Open on one of the
+// conversations that happened, chosen at random, so the page is a different
+// argument each time it loads.
+if (SESSIONS.length){
+  const first = Math.floor(Math.random() * SESSIONS.length);
+  S.scenario = SESSIONS[first].meta.scenario;
+  S.case = CASES[SESSIONS[first].meta.case] ? SESSIONS[first].meta.case : "given";
+  S.view = "scene";
+  paintScenarios(); paintCaseLabels();
+  showRun(first);
+} else {
+  paintScenarios(); paintCaseLabels(); renderCmp(); renderBadges();
+  S.view = "scene"; settleNow();
+}
 })();
 </script>
-</body>
-</html>
+</body></html>

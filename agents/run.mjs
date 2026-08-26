@@ -92,6 +92,11 @@ const TurnSchema = z.object({
   asserts: z.array(z.string()).describe("Which of the listed feature keys you mean by it. One or two. Use the keys exactly."),
   done: z.boolean().optional().default(false)
     .describe("True if, having said this, you have said everything you came to say and would let it rest."),
+  // Reddy's actual claim is about the listener, and nothing here was measuring it:
+  // each participant said what IT meant, and nobody recorded what it took the
+  // other to mean. This does.
+  tookThemToMean: z.array(z.string()).optional().default([])
+    .describe("If you could hear the other person's last line, the feature keys for what YOU took them to need. Your reading of them, not theirs. Empty if you have heard nothing from them."),
 });
 
 // What the machine returns when it is a model rather than a word list.
@@ -139,6 +144,10 @@ function systemPrompt(role, act, scenario, situation, goal, hat) {
       : `Return the sentence, and the keys for what you are REFUSING — the thing your sentence names, ` +
         `not the thing you would rather have. "I do not want to feel it sway" refuses "sways"; it does not ask for "steady". ` +
         `"I do not want to climb up to it" refuses "high"; it does not ask for "low".`,
+    `Also return tookThemToMean: the keys for what you took the OTHER person's last line to need — your`,
+    `reading of them, in your own terms, whether or not you think they put it well. Leave it empty if you`,
+    `have not heard them. Do not correct it toward what they probably meant; report what you took.`,
+    ``,
     `Use this list only:`,
     ...Object.entries(FEATURES).map(([k, v]) => `   ${k} — ${v}`),
   ].join("\n");
@@ -212,7 +221,7 @@ async function askOpenAI(system, user) {
     model: OPENAI_MODEL,
     response_format: { type: "json_object" },
     messages: [
-      { role: "system", content: system + `\n\nReply with JSON only: {"say": "...", "asserts": ["key", ...], "done": <true or false>}` },
+      { role: "system", content: system + `\n\nReply with JSON only: {"say": "...", "asserts": ["key", ...], "done": <true or false>, "tookThemToMean": ["key", ...]}` },
       { role: "user", content: user },
     ],
   });
@@ -265,7 +274,7 @@ function askGeminiWith(shape) {
     return shape.zod.parse(JSON.parse(m[0]));
   };
 }
-const TURN_JSON = { type:"object", properties:{ say:{type:"string"}, asserts:{type:"array", items:{type:"string"}}, done:{type:"boolean"} }, required:["say","asserts","done"] };
+const TURN_JSON = { type:"object", properties:{ say:{type:"string"}, asserts:{type:"array", items:{type:"string"}}, done:{type:"boolean"}, tookThemToMean:{type:"array", items:{type:"string"}} }, required:["say","asserts","done","tookThemToMean"] };
 const READ_JSON = { type:"object", properties:{ needs:{type:"array", items:{type:"string"}} }, required:["needs"] };
 const SAY_JSON  = { type:"object", properties:{ say:{type:"string"} }, required:["say"] };
 const askGemini = askGeminiWith({ json: TURN_JSON, zod: TurnSchema });
@@ -418,7 +427,9 @@ for (let i = 0; i < maxTurns; i++) {
   // sticky: anybody who has let it rest can be drawn back in by the other one
   // saying something new, which is what the turn after a "done" is for.
   state.done[role] = !!turn.done;
+  state.lastMeant = state.lastMeant || { A: [], B: [] };
   state.said[role].push(sentence);
+  state.lastMeant[role] = turn.asserts.slice();
   state.turn++;
 
   // Both readers see the sentence. Only the chosen one gets to build with it.
@@ -436,6 +447,8 @@ for (let i = 0; i < maxTurns; i++) {
   const anyOf = turn.asserts.some(f => taken.includes(f));
   transcript.push({ turn: state.turn, who: role, player, act, text: sentence,
                     meant: turn.asserts, taken, byWord, byModel, caught, anyOf, done: !!turn.done,
+                    tookThemToMean: (turn.tookThemToMean || []).filter(f => f in FEATURES),
+                    theyActuallyMeant: state.lastMeant[role === "A" ? "B" : "A"] || [],
                     invented: taken.filter(f => !turn.asserts.includes(f)),
                     asserts: turn.asserts,      // kept under the old name for the page
                     attempts, built: after, changed: before !== after });
