@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I Want, I Do Not Want</title>
-<meta name="description" content="Every structure, scored, beside the one that got built — and recorded runs where all three parts are real models.">
+<meta name="description" content="Three people and one crossing. Two describe what they need; the third must build it and cannot ask a single question.">
 <link rel="icon" href="data:,">
 </head>
 <body>
@@ -197,7 +197,7 @@
   .case:hover{border-color:var(--ink)}
   .case[aria-pressed="true"]{border-color:var(--signal); background:color-mix(in srgb,var(--signal) 8%,transparent)}
 
-  /* the ledger of what the machine used and what it threw away */
+  /* the ledger of what the builder used and what it threw away */
   .analysis{
     position:absolute; inset:0; overflow-y:auto; padding:16px 18px 20px;
     background:var(--panel); display:flex; flex-direction:column; gap:14px;
@@ -267,7 +267,7 @@
   .wchip.prov.both{border-color:var(--ink); color:var(--ink)}
   .an-sec.used > h4{color:var(--signal)}
   .an-sec.meaning > h4{color:var(--fault)}
-  .an-sec.grammar > h4, .an-sec.machine > h4{color:var(--muted)}
+  .an-sec.grammar > h4, .an-sec.builder > h4{color:var(--muted)}
   .wchips{display:flex; gap:5px; flex-wrap:wrap}
   .wchip{
     display:inline-flex; align-items:baseline; gap:5px; border:1px solid var(--line);
@@ -278,7 +278,7 @@
   .wchip.a{border-color:color-mix(in srgb,var(--roleA) 50%,transparent); color:var(--roleA)}
   .wchip.b{border-color:color-mix(in srgb,var(--roleB) 50%,transparent); color:var(--roleB)}
   .an-sec.meaning .wchip{font-size:13px; padding:3px 9px}
-  .an-sec.grammar .wchip, .an-sec.machine .wchip{opacity:.5; font-size:10.5px; padding:1px 6px}
+  .an-sec.grammar .wchip, .an-sec.builder .wchip{opacity:.5; font-size:10.5px; padding:1px 6px}
 
   /* Tabs on their own line, the note underneath at a reading measure. Side by
      side they competed for the same row and neither won. */
@@ -602,7 +602,8 @@
 <header class="bar">
   <div>
     <h1>I Want, <em>I Do Not Want</em></h1>
-    <p>Two people at odds over one crossing, one kind of sentence each, and a machine that builds from what it infers.</p>
+    <p>Three people and one crossing. Two of them describe what they need, one kind of sentence each. The third has to
+       build something out of it, and cannot ask them a single question.</p>
   </div>
   <div class="tools">
     <button class="ghost primary" id="playBtn">Watch it happen</button>
@@ -648,7 +649,7 @@
           <circle cx="70" cy="23" r="5" class="rai"/><circle cx="88" cy="23" r="6" class="rb"/>
           <text x="16" y="5" class="ta">+</text><text x="88" y="5" class="tb">&minus;</text>
         </svg>
-        <b>3 · Apart</b><span>same voices as case 1, but each is alone with the machine. With nobody else to ask, they start asking <em>it</em> why.</span>
+        <b>3 · Apart</b><span>same voices as case 1, but each is alone with the builder. With nobody else to ask, they start asking <em>it</em> why.</span>
         <em class="res" data-res="separate">not run</em>
       </button>
       <button class="case" data-c="together" aria-pressed="false">
@@ -660,7 +661,7 @@
           <circle cx="88" cy="23" r="5" class="rai"/>
           <text x="20" y="5" class="ta">+</text><text x="46" y="5" class="tb">&minus;</text>
         </svg>
-        <b>4 · Conferring first</b><span>they settle it between themselves, out of the machine's hearing, then put one agreed position to it.</span>
+        <b>4 · Conferring first</b><span>they settle it between themselves, out of the builder's hearing, then put one agreed position to it.</span>
         <em class="res" data-res="together">not run</em>
       </button>
       <button class="case" data-c="alone" aria-pressed="false">
@@ -721,12 +722,16 @@
       <div class="body">
         <p><span class="ka">+</span> may only say &ldquo;I want&hellip;&rdquo; &nbsp;·&nbsp;
            <span class="kb">&minus;</span> may only say &ldquo;I do not want&hellip;&rdquo; &nbsp;·&nbsp;
-           <span class="km">○</span> the machine &nbsp;·&nbsp; boxes are rooms.</p>
+           <span class="km">○</span> the builder &nbsp;·&nbsp; boxes are rooms.</p>
         <p id="scenNote"></p>
-        <p>These two are scripted, not people. In one room they answer each other; separated, they question the machine
+        <p><b>Role 3 builds.</b> They have a workshop with six things in it they know how to make, and no way to ask
+           anything: they get sentences, and out of those sentences and their own materials they make what they can.
+           That is Reddy&rsquo;s toolmaker rather than a device — the limit is what is to hand, not what a machine
+           can process.</p>
+        <p>The first two are scripted, not people. In one room they answer each other; separated, they question the builder
            instead, and can come to want what is standing once they are told — but they never lie, never invent a
            sentence outside their script, never learn a word from each other, and only ever give ground toward what is
-           already built. Apart, each knows only what it has said itself and whatever the machine has put in front of it.</p>
+           already built. Apart, each knows only what it has said itself and whatever the builder has put in front of them.</p>
         <p>Every case was played twenty-four times in each of four temperament pairings before this page appeared, and
            <b>All five cases</b> reports how often each outcome came up. Watching one happen is optional — every case
            arrives already run.</p>
@@ -779,7 +784,7 @@ const groundAt = (c, x) => (x <= GAP_L || x >= GAP_R) ? GROUND_Y : bedOf(c);
    2 · THE KIT — what can be made, and what each thing is like.
    Nobody in this simulation is allowed to name any of it.
    ═══════════════════════════════════════════════════════════ */
-// `made` is what it does with the matches, in the machine's own terms. It builds
+// `made` is what it does with the matches, in the builder's own terms. It builds
 // these things; being able to name the structure and not the act of making it is
 // the same silence the two people are held to.
 const KIT = [
@@ -806,7 +811,7 @@ const FEATLABEL = {
   inGap:"something standing in the gap", high:"raised above the banks", many:"a great deal of timber",
 };
 
-// The words a need is made of. The machine never hears a structure named — it infers one.
+// The words a need is made of. The builder never hears a structure named — they infer one.
 const NEEDWORDS = {
   water:["soaked","running","knees","past","underneath","current","wet","dry","feet"],
   rock:["down","up","side","bottom","way","round","other"],
@@ -830,7 +835,7 @@ const NEEDWORDS = {
 
 /* ═══════════════════════════════════════════════════════════
    HOW EACH OF THEM READS A WORD
-   The machine has the lexicon above. These two do not — each hears
+   The builder has the lexicon above. These two do not — each hears
    through its own, and on the words that matter they disagree. One
    of them stands over water and one over a drop, so "out" is
    openness to the first and exposure to the second. Same word,
@@ -874,7 +879,7 @@ function readAs(text, who){
    3 · THREE SCENARIOS
    Not one terrain word and not one part of a structure appears
    anywhere below. They describe a situation and a need; every
-   form in the result is the machine's own inference.
+   form in the result is the builder's own inference.
    ═══════════════════════════════════════════════════════════ */
 const SCENARIOS = {
   places:{
@@ -1128,7 +1133,7 @@ const SCENARIOS = {
 
   refs:{
     label:"Two references",
-    blurb:"Neither describes a need at all. Each names a crossing they have both seen — and the machine has its own picture of what those names mean.",
+    blurb:"Neither describes a need at all. Each names a crossing they have both seen — and the builder has its own picture of what those names mean.",
     at:"the disagreement is about <b>a word they both think they share</b>",
     goal:{A:"trestle", B:"hang"}, place:{A:"water", B:"water"}, ground:"water", refs:true,
     want:{A:"the one in London", B:"the one in New York"},
@@ -1138,22 +1143,22 @@ const SCENARIOS = {
             "the one back home, the one they put over the current. You know it.",
             "the one at home, over the current. Everybody knows it.",
             "the one from home, over the current. You've seen it."]},
-          {meant:"crowds crossing between the two towers", infer:["light","low"], why:"the machine pictures a thin modern walkway instead", says:[
+          {meant:"crowds crossing between the two towers", infer:["light","low"], why:"the builder pictures a thin modern walkway instead", says:[
             "it like the one everybody walks over on their lunch break.",
             "the one people walk over at lunchtime. Like that.",
             "like the one you walk over, one person after another."]},
-          {meant:"slender between two heavy stone piers", infer:["minimal","open"], why:"the machine drops the stone and keeps the thinness",
+          {meant:"slender between two heavy stone piers", infer:["minimal","open"], why:"the builder drops the stone and keeps the thinness",
            counters:["many","high","heavy"],
            alt:"it thin. From the side you should barely see it's there — not the heavy great thing you keep describing.",
            says:[
             "it thin. From the side you should barely see it's there.",
             "it slight from the side. Almost not there.",
             "it thin, so you'd look straight past it side on."]},
-          {meant:"solid, but busy with people", infer:["sways"], why:"the machine hears movement and builds something that moves", says:[
+          {meant:"solid, but busy with people", infer:["sways"], why:"the builder hears movement and builds something that moves", says:[
             "it to feel a bit alive under you when you're on it.",
             "it alive underfoot, not dead.",
             "it to have a bit of give, a bit of life to it."]},
-          {meant:"stone", infer:["minimal"], why:"the machine hears restraint, not material", says:[
+          {meant:"stone", infer:["minimal"], why:"the builder hears restraint, not material", says:[
             "it plain and grey and quiet about itself.",
             "it plain. Grey. Not shouting.",
             "it plain and small in the way it carries itself."]},
@@ -1175,7 +1180,7 @@ const SCENARIOS = {
             "to have to climb up onto it.",
             "to go up to it. You should walk straight on.",
             "to be climbing up before I'm on it."]},
-          {meant:"slender, not small", infer:["many"], why:"the machine hears small where it meant slender", says:[
+          {meant:"slender, not small", infer:["many"], why:"the builder hears small where it meant slender", says:[
             "a great deal of it, honestly. Keep it slight.",
             "half of it. Keep it slight.",
             "a great deal. It should be slight."]},
@@ -1193,7 +1198,7 @@ const SCENARIOS = {
             "the one off the postcards. Everybody photographs it.",
             "the one on all the postcards. You've seen it a hundred times.",
             "the one everybody photographs. That one."]},
-          {meant:"towers you can see from the harbour", infer:["many","high"], why:"the machine hears bulk, not proportion",
+          {meant:"towers you can see from the harbour", infer:["many","high"], why:"the builder hears bulk, not proportion",
            counters:["minimal","open","light"],
            alt:"it grand. It ought to be the thing you notice first, not something you could walk past without seeing.",
            says:[
@@ -1234,7 +1239,7 @@ const SCENARIOS = {
             "to climb a great stair just to get onto it.",
             "to be climbing up to get on.",
             "a great climb up before you're even on it."]},
-          {meant:"open above the roadway", infer:["open"], why:"the machine hears this as wanting openness removed", says:[
+          {meant:"open above the roadway", infer:["open"], why:"the builder hears this as wanting openness removed", says:[
             "the sky shut off above me the whole way over.",
             "to have the sky shut out the whole way.",
             "it closed in over the top."]},
@@ -1269,9 +1274,9 @@ const CASES = {
   swapped: {label:"Swapped",  A:"avoid", B:"want",
             note:"the same two goals, the two voices exchanged — the only thing that changed"},
   separate:{label:"Apart",    A:"want",  B:"avoid", split:true,
-            note:"case 1 again, but each is alone with the machine and neither knows the other is there"},
+            note:"case 1 again, but each is alone with the builder and neither knows the other is there"},
   together:{label:"Conferring first", A:"want", B:"avoid", confer:true,
-            note:"they talk it over between themselves first, out of the machine's hearing, and go to it with one agreed position"},
+            note:"they talk it over between themselves first, out of the builder's hearing, and go to it with one agreed position"},
   alone:   {label:"Each alone", A:"want", B:"avoid", split:true, solo:true,
             note:"separate rooms and a crossing each — what each would get if the other did not exist"},
 };
@@ -1439,10 +1444,10 @@ const linesFor = role => SC().speech[role][CASES[S.case][role]];
 // everything got through either way, so it could not matter what happened in
 // between. A run now has a fixed number of turns. One unit is exactly enough for
 // each of them to say all of it once; anything spent on the other person is a
-// need that never reaches the machine.
+// need that never reaches the builder.
 // It is off by default, because it does not do what it was built to do, and
 // that turned out to be the useful part. Capping turns truncates the TAIL of
-// what each of them says — and the machine has already made its choice by then.
+// what each of them says — and the builder has already made its choice by then.
 // The ranking is settled by the first few things it hears; everything after is
 // people repeating themselves in different words. So a tight budget starves the
 // conferring case of the turns it needs to agree on anything and leaves the
@@ -1458,7 +1463,7 @@ const budget = () => BK <= 0 ? Infinity
   : Math.max(4, Math.round(BK * (linesFor("A").length + linesFor("B").length)));
 
 /* ═══════════════════════════════════════════════════════════
-   4 · THE MACHINE
+   4 · THE BUILDER
    A want adds weight to a property. A refusal takes more away
    than a want adds, so one fear can outlast several requests.
    ═══════════════════════════════════════════════════════════ */
@@ -1482,7 +1487,7 @@ const S = {
   mem:{A:null, B:null}, asked:{A:0, B:0}, dodged:0,
   recent:{A:[], B:[]}, spent:{A:false, B:false}, lastSaid:{A:[], B:[]},
   picture:{A:null, B:null}, readings:[],
-  phase:"machine", pact:null, dropped:[],
+  phase:"builder", pact:null, dropped:[],
   goalNow:{A:null, B:null}, revised:{A:0, B:0}, revisedAt:{A:0, B:0}, hitNow:{A:0, B:0},
   turn:0, speaker:"A", said:{A:new Set(), B:new Set()},
   seen:{A:null, B:null}, unexplained:{A:0, B:0},
@@ -1503,7 +1508,7 @@ S.side = {A: mkCtx(), B: mkCtx()};
 const CX = role => CASES[S.case].solo ? S.side[role] : S.shared;
 const split = () => !!CASES[S.case].split;
 
-// ── The machine's own reading ────────────────────────────────────────
+// ── The builder's own reading ────────────────────────────────────────
 // It was being handed each speaker's intent directly, which made it the only
 // party here that never misunderstood anything — an odd thing in a piece about
 // misunderstanding. It has a lexicon of its own already: the words it watches
@@ -1513,18 +1518,18 @@ const split = () => !!CASES[S.case].split;
 // Its word list was written to mark which words carried something, and half of
 // it is grammar — "up", "down", "over", "out", "that". Watching those makes it
 // hear a cleft in every sentence containing the word "down". The ledger already
-// keeps a list of words that mean nothing on their own; the machine uses the
+// keeps a list of words that mean nothing on their own; the builder uses the
 // same one to decide what not to listen to.
-let MHEARS = null;
-function mlex(){
-  if (MHEARS) return MHEARS;
-  MHEARS = {};
+let BLEX = null;
+function blex(){
+  if (BLEX) return BLEX;
+  BLEX = {};
   for (const [f, ws] of Object.entries(NEEDWORDS))
-    for (const w of ws) if (!GRAMMAR.has(w)) (MHEARS[w] ||= []).push(f);
-  return MHEARS;
+    for (const w of ws) if (!GRAMMAR.has(w)) (BLEX[w] ||= []).push(f);
+  return BLEX;
 }
-function machineReads(text){
-  const lex = mlex(), score = new Map();
+function builderReads(text){
+  const lex = blex(), score = new Map();
   text.toLowerCase().split(/\s+/).forEach(tok => {
     const w = tok.replace(/[^a-z0-9'-]/g, "");
     // a word that could mean four things is weaker evidence than one that means one
@@ -1536,7 +1541,7 @@ function machineReads(text){
 }
 
 // meant — what the speaker was asking for, which only the speaker ever knows.
-// taken — what the machine made of the sentence, which is all it has to build on.
+// taken — what the builder made of the sentence, which is all they have to build on.
 function hear(meant, taken, role){
   const c = CX(role), act = CASES[S.case][role], m = S.mem[role];
   meant.forEach(f => {
@@ -1570,7 +1575,7 @@ function build(c){
   const best = scored[0], next = scored[1];
   // An argmax with no margin reported is a claim with no error bar. Two of these
   // are usually within a point or two of each other, and the gap between them is
-  // made of things the machine misheard — so the gap is worth printing.
+  // made of things the builder misheard — so the gap is worth printing.
   c.margin = next ? best.s - next.s : null;
   c.runnerUp = next ? next.k.id : null;
   c.ranked = scored.map(x => ({id:x.k.id, s:x.s}));
@@ -1627,7 +1632,7 @@ function choose(role){
   const fresh = lines.filter((l,i) => !said.has(i));
   const act = CASES[S.case][role];
 
-  // what is standing is visible to both of them in every case — the machine shows it
+  // what is standing is visible to both of them in every case — the builder shows it
   const standing = c.design;
   const goalKit = KIT.find(k => k.id === GNOW(role));
   const offGoal = !standing || standing.id !== GNOW(role);
@@ -1644,11 +1649,11 @@ function choose(role){
   const soft = giving(role), press = soft ? 1 : 6;
 
   // ── Saying it again, harder ──────────────────────────────────────────
-  // Being contradicted makes people repeat themselves, and the machine counts
+  // Being contradicted makes people repeat themselves, and the builder counts
   // every time a thing is put to it — so a point made twice weighs twice, and a
   // fear repeated is worth four each time. That is the one thing that can change
   // what gets built without anybody saying anything new, and it can only happen
-  // where there is somebody to be contradicted by. Alone with the machine there
+  // where there is somebody to be contradicted by. Alone with the builder there
   // is nothing to push back against and every need is put exactly once.
   // Once each. People do say a thing twice when contradicted; they do not say it
   // eleven times, and a run where seven turns in ten are repetitions is not an
@@ -1713,7 +1718,7 @@ function eject(who, text, inferred){
 // It asks only about something it can feel that its own goal does not have,
 // and only once it has been at this a while. Two questions each, at most.
 function maybeAsk(role){
-  // In one room you turn to the other person. Apart, the machine is the only
+  // In one room you turn to the other person. Apart, the builder is the only
   // thing there is to ask, so this is where the questions happen.
   if (!split()) return null;
   if ((S.asked[role] || 0) >= 2 || S.turn < 5) return null;
@@ -1724,7 +1729,7 @@ function maybeAsk(role){
   return st.has.find(f => !goalKit.has.includes(f) && QUESTIONS[f] && !S.askedFeats[role].has(f)) || null;
 }
 
-// The true answer is always available to the machine. What it may say of it is not.
+// The true answer is always available to the builder. What it may say of it is not.
 function answerFor(role, f){
   const c = CX(role), other = role === "A" ? "B" : "A", by = c.namedBy.get(f);
   const solo = !!CASES[S.case].solo;
@@ -1755,7 +1760,7 @@ function answerFor(role, f){
   return {text:"Nobody asked for it. It is what everything I have been told adds up to.", dodged:false};
 }
 
-// What they say to each other before the machine hears anything.
+// What they say to each other before the builder hears anything.
 function conferTurn(role){
   const {line, index, repeat, pressing, answering} = choose(role);
   const spoken = (answering && line.alt) ? line.alt : voice(line);
@@ -1800,7 +1805,7 @@ function settle(){
   gB.forEach(f => { if (P.A.avoid.has(f)) contested.add(f); });
 
   // Who yields on a contested point. If exactly one of them gives ground, the
-  // other's version stands and the machine hears it. If they both hold firm —
+  // other's version stands and the builder hears it. If they both hold firm —
   // or, just as fatally, both give way — neither can raise it, and it is
   // dropped out of the agreed position altogether.
   const yielder = S.temper.A === S.temper.B ? null : (S.temper.A === "giving" ? "A" : "B");
@@ -1820,7 +1825,7 @@ function settle(){
   };
   ["A","B"].forEach(r => { P[r].want.forEach(f => put(r,f,"want")); P[r].avoid.forEach(f => put(r,f,"avoid")); });
 
-  S.phase = "machine";
+  S.phase = "builder";
   pushPact(S.dropped, yielder);
   build(c);
 }
@@ -1836,7 +1841,7 @@ function takeTurn(){
   }
   if (CASES[S.case].confer && S.phase === "confer") return conferTurn(role);
   // after the pact they put nothing further of their own — they may only ask
-  if (CASES[S.case].confer && S.phase === "machine"){
+  if (CASES[S.case].confer && S.phase === "builder"){
     if (!S.spent[role]){ S.spent[role] = true; pushSpent(role); S.turn++; }
     S.speaker = role === "A" ? "B" : "A";
     if (S.spent.A && S.spent.B && !S.done){ S.done = true; record(); pushVerdict(); stop(); }
@@ -1896,7 +1901,7 @@ function takeTurn(){
   S.readings.push({turn:S.turn + 1, role, spoken, meant:line.infer.slice(), heard,
                    agreed: line.infer.every(f => heard.includes(f)) && heard.length > 0});
   // The reaction is spoken aloud and asserts nothing, so every word of it is
-  // heard by the machine and carried by none of it.
+  // heard by the builder and carried by none of it.
   const up = split() ? "" : uptakeFor(role, !!line.adopted);
   if (up) eject(role, up, []);
   eject(role, LEAD[CASES[S.case][role]] + spoken, line.infer);
@@ -1907,7 +1912,7 @@ function takeTurn(){
   S.lastSaid[role] = line.infer.slice();
   S.lastHeard = S.lastHeard || {A:[], B:[]};
   S.lastHeard[other] = heard;                 // what the other one actually took from it
-  const taken = machineReads(spoken);
+  const taken = builderReads(spoken);
   // What it was already holding, so that when nothing changes it can say which
   // of the two reasons that is: it has heard this before, or it has heard it for
   // the first time and it makes no difference.
@@ -1979,7 +1984,7 @@ function pushSaid(role, line, repeat, pressing, answering, spoken, confer, readi
   const host = target(role);
   const el = document.createElement("div");
   el.className = "turn " + role.toLowerCase() + (confer ? " confer" : "");
-  el.innerHTML = `<span class="who">${role === "A" ? "Role 1" : "Role 2"}${confer ? " · to the other, not the machine" : ""}${line.adopted ? " · taking up the other one's need" : ""}${harder ? " · saying it again, harder" : answering ? ` · answering Role ${role === "A" ? "2" : "1"}` : repeat ? (pressing ? " · pressing it again" : " · saying it again") : ""}</span>
+  el.innerHTML = `<span class="who">${role === "A" ? "Role 1" : "Role 2"}${confer ? " · to the other, not the builder" : ""}${line.adopted ? " · taking up the other one's need" : ""}${harder ? " · saying it again, harder" : answering ? ` · answering Role ${role === "A" ? "2" : "1"}` : repeat ? (pressing ? " · pressing it again" : " · saying it again") : ""}</span>
     <div class="bub">${up ? `<span class="up"></span>` : ""}<span class="lead">${LEAD[CASES[S.case][role]]}</span><span class="body"></span></div>
     ${line.meant ? `<span class="meant">pictured: ${line.meant}</span>` : ""}
     ${reading && reading.heard && reading.heard.length ? `<span class="reading${
@@ -2006,14 +2011,14 @@ function pushPact(dropped, yielder){
   const el = document.createElement("div");
   el.className = "ai pact";
   const kept = [...S.shared.wants.keys(), ...S.shared.avoids.keys()].map(f => FEATLABEL[f] || f);
-  el.innerHTML = `<span class="who">the two of them, to the machine</span>
+  el.innerHTML = `<span class="who">the two of them, to the builder</span>
     <p>Having talked it over, this is what they put — one position, agreed.</p>
     <div class="wchips">${kept.map(k => `<span class="wchip">${k}</span>`).join("")}</div>
     ${yielder && S.yielded.length ? `<p class="dropped"><b>Role ${yielder === "A" ? "1" : "2"} gave way on:</b> ${
-      S.yielded.map(f => FEATLABEL[f] || f).join(" · ")}. Because one of them stopped arguing, the machine
+      S.yielded.map(f => FEATLABEL[f] || f).join(" · ")}. Because one of them stopped arguing, the builder
       hears the other's version of all of it.</p>` : ""}
     ${dropped.length ? `<p class="dropped"><b>Dropped in order to agree:</b> ${
-      dropped.map(f => FEATLABEL[f] || f).join(" · ")}. The machine never hears any of it.</p>` : ""}`;
+      dropped.map(f => FEATLABEL[f] || f).join(" · ")}. The builder never hears any of it.</p>` : ""}`;
   drop(el, target(S.speaker));
 }
 function pushSpent(role){
@@ -2038,19 +2043,19 @@ function pushRevise(role, kit, self){
 function pushAnswer(role, a){
   const el = document.createElement("div");
   el.className = "ai answer" + (a.dodged ? " dodged" : "");
-  el.innerHTML = `<span class="who">the machine${a.dodged ? " · not saying" : ""}</span><p></p>`;
+  el.innerHTML = `<span class="who">the builder${a.dodged ? " · not saying" : ""}</span><p></p>`;
   el.querySelector("p").textContent = a.text;
   drop(el, target(role));
 }
 function pushNote(text, role){
   const el = document.createElement("div");
   el.className = "ai";
-  el.innerHTML = `<span class="who">the machine</span><p></p>`;
+  el.innerHTML = `<span class="who">the builder</span><p></p>`;
   el.querySelector("p").textContent = text;
   drop(el, target(role || S.speaker));
 }
 // Why nothing moved. It always had a reason and always gave the same sentence,
-// which read as a machine with one thing to say rather than a machine that had
+// which read as a builder with one thing to say rather than a builder who had
 // weighed something. Each of these is true of the turn it appears on.
 // What it actually does with the matches. It is a builder; saying only the name
 // of what now stands leaves out the whole of its work.
@@ -2086,7 +2091,7 @@ function stoodStill(after, taken, why){
 }
 
 // The same matchsticks the scene is drawn from, laid out for one design without
-// touching the run. Two of these differenced gives exactly what the machine
+// touching the run. Two of these differenced gives exactly what the builder
 // picked up and what it put down on this turn.
 function segsFor(id, world){
   const k = KIT.find(x => x.id === id);
@@ -2150,7 +2155,7 @@ function miniDiff(beforeId, afterId, world){
 
 // One column per turn. Two failure marks above it, because a sentence can go
 // wrong in two unrelated ways here — the other person can take it for something
-// else, and the machine can — and a run where both happen constantly still
+// else, and the builder can — and a run where both happen constantly still
 // produces a crossing that looks perfectly reasonable.
 // How close the six were. The question this answers keeps being asked of the
 // scenarios rather than of the arithmetic: two places looks uniform because both
@@ -2175,13 +2180,13 @@ function renderStanding(){
 function renderTrace(){
   const host = document.getElementById("trace");
   // Conferring has no trace to draw and that is the point of it: they settle it
-  // between themselves and the machine builds once, at the end, from what is
+  // between themselves and the builder builds once, at the end, from what is
   // left. An empty strip says that rather than disappearing.
   if (!S.trace.length){
     if (!CASES[S.case].confer){ host.hidden = true; return; }
     host.hidden = false;
     host.innerHTML = `<div class="trace-head"><span>the run</span></div>
-      <p class="none">They settle it between themselves first, out of the machine&rsquo;s hearing. It builds
+      <p class="none">They settle it between themselves first, out of the builder&rsquo;s hearing. It builds
       once, at the end, from whatever they did not drop — so there is nothing to trace turn by turn.</p>`;
     return;
   }
@@ -2191,7 +2196,7 @@ function renderTrace(){
     const pct = Math.round(100 * t.matches / top);
     const note = `turn ${t.t} · role ${t.role === "A" ? 1 : 2} · ${NAME(t.built).toLowerCase()} · ${t.matches} matches`
       + (t.misheard ? " · the other one took it for something else" : "")
-      + (t.missed ? " · the machine did not catch what was asked" : "");
+      + (t.missed ? " · the builder did not catch what was asked" : "");
     return `<button type="button" class="trk ${t.role.toLowerCase()}${t.down ? " gone" : ""}${
       i === S.trace.length - 1 ? " here" : ""}" data-t="${i}" title="${note}">
       <span class="fl">${t.misheard ? `<i class="mis"></i>` : ""}${t.missed ? `<i class="mch"></i>` : ""}</span>
@@ -2232,13 +2237,13 @@ function pushBuild(before, after, best, role, drifted, seenBefore, c, taken, mea
         missed.length ? `, and does not catch ${missed.map(f => FEATLABEL[f] || f).join(" or ")}` : ""}.</p>`;
   // What it understood, then what it did about it. The name of the thing is a
   // caption on the diagram, not the headline: naming a structure is precisely
-  // what neither of the other two is allowed to do, and having the machine
+  // what neither of the other two is allowed to do, and having the builder
   // announce one in the largest type in the block made the label look like the
   // reply. The reply is the reading and the act.
   const act = solo !== null ? solo
     : changed ? action(before, after, c.matches, (why && why.wasMatches) || 0)
               : stoodStill(after, taken, why);
-  el.innerHTML = `<span class="who">the machine</span>
+  el.innerHTML = `<span class="who">the builder</span>
     ${read}
     <div class="did">
       ${after ? miniDiff(before, after, c.world) : ""}
@@ -2401,7 +2406,7 @@ function pushVerdict(){
       ? `${NAME(S.side.A.design && S.side.A.design.id)} in one room, ${NAME(S.side.B.design && S.side.B.design.id).toLowerCase()} in the other.`
       : `${cc.design ? NAME(cc.design.id) : "Nothing"} is standing, over ${groundPhrase(cc)}.`}</h3>
     ${SC().refs ? `<p>Neither of them described anything. Each named a crossing they assumed the other could see,
-       and the machine has its own picture of what those names mean. What it built came from their <em>words</em>,
+       and the builder has its own picture of what those names mean. What it built came from their <em>words</em>,
        which point somewhere quite different from their <em>pictures</em> — shown in red under everything they said.</p>` : ""}
     <p>Role 1 came for <b>${SC().want.A}</b> and ${S.hit.A ? `had it at turn ${S.hit.A}` : "never had it"}.
        Role 2 came for <b>${SC().want.B}</b> and ${S.hit.B ? `had it at turn ${S.hit.B}` : "never had it"}.
@@ -2410,9 +2415,9 @@ function pushVerdict(){
       ? "Not one property of what is standing was ever put into words. Every part of it was inferred from a description of a need."
       : `${unnamedA} of ${r.prov ? r.prov.total : 0} of its properties came from nothing either of them said.`}</p>
     ${CASES[S.case].confer ? `<p>They settled it between themselves first. To speak with one voice they had to drop
-       <b>${(S.dropped||[]).length}</b> thing${(S.dropped||[]).length===1?"":"s"} they disagreed about — and the machine never heard any of it.
+       <b>${(S.dropped||[]).length}</b> thing${(S.dropped||[]).length===1?"":"s"} they disagreed about — and the builder never heard any of it.
        What it built came from what was left.</p>` : ""}
-    ${r.revised ? `<p>${r.revised === 1 ? "One of them" : "Both of them"} changed their mind: told plainly why the crossing was the way it was, ${r.revised === 1 ? "it" : "they"} came to want what was already standing. That only happens where the machine is free to explain — refused an answer, nobody accommodates anything.</p>` : ``}
+    ${r.revised ? `<p>${r.revised === 1 ? "One of them" : "Both of them"} changed their mind: told plainly why the crossing was the way it was, ${r.revised === 1 ? "it" : "they"} came to want what was already standing. That only happens where the builder is free to explain — refused an answer, nobody accommodates anything.</p>` : ``}
     <p class="k">${["given","swapped","separate","together","alone"].every(k => S.results[KEY(k)]) ? "all five cases run — the comparison is above the scene" : "now run another case"}</p>`;
   vhost.appendChild(el);
 }
@@ -2628,7 +2633,7 @@ function paintSaid(ctx){
   ctx.save();
   ctx.font = '500 14px "IBM Plex Mono", monospace';
   ctx.fillStyle = C.muted; ctx.fillText(`${S.spoken} words spoken by the two of them`, 30, 40);
-  ctx.fillStyle = C.signal; ctx.fillText(`${S.taken} let the machine infer something`, 30, 64);
+  ctx.fillStyle = C.signal; ctx.fillText(`${S.taken} let the builder infer something`, 30, 64);
   ctx.fillStyle = C.muted; ctx.globalAlpha = .8;
   ctx.fillText("the rest are still in the air", 30, 88);
   ctx.restore();
@@ -2681,7 +2686,7 @@ function renderAnalysis(){
   const used    = rows.filter(r => r.took);
   const meaning = rows.filter(r => !r.took && r.who !== "AI" && !r.grammar);
   const grammar = rows.filter(r => !r.took && r.who !== "AI" && r.grammar);
-  const machine = rows.filter(r => r.who === "AI");
+  const builder = rows.filter(r => r.who === "AI");
 
   const spoken = human.length, took = human.filter(o => o.took).length;
   const pct = n => Math.round(100 * n / Math.max(1, spoken));
@@ -2717,7 +2722,7 @@ function renderAnalysis(){
     </section>`;
   };
 
-  // What the machine made of each sentence, set against what was asked for.
+  // What the builder made of each sentence, set against what was asked for.
   const mr = S.mRead || [];
   const caught = mr.filter(r => r.meant.every(f => r.taken.includes(f)));
   const partial = mr.filter(r => !r.meant.every(f => r.taken.includes(f)) && r.taken.length);
@@ -2725,7 +2730,7 @@ function renderAnalysis(){
   const invented = mr.reduce((n, r) => n + r.invented, 0);
   const worst = mr.filter(r => r.meant.length && !r.meant.some(f => r.taken.includes(f)) && r.taken.length).slice(0, 4);
   const mblock = !mr.length ? "" : `<section class="an-sec meaning">
-    <h4>What the machine made of it · ${caught.length} of ${mr.length} sentences taken as meant</h4>
+    <h4>What the builder made of it · ${caught.length} of ${mr.length} sentences taken as meant</h4>
     <p>It has no access to anybody's intention. It watches the sentence for words on a list of its own
        and commits to whichever reading has the most behind it — so it can take a request for one thing
        as a request for another, and it can hear things nobody asked for.
@@ -2745,21 +2750,21 @@ function renderAnalysis(){
       <div class="an-stat"><dt>Words spoken</dt><dd>${spoken}<small>by the two of them</small></dd></div>
       <div class="an-stat"><dt>Words that carried</dt><dd>${took}<small>${pct(took)}% — let something be inferred</small></dd></div>
       <div class="an-stat hero"><dt>Words discarded</dt><dd>${spoken - took}<small>${pct(spoken - took)}% — heard, then dropped</small></dd></div>
-      <div class="an-stat"><dt>The machine said</dt><dd>${mw}<small>none of it picked up</small></dd></div>
+      <div class="an-stat"><dt>The builder said</dt><dd>${mw}<small>none of it picked up</small></dd></div>
     </dl>
     <div class="an-rates">
       ${rateRow("a", "role 1", ra.n, ra.k)}
       ${rateRow("b", "role 2", rb.n, rb.k)}
-      ${rateRow("m", "the machine", mw, 0)}
+      ${rateRow("m", "the builder", mw, 0)}
     </div>
     <section class="an-sec used">
       <h4>Carried · ${used.length} distinct words</h4>
-      <p>Not one of these is the name of a structure. Each is a word about a need, and the property beside it is what the machine decided that need implied.</p>
+      <p>Not one of these is the name of a structure. Each is a word about a need, and the property beside it is what the builder decided that need implied.</p>
       <div class="wchips">${used.map(r => chip(r, true)).join("")}</div>
     </section>
     <section class="an-sec meaning">
       <h4>Discarded · ${meaning.length} words that carried meaning</h4>
-      <p>Not grammar. A person would have understood every one of these, and the machine had no slot for any of them.</p>
+      <p>Not grammar. A person would have understood every one of these, and the builder had no slot for any of them.</p>
       <div class="wchips">${meaning.map(r => chip(r)).join("")}</div>
     </section>
     <section class="an-sec grammar">
@@ -2767,15 +2772,15 @@ function renderAnalysis(){
       <p>Articles, pronouns, prepositions — including the whole of &ldquo;I want&rdquo; and &ldquo;I do not want&rdquo;.</p>
       <div class="wchips">${grammar.map(r => chip(r)).join("")}</div>
     </section>
-    <section class="an-sec machine">
-      <h4>The machine&rsquo;s own words · ${machine.length} distinct</h4>
+    <section class="an-sec builder">
+      <h4>The builder&rsquo;s own words · ${builder.length} distinct</h4>
       <p>It ejects into the same space and none of it is ever picked up, including by itself.</p>
-      <div class="wchips">${machine.map(r => chip(r)).join("")}</div>
+      <div class="wchips">${builder.map(r => chip(r)).join("")}</div>
     </section>`;
 }
 
 /* ── the conduit, drawn as one: both of them speaking inward, most of it
-      falling out before the middle, and the machine's own output below ── */
+      falling out before the middle, and the builder's own output below ── */
 function conduit(f, w){
   const A = f.A, B = f.B;
   const aTot = A.carried + A.meaning + A.grammar;
@@ -2827,10 +2832,10 @@ function conduit(f, w){
     ${bar(xC, yM, hM, "var(--muted)")}
     ${lab(xA - 10, midY + 5, "role 1 " + aTot, "", "end")}
     ${lab(xB + BAR + 10, midY + 5, "role 2 " + bTot)}
-    ${lab(w/2, yC - 14, "reached the machine " + carried, "big mid", "middle")}
+    ${lab(w/2, yC - 14, "reached the builder " + carried, "big mid", "middle")}
     ${lab(xD1 - 10, dropTop + d1/2 + 5, "fell out " + (A.meaning+A.grammar), "", "end")}
     ${lab(xD2 + BAR + 10, dropTop + d2/2 + 5, "fell out " + (B.meaning+B.grammar))}
-    ${lab(w/2, yM - 12, "the machine said " + f.AI + ", and none of it was picked up", "mid", "middle")}
+    ${lab(w/2, yM - 12, "the builder said " + f.AI + ", and none of it was picked up", "mid", "middle")}
   </svg>`;
 }
 
@@ -2854,7 +2859,7 @@ function renderFlow(){
     <div class="fhead">
       <h4>${CASES[S.case].label} · ${SC().label.toLowerCase()}</h4>
       <p>${spoken} words between the two of them. <b>${carried}</b> of them — ${Math.round(100*carried/spoken)}% —
-         reached the thing being built. The machine said ${f.AI} more, and not one of those was picked up by anything,
+         reached the thing being built. The builder said ${f.AI} more, and not one of those was picked up by anything,
          including itself.</p>
     </div>
     <div class="fbig">${conduit(f, 900)}</div>
@@ -2885,8 +2890,8 @@ function renderRec(){
       x.meta.scenario} · ${x.outcome ? x.outcome.name.replace(/^An? /, "").toLowerCase() : x.meta.label}</button>`).join("")}</div>`;
 
   const turns = all.map(t => {
-    if (t.who === "machine") return `<div class="ai">
-      <span class="who">the machine</span>
+    if (t.who === "builder") return `<div class="ai">
+      <span class="who">the builder</span>
       <div class="made">${t.text}${t.changed ? `<small>rebuilt</small>` : ``}</div>
       <p class="mvoice"></p></div>`;
     const meant = t.meant || t.asserts || [], taken = t.taken || [];
@@ -2896,7 +2901,7 @@ function renderRec(){
       <span class="who">Role ${t.who === "A" ? "1" : "2"} · ${t.player || "a model"}</span>
       <div class="bub"><span class="body"></span></div>
       <span class="reading${off ? " off" : " ok"}">meant ${meant.map(lab).join(", ") || "nothing"}
-        &nbsp;·&nbsp; the machine took ${taken.map(lab).join(", ") || "nothing at all"}</span>
+        &nbsp;·&nbsp; the builder took ${taken.map(lab).join(", ") || "nothing at all"}</span>
       ${alt ? `<span class="why">the word list would have taken ${alt.map(lab).join(", ") || "nothing"}</span>` : ""}
     </div>`;
   }).join("");
@@ -2904,10 +2909,10 @@ function renderRec(){
   host.innerHTML = `${picker}
     <section class="an-sec">
       <h4>${ss.meta.label} · ${ss.meta.scenario} · ${ss.meta.turns} turns</h4>
-      <p>Role 1 played by <b>${ss.meta.players.A}</b>, Role 2 by <b>${ss.meta.players.B}</b>, and the machine
-         reading with <b>${ss.meta.machineIsModel || ss.meta.machine === "llm" ? "a language model" : "the word list"}</b>.
+      <p>Role 1 played by <b>${ss.meta.players.A}</b>, Role 2 by <b>${ss.meta.players.B}</b>, and the builder
+         reading with <b>${(ss.meta.builderIsModel ?? ss.meta.machineIsModel ?? ss.meta.machine === "llm") ? `a language model (${ss.meta.machine})` : "the word list"}</b>.
          ${ss.outcome ? `It built <b>${ss.outcome.name}</b>, over ${ss.outcome.ground}.` : ""}</p>
-      ${r.said ? `<p class="prov-head ${r.caught === r.said ? "none" : "some"}">The machine took
+      ${r.said ? `<p class="prov-head ${r.caught === r.said ? "none" : "some"}">The builder took
         <b>${r.caught} of ${r.said}</b> sentences as they were meant${
         r.deaf ? `, <b>${r.deaf}</b> passed it by entirely` : ""}${
         r.invented ? `, and it credited them with <b>${r.invented}</b> need${r.invented === 1 ? "" : "s"} neither stated` : ""}.${
@@ -2917,7 +2922,7 @@ function renderRec(){
 
   host.querySelectorAll("[data-rec]").forEach(b => b.onclick = () => { S.rec = +b.dataset.rec; renderRec(); });
   host.querySelectorAll(".turn .body").forEach((el, n) => { el.textContent = said[n].text; });
-  const voices = all.filter(t => t.who === "machine");
+  const voices = all.filter(t => t.who === "builder");
   host.querySelectorAll(".ai .mvoice").forEach((el, n) => { el.textContent = voices[n].say; });
 }
 
@@ -2936,7 +2941,7 @@ function renderTemper(){
     const conf = CASES[S.case].confer;
     return `<div class="cell${mine ? " won" : ""}"><b>${what}</b>
       <span class="m">${who}<br>
-      ${conf ? (d.yielded ? `one of them gave way on ${d.yielded}, so the machine heard it`
+      ${conf ? (d.yielded ? `one of them gave way on ${d.yielded}, so the builder heard it`
                           : `${d.dropped} dropped in order to agree`)
         : d.gave ? `${d.gave} demand${d.gave === 1 ? "" : "s"} given up${
             d.misgiven ? ` · <span class="bad">${d.misgiven} of them to a misreading</span>` : " · all warranted"}`
@@ -2947,7 +2952,7 @@ function renderTemper(){
   const all = [ff, fg, gf, gg].filter(Boolean);
   const same = all.length === 4 && new Set(all.map(d => d.built[0][0])).size === 1;
   // The diagonal is the interesting one: deadlock and mutual deference are the
-  // same shape from the machine's side.
+  // same shape from the builder's side.
   const mirrored = !same && ff && gg && ff.built[0][0] === gg.built[0][0]
                    && (!fg || fg.built[0][0] !== ff.built[0][0] || !gf || gf.built[0][0] !== ff.built[0][0]);
   const misgiven = all.reduce((n, d) => n + d.misgiven, 0);
@@ -2971,12 +2976,12 @@ function renderTemper(){
       <h4>What it buys</h4>
       <p>${same
         ? `<b>Nothing, here.</b> All four temperaments end at the same structure. Giving ground changes what
-           gets said and what gets taken back, and the machine arrives at the same place regardless — the
+           gets said and what gets taken back, and the builder arrives at the same place regardless — the
            weighting that lets one refusal outlast several requests is doing the deciding, not the manners.`
         : `The four end differently, so <b>how they argue decides what gets built</b>, not only what they came
            for.`}${mirrored ? ` <b>Look at the diagonal.</b> Both holding firm and both giving way come out at
            the same place — a point only survives if <i>one</i> of them stops arguing about it. Two people
-           deferring to each other lose exactly what two people refusing to budge lose, and the machine
+           deferring to each other lose exactly what two people refusing to budge lose, and the builder
            cannot tell the difference between deadlock and mutual courtesy.` : ""}
         ${given ? ` Across the four, <b>${given} demands were given up</b>${
           misgiven ? `, and <b class="bad">${misgiven} of them went to something the other never objected to</b>.
@@ -2984,7 +2989,7 @@ function renderTemper(){
             other is not helped, because the concession was made to somebody who was never there.`
           : `, every one to something the other had actually objected to.`}` : ``}
         ${took ? ` And it runs the other way too: <b>${took} need${took === 1 ? " was" : "s were"} taken up</b> —
-          asked of the machine by somebody who did not arrive wanting ${took === 1 ? "it" : "them"}, having worked
+          asked of the builder by somebody who did not arrive wanting ${took === 1 ? "it" : "them"}, having worked
           back from what they believed the other would not have.${idle
             ? ` <b class="bad">${idle} of ${took} do${idle === 1 ? "es" : ""} nothing for the other one's goal.</b>
               Refusing a thing is not the same as wanting its opposite — <i>not cheap and done twice</i> is a wish
@@ -3076,7 +3081,7 @@ function renderCmp(){
       <td class="k">each over their own</td>${goal}
       <td class="k">${d.unspoken}/${d.total} unspoken</td>
       <td class="k q">there is no one to hear</td></tr>`;
-    // Column five is the machine's channel; column six is the one between them.
+    // Column five is the builder's channel; column six is the one between them.
     const between = c.confer ? `${d.dropped} dropped in order to agree`
                   : c.split  ? `<span class="q">neither hears a word</span>`
                   : `${showSpan(d.missSpan)} of ${showSpan(d.heardSpan)} sentences misread${
@@ -3113,19 +3118,19 @@ function renderCmp(){
     else finds.push(["Agreed ground", `They are on agreed ground throughout, so nothing here turns on place.`, true]);
 
     finds.push(["Nothing was ever named",
-      `Neither of them may say what they want built, so every property of every result is the machine&rsquo;s
+      `Neither of them may say what they want built, so every property of every result is the builder&rsquo;s
        reading of a described need — and in each shared case some of it traces back to <b>nothing either of
        them said at all</b>.`]);
 
     if (a.asked) finds.push(["Who asks, and what they are told",
-      `In one room they turn to each other and nobody interrogates the machine, because there is somebody better
+      `In one room they turn to each other and nobody interrogates the builder, because there is somebody better
        to ask. Separated, it is the only thing left to ask — and <b>apart</b> it must not reveal that another
        person exists: <b>${a.dodged} of ${a.asked} questions answered without disclosure</b>. <b>Alone</b>,
        there is nobody to shield, and the answer is the hardest of all.`]);
 
     finds.push(["Being in the room", (
       g.built[0][0] !== a.built[0][0]
-        ? `Cases 1 and 3 both have each of them addressing the machine, so it is fair to ask whether the first is
+        ? `Cases 1 and 3 both have each of them addressing the builder, so it is fair to ask whether the first is
            the third with the chairs moved. It is not: in one room they end at <b>${NAME(g.built[0][0]).toLowerCase()}</b>,
            apart at <b>${NAME(a.built[0][0]).toLowerCase()}</b>.`
         : (g.who[0][0] !== a.who[0][0]
@@ -3133,7 +3138,7 @@ function renderCmp(){
                apart <b>${a.who[0][0]}</b>.`
             : `Here they reach the same structure for the same person. What separates them is that the shared run is
                no longer <i>certain</i> of it: it moves with phrasing, and the separated one does not.`))
-      + ` Hearing somebody changes what you ask for, and what you ask for is the only thing the machine reads.`]);
+      + ` Hearing somebody changes what you ask for, and what you ask for is the only thing the builder reads.`]);
 
     // The answer to why so many of these cells look alike, and it is a number.
     const margins = cases.map(d => d.margin).filter(m => m != null);
@@ -3160,7 +3165,7 @@ function renderCmp(){
 
     finds.push([`${g.n} runs a cell, not one`, (
       firm === cases.length
-        ? `Across ${cases.length * g.n} runs of this scenario the machine built the same thing every time — and the
+        ? `Across ${cases.length * g.n} runs of this scenario the builder built the same thing every time — and the
            last column kept changing, because <b>what they understood of each other varied while what got built did
            not</b>. Phrasing is free to alter who feels understood without moving one matchstick.`
         : `<b>${cases.length - firm} of ${cases.length}</b> cases came out differently between runs. A cell is marked
@@ -3180,10 +3185,10 @@ function renderCmp(){
    11 · VIEWS + TRANSPORT
    ═══════════════════════════════════════════════════════════ */
 const VNOTE = {
-  scene:   "What stands, and what the machine made of each sentence on the way to it. Neither of them may name a structure; every property here is its reading of a described need.",
+  scene:   "What stands, and what Role 3 made of each sentence on the way to it. Neither of the other two may name a structure, so every property here is what the builder took them to need — reconstructed out of their own materials, which is Reddy's claim exactly.",
   compare: "All five cases at once, each played twenty-four times. A cell is marked only where the outcome moved between runs.",
-  said:    "Every word either of them has said, ejected into the space between them and left there. Colour is the little the machine could use.",
-  dropped: "The same run, counted: what carried, what was heard and dropped, and what the machine took each sentence to be about.",
+  said:    "Every word the first two have said, ejected into the space between them and left there. Colour is the little of it the builder could use.",
+  dropped: "The same run, counted: what carried, what was heard and dropped, and what the builder took each sentence to be about.",
   flow:    "Where each word of this case went, from the one who said it to the need it fed — or to nothing.",
   picture: "Reddy's actual claim, which the other views do not show: the listener does not receive a meaning, it rebuilds one out of its own materials.",
   temper:  "The same case run four ways, according to whether each of them presses its point or gives ground.",
@@ -3269,7 +3274,7 @@ function reset(){
     goalNow:{...SC().goal}, revised:{A:0, B:0}, revisedAt:{A:0, B:0}, hitNow:{A:0, B:0},
     recent:{A:[], B:[]}, spent:{A:false, B:false}, lastSaid:{A:[], B:[]}, lastHeard:{A:[], B:[]}, lastUp:{A:"", B:""}, gave:{A:[], B:[]}, mRead:[], trace:[], pressed:{A:new Set(), B:new Set()}, adopted:{A:new Set(), B:new Set()}, took:{A:[], B:[]},
     picture:{A:{wants:new Map(), avoids:new Map()}, B:{wants:new Map(), avoids:new Map()}}, readings:[],
-    phase: CASES[S.case].confer ? "confer" : "machine", dropped:[], yielded:[], ranOut:false,
+    phase: CASES[S.case].confer ? "confer" : "builder", dropped:[], yielded:[], ranOut:false,
     pact:{A:{want:new Set(), avoid:new Set()}, B:{want:new Set(), avoid:new Set()}}});
   S.shared = mkCtx(); S.side = {A: mkCtx(), B: mkCtx()};
   S.mem = {A: mkMem(), B: mkMem()};

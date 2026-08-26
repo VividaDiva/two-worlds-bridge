@@ -260,10 +260,10 @@ async function machineClaude(system, user, schema = ReadSchema) {
       messages: [{ role: "user", content: user }],
       output_config: { format: betaZodOutputFormat(schema) },
     });
-    if (again.stop_reason === "refusal") throw new Error("the machine declined twice");
-    return parsedOr(again, schema, "the machine");
+    if (again.stop_reason === "refusal") throw new Error("the builder declined twice");
+    return parsedOr(again, schema, "the builder");
   }
-  return parsedOr(res, schema, "the machine");
+  return parsedOr(res, schema, "the builder");
 }
 
 async function machineOpenAI(system, user, schema = ReadSchema) {
@@ -277,7 +277,7 @@ async function machineOpenAI(system, user, schema = ReadSchema) {
     ],
   });
   const raw = res.choices?.[0]?.message?.content;
-  if (!raw) throw new Error("the machine returned no content");
+  if (!raw) throw new Error("the builder returned no content");
   return schema.parse(JSON.parse(raw));
 }
 
@@ -349,7 +349,7 @@ const transcript = [];
 console.log(`\n  ${SCENARIOS[scenarioKey].blurb}`);
 console.log(`  ${cfg.label} — role 1 ${LEAD[cfg.A]}… (${playerA}), role 2 ${LEAD[cfg.B]}… (${playerB})`);
 console.log(`  ${cfg.hears ? "One room: each can hear the other." : "Apart: neither knows the other exists."}`);
-console.log(`  The machine reads what they say with ${READERS[reader]}. Nobody tells it what they meant.\n`);
+console.log(`  Role 3 reads what they say with ${READERS[reader]}. Nobody tells it what they meant.\n`);
 
 for (let i = 0; i < maxTurns; i++) {
   const role = i % 2 === 0 ? "A" : "B";
@@ -379,9 +379,9 @@ for (let i = 0; i < maxTurns; i++) {
                     attempts, built: after, changed: before !== after });
   console.log(`  ${state.turn.toString().padStart(2)} role ${role === "A" ? 1 : 2} (${player}): ${sentence}`);
   console.log(`     meant [${turn.asserts.join(", ")}]${attempts > 1 ? `  after ${attempts} attempts` : ""}`);
-  console.log(`     machine took [${taken.join(", ") || "nothing"}]${caught ? "" : "   ← not what was meant"}`);
+  console.log(`     they took [${taken.join(", ") || "nothing"}]${caught ? "" : "   ← not what was meant"}`);
   if (byModel && byWord.join() !== byModel.join()) console.log(`     the word list would have taken [${byWord.join(", ") || "nothing"}]`);
-  if (before !== after) console.log(`     → the machine rebuilds: ${NAME(after)}`);
+  if (before !== after) console.log(`     → they rebuild: ${NAME(after)}`);
   // Only now, with the reading committed and the thing rebuilt, does it speak.
   let saidByMachine = "";
   if (voiced) try {
@@ -422,16 +422,16 @@ const deafN = said.filter(t => !t.taken.length).length;
 const agreed = said.filter(t => t.byModel && t.byWord.join() === t.byModel.join()).length;
 
 console.log(`\n  ${NAME(ctx.design.id)} is standing, over ${groundOf(ctx)}.`);
-console.log(`  The machine took ${caughtN} of ${said.length} sentences as they were meant.`);
+console.log(`  Role 3 took ${caughtN} of ${said.length} sentences as they were meant.`);
 if (deafN) console.log(`  ${deafN} passed it by entirely.`);
-if (inventedN) console.log(`  It credited them with ${inventedN} need${inventedN === 1 ? "" : "s"} neither of them stated.`);
+if (inventedN) console.log(`  They credited the two of them with ${inventedN} need${inventedN === 1 ? "" : "s"} neither of them stated.`);
 if (byModelUsed) console.log(`  The word list would have agreed with it on ${agreed} of ${said.length}.`);
 console.log(`  ${unspoken} of ${prov.total} of its properties were never put into words by either of them.`);
-console.log(`  ${led.spoken} words spoken; the machine's whole vocabulary for this run was ${ctx.wants.size + ctx.avoids.size} features.`);
+console.log(`  ${led.spoken} words spoken; Role 3's whole vocabulary for this run was ${ctx.wants.size + ctx.avoids.size} features.`);
 if (state.violations.length) console.log(`  ${state.violations.length} turns broke the rules and were sent back.`);
 if (RETRIES) console.log(`  ${RETRIES} calls were declined once and succeeded on a retry.`);
 if (PAUSED) console.log(`  ${Math.round(PAUSED / 1000)}s of this run was spent waiting on a rate limit.`);
-if (state.mute) console.log(`  ${state.mute} turns the machine had nothing to say — declined twice.`);
+if (state.mute) console.log(`  ${state.mute} turns Role 3 had nothing to say — declined twice.`);
 
 const session = {
   meta: { scenario: scenarioKey, case: caseKey, label: CASES[caseKey].label,

@@ -1,9 +1,16 @@
-# Two models arguing, and a third reading them
+# Three roles, three models
 
-Role 1 and Role 2 played by two different providers. The machine between them
-builds with the same deterministic kit the browser simulation uses — and, like
-the simulation, it is told nothing about what anybody meant. It gets the
-sentence.
+Role 1 wants one kind of crossing, Role 2 wants another, and Role 3 has to build
+something out of what they say. All three are language models, and they can be
+three different ones — the point of which is below.
+
+Role 3 is a person with a workshop, not a machine. Six things they know how to
+make, no way to ask a question, and only sentences to go on. That is Reddy's
+toolmaker: the limit is what is to hand. What Role 3 does NOT do is choose the
+structure freely — they say what they take the other two to need, and a fixed
+scoring rule turns those needs into one of the six. If they both interpreted and
+built, a strange crossing would be unattributable; with the rule fixed, every
+difference between one reader and another is a difference in hearing.
 
 The scripted version in the browser shows the mechanism is **possible**, and is
 reproducible and shareable. This shows whether it **happens** when the language
