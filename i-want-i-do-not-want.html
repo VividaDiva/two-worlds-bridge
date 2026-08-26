@@ -1848,8 +1848,12 @@ function takeTurn(){
     paint(); hud();
     return;
   }
-  // said everything, asked everything, and the crossing has stopped moving
-  if (S.said[role].size >= linesFor(role).length && (S.still || 0) >= 3 && !maybeAsk(role)){
+  // Said their piece: nothing new has reached the builder for four turns, the
+  // crossing has not moved, and it is past the shortest thing worth calling a
+  // conversation. They may well have lines left. People usually do — and making
+  // them empty the list first is why all five cases arrived at the same crossing.
+  const saidTheirPiece = (S.stale || 0) >= 4 && (S.still || 0) >= 4 && S.turn >= 8;
+  if ((saidTheirPiece || (S.said[role].size >= linesFor(role).length && (S.still || 0) >= 3)) && !maybeAsk(role)){
     if (!S.spent[role]){ S.spent[role] = true; pushSpent(role); S.turn++; }
     S.speaker = role === "A" ? "B" : "A";
     if (S.spent.A && S.spent.B && !S.done){ S.done = true; record(); pushVerdict(); stop(); }
@@ -1962,7 +1966,9 @@ function takeTurn(){
 
   S.speaker = role === "A" ? "B" : "A";
   S.still = before === after ? (S.still || 0) + 1 : 0;
-  if ((S.still >= 6 && S.said.A.size >= linesFor("A").length) || S.turn >= 26){
+  // did this turn put a need in front of the builder it had not already heard?
+  S.stale = taken.some(f => !heldBefore.has(f)) ? 0 : (S.stale || 0) + 1;
+  if ((S.still >= 6 && ((S.stale || 0) >= 4 || S.said.A.size >= linesFor("A").length)) || S.turn >= 26){
     S.done = true; record(); pushVerdict(); stop();
   }
   paint(); hud();
@@ -3276,7 +3282,7 @@ function reset(){
     words:[], spoken:0, taken:0, asked:{A:0, B:0}, dodged:0,
     askedFeats:{A:new Set(), B:new Set()},
     goalNow:{...SC().goal}, revised:{A:0, B:0}, revisedAt:{A:0, B:0}, hitNow:{A:0, B:0},
-    recent:{A:[], B:[]}, spent:{A:false, B:false}, lastSaid:{A:[], B:[]}, lastHeard:{A:[], B:[]}, lastUp:{A:"", B:""}, gave:{A:[], B:[]}, mRead:[], trace:[], pressed:{A:new Set(), B:new Set()}, adopted:{A:new Set(), B:new Set()}, took:{A:[], B:[]},
+    recent:{A:[], B:[]}, spent:{A:false, B:false}, lastSaid:{A:[], B:[]}, lastHeard:{A:[], B:[]}, lastUp:{A:"", B:""}, gave:{A:[], B:[]}, mRead:[], trace:[], stale:0, pressed:{A:new Set(), B:new Set()}, adopted:{A:new Set(), B:new Set()}, took:{A:[], B:[]},
     picture:{A:{wants:new Map(), avoids:new Map()}, B:{wants:new Map(), avoids:new Map()}}, readings:[],
     phase: CASES[S.case].confer ? "confer" : "builder", dropped:[], yielded:[], ranOut:false,
     pact:{A:{want:new Set(), avoid:new Set()}, B:{want:new Set(), avoid:new Set()}}});
