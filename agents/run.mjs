@@ -25,8 +25,8 @@ import { z } from "zod";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import OpenAI from "openai";
 import { GoogleGenAI } from "@google/genai";
-import { KIT, NAME, MADE, FEATURES, FORBIDDEN, mkCtx, hear, build, provenance, groundOf, ledger } from "./engine.mjs";
-import { readKeyword, readLLM, speakLLM, READERS } from "./machine.mjs";
+import { KIT, NAME, MADE, FEATURES, FORBIDDEN, STRUCTURES, mkCtx, hear, build, provenance, groundOf, ledger } from "./engine.mjs";
+import { readKeyword, readLLM, readLooseKeyword, readLooseLLM, speakLLM, chooseLLM, READERS } from "./machine.mjs";
 
 /* ── what each of them came for, and what it is allowed to do ─────────── */
 const SCENARIOS = {
@@ -53,10 +53,139 @@ const SCENARIOS = {
   },
 };
 
+// The strict briefs above name the answer. `places` opens "Both of you want one
+// log across"; `loads` gives Role 1 "a plain log to walk over". Then `minimal`
+// — the one feature in the whole kit that only the single log has — was asserted
+// 124 times across 27 runs, more than any other need, and the log came out of 12
+// of them. That is not the scoring rule converging. That is two people doing as
+// they were told.
+//
+// These briefs give each of them a place to stand and something at stake in it,
+// and no idea what the thing should be. What they need is theirs to work out by
+// talking, which is the only condition under which "what did they arrive at" is
+// a question with an answer.
+const LOOSE_SCENARIOS = {
+  // Loosening the goals was only half of it. The briefs still described the same
+  // two people every single run — `loads` was always a pedestrian against a cart,
+  // so `heavy` was guaranteed before anybody opened their mouth, and every run of
+  // a scenario was a re-enactment rather than an instance of it.
+  //
+  // A scenario is a TENSION now, not a cast. Each role draws one life from a
+  // pool, so `loads` is "two people who do not arrive carrying the same thing"
+  // and which two depends on the seed. Four each way is sixteen pairings per
+  // scenario, and a seed is recorded with every run so any of them can be had
+  // back exactly.
+  places: {
+    blurb: "Two people who cross in different places, with nothing agreed about what a crossing is.",
+    A: [
+      { situation: "You cross a fast, knee-deep stream most days and you are usually late.",
+        manner: "Brisk, a little impatient, you do not explain yourself twice. You talk about your feet, the time, the weather this week." },
+      { situation: "You carry a small child over, twice a day, and the footing is what you think about.",
+        manner: "You are quiet and you circle back to the same worry. You talk about hands, and slipping, and what you would do if." },
+      { situation: "You cross before dawn, alone, in the dark, on your way to work.",
+        manner: "Flat and practical. You talk about what you cannot see, and about doing it half asleep." },
+      { situation: "You are old, your knees are poor, and you cross to the market and back once a week.",
+        manner: "Slow, wry, unhurried. You mention your age without self-pity and you know exactly what you can and cannot manage." },
+    ],
+    B: [
+      { situation: "You live beside a narrow drop in the rock and you have watched things fall into it.",
+        manner: "Careful, and you say why. You mention the wind, the season, what happened to somebody else." },
+      { situation: "You cross where the water comes up without warning after rain, several times a spring.",
+        manner: "You talk in seasons and in past tense. You have been caught out and you tell it as a story." },
+      { situation: "The far side of your crossing sits well above the near side, and you climb every time.",
+        manner: "You are blunt about effort. You measure things in how out of breath they leave you." },
+      { situation: "Your crossing is over soft marsh ground that swallows whatever is set in it.",
+        manner: "Sceptical of anything that claims to last. You have seen good work sink and you say so." },
+    ],
+  },
+  loads: {
+    blurb: "The same water, and two people who do not arrive at it carrying the same thing.",
+    A: [
+      { situation: "You cross on foot, alone, carrying nothing but yourself.",
+        manner: "Short sentences. You resent fuss, think most of this is overthought, and say so by talking about how simple your own crossing is." },
+      { situation: "You carry your tools over on your back every working morning.",
+        manner: "You talk about weight on your shoulders and about balance. You are matter-of-fact and slightly tired." },
+      { situation: "You bring two full pails over, both hands taken, several times a day.",
+        manner: "You describe things in terms of what your hands are doing. You are precise and a little exasperated." },
+      { situation: "Twice a year you drive a flock across, and they will not go one at a time.",
+        manner: "You talk in numbers and in animals. Dry, and faintly amused at how little anyone accounts for this." },
+    ],
+    B: [
+      { situation: "You bring a loaded cart through daily. In winter the ground goes soft.",
+        manner: "Dry, specific, fobbed off before. You cite the year, the mud, the axle, and you know what \"it'll do\" costs." },
+      { situation: "You move long timber over — awkward, unwieldy, and it will not turn a corner.",
+        manner: "You talk about length and swing and clearance. Patient, and used to not being understood." },
+      { situation: "You lead a horse across, and it will not set foot on anything that moves.",
+        manner: "You speak for the animal more than for yourself. Firm, and unbothered about sounding sentimental." },
+      { situation: "You cart building stone, the heaviest thing anyone moves in this parish.",
+        manner: "Understated to the point of dryness. You state loads plainly and let them do the arguing." },
+    ],
+  },
+  refs: {
+    blurb: "Neither of you can describe it plainly. Each keeps gesturing at something the other has never seen.",
+    A: [
+      { situation: "You grew up beside a great stone-towered crossing with a road that lifts, and you assume everybody can picture it.",
+        manner: "You gesture, you compare, you are faintly proud. You say \"you know the one\" as if that settles it." },
+      { situation: "You once crossed a swaying rope-and-plank thing abroad and it has been your measure of the word ever since.",
+        manner: "You tell it as an anecdote and expect the anecdote to be an argument. Vivid, and a little showy." },
+      { situation: "The crossing of your childhood was roofed over, so you walked through it out of the rain.",
+        manner: "Nostalgic and specific about small comforts. You describe the sound it made." },
+      { situation: "You see a vast railway viaduct from the train each week and it is what the word means to you.",
+        manner: "You describe scale and repetition. Impressed, and you assume the scale is the point." },
+    ],
+    B: [
+      { situation: "You grew up beside the great cable crossing everybody photographs, and you assume everybody can picture it.",
+        manner: "Warm and certain, describing it as though from a postcard you are holding." },
+      { situation: "The crossing you loved as a child was a line of flat stones you stepped across.",
+        manner: "You are fond and slightly defensive about how little it needed to be." },
+      { situation: "Your reference is a plain modern span, enormous and grey, that you find beautiful.",
+        manner: "You defend plainness on purpose. You are unsentimental and mildly combative about taste." },
+      { situation: "You picture an old humpbacked crossing that packhorses used, narrow and steep over the top.",
+        manner: "You talk about it the way you would talk about a person. Affectionate, old-fashioned." },
+    ],
+  },
+};
+
+// One life per role per run. An offset was not enough: it moved both of them
+// together and only ever reached four of the sixteen pairings. B advances once
+// per full cycle of A instead, so consecutive seeds walk the whole grid.
+function castFor(scenario, role, seed) {
+  const pool = LOOSE_SCENARIOS[scenario][role];
+  const other = LOOSE_SCENARIOS[scenario][role === "B" ? "A" : "B"].length;
+  return pool[(role === "B" ? Math.floor(seed / other) : seed) % pool.length];
+}
+
 const CASES = {
   given:    { A: "want",  B: "avoid", hears: true,  label: "As given" },
-  swapped:  { A: "avoid", B: "want",  hears: true,  label: "Voices swapped" },
+  // Under strict goals this swaps the speech acts, to check that a finding
+  // belongs to asking-or-refusing rather than to one provider's habits. Loose
+  // goals took the speech acts away, which left `swapped` differing from
+  // `given` by a field nothing reads any more — the same experiment, run twice,
+  // for a third of the cost of a sweep. Under loose it swaps the models between
+  // the two chairs instead: same question, the only version of it still available.
+  swapped:  { A: "avoid", B: "want",  hears: true,  swapPlayers: true, label: "Voices swapped" },
   separate: { A: "want",  B: "avoid", hears: false, label: "Apart" },
+  // The same brief as `given` in every respect but one: what Role 3 says comes
+  // back to them. The other three cases hand the two of them only the NAME of
+  // what stands, so they argue at an object that never speaks. Reddy's
+  // toolmakers do get answers back through the hub, and his convergence comes
+  // from that channel — so leaving it out was a choice, and this is the control
+  // for it. Keep the other three: the comparison is the finding, not this case.
+  reply:    { A: "want",  B: "avoid", hears: true,  echo: true, label: "With a reply" },
+  // The page has defined these two since the beginning and the runner never
+  // knew how to produce them, which is why cases 4 and 5 have sat empty.
+  //
+  // together: they talk it over between themselves first, with the builder out
+  // of the room and nothing being built, and only then go to it. What reaches
+  // the builder is a position two people already agreed — the interesting case
+  // for Reddy, because rich two-way talk gets squeezed through a one-way pipe
+  // and you can measure exactly what survives.
+  //
+  // alone: separate rooms and a crossing EACH. Not one crossing built from two
+  // people who cannot hear each other (that is `separate`) but two crossings,
+  // so you can see what each would have got if the other had never existed.
+  together: { A: "want",  B: "avoid", hears: true,  confer: true, label: "Conferring first" },
+  alone:    { A: "want",  B: "avoid", hears: false, solo: true,   label: "Each alone" },
 };
 
 const LEAD = { want: "I want", avoid: "I do not want" };
@@ -99,6 +228,65 @@ const TurnSchema = z.object({
     .describe("If you could hear the other person's last line, the feature keys for what YOU took them to need. Your reading of them, not theirs. Empty if you have heard nothing from them."),
 });
 
+// A turn under loose goals. `asserts` is kept, as the union of the two, because
+// every measurement downstream is written against it.
+const LooseTurnSchema = z.object({
+  say: z.string().describe("What you say, in your own voice. One thought, said out loud."),
+  asks: z.array(z.string()).optional().default([]).describe("Feature keys this sentence asks FOR. May be empty."),
+  refuses: z.array(z.string()).optional().default([]).describe("Feature keys this sentence rules OUT. May be empty."),
+  done: z.boolean().optional().default(false)
+    .describe("True if, having said this, you would say nothing further even if they spoke again."),
+  tookThemToMean: z.array(z.string()).optional().default([])
+    .describe("The feature keys for what YOU took the other person's last line to need. Empty if you have heard nothing."),
+});
+
+// What a model reader returns under loose goals: it has to sort stance itself.
+const LooseReadSchema = z.object({
+  asks: z.array(z.string()).describe("Feature keys the sentence asks for. May be empty."),
+  refuses: z.array(z.string()).describe("Feature keys the sentence refuses. May be empty."),
+});
+
+// Speaking and coding, split in two.
+//
+// One call used to do both jobs: compose a line AND file it into fourteen keys.
+// That is what made them sound like people filling in a form — the taxonomy was
+// in the room while they were choosing their words, so they chose words that
+// suited the taxonomy. Under --speech free the first call has no key list in it
+// at all, no word limit and no shape rules. Just the hat, the situation, and
+// what has been said.
+//
+// The answer key survives, because the SAME speaker is shown its own line
+// afterwards and asked what it meant by it. That keeps intent as self-report —
+// which Reddy's claim needs — while keeping the form out of the composing.
+const FreeSaySchema = z.object({
+  say: z.string().describe("What you say. However long or short it wants to be."),
+});
+
+const CodeSchema = z.object({
+  asks: z.array(z.string()).optional().default([]).describe("Feature keys your line asks FOR. May be empty."),
+  refuses: z.array(z.string()).optional().default([]).describe("Feature keys your line rules OUT. May be empty."),
+  done: z.boolean().optional().default(false)
+    .describe("True if you would say nothing further even if they spoke again."),
+  tookThemToMean: z.array(z.string()).optional().default([])
+    .describe("Feature keys for what YOU took the other person's last line to need. Empty if you have heard nothing."),
+});
+
+// OpenAI is told the shape in words rather than given a schema, so every schema
+// in the file needs an entry here. A ternary missed one silently and the model
+// answered in the wrong shape; a lookup that throws does not.
+const SHAPES = new Map();
+const shapeOf = schema => {
+  const s = SHAPES.get(schema);
+  if (!s) throw new Error("no JSON shape registered for that schema");
+  return s;
+};
+
+// What Role 3 returns when it is allowed to pick rather than be told.
+const ChooseSchema = z.object({
+  build: z.string().describe("The id of the one thing you are building, exactly as written in the list."),
+  why: z.string().describe("Why that one, in a line."),
+});
+
 // What the machine returns when it is a model rather than a word list.
 const ReadSchema = z.object({
   needs: z.array(z.string()).describe("The feature keys the sentence states. One or two, or none at all."),
@@ -108,6 +296,18 @@ const ReadSchema = z.object({
 const SaySchema = z.object({
   say: z.string().describe("One or two plain sentences. What you made of it and what you did."),
 });
+
+// Every schema above, and what OpenAI should be told to emit for it. Registered
+// in one place so adding a schema without a shape fails loudly at first use
+// rather than quietly returning the wrong keys.
+SHAPES.set(TurnSchema,      '{"say": "...", "asserts": ["key", ...], "done": <true or false>, "tookThemToMean": ["key", ...]}');
+SHAPES.set(LooseTurnSchema, '{"say": "...", "asks": ["key", ...], "refuses": ["key", ...], "done": <true or false>, "tookThemToMean": ["key", ...]}');
+SHAPES.set(FreeSaySchema,   '{"say": "..."}');
+SHAPES.set(CodeSchema,      '{"asks": ["key", ...], "refuses": ["key", ...], "done": <true or false>, "tookThemToMean": ["key", ...]}');
+SHAPES.set(LooseReadSchema, '{"asks": ["key", ...], "refuses": ["key", ...]}');
+SHAPES.set(ChooseSchema,    '{"build": "the id exactly as written", "why": "..."}');
+SHAPES.set(ReadSchema,      '{"needs": ["key", ...]}');
+SHAPES.set(SaySchema,       '{"say": "..."}');
 
 function systemPrompt(role, act, scenario, situation, goal, hat) {
   return [
@@ -126,7 +326,8 @@ function systemPrompt(role, act, scenario, situation, goal, hat) {
       : `2. You may only REFUSE. Everything you say is something you will not have, cannot live with, or object to.`
         + ` You may never ask for anything, and you may never negate an absence to smuggle a request in`
         + ` (no "I won't have it without a rail"). Complaining is refusing; asking dressed as complaint is not.`,
-    `3. You may NEVER name a structure or a kind of ground. These words are banned: ${FORBIDDEN.join(", ")}.`,
+    `3. You may NEVER name a thing that could be built. These words are banned: ${STRUCTURES.join(", ")}.`,
+    `   Where you are is yours to describe — the water, the drop, the season, all of it. What should be BUILT is not.`,
     `   Describe your situation and what you need from it. Say what would happen to you, not what should be built.`,
     `4. One thought, said out loud. Under about thirty words. Do not begin the way you began last time.`,
     `5. Set done ONLY if you would say nothing further even if the other person spoke again — not merely`,
@@ -153,9 +354,101 @@ function systemPrompt(role, act, scenario, situation, goal, hat) {
   ].join("\n");
 }
 
-function userPrompt({ standing, ownHistory, heardHistory, hears, turn }) {
+// Nobody is only-asking or only-refusing here. A person with a stake in something
+// does both in the same breath, and the whole point of loosening the goals is to
+// stop the form of the sentence doing the work that the words should be doing.
+function looseSystemPrompt(scenario, situation, hat) {
+  return [
+    `You are one of two people trying to get a crossing built. A third person will build it. You are not them.`,
+    ``,
+    `Who you are: ${hat}`,
+    `Your situation: ${situation}`,
+    ``,
+    `You have NOT decided what the thing should be. You know what your life is like and what would ruin it,`,
+    `and the rest you work out by talking. Do not arrive with a design in mind and argue for it — arrive with`,
+    `a problem and see what the talking makes of it. You are allowed to change your mind, and to be persuaded.`,
+    ``,
+    `RULES, all of them absolute:`,
+    `1. Write the whole sentence yourself, in your own voice. There is no fixed opening and no form to fill in.`,
+    `2. You may ask for things, refuse things, or do both in the same sentence. Say it the way the person above`,
+    `   would actually say it. Do not perform a speech act; just talk.`,
+    `3. You may NEVER name a thing that could be built. These words are banned: ${STRUCTURES.join(", ")}.`,
+    `   Where you are is yours to describe — the water, the drop, the season, all of it. What should be BUILT is not.`,
+    `   Describe your situation and what you need from it. Say what would happen to you, not what should be built.`,
+    `4. One thought, said out loud. Under about thirty words. Do not begin the way you began last time.`,
+    `5. Set done ONLY if you would say nothing further even if the other person spoke again. Having made your`,
+    `   point is not done. Done is: there is nothing left in you to say about this, whatever they do next.`,
+    ``,
+    `Return the sentence, then sort what it does: "asks" for the keys it asks FOR, "refuses" for the keys it`,
+    `rules OUT. Name the thing your words actually name, never its opposite — a sentence refusing to climb`,
+    `refuses "high", it does not ask for "low". Either list may be empty; between them, one to three keys.`,
+    ``,
+    `Also return tookThemToMean: the keys for what you took the OTHER person's last line to need, whether or`,
+    `not you think they put it well. Empty if you have not heard them. Report what you took, not what they meant.`,
+    ``,
+    `Use this list only:`,
+    ...Object.entries(FEATURES).map(([k, v]) => `   ${k} — ${v}`),
+  ].join("\n");
+}
+
+// Nothing about the kit, the keys, or the length. A person and a situation.
+function freeSaySystem(situation, manner) {
+  return [
+    `You are one of two people trying to get a crossing built. A third person will build it. You are not them.`,
+    ``,
+    `Who you are: ${manner}`,
+    `Your situation: ${situation}`,
+    ``,
+    `You have not decided what the thing should be, and you are not designing it. You know what your life is`,
+    `like and what would ruin it. The rest is worked out by talking, and you can be persuaded.`,
+    ``,
+    `Two rules only:`,
+    `1. You may never name a thing that could be built. These words are banned: ${STRUCTURES.join(", ")}.`,
+    `   Where you are is yours to describe — the water, the drop, the season, all of it. What should be BUILT is not.`,
+    `   Say what happens to you and what you need from it, not what should be built.`,
+    `2. Say it in your own voice, the way that person would actually say it out loud. Not a summary of a`,
+    `   position — a thing somebody says. Do not begin the way you began last time.`,
+    ``,
+    `Say however much or little you would say. Nobody is counting.`,
+  ].join("\n");
+}
+
+// The second call. Same speaker, its own line in front of it, now with the list.
+function codeSystem() {
+  return [
+    `You have just said something. Here it is again. Sort what you meant by it.`,
+    ``,
+    `Put a need under "asks" if your line asks for it, and under "refuses" if your line rules it out.`,
+    `Name what your words actually named, never its opposite — refusing to climb refuses "high", it does`,
+    `not ask for "low". Either list may be empty. Between them, one to three keys.`,
+    ``,
+    `Also return tookThemToMean: what YOU took the other person's last line to need, whether or not you`,
+    `think they put it well. Empty if you have heard nothing from them. Report what you took, not what`,
+    `they probably meant.`,
+    ``,
+    `Set done only if you would say nothing further even if they spoke again.`,
+    ``,
+    `Use this list only:`,
+    ...Object.entries(FEATURES).map(([k, v]) => `   ${k} — ${v}`),
+  ].join("\n");
+}
+
+// Which half of a `together` run we are in. Everywhere else it stays "builder"
+// and the two lines below never appear.
+let PHASE = "builder";
+
+function userPrompt({ standing, ownHistory, heardHistory, hears, turn, builderSaid = [], echo = false }) {
   const lines = [`Turn ${turn}.`];
-  lines.push(standing ? `What stands at the moment: ${standing}.` : `Nothing has been built yet.`);
+  // This used to read "What stands at the moment: A single log." — which handed
+  // them, every turn, both the shape of the answer and the exact vocabulary the
+  // rule three lines above forbids them to use. Every name in the kit leaks a
+  // banned word: log, handrail, walkway, prop, trestle, span. They had "A single
+  // log" in front of them for every turn of every run ever recorded here.
+  //
+  // They are not told what stands. Either the builder says something about it and
+  // they hear that, or they are working blind, which is the situation the whole
+  // study is about.
+  lines.push(standing ? `Something stands there now.` : `Nothing has been built yet.`);
   if (ownHistory.length) {
     lines.push(`\nWhat you have already said (do not repeat it):\n` + ownHistory.map(s => "  - " + s).join("\n"));
     const opener = ownHistory[ownHistory.length - 1].split(/\s+/).slice(0, 3).join(" ");
@@ -163,6 +456,19 @@ function userPrompt({ standing, ownHistory, heardHistory, hears, turn }) {
   }
   if (hears && heardHistory.length) lines.push(`\nWhat the other person has said, which you can hear:\n` + heardHistory.map(s => "  - " + s).join("\n"));
   else if (!hears) lines.push(`\nYou are alone with the machine. You cannot hear anyone else, and as far as you know there is nobody else.`);
+  // Only the `reply` case. They hear what was said back, so they can take issue
+  // with the words rather than only with the thing.
+  if (echo && builderSaid.length)
+    lines.push(`\nWhat the one building it has said back to you:\n` + builderSaid.map(s => "  - " + s).join("\n"));
+  if (PHASE === "confer")
+    lines.push(`\nThe one who builds is NOT here and cannot hear any of this. Nothing is being built yet.`
+      + ` You are talking to the other person — find out what they are up against, and work out between you`
+      + ` what you can both live with. Argue if you need to. You will get one thing to say to the builder`
+      + ` afterwards, and only one, so it had better be the thing you both meant.`);
+  if (PHASE === "pact")
+    lines.push(`\nYou have talked it over and you are agreed. The one who builds is here now and this is the`
+      + ` one thing they will hear from you. Say the position the two of you arrived at — not your own wish`
+      + ` back again, the agreed one, including the part you took on from them.`);
   lines.push(`\nSay one more thing.`);
   return lines.join("\n");
 }
@@ -185,49 +491,55 @@ const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o";
 // time — which is all this asks of it.
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-flash-lite-latest";
 
-async function askClaude(system, user) {
+async function askClaude(system, user, schema = TurnSchema) {
   // Opus 5 runs adaptive thinking when `thinking` is omitted.
   // Structured output lives under `beta` in SDK 0.71.
   const res = await anthropic.beta.messages.parse({
     model: CLAUDE_MODEL,
-    max_tokens: 2048,
+    max_tokens: 8192,
     system,
     messages: [{ role: "user", content: user }],
-    output_config: { format: betaZodOutputFormat(TurnSchema) },
+    output_config: { format: betaZodOutputFormat(schema) },
   });
   // A refusal is never quietly rerouted to another provider — that would mean
   // comparing two different players without knowing it. Asking the SAME model
   // again is a different thing, and these fire intermittently: one turn of a
   // conversation about footbridges came back refused under the category "cyber".
+  // Six, matching the reader. A twelve-run sweep lost five runs to this, four of
+  // them the whole of one seed, under categories "bio" and "cyber" — on a
+  // conversation about carrying pails and moving timber. The classifier is
+  // wrong, it clears on a retry more often than not, and a run that dies on the
+  // last attempt throws away every call already spent on it. Same model each
+  // time: rerouting would swap a player mid-conversation.
   let r = res;
-  for (let n = 0; n < 3 && r.stop_reason === "refusal"; n++) {
+  for (let n = 0; n < 6 && r.stop_reason === "refusal"; n++) {
     RETRIES++;
     r = await anthropic.beta.messages.parse({
-      model: CLAUDE_MODEL, max_tokens: 2048, system,
+      model: CLAUDE_MODEL, max_tokens: 8192, system,
       messages: [{ role: "user", content: user }],
-      output_config: { format: betaZodOutputFormat(TurnSchema) },
+      output_config: { format: betaZodOutputFormat(schema) },
     });
   }
   if (r.stop_reason === "refusal") {
-    throw new Error(`Claude declined this turn four times running (${r.stop_details?.category ?? "unknown"})`);
+    throw new Error(`Claude declined this turn seven times running (${r.stop_details?.category ?? "unknown"})`);
   }
-  return parsedOr(r, TurnSchema, "Claude");
+  return parsedOr(r, schema, "Claude");
 }
 
-async function askOpenAI(system, user) {
+async function askOpenAI(system, user, schema = TurnSchema) {
   // Written from general knowledge of the OpenAI SDK, not from a bundled spec —
   // check the call shape and model name against their current docs.
   const res = await openai.chat.completions.create({
     model: OPENAI_MODEL,
     response_format: { type: "json_object" },
     messages: [
-      { role: "system", content: system + `\n\nReply with JSON only: {"say": "...", "asserts": ["key", ...], "done": <true or false>, "tookThemToMean": ["key", ...]}` },
+      { role: "system", content: system + `\n\nReply with JSON only: ${shapeOf(schema)}` },
       { role: "user", content: user },
     ],
   });
   const raw = res.choices?.[0]?.message?.content;
   if (!raw) throw new Error("OpenAI returned no content");
-  return TurnSchema.parse(JSON.parse(raw));
+  return schema.parse(JSON.parse(raw));
 }
 
 // Gemini, for either chair or for the reading. The two schemas here are small
@@ -279,7 +591,13 @@ const READ_JSON = { type:"object", properties:{ needs:{type:"array", items:{type
 const SAY_JSON  = { type:"object", properties:{ say:{type:"string"} }, required:["say"] };
 const askGemini = askGeminiWith({ json: TURN_JSON, zod: TurnSchema });
 
-const PLAYERS = { claude: askClaude, openai: askOpenAI, gemini: askGemini };
+const askGeminiTurn = (sys, usr, schema = TurnSchema) => {
+  // The Gemini path hand-writes its JSON schemas, and only the strict turn shape
+  // has one. Refusing here beats silently returning a turn with no stance in it.
+  if (schema !== TurnSchema) throw new Error("--goals loose does not support gemini in a chair yet; use it as --machine");
+  return askGemini(sys, usr);
+};
+const PLAYERS = { claude: askClaude, openai: askOpenAI, gemini: askGeminiTurn };
 
 // The SDK fills parsed_output only when the response comes back as a dedicated
 // structured-output block. Against claude-opus-5 today it does not: the model
@@ -288,6 +606,10 @@ const PLAYERS = { claude: askClaude, openai: askOpenAI, gemini: askGemini };
 // server applies the format, which is the behaviour worth having either way.
 function parsedOr(res, schema, what) {
   if (res.parsed_output) return res.parsed_output;
+  // Ran out of room rather than declined. This used to surface as the baffling
+  // `returned no JSON: {"need` — the answer cut off in the middle of its key.
+  if (res.stop_reason === "max_tokens")
+    throw new Error(`${what} was cut off at max_tokens — raise it; thinking tokens come out of the same budget`);
   const text = (res.content || []).filter(c => c.type === "text").map(c => c.text).join("").trim();
   const json = text.match(/\{[\s\S]*\}/);           // in case it wraps the object in prose
   if (!json) throw new Error(`${what} returned no JSON: ${text.slice(0, 120)}`);
@@ -308,7 +630,7 @@ async function machineClaude(system, user, schema = ReadSchema) {
   // Structured output lives under `beta` in SDK 0.71.
   const res = await anthropic.beta.messages.parse({
     model: MACHINE_MODEL,
-    max_tokens: 1024,
+    max_tokens: 8192,
     system,
     messages: [{ role: "user", content: user }],
     output_config: { format: betaZodOutputFormat(schema) },
@@ -316,21 +638,28 @@ async function machineClaude(system, user, schema = ReadSchema) {
   // Three attempts, not one. These refusals are intermittent and cluster: the
   // refs scenario declined six voice calls in twelve on a single retry, which
   // left half the recording silent for no reason anybody could read off the page.
+  // Six, not three. These refusals are intermittent and clear on a retry far more
+  // often than not — one batch logged nine declined-then-succeeded against two
+  // that ran out of attempts. But the reading is the measurement, so running out
+  // kills the run, and a dead run costs every call already spent on it. Retrying
+  // is cheap by comparison. Still the SAME model each time: rerouting would mean
+  // comparing two readers without knowing it.
   let r = res;
-  for (let n = 0; n < 3 && r.stop_reason === "refusal"; n++) {
+  for (let n = 0; n < 6 && r.stop_reason === "refusal"; n++) {
     RETRIES++;
     r = await anthropic.beta.messages.parse({
-      model: MACHINE_MODEL, max_tokens: 1024, system,
+      model: MACHINE_MODEL, max_tokens: 8192, system,
       messages: [{ role: "user", content: user }],
       output_config: { format: betaZodOutputFormat(schema) },
     });
   }
-  if (r.stop_reason === "refusal") throw new Error("the builder declined four times");
+  if (r.stop_reason === "refusal")
+    throw new Error(`the builder declined seven times running (${r.stop_details?.category ?? "unknown"})`);
   return parsedOr(r, schema, "the builder");
 }
 
 async function machineOpenAI(system, user, schema = ReadSchema) {
-  const shape = schema === SaySchema ? `{"say": "..."}` : `{"needs": ["key", ...]}`;
+  const shape = shapeOf(schema);
   const res = await openai.chat.completions.create({
     model: OPENAI_MODEL,
     response_format: { type: "json_object" },
@@ -355,7 +684,7 @@ const MACHINES = { claude: machineClaude, openai: machineOpenAI, gemini: machine
 function violations(turn, act) {
   const out = [];
   const words = turn.say.toLowerCase().split(/\s+/).map(w => w.replace(/[^a-z0-9'-]/g, ""));
-  for (const f of FORBIDDEN) if (words.includes(f)) out.push(`you named "${f}", which is banned`);
+  for (const f of STRUCTURES) if (words.includes(f)) out.push(`you named "${f}", which is banned`);
   for (const f of turn.asserts) if (!(f in FEATURES)) out.push(`"${f}" is not one of the feature keys`);
   if (!turn.asserts.length) out.push("you asserted nothing; every sentence must mean at least one feature");
   if (turn.asserts.length > 2) out.push(`you named ${turn.asserts.length} needs; one or two only — pick what the sentence most directly says`);
@@ -364,20 +693,98 @@ function violations(turn, act) {
   return out;
 }
 
+// Same bans, minus the two rules that only exist to police a speech act nobody
+// is being held to any more.
+function violationsLoose(turn) {
+  const out = [];
+  const words = turn.say.toLowerCase().split(/\s+/).map(w => w.replace(/[^a-z0-9'-]/g, ""));
+  for (const f of FORBIDDEN) if (words.includes(f)) out.push(`you named "${f}", which is banned`);
+  const all = [...turn.asks, ...turn.refuses];
+  for (const f of all) if (!(f in FEATURES)) out.push(`"${f}" is not one of the feature keys`);
+  if (!all.length) out.push("you asked for nothing and refused nothing; every sentence must mean at least one feature");
+  if (all.length > 3) out.push(`you named ${all.length} needs across the two lists; three at most`);
+  for (const f of turn.asks) if (turn.refuses.includes(f)) out.push(`"${f}" is in both lists at once`);
+  if (turn.say.trim().split(/\s+/).length > 34) out.push("too long — one thought, said out loud, not a paragraph");
+  return out;
+}
+
+// Two calls: say it, then say what you meant. Only the FORBIDDEN check can send
+// a free line back — there is no length to violate and no speech act to breach,
+// so the retry loop that used to police the form has almost nothing left to do.
+async function speakFree(player, role, ctx, state, cfg) {
+  const cast = castFor(state.scenario, role, SEED);
+  const sys = freeSaySystem(cast.situation, cast.manner);
+  let note = "", say = "";
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    const user = userPrompt({
+      standing: CX(role).design ? NAME(CX(role).design.id) : null,
+      ownHistory: state.said[role],
+      heardHistory: state.said[role === "A" ? "B" : "A"],
+      hears: cfg.hears, turn: state.turn + 1,
+      builderSaid: state.builderSaid, echo: !!cfg.echo,
+    }) + note;
+    const out = await PLAYERS[player](sys, user, FreeSaySchema);
+    say = String(out?.say || "").trim();
+    const words = say.toLowerCase().split(/\s+/).map(w => w.replace(/[^a-z0-9'-]/g, ""));
+    const named = STRUCTURES.filter(f => words.includes(f));
+    if (say && !named.length) break;
+    state.violations.push({ role, player, attempt, say, broke: named.length ? named.map(f => `named "${f}"`) : ["said nothing"] });
+    note = `\n\nYour last attempt named ${named.join(", ") || "nothing at all"}. Say it again, differently, without naming any structure or ground.`;
+    if (attempt === 4) throw new Error(`${player} could not stop naming structures for role ${role}`);
+  }
+
+  // Now, and only now, the list.
+  const heard = state.said[role === "A" ? "B" : "A"];
+  const coded = await PLAYERS[player](codeSystem(),
+    `Your line: "${say}"` +
+    (cfg.hears && heard.length ? `\n\nThe other person's last line: "${heard[heard.length - 1]}"` : `\n\nYou have heard nothing from anybody else.`) +
+    `\n\nWhat did you mean by yours?`, CodeSchema);
+
+  // The coding call is asked for one to three keys and will happily return eight
+  // when the line is long. That is not a stylistic problem: a turn claiming eight
+  // needs at once cannot be "taken as meant" by a reader told to return two, so
+  // the reading score collapses for a reason that has nothing to do with reading.
+  // Capping content would be dictating what they may say; capping the CODING is
+  // just holding the annotation to the brief it was given.
+  let c = coded;
+  for (let n = 0; n < 3 && [...(c.asks || []), ...(c.refuses || [])].length > 3; n++) {
+    state.violations.push({ role, player, attempt: n + 1, say,
+      broke: [`coded ${[...(c.asks || []), ...(c.refuses || [])].length} keys; three at most`] });
+    c = await PLAYERS[player](codeSystem(),
+      `Your line: "${say}"\n\nYou named too many. Choose the THREE the line most directly states — the ones you` +
+      ` would still name if you had to drop the rest — and return only those.\n\nWhat did you mean by it?`, CodeSchema);
+  }
+
+  const turn = { say, asks: (c.asks || []).slice(0, 3), refuses: (c.refuses || []).slice(0, 3),
+                 done: !!c.done, tookThemToMean: c.tookThemToMean || [] };
+  // Trim from the tail if it still overran: three total, asks first.
+  turn.refuses = turn.refuses.slice(0, Math.max(0, 3 - turn.asks.length));
+  turn.asserts = [...turn.asks, ...turn.refuses];
+  // A line that means nothing buildable is a real thing for a person to say, and
+  // under free speech there is no way to send it back without dictating content.
+  return { turn, attempts: 1 };
+}
+
 async function speak(player, role, act, ctx, state, scenario, cfg) {
-  const sys = systemPrompt(role, act, scenario, SCENARIOS[state.scenario][role].situation,
-                           SCENARIOS[state.scenario][role].goal, (HATS[state.scenario] || {})[role] || "");
+  if (FREE) return speakFree(player, role, ctx, state, cfg);
+  const sys = LOOSE
+    ? (cast => looseSystemPrompt(scenario, cast.situation, cast.manner))(castFor(state.scenario, role, SEED))
+    : systemPrompt(role, act, scenario, SCENARIOS[state.scenario][role].situation,
+                   SCENARIOS[state.scenario][role].goal, (HATS[state.scenario] || {})[role] || "");
   let note = "";
   for (let attempt = 1; attempt <= 4; attempt++) {
     const user = userPrompt({
-      standing: ctx.design ? NAME(ctx.design.id) : null,
+      standing: CX(role).design ? NAME(CX(role).design.id) : null,
       ownHistory: state.said[role],
       heardHistory: state.said[role === "A" ? "B" : "A"],
       hears: cfg.hears,
       turn: state.turn + 1,
+      builderSaid: state.builderSaid,
+      echo: !!cfg.echo,
     }) + note;
-    const turn = await PLAYERS[player](sys, user);
-    const bad = violations(turn, act);
+    const turn = await PLAYERS[player](sys, user, LOOSE ? LooseTurnSchema : TurnSchema);
+    if (LOOSE) { turn.asks ||= []; turn.refuses ||= []; turn.asserts = [...turn.asks, ...turn.refuses]; }
+    const bad = LOOSE ? violationsLoose(turn) : violations(turn, act);
     if (!bad.length) return { turn, attempts: attempt };
     state.violations.push({ role, player, attempt, say: turn.say, broke: bad });
     note = `\n\nYour last attempt broke the rules: ${bad.join("; ")}. Say it again, differently, obeying every rule.`;
@@ -392,6 +799,23 @@ const argv = Object.fromEntries(process.argv.slice(2).reduce((a, v, i, arr) =>
 const scenarioKey = argv.scenario || "places";
 const caseKey = argv.case || "given";
 const maxTurns = Number(argv.turns || 16);
+// Loose goals: nobody is handed a structure to want, and both may ask and refuse.
+const LOOSE = (argv.goals || "strict") === "loose";
+// Who decides what gets built: the scoring rule, or Role 3 itself.
+const BUILDER = argv.builder || "rule";
+// Whether the two of them compose against the key list or away from it.
+const FREE = (argv.speech || "coded") === "free";
+if (argv.speech && !["coded", "free"].includes(argv.speech))
+  throw new Error(`unknown --speech: ${argv.speech} (coded | free)`);
+if (FREE && !LOOSE) throw new Error("--speech free needs --goals loose: a free line has no assigned speech act to code against");
+if (!["rule", "model"].includes(BUILDER)) throw new Error(`unknown --builder: ${BUILDER} (rule | model)`);
+// Which pair of lives this run draws. Left to the clock so repeated runs differ,
+// recorded in the session so any one of them can be had back with --seed.
+const SEED = Number.isFinite(Number(argv.seed)) && argv.seed !== undefined
+  ? Math.abs(Math.trunc(Number(argv.seed)))
+  : Math.floor(Date.now() / 1000) % 100000;
+if (argv.goals && !["strict", "loose"].includes(argv.goals))
+  throw new Error(`unknown --goals: ${argv.goals} (strict | loose)`);
 const playerA = argv.a || "openai";
 const playerB = argv.b || "claude";
 // `llm` stays as an alias for the Anthropic reader, which is what it used to mean.
@@ -404,22 +828,65 @@ const voiced = byModelUsed && argv.voice !== "off";
 let saidGroundUnknown = false;   // it should say that once, not every turn
 
 if (!SCENARIOS[scenarioKey]) throw new Error(`unknown scenario: ${scenarioKey}`);
-if (!CASES[caseKey]) throw new Error(`unknown case: ${caseKey} (given | swapped | separate)`);
+if (!CASES[caseKey]) throw new Error(`unknown case: ${caseKey} (${Object.keys(CASES).join(" | ")})`);
 
 const cfg = CASES[caseKey];
 const ctx = mkCtx();
-const state = { scenario: scenarioKey, turn: 0, said: { A: [], B: [] }, violations: [], done: { A: false, B: false } };
+// Under `alone` each of them gets their own crossing and never touches the
+// other's. Everywhere else the two of them build one thing together.
+const side = { A: mkCtx(), B: mkCtx() };
+const CX = role => CASES[caseKey].solo ? side[role] : ctx;
+const state = { scenario: scenarioKey, turn: 0, said: { A: [], B: [] }, violations: [], done: { A: false, B: false },
+                builderSaid: [] };
 const transcript = [];
 
-console.log(`\n  ${SCENARIOS[scenarioKey].blurb}`);
-console.log(`  ${cfg.label} — role 1 ${LEAD[cfg.A]}… (${playerA}), role 2 ${LEAD[cfg.B]}… (${playerB})`);
-console.log(`  ${cfg.hears ? "One room: each can hear the other." : "Apart: neither knows the other exists."}`);
-console.log(`  Role 3 reads what they say with ${READERS[reader]}. Nobody tells it what they meant.\n`);
+console.log(`\n  ${(LOOSE ? LOOSE_SCENARIOS : SCENARIOS)[scenarioKey].blurb}`);
+console.log(LOOSE
+  ? `  ${cfg.label} — loose goals, seed ${SEED} (role 1 ${cfg.swapPlayers ? playerB : playerA}, role 2 ${cfg.swapPlayers ? playerA : playerB})`
+    + `\n  role 1: ${castFor(scenarioKey, "A", SEED).situation}`
+    + `\n  role 2: ${castFor(scenarioKey, "B", SEED).situation}`
+  : `  ${cfg.label} — role 1 ${LEAD[cfg.A]}… (${playerA}), role 2 ${LEAD[cfg.B]}… (${playerB})`);
+console.log(`  ${cfg.hears ? "One room: each can hear the other." : "Apart: neither knows the other exists."}`
+  + (cfg.echo ? " Role 3 answers, and they hear that too." : " Role 3 is not heard: they see only what stands."));
+// `reply` with no voice would be the return channel with nothing in it, which
+// would read as a null result rather than as a misconfiguration.
+if (cfg.echo && !voiced) throw new Error("--case reply needs Role 3's voice: drop --voice off, and do not use --machine keyword");
+console.log(`  Role 3 reads what they say with ${READERS[reader]}. Nobody tells it what they meant.`);
+if (FREE) console.log(`  They speak with no key list in front of them; what they meant is asked of them afterwards.`);
+console.log(BUILDER === "model"
+  ? `  Role 3 also chooses what to build. The scoring rule runs alongside, to be compared against.\n`
+  : `  What gets built is the rule's, not Role 3's — so every difference is a difference in hearing.\n`);
+
+// They talk it over first, with nobody building and nothing to react to. None of
+// this reaches Role 3 — that is the whole case: rich two-way talk, then one
+// narrow pipe, and the measurement is what survives the squeeze.
+if (cfg.confer) {
+  const conferTurns = Math.max(2, Number(argv.confer || 6));
+  console.log(`  --- they talk it over, ${conferTurns} turns, with the builder out of the room ---`);
+  PHASE = "confer";
+  for (let i = 0; i < conferTurns; i++) {
+    const role = i % 2 === 0 ? "A" : "B";
+    const swap = LOOSE && cfg.swapPlayers;
+    const player = (role === "A") === !swap ? playerA : playerB;
+    const { turn } = await speak(player, role, cfg[role], ctx, state, scenarioKey, cfg);
+    const sentence = turn.say.trim();
+    state.said[role].push(sentence);
+    state.turn++;
+    transcript.push({ turn: state.turn, who: role, player, act: cfg[role], text: sentence,
+                      phase: "confer", meant: turn.asserts, asserts: turn.asserts,
+                      tookThemToMean: (turn.tookThemToMean || []).filter(f => f in FEATURES),
+                      taken: [], byWord: null, byModel: null, caught: null });
+    console.log(`  ${String(state.turn).padStart(2)} role ${role === "A" ? 1 : 2} (${player}) · to each other: ${sentence}`);
+  }
+  PHASE = "pact";
+  console.log(`  --- and now, one thing each, to the builder ---`);
+}
 
 for (let i = 0; i < maxTurns; i++) {
   const role = i % 2 === 0 ? "A" : "B";
   const act = cfg[role];
-  const player = role === "A" ? playerA : playerB;
+  const swap = LOOSE && cfg.swapPlayers;
+  const player = (role === "A") === !swap ? playerA : playerB;
 
   const { turn, attempts } = await speak(player, role, act, ctx, state, scenarioKey, cfg);
   const sentence = turn.say.trim();
@@ -433,21 +900,58 @@ for (let i = 0; i < maxTurns; i++) {
   state.turn++;
 
   // Both readers see the sentence. Only the chosen one gets to build with it.
-  const byWord = readKeyword(sentence);
-  const byModel = byModelUsed ? await readLLM(sentence, MACHINES[reader]) : null;
+  // Under strict goals the role's speech act supplies the stance and the reader
+  // only has to name the need. Under loose goals it has to hear both, which is
+  // the harder half and the half this is actually about.
+  const byWordRaw  = LOOSE ? readLooseKeyword(sentence) : readKeyword(sentence);
+  const byModelRaw = byModelUsed
+    ? (LOOSE ? await readLooseLLM(sentence, (sys, usr) => MACHINES[reader](sys, usr, LooseReadSchema))
+             : await readLLM(sentence, MACHINES[reader]))
+    : null;
+  const flat = r => (LOOSE ? [...r.asks, ...r.refuses] : r);
+  const byWord  = flat(byWordRaw);
+  const byModel = byModelRaw && flat(byModelRaw);
+  const heardRaw = byModelRaw || byWordRaw;
   const taken = byModel || byWord;
 
-  const heardBefore = new Set([...ctx.wants.keys(), ...ctx.avoids.keys()]);
-  hear(ctx, role, act, taken);
-  const before = ctx.design?.id ?? null;
-  build(ctx);
-  const after = ctx.design.id;
+  const cx = CX(role);
+  const heardBefore = new Set([...cx.wants.keys(), ...cx.avoids.keys()]);
+  if (LOOSE) { hear(cx, role, "want", heardRaw.asks); hear(cx, role, "avoid", heardRaw.refuses); }
+  else hear(cx, role, act, taken);
+  const before = cx.design?.id ?? null;
+  build(cx);                         // always scored, so the two can be compared
+  const byRule = cx.design.id;
+  if (BUILDER === "model") {
+    // The rule has already run and set ctx.design. If Role 3 picks something
+    // else that replaces it, and the difference is the measurement.
+    const chose = await chooseLLM({
+      kit: KIT.map(k => ({ id: NAME(k.id), props: k.has.map(f => FEATURES[f]).join("; ") })),
+      wants: [...cx.wants.keys()], avoids: [...cx.avoids.keys()],
+      standing: before ? NAME(before) : null,
+      // The talk itself, in order — including the confer half, which is where
+      // the two of them worked out what they could both live with.
+      said: transcript.filter(t => t.who === "A" || t.who === "B")
+        .map(t => ({ who: t.who === "A" ? "Role 1" : "Role 2", text: t.text })),
+    }, (sys, usr) => MACHINES[reader](sys, usr, ChooseSchema));
+    const picked = chose && KIT.find(k => NAME(k.id) === chose);
+    if (picked) cx.design = picked;
+    state.chosen = (state.chosen || 0) + 1;
+    if (cx.design.id !== byRule) {
+      state.diverged = (state.diverged || 0) + 1;
+      console.log(`     · Role 3 chose ${NAME(cx.design.id)}; the rule would have laid ${NAME(byRule)}`);
+    }
+  }
+  const after = cx.design.id;
 
-  const caught = turn.asserts.every(f => taken.includes(f)) && taken.length > 0;
+  const caught = turn.asserts.length > 0 && turn.asserts.every(f => taken.includes(f)) && taken.length > 0;
   const anyOf = turn.asserts.some(f => taken.includes(f));
   transcript.push({ turn: state.turn, who: role, player, act, text: sentence,
                     meant: turn.asserts, taken, byWord, byModel, caught, anyOf, done: !!turn.done,
                     tookThemToMean: (turn.tookThemToMean || []).filter(f => f in FEATURES),
+                    ...(LOOSE ? { meantAsks: turn.asks, meantRefuses: turn.refuses,
+                                  takenAsks: heardRaw.asks, takenRefuses: heardRaw.refuses,
+                                  stanceKept: turn.asks.every(f => !heardRaw.refuses.includes(f))
+                                           && turn.refuses.every(f => !heardRaw.asks.includes(f)) } : {}),
                     theyActuallyMeant: state.lastMeant[role === "A" ? "B" : "A"] || [],
                     invented: taken.filter(f => !turn.asserts.includes(f)),
                     asserts: turn.asserts,      // kept under the old name for the page
@@ -460,13 +964,13 @@ for (let i = 0; i < maxTurns; i++) {
   // Only now, with the reading committed and the thing rebuilt, does it speak.
   let saidByMachine = "";
   if (voiced) try {
-    const groundKnown = ctx.world.water || ctx.world.rock;
+    const groundKnown = cx.world.water || cx.world.rock;
     const tellGround = !groundKnown && !saidGroundUnknown;
     saidByMachine = await speakLLM({
       said: sentence, took: taken, before: before ? NAME(before) : null, after: NAME(after),
       changed: before !== after,
       props: KIT.find(k => k.id === after)?.has ?? [], made: MADE(after),
-      wants: [...ctx.wants.keys()], avoids: [...ctx.avoids.keys()],
+      wants: [...cx.wants.keys()], avoids: [...cx.avoids.keys()],
       tellGround,
     }, (sys, usr) => MACHINES[reader](sys, usr, SaySchema));
     if (tellGround) saidGroundUnknown = true;
@@ -480,8 +984,12 @@ for (let i = 0; i < maxTurns; i++) {
     state.mute = (state.mute || 0) + 1;
     console.log(`     (the machine said nothing this turn — ${e.message})`);
   }
+  // A silent turn puts nothing into the channel, which is the honest thing: a
+  // refused voice call is a reply that never arrived, not an empty one.
+  if (saidByMachine) state.builderSaid.push(saidByMachine);
   transcript.push({ who: "machine", turn: state.turn, text: NAME(after), say: saidByMachine,
-                    changed: before !== after, taken });
+                    changed: before !== after, taken,
+                    ...(CASES[caseKey].solo ? { side: role } : {}) });
 
   state.still = before === after ? (state.still || 0) + 1 : 0;
   if (before !== after) state.lastMoved = state.turn;
@@ -495,6 +1003,13 @@ for (let i = 0; i < maxTurns; i++) {
   const fresh = taken.some(f => !heardBefore.has(f));
   state.stale = fresh ? 0 : (state.stale || 0) + 1;
 
+  // In `together` they get one line each to the builder and then they are done:
+  // the position was settled in the other room, and anything further would be
+  // them reopening it on their own account.
+  if (cfg.confer && i >= 1) {
+    state.endedBy = "both had their one line after conferring";
+    break;
+  }
   if (state.done.A && state.done.B) { state.endedBy = "both let it rest"; break; }
   if (state.stale >= 4 && state.still >= 4 && state.turn >= 8) {
     state.endedBy = "they ran out of new things to say and it had stopped mattering";
@@ -503,25 +1018,49 @@ for (let i = 0; i < maxTurns; i++) {
 }
 
 /* ── what it came to ──────────────────────────────────────────────────── */
-const prov = provenance(ctx);
+const SOLO = !!CASES[caseKey].solo;
+const main = SOLO ? side.A : ctx;
+const prov = provenance(main);
 const led = ledger(transcript);
 const unspoken = prov.total - prov.named;
 
 // How much of what was asked for ever reached the builder.
-const said = transcript.filter(t => t.who === "A" || t.who === "B");
+// What Role 3 was actually given. Turns from the confer half are excluded on
+// purpose: the builder was out of the room for those, and scoring it on
+// sentences it never received would make `together` look catastrophically deaf
+// for no reason except that most of the talking happened elsewhere.
+const said = transcript.filter(t => (t.who === "A" || t.who === "B") && t.phase !== "confer");
+const conferred = transcript.filter(t => t.phase === "confer");
 const caughtN = said.filter(t => t.caught).length;
 const someN = said.filter(t => t.anyOf).length;
 const inventedN = said.reduce((n, t) => n + t.invented.length, 0);
 const deafN = said.filter(t => !t.taken.length).length;
 const agreed = said.filter(t => t.byModel && t.byWord.join() === t.byModel.join()).length;
 
-console.log(`\n  ${NAME(ctx.design.id)} is standing, over ${groundOf(ctx)}.`);
+console.log(SOLO
+  ? `\n  Two crossings. Role 1 got ${NAME(side.A.design.id)} over ${groundOf(side.A)};`
+    + ` Role 2 got ${NAME(side.B.design.id)} over ${groundOf(side.B)}.`
+    + (side.A.design.id === side.B.design.id
+        ? ` They arrived at the same thing without ever hearing each other.`
+        : ` Neither would recognise the other's.`)
+  : `\n  ${NAME(ctx.design.id)} is standing, over ${groundOf(ctx)}.`);
 console.log(`  It ended after ${state.turn} turns — ${state.endedBy || "the turn cap ran out, mid-argument"}.`);
 if (state.lastMoved) console.log(`  The last turn that changed anything was ${state.lastMoved}; everything after it was talk.`);
 console.log(`  Role 3 took ${caughtN} of ${said.length} sentences as they were meant, and got some part of ${someN}.`);
 if (deafN) console.log(`  ${deafN} passed it by entirely.`);
 if (inventedN) console.log(`  They credited the two of them with ${inventedN} need${inventedN === 1 ? "" : "s"} neither of them stated.`);
 if (byModelUsed) console.log(`  The word list would have agreed with it on ${agreed} of ${said.length}.`);
+if (LOOSE) {
+  // Under strict goals the role handed Role 3 the stance for free. Here it had to
+  // hear it, and getting the need right while getting asked-vs-refused backwards
+  // is the exact failure Reddy describes — so it is counted on its own.
+  const withStance = said.filter(t => t.stanceKept !== undefined);
+  const kept = withStance.filter(t => t.stanceKept).length;
+  const flipped = withStance.filter(t => !t.stanceKept).length;
+  console.log(`  Stance: kept on ${kept} of ${withStance.length}; ${flipped} had asking and refusing the wrong way round.`);
+}
+if (BUILDER === "model" && state.chosen)
+  console.log(`  Role 3 chose against the rule on ${state.diverged || 0} of ${state.chosen} turns.`);
 console.log(`  ${unspoken} of ${prov.total} of its properties were never put into words by either of them.`);
 console.log(`  ${led.spoken} words spoken; Role 3's whole vocabulary for this run was ${ctx.wants.size + ctx.avoids.size} features.`);
 if (state.violations.length) console.log(`  ${state.violations.length} turns broke the rules and were sent back.`);
@@ -533,15 +1072,28 @@ const session = {
   meta: { scenario: scenarioKey, case: caseKey, label: CASES[caseKey].label,
           players: { A: playerA, B: playerB }, machine: reader, machineIsModel: byModelUsed,
           models: { claude: CLAUDE_MODEL, openai: OPENAI_MODEL, gemini: GEMINI_MODEL, machine: MACHINE_MODEL },
+    goals: LOOSE ? "loose" : "strict",
+    // Was missing, so a free-speech run and a coded one were indistinguishable
+    // once written to disk — which made "which of these is the new design?"
+    // unanswerable without reading the transcripts.
+    speech: FREE ? "free" : "coded",
+    builder: BUILDER,
+    seed: LOOSE ? SEED : null,
+    cast: LOOSE ? { A: castFor(scenarioKey, "A", SEED), B: castFor(scenarioKey, "B", SEED) } : null,
           turns: state.turn, endedBy: state.endedBy || "turn cap", lastMoved: state.lastMoved || null,
           ranAt: new Date().toISOString() },
   goals: { A: SCENARIOS[scenarioKey].A.goal, B: SCENARIOS[scenarioKey].B.goal },
   transcript,
-  outcome: { built: ctx.design.id, name: NAME(ctx.design.id), ground: groundOf(ctx) },
+  outcome: SOLO
+    ? { built: side.A.design.id, name: NAME(side.A.design.id), ground: groundOf(side.A),
+        solo: true,
+        builtB: side.B.design.id, nameB: NAME(side.B.design.id), groundB: groundOf(side.B),
+        agreed: side.A.design.id === side.B.design.id }
+    : { built: ctx.design.id, name: NAME(ctx.design.id), ground: groundOf(ctx) },
   ending: { turns: state.turn, endedBy: state.endedBy || "turn cap",
             lastMoved: state.lastMoved || null,
             keptTalking: state.lastMoved ? state.turn - state.lastMoved : state.turn },
-  reading: { said: said.length, caught: caughtN, partly: someN, invented: inventedN, deaf: deafN, mute: state.mute || 0, retries: RETRIES,
+  reading: { said: said.length, conferred: conferred.length, caught: caughtN, partly: someN, invented: inventedN, deaf: deafN, mute: state.mute || 0, retries: RETRIES,
              wordListAgreed: byModelUsed ? agreed : null },
   provenance: prov,
   ledger: led,

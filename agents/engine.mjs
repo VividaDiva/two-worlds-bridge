@@ -41,9 +41,24 @@ export const FEATURES = {
 };
 
 // Nobody may say any of these. Checked on every generated line.
-export const FORBIDDEN = ("water stream river brook creek boat wade waded mountain cleft rock ridge hill hillside " +
-  "gorge canyon cliff chasm log plank bridge rail handrail tower towers cable cables rope prop props post posts " +
+// The ban exists so nobody can SPECIFY THE DESIGN — the whole problem is having
+// to describe an experience and let somebody else reconstruct a thing from it.
+// It had swept up eighteen words for the ground as well, so the two of them were
+// forbidden to say where they were standing. Then 82% of runs ended over "ground
+// nobody has described" and that got written up as a finding, when it was a rule.
+//
+// Structures stay banned. Ground does not: where you are is your situation, not
+// your design, and a person who cannot mention the water they cross every day is
+// not speaking freely by any reading of the word.
+export const STRUCTURES = ("log plank bridge rail handrail tower towers cable cables rope prop props post posts " +
   "trestle beam deck timber frame span walkway footbridge").split(" ");
+
+export const GROUND = ("water stream river brook creek boat wade waded mountain cleft rock ridge hill hillside " +
+  "gorge canyon cliff chasm").split(" ");
+
+// Kept so anything still importing it keeps working; new code should use
+// STRUCTURES, which is what is actually enforced now.
+export const FORBIDDEN = STRUCTURES;
 
 export const W_WANT = 2, W_AVOID = 4;
 
@@ -78,8 +93,26 @@ export function build(ctx) {
     }
     return { k, s };
   }).sort((x, y) => y.s - x.s || KIT.indexOf(x.k) - KIT.indexOf(y.k));
-  ctx.design = scored[0].k;
-  return { chosen: scored[0], ranked: scored };
+
+  // Ties used to be settled by position in KIT, which is to say by nothing.
+  // A quarter of all runs ended tied at the top, and five in seven of those were
+  // handed to whatever sits at index 0 — the bare log. List order, not anything
+  // anybody said, was the commonest single cause of the outcome.
+  //
+  // Two rules replace it, in order. A builder with nothing to gain does not tear
+  // down and re-lay, so what is already standing keeps standing on a tie. On the
+  // first build there is no incumbent, so prefer the structure the conversation
+  // has actually been about — the one with most of its properties named out
+  // loud. KIT order remains underneath as a last resort, and now decides almost
+  // nothing.
+  const top = scored[0].s;
+  const tied = scored.filter(r => r.s === top);
+  const named = k => k.has.filter(f => ctx.namedBy.has(f)).length;
+  const held = ctx.design && tied.find(r => r.k === ctx.design);
+  const pick = held || tied.slice().sort((x, y) => named(y.k) - named(x.k))[0];
+
+  ctx.design = pick.k;
+  return { chosen: pick, ranked: scored };
 }
 
 // Of the properties the built thing actually has, which were ever put into words?

@@ -35,11 +35,18 @@ const keep = s => ({
   reading: s.reading,
   transcript: (s.transcript || [])
     .filter(t => t.who === "A" || t.who === "B" || (t.who === "machine" && t.say))
+    // `phase` and `side` were being dropped, which made two of the five cases
+    // unrenderable: without `phase` the page cannot tell the confer half of a
+    // `together` run from the two lines that actually reached the builder, and
+    // without `side` an `alone` run's two separate crossings collapse into one
+    // stream of builder turns.
     .map(t => t.who === "machine"
-      ? { turn: t.turn, who: "machine", text: t.text, say: t.say, changed: !!t.changed }
+      ? { turn: t.turn, who: "machine", text: t.text, say: t.say, changed: !!t.changed,
+          ...(t.side ? { side: t.side } : {}) }
       : { turn: t.turn, who: t.who, player: t.player, text: t.text,
           meant: t.meant || t.asserts || [], taken: t.taken || [],
-          byWord: t.byWord || null, byModel: t.byModel || null }),
+          byWord: t.byWord || null, byModel: t.byModel || null,
+          ...(t.phase ? { phase: t.phase } : {}) }),
 });
 
 let sessions = [];

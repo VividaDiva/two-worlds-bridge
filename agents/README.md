@@ -34,7 +34,9 @@ node --env-file=.env run.mjs --scenario places --case given --machine llm
 | Flag | Values | Default |
 |---|---|---|
 | `--scenario` | `places` · `loads` · `refs` | `places` |
-| `--case` | `given` · `swapped` · `separate` | `given` |
+| `--case` | `given` · `swapped` · `separate` · `reply` | `given` |
+| `--goals` | `strict` · `loose` — whether either of them is told what to want | `strict` |
+| `--seed` | which pair of lives a loose run draws | the clock |
 | `--machine` | `claude` · `openai` · `gemini` · `keyword` — who reads what the builder is told | `claude` |
 | `--turns` | how many turns to run | `16` |
 | `--a` / `--b` | `openai` · `claude` · `gemini` — who plays which role | `openai` / `claude` |
@@ -57,6 +59,116 @@ That is a complete run — two model participants and a model reading them. It i
 weaker evidence than two providers, because both arguers share a set of habits
 and a way of hearing, so a misreading they agree on might be a house style rather
 than a property of the channel. Worth knowing, not worth waiting for.
+
+## Why it kept building the same log
+
+Twelve of twenty-seven runs came out a single log, and the obvious suspects were
+all innocent. Three things were measured and none of them was the cause:
+
+- **The tiebreak.** A quarter of runs ended in an exact tie at the top, settled
+  by position in `KIT` — which is to say by nothing. Worth fixing, and fixed
+  (what stands stays standing on a tie; on the first build, the structure whose
+  properties have most been talked about). It moves the log from 12 to 10.
+- **The refusal weight.** `W_AVOID` at twice `W_WANT` looked like it must be
+  stripping richer structures back to the bare one. Replaying every run at
+  `-3`, `-2`, `-1` and `0` gives 11 or 12 logs every time. It is not the weights.
+- **The kit.** All six structures carry three to five properties. Nothing is
+  penalised for being elaborate.
+
+What it actually was: **`minimal` was asserted 124 times across 27 runs, more
+than any other need in the list, and exactly one structure in the kit has it.**
+Every one of those went to the single log and nowhere else.
+
+And `minimal` was asserted that often because the briefs said to. `places`
+opened *"Both of you want one log across"* and handed each of them "a single log"
+as their private goal; `loads` gave Role 1 "a plain log to walk over". Two of the
+three scenarios named the answer in the question. `refs` — the one that names no
+structure — is the one that produced the varied outcomes.
+
+So the convergence was never the machine, the rule, or the kit. It was two people
+doing as they were told, and a scoring rule faithfully reporting it.
+
+## Loose goals
+
+`--goals loose` takes the answer out of the question. Each role gets a place to
+stand and something at stake in it, and no idea what the thing should be. Neither
+is told to want a structure, because there is no structure in their brief to want.
+
+It also drops the strict speech acts. Under `strict`, one of them may only ask
+and the other may only refuse — which quietly handed Role 3 the stance for free:
+it was told by the role assignment whether a sentence was a request or a
+refusal, and only ever had to name the need. That is a large thing to give away
+in a study about stance being what the channel loses. Under `loose` either of
+them may ask, refuse, or do both in one breath, and **Role 3 has to recover the
+stance from the words**, like everything else.
+
+That is measured on its own line:
+
+    Stance: kept on 14 of 14; 0 had asking and refusing the wrong way round.
+
+The word list has no notion of stance at all — the best it can do is look for a
+negation anywhere in the sentence and throw everything to one side. It is meant
+to be bad at this; how bad is the measurement.
+
+Gemini is not wired for a loose chair yet (its JSON schemas are hand-written and
+only the strict turn shape has one); it refuses rather than quietly returning a
+turn with no stance in it. It still works as `--machine`.
+
+### A scenario is a tension, not a cast
+
+Loosening the goals was only half of it. The briefs still described the same two
+people every single run. `loads` was always a pedestrian against a cart, so
+`heavy` was settled before anybody opened their mouth, and every run of a
+scenario was a re-enactment of it rather than an instance of it.
+
+Each role now draws one life from a pool of four. `loads` is "two people who do
+not arrive carrying the same thing" — and which two depends on the seed:
+
+    seed 1   role 1: You carry your tools over on your back every working morning.
+             role 2: You bring a loaded cart through daily. In winter the ground goes soft.
+    seed 3   role 1: Twice a year you drive a flock across, and they will not go one at a time.
+             role 2: You lead a horse across, and it will not set foot on anything that moves.
+
+Sixteen pairings per scenario, forty-eight in all, and consecutive seeds walk the
+whole grid rather than sliding both roles along together — an offset was the
+first attempt and it only ever reached four of the sixteen. Every run records its
+seed, so any pairing can be had back exactly.
+
+The situations describe a life and a stake. None of them says what to build.
+
+## The return channel
+
+For a long time this had a hole in it, and it is worth naming because the hole
+was the interesting part.
+
+Role 3 spoke every turn. Nobody heard it. What reached Role 1 and Role 2 was the
+*name* of what stood — "A single log" — and their own and each other's lines.
+The sentence Role 3 composed went into the recording and nowhere else. Two people
+were arguing at an object that never answered.
+
+That is not Reddy. His toolmakers are in separate sectors and cannot visit each
+other, but they do get answers back through the hub, and the convergence he
+describes comes **from** that channel. Leaving it out was a choice, so `--case
+reply` is the control for it: identical to `given` in every respect but one —
+what Role 3 says comes back to them.
+
+It changes what the two of them do. They stop describing what they want and start
+arguing with what they have been told:
+
+> **Role 3** · The single log stays as it is … It moves when the wind gets up, and I have laid nothing to stop that.
+> **Role 2** · Whatever they'd hammer in to stop that shifting will only rot and shear in the wet — Wilkin's gate went that way in February.
+> **Role 1** · Could you ensure it stays steady even if we don't add anything new to it?
+
+Role 1 is now negotiating against a constraint Role 3 stated, which is a move
+that does not exist in the other three cases.
+
+Keep the other three. The comparison is the finding, not this case on its own —
+and the question it puts is whether a return channel actually recovers the
+speaker's stance, or only makes everyone feel better understood while the same
+misreadings go on being built.
+
+`reply` requires Role 3's voice, so it refuses `--voice off` and
+`--machine keyword` rather than running a channel with nothing in it.
 
 ## What is fixed and what is not
 
