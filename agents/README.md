@@ -94,6 +94,46 @@ That is the number a language model has to beat, and the more interesting
 question is not whether it beats it but *whether it fails on the same sentences*.
 Add `--misses` to see every one the word list gets backwards.
 
+## What thirteen runs of one case say
+
+Thirteen runs of `loads --case given`, two OpenAI participants, an OpenAI
+machine reading them. The same brief every time:
+
+| | |
+|---|---|
+| what got built | **braced walkway 4** · single log 4 · log on a prop 3 · timber trestle 1 · handrail 1 |
+| ground | **13 of 13 ended over "ground nobody has described"** |
+| machine took as meant | median **7 of 14**, range 2–11 |
+| the word list would have agreed | median **3 of 14**, range 1–6 |
+| sentences that passed it by entirely | median 1 |
+| needs credited to them that neither stated | median **4**, up to 9 |
+| turns sent back for breaking the rules | 54 across 13 runs |
+
+**Five different crossings out of one brief.** Not because anybody changed their
+mind — the two of them want the same things every run — but because which words
+they happened to use changed what the builder took, and the top structures are
+within a few points of each other.
+
+**Nobody ever said where they were standing.** Thirteen runs, fourteen turns
+each, two people describing what they need, and not once did the ground get
+established. It is the one thing the machine says, unprompted, that it does not
+know.
+
+**The word list and the model agree on 3 of 14 sentences.** They are not two
+approximations of the same reading. They are two different readings, and the
+crude one is wrong far more often — which is what makes "the conduit loses your
+stance" a property of shallow reading rather than of machines in the middle.
+
+Reproduce with:
+
+```bash
+for i in $(seq 1 10); do node --env-file=.env run.mjs --scenario loads --case given \
+  --machine openai --a openai --b openai --voice off --turns 14; done
+```
+
+`--voice off` skips the machine's spoken line, which is a second call per turn
+and only there to be read. Leave it on for runs you intend to put in the page.
+
 ## One run proves nothing
 
 Two model participants make every run different in ways you do not control. A
