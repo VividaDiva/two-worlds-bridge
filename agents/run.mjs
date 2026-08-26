@@ -128,7 +128,12 @@ const gemini = () => (_gem ||= new GoogleGenAI({ apiKey: process.env.GEMINI_API_
 const CLAUDE_MODEL = process.env.CLAUDE_MODEL || "claude-opus-5";
 const MACHINE_MODEL = process.env.MACHINE_MODEL || "claude-opus-5";
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o";
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+// Checked against live calls, not remembered. gemini-2.5-flash 404s for new keys
+// and the API names its replacement in the error; gemini-3.6-flash then allows
+// twenty requests a DAY on the free tier, which one ten-turn run exhausts. The
+// lite model has its own allowance and is plenty for reading one sentence at a
+// time — which is all this asks of it.
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-flash-lite-latest";
 
 async function askClaude(system, user) {
   // Opus 5 runs adaptive thinking when `thinking` is omitted.
@@ -169,9 +174,35 @@ async function askOpenAI(system, user) {
 // is fussier about what it accepts than a converter's output tends to be, and the
 // shapes are two fields between them.
 const JSON_SCHEMAS = new Map();
+// The free tier allows five requests a minute and a ten-turn run wants ten, so
+// a batch will hit the limit. The API says how long to wait in the error, so
+// wait that long rather than guessing or giving up: a run takes a couple of
+// minutes instead of failing.
+const wait = ms => new Promise(r => setTimeout(r, ms));
+let PAUSED = 0;
+async function generateWithBackoff(req, tries = 6) {
+  for (let n = 1; ; n++) {
+    try { return await gemini().models.generateContent(req); }
+    catch (e) {
+      const msg = e?.message || String(e);
+      // A per-minute limit is worth waiting out. A per-day one is not: the API
+      // asks for a 0s retry because there is nothing to wait for until tomorrow.
+      if (e?.status === 429 && /PerDay/.test(msg))
+        throw new Error(`Gemini's daily free-tier quota for ${GEMINI_MODEL} is used up. `
+          + `Try GEMINI_MODEL=gemini-2.5-flash-lite, or come back tomorrow, or enable billing.`);
+      if (e?.status !== 429 || n >= tries) throw e;
+      const asked = Number((msg.match(/"retryDelay":\s*"(\d+(?:\.\d+)?)s"/) || [])[1]);
+      const ms = Math.ceil(((Number.isFinite(asked) ? asked : 0) || 2 ** n) * 1000) + 500;
+      PAUSED += ms;
+      process.stdout.write(`     (rate limit — waiting ${Math.round(ms / 1000)}s)\n`);
+      await wait(ms);
+    }
+  }
+}
+
 function askGeminiWith(shape) {
   return async (system, user) => {
-    const res = await gemini().models.generateContent({
+    const res = await generateWithBackoff({
       model: GEMINI_MODEL,
       contents: user,
       config: { systemInstruction: system, responseMimeType: "application/json", responseJsonSchema: shape.json },
@@ -399,6 +430,7 @@ console.log(`  ${unspoken} of ${prov.total} of its properties were never put int
 console.log(`  ${led.spoken} words spoken; the machine's whole vocabulary for this run was ${ctx.wants.size + ctx.avoids.size} features.`);
 if (state.violations.length) console.log(`  ${state.violations.length} turns broke the rules and were sent back.`);
 if (RETRIES) console.log(`  ${RETRIES} calls were declined once and succeeded on a retry.`);
+if (PAUSED) console.log(`  ${Math.round(PAUSED / 1000)}s of this run was spent waiting on a rate limit.`);
 if (state.mute) console.log(`  ${state.mute} turns the machine had nothing to say — declined twice.`);
 
 const session = {
