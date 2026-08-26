@@ -61,6 +61,31 @@ const CASES = {
 
 const LEAD = { want: "I want", avoid: "I do not want" };
 
+// A hat each. Both chairs used to get one instruction between them — "speak like
+// a person, plain words, one thought" — and produced one voice in two costumes:
+// four sentences running "I want something that…", none of them standing
+// anywhere. Somebody with a life says different things.
+const HATS = {
+  places: {
+    A: `You cross on foot most days and you are usually late. You are brisk, a little impatient, and you do not
+        explain yourself twice. You talk about your feet, the time, the weather this week.`,
+    B: `You live beside the drop and you have watched things fall into it. You are careful and you say why. You
+        mention the wind, the season, what happened to somebody else.`,
+  },
+  loads: {
+    A: `You walk it, carrying nothing, and you resent fuss. Short sentences. You think most of this is overthought
+        and you say so by talking about how simple your own crossing is.`,
+    B: `You bring a loaded cart through daily and you have been fobbed off before. You are dry, specific, and you
+        cite the year, the mud, the axle. You know what "it'll do" costs.`,
+  },
+  refs: {
+    A: `You grew up beside a famous crossing and you assume everybody can picture it. You gesture, you compare,
+        you are faintly proud. You say "you know the one" as if that settles it.`,
+    B: `You grew up beside a different famous crossing and you also assume everybody can picture it. You are warm
+        and certain and describe it as though from a postcard you are holding.`,
+  },
+};
+
 /* ── the ask ──────────────────────────────────────────────────────────── */
 const TurnSchema = z.object({
   say: z.string().describe("The rest of the sentence, following the fixed opening. Spoken, plain, no more than about twenty words."),
@@ -77,21 +102,26 @@ const SaySchema = z.object({
   say: z.string().describe("One or two plain sentences. What you made of it and what you did."),
 });
 
-function systemPrompt(role, act, scenario, situation, goal) {
+function systemPrompt(role, act, scenario, situation, goal, hat) {
   return [
-    `You are one of two people trying to get a crossing built. A machine will build it. You are not the machine.`,
+    `You are one of two people trying to get a crossing built. A third person will build it. You are not them.`,
     ``,
+    `Who you are: ${hat}`,
     `Your situation: ${situation}`,
     `What you actually want, and may NEVER say aloud: ${goal}`,
     ``,
     `RULES, all of them absolute:`,
-    `1. Every sentence you say begins "${LEAD[act]}" — that opening is added for you, so return only what follows it.`,
+    `1. Write the whole sentence yourself, in your own voice. There is no fixed opening and no form to fill in.`,
+    `   Say it the way the person described above would say it, out loud, to somebody in the room.`,
     act === "want"
-      ? `2. You may only ask for things. You may never refuse or rule anything out.`
-      : `2. You may only refuse things. You may never ask for anything, and you may never negate an absence to smuggle in a request (no "I do not want it without X").`,
+      ? `2. You may only ASK. Everything you say is something you want to happen or to be able to do. You may never`
+        + ` refuse, rule out, object to or complain about anything. No "not", no "don't", no "never".`
+      : `2. You may only REFUSE. Everything you say is something you will not have, cannot live with, or object to.`
+        + ` You may never ask for anything, and you may never negate an absence to smuggle a request in`
+        + ` (no "I won't have it without a rail"). Complaining is refusing; asking dressed as complaint is not.`,
     `3. You may NEVER name a structure or a kind of ground. These words are banned: ${FORBIDDEN.join(", ")}.`,
     `   Describe your situation and what you need from it. Say what would happen to you, not what should be built.`,
-    `4. Speak like a person, not a specification. Contractions, plain words, one thought.`,
+    `4. One thought, said out loud. Under about thirty words. Do not begin the way you began last time.`,
     ``,
     // A refuser kept declaring the need it would prefer instead of the one it
     // was naming — "I do not want it to sway" filed as steady, not sways. That
@@ -295,13 +325,15 @@ function violations(turn, act) {
   for (const f of FORBIDDEN) if (words.includes(f)) out.push(`you named "${f}", which is banned`);
   for (const f of turn.asserts) if (!(f in FEATURES)) out.push(`"${f}" is not one of the feature keys`);
   if (!turn.asserts.length) out.push("you asserted nothing; every sentence must mean at least one feature");
-  if (/^i (want|do not want|don't want)\b/i.test(turn.say)) out.push("do not repeat the opening; return only what follows it");
+  if (turn.asserts.length > 2) out.push(`you named ${turn.asserts.length} needs; one or two only — pick what the sentence most directly says`);
+  if (turn.say.trim().split(/\s+/).length > 34) out.push("too long — one thought, said out loud, not a paragraph");
   if (act === "avoid" && /\bwithout\b/i.test(turn.say)) out.push('no "without" — that negates an absence to smuggle in a request');
   return out;
 }
 
 async function speak(player, role, act, ctx, state, scenario, cfg) {
-  const sys = systemPrompt(role, act, scenario, SCENARIOS[state.scenario][role].situation, SCENARIOS[state.scenario][role].goal);
+  const sys = systemPrompt(role, act, scenario, SCENARIOS[state.scenario][role].situation,
+                           SCENARIOS[state.scenario][role].goal, (HATS[state.scenario] || {})[role] || "");
   let note = "";
   for (let attempt = 1; attempt <= 4; attempt++) {
     const user = userPrompt({
@@ -357,7 +389,7 @@ for (let i = 0; i < maxTurns; i++) {
   const player = role === "A" ? playerA : playerB;
 
   const { turn, attempts } = await speak(player, role, act, ctx, state, scenarioKey, cfg);
-  const sentence = `${LEAD[act]} ${turn.say}`;
+  const sentence = turn.say.trim();
   state.said[role].push(sentence);
   state.turn++;
 
@@ -372,8 +404,9 @@ for (let i = 0; i < maxTurns; i++) {
   const after = ctx.design.id;
 
   const caught = turn.asserts.every(f => taken.includes(f)) && taken.length > 0;
+  const anyOf = turn.asserts.some(f => taken.includes(f));
   transcript.push({ turn: state.turn, who: role, player, act, text: sentence,
-                    meant: turn.asserts, taken, byWord, byModel, caught,
+                    meant: turn.asserts, taken, byWord, byModel, caught, anyOf,
                     invented: taken.filter(f => !turn.asserts.includes(f)),
                     asserts: turn.asserts,      // kept under the old name for the page
                     attempts, built: after, changed: before !== after });
@@ -417,12 +450,13 @@ const unspoken = prov.total - prov.named;
 // How much of what was asked for ever reached the builder.
 const said = transcript.filter(t => t.who === "A" || t.who === "B");
 const caughtN = said.filter(t => t.caught).length;
+const someN = said.filter(t => t.anyOf).length;
 const inventedN = said.reduce((n, t) => n + t.invented.length, 0);
 const deafN = said.filter(t => !t.taken.length).length;
 const agreed = said.filter(t => t.byModel && t.byWord.join() === t.byModel.join()).length;
 
 console.log(`\n  ${NAME(ctx.design.id)} is standing, over ${groundOf(ctx)}.`);
-console.log(`  Role 3 took ${caughtN} of ${said.length} sentences as they were meant.`);
+console.log(`  Role 3 took ${caughtN} of ${said.length} sentences as they were meant, and got some part of ${someN}.`);
 if (deafN) console.log(`  ${deafN} passed it by entirely.`);
 if (inventedN) console.log(`  They credited the two of them with ${inventedN} need${inventedN === 1 ? "" : "s"} neither of them stated.`);
 if (byModelUsed) console.log(`  The word list would have agreed with it on ${agreed} of ${said.length}.`);
@@ -441,7 +475,7 @@ const session = {
   goals: { A: SCENARIOS[scenarioKey].A.goal, B: SCENARIOS[scenarioKey].B.goal },
   transcript,
   outcome: { built: ctx.design.id, name: NAME(ctx.design.id), ground: groundOf(ctx) },
-  reading: { said: said.length, caught: caughtN, invented: inventedN, deaf: deafN, mute: state.mute || 0, retries: RETRIES,
+  reading: { said: said.length, caught: caughtN, partly: someN, invented: inventedN, deaf: deafN, mute: state.mute || 0, retries: RETRIES,
              wordListAgreed: byModelUsed ? agreed : null },
   provenance: prov,
   ledger: led,

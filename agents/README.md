@@ -109,6 +109,45 @@ That is the number a language model has to beat, and the more interesting
 question is not whether it beats it but *whether it fails on the same sentences*.
 Add `--misses` to see every one the word list gets backwards.
 
+## What happens when you take the form away
+
+The two roles used to get one instruction between them — "speak like a person,
+plain words, one thought" — and every sentence had "I want" or "I do not want"
+bolted on the front. That produced one voice in two costumes, saying things like
+"I want something that holds firm beneath me" four turns running.
+
+They have hats now. Who they are, how they talk, what they bring up. And they
+write the whole sentence themselves — no fixed opening, no form. The two rules
+that stayed are the ones that matter: one may only ask and one may only refuse,
+and each states privately which needs it meant, as the answer key.
+
+They started talking:
+
+> **Role 2** · That skinny thing they laid down in '19 is a joke — one wheel on it and I'm done for.
+> **Role 2** · Him walking over on his own two feet is fine, but I'm not the one arriving empty-handed every morning.
+> **Role 2** · Four times now he's said "just walk over" — I'll not have my morning ruined by something sized for one man's boots.
+
+And the reading fell through the floor. **Role 3 took 2 of 8 sentences as they
+were meant**, against 6 or 7 of 10 when the sentences were formulaic. Run it
+again with a different reader and you get 2 of 8 again.
+
+The reason is the same every time, and it is worth stating plainly because it is
+the whole thesis in one line. Role 2 refuses a crossing sized for one man — the
+need is `light`, refused. Every reader takes `heavy`. Six times out of eight,
+both with Gemini reading and with Claude reading.
+
+**When somebody complains about what they lack, a reader hears them refusing the
+thing they lack.** The content word survives the trip; the direction does not.
+Role 2 talks about carts and axles and full loads because that is what is at
+stake, and it is filed as an objection to carts.
+
+Formulaic speech is legible to a reader. Human speech is not — and it fails in a
+direction that takes away exactly what the speaker needed.
+
+One more thing fell out of it: with no fixed opening to lean on, **the asking
+role broke the only-ask rule on three turns in eight** and had to be sent back.
+Holding a speech act is work when the syntax is not doing it for you.
+
 ## What thirteen runs of one case say
 
 Thirteen runs of `loads --case given`, two OpenAI participants, an OpenAI
