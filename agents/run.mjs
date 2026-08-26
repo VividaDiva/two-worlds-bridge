@@ -88,8 +88,10 @@ const HATS = {
 
 /* ── the ask ──────────────────────────────────────────────────────────── */
 const TurnSchema = z.object({
-  say: z.string().describe("The rest of the sentence, following the fixed opening. Spoken, plain, no more than about twenty words."),
+  say: z.string().describe("What you say, in your own voice. One thought, said out loud."),
   asserts: z.array(z.string()).describe("Which of the listed feature keys you mean by it. One or two. Use the keys exactly."),
+  done: z.boolean().optional().default(false)
+    .describe("True if, having said this, you have said everything you came to say and would let it rest."),
 });
 
 // What the machine returns when it is a model rather than a word list.
@@ -122,6 +124,10 @@ function systemPrompt(role, act, scenario, situation, goal, hat) {
     `3. You may NEVER name a structure or a kind of ground. These words are banned: ${FORBIDDEN.join(", ")}.`,
     `   Describe your situation and what you need from it. Say what would happen to you, not what should be built.`,
     `4. One thought, said out loud. Under about thirty words. Do not begin the way you began last time.`,
+    `5. Set done ONLY if you would say nothing further even if the other person spoke again — not merely`,
+    `   because you have made your point, and not because you are tired of repeating it. Having said your`,
+    `   piece is not done. Done is: there is nothing left in you to say about this, whatever they do next.`,
+    `   If you are still answering them, or still want something out of this, done is false.`,
     ``,
     // A refuser kept declaring the need it would prefer instead of the one it
     // was naming — "I do not want it to sway" filed as steady, not sways. That
@@ -141,7 +147,11 @@ function systemPrompt(role, act, scenario, situation, goal, hat) {
 function userPrompt({ standing, ownHistory, heardHistory, hears, turn }) {
   const lines = [`Turn ${turn}.`];
   lines.push(standing ? `What stands at the moment: ${standing}.` : `Nothing has been built yet.`);
-  if (ownHistory.length) lines.push(`\nWhat you have already said (do not repeat it):\n` + ownHistory.map(s => "  - " + s).join("\n"));
+  if (ownHistory.length) {
+    lines.push(`\nWhat you have already said (do not repeat it):\n` + ownHistory.map(s => "  - " + s).join("\n"));
+    const opener = ownHistory[ownHistory.length - 1].split(/\s+/).slice(0, 3).join(" ");
+    lines.push(`Your last line began "${opener}…". Do not begin this one that way.`);
+  }
   if (hears && heardHistory.length) lines.push(`\nWhat the other person has said, which you can hear:\n` + heardHistory.map(s => "  - " + s).join("\n"));
   else if (!hears) lines.push(`\nYou are alone with the machine. You cannot hear anyone else, and as far as you know there is nobody else.`);
   lines.push(`\nSay one more thing.`);
@@ -149,6 +159,7 @@ function userPrompt({ standing, ownHistory, heardHistory, hears, turn }) {
 }
 
 /* ── the two players ──────────────────────────────────────────────────── */
+let RETRIES = 0;
 const anthropic = new Anthropic();                       // ANTHROPIC_API_KEY or an `ant auth login` profile
 const openai = new OpenAI();                             // OPENAI_API_KEY
 // Only constructed when actually used, so a missing key is not an error for
@@ -175,12 +186,23 @@ async function askClaude(system, user) {
     messages: [{ role: "user", content: user }],
     output_config: { format: betaZodOutputFormat(TurnSchema) },
   });
-  // A refusal is surfaced, never quietly rerouted — a silent fallback to another
-  // model would mean comparing two different players without knowing it.
-  if (res.stop_reason === "refusal") {
-    throw new Error(`Claude declined this turn (${res.stop_details?.category ?? "unknown"})`);
+  // A refusal is never quietly rerouted to another provider — that would mean
+  // comparing two different players without knowing it. Asking the SAME model
+  // again is a different thing, and these fire intermittently: one turn of a
+  // conversation about footbridges came back refused under the category "cyber".
+  let r = res;
+  for (let n = 0; n < 3 && r.stop_reason === "refusal"; n++) {
+    RETRIES++;
+    r = await anthropic.beta.messages.parse({
+      model: CLAUDE_MODEL, max_tokens: 2048, system,
+      messages: [{ role: "user", content: user }],
+      output_config: { format: betaZodOutputFormat(TurnSchema) },
+    });
   }
-  return parsedOr(res, TurnSchema, "Claude");
+  if (r.stop_reason === "refusal") {
+    throw new Error(`Claude declined this turn four times running (${r.stop_details?.category ?? "unknown"})`);
+  }
+  return parsedOr(r, TurnSchema, "Claude");
 }
 
 async function askOpenAI(system, user) {
@@ -190,7 +212,7 @@ async function askOpenAI(system, user) {
     model: OPENAI_MODEL,
     response_format: { type: "json_object" },
     messages: [
-      { role: "system", content: system + `\n\nReply with JSON only: {"say": "...", "asserts": ["key", ...]}` },
+      { role: "system", content: system + `\n\nReply with JSON only: {"say": "...", "asserts": ["key", ...], "done": <true or false>}` },
       { role: "user", content: user },
     ],
   });
@@ -243,7 +265,7 @@ function askGeminiWith(shape) {
     return shape.zod.parse(JSON.parse(m[0]));
   };
 }
-const TURN_JSON = { type:"object", properties:{ say:{type:"string"}, asserts:{type:"array", items:{type:"string"}} }, required:["say","asserts"] };
+const TURN_JSON = { type:"object", properties:{ say:{type:"string"}, asserts:{type:"array", items:{type:"string"}}, done:{type:"boolean"} }, required:["say","asserts","done"] };
 const READ_JSON = { type:"object", properties:{ needs:{type:"array", items:{type:"string"}} }, required:["needs"] };
 const SAY_JSON  = { type:"object", properties:{ say:{type:"string"} }, required:["say"] };
 const askGemini = askGeminiWith({ json: TURN_JSON, zod: TurnSchema });
@@ -273,7 +295,6 @@ function parsedOr(res, schema, what) {
 // two players without knowing it, retrying is just asking again. Retries are
 // counted so a run that needed several is not indistinguishable from one that
 // needed none.
-let RETRIES = 0;
 async function machineClaude(system, user, schema = ReadSchema) {
   // Structured output lives under `beta` in SDK 0.71.
   const res = await anthropic.beta.messages.parse({
@@ -378,7 +399,7 @@ if (!CASES[caseKey]) throw new Error(`unknown case: ${caseKey} (given | swapped 
 
 const cfg = CASES[caseKey];
 const ctx = mkCtx();
-const state = { scenario: scenarioKey, turn: 0, said: { A: [], B: [] }, violations: [] };
+const state = { scenario: scenarioKey, turn: 0, said: { A: [], B: [] }, violations: [], done: { A: false, B: false } };
 const transcript = [];
 
 console.log(`\n  ${SCENARIOS[scenarioKey].blurb}`);
@@ -393,6 +414,10 @@ for (let i = 0; i < maxTurns; i++) {
 
   const { turn, attempts } = await speak(player, role, act, ctx, state, scenarioKey, cfg);
   const sentence = turn.say.trim();
+  // Said when they say they are said out, not when a counter runs out. It is not
+  // sticky: anybody who has let it rest can be drawn back in by the other one
+  // saying something new, which is what the turn after a "done" is for.
+  state.done[role] = !!turn.done;
   state.said[role].push(sentence);
   state.turn++;
 
@@ -401,6 +426,7 @@ for (let i = 0; i < maxTurns; i++) {
   const byModel = byModelUsed ? await readLLM(sentence, MACHINES[reader]) : null;
   const taken = byModel || byWord;
 
+  const heardBefore = new Set([...ctx.wants.keys(), ...ctx.avoids.keys()]);
   hear(ctx, role, act, taken);
   const before = ctx.design?.id ?? null;
   build(ctx);
@@ -409,12 +435,12 @@ for (let i = 0; i < maxTurns; i++) {
   const caught = turn.asserts.every(f => taken.includes(f)) && taken.length > 0;
   const anyOf = turn.asserts.some(f => taken.includes(f));
   transcript.push({ turn: state.turn, who: role, player, act, text: sentence,
-                    meant: turn.asserts, taken, byWord, byModel, caught, anyOf,
+                    meant: turn.asserts, taken, byWord, byModel, caught, anyOf, done: !!turn.done,
                     invented: taken.filter(f => !turn.asserts.includes(f)),
                     asserts: turn.asserts,      // kept under the old name for the page
                     attempts, built: after, changed: before !== after });
   console.log(`  ${state.turn.toString().padStart(2)} role ${role === "A" ? 1 : 2} (${player}): ${sentence}`);
-  console.log(`     meant [${turn.asserts.join(", ")}]${attempts > 1 ? `  after ${attempts} attempts` : ""}`);
+  console.log(`     meant [${turn.asserts.join(", ")}]${attempts > 1 ? `  after ${attempts} attempts` : ""}${turn.done ? "  · would let it rest" : ""}`);
   console.log(`     they took [${taken.join(", ") || "nothing"}]${caught ? "" : "   ← not what was meant"}`);
   if (byModel && byWord.join() !== byModel.join()) console.log(`     the word list would have taken [${byWord.join(", ") || "nothing"}]`);
   if (before !== after) console.log(`     → they rebuild: ${NAME(after)}`);
@@ -443,6 +469,24 @@ for (let i = 0; i < maxTurns; i++) {
   }
   transcript.push({ who: "machine", turn: state.turn, text: NAME(after), say: saidByMachine,
                     changed: before !== after, taken });
+
+  state.still = before === after ? (state.still || 0) + 1 : 0;
+  if (before !== after) state.lastMoved = state.turn;
+
+  // "Nothing got built" is a poor proxy for "nothing left to say" — the crossing
+  // often settles on turn one and the argument runs for twenty more. What ends a
+  // conversation is people stopping saying anything NEW. So: four turns in which
+  // nobody put a need the builder had not already heard, AND the crossing has not
+  // moved, and not before turn eight, which is the shortest thing worth calling a
+  // conversation.
+  const fresh = taken.some(f => !heardBefore.has(f));
+  state.stale = fresh ? 0 : (state.stale || 0) + 1;
+
+  if (state.done.A && state.done.B) { state.endedBy = "both let it rest"; break; }
+  if (state.stale >= 4 && state.still >= 4 && state.turn >= 8) {
+    state.endedBy = "they ran out of new things to say and it had stopped mattering";
+    break;
+  }
 }
 
 /* ── what it came to ──────────────────────────────────────────────────── */
@@ -459,6 +503,8 @@ const deafN = said.filter(t => !t.taken.length).length;
 const agreed = said.filter(t => t.byModel && t.byWord.join() === t.byModel.join()).length;
 
 console.log(`\n  ${NAME(ctx.design.id)} is standing, over ${groundOf(ctx)}.`);
+console.log(`  It ended after ${state.turn} turns — ${state.endedBy || "the turn cap ran out, mid-argument"}.`);
+if (state.lastMoved) console.log(`  The last turn that changed anything was ${state.lastMoved}; everything after it was talk.`);
 console.log(`  Role 3 took ${caughtN} of ${said.length} sentences as they were meant, and got some part of ${someN}.`);
 if (deafN) console.log(`  ${deafN} passed it by entirely.`);
 if (inventedN) console.log(`  They credited the two of them with ${inventedN} need${inventedN === 1 ? "" : "s"} neither of them stated.`);
@@ -474,10 +520,14 @@ const session = {
   meta: { scenario: scenarioKey, case: caseKey, label: CASES[caseKey].label,
           players: { A: playerA, B: playerB }, machine: reader, machineIsModel: byModelUsed,
           models: { claude: CLAUDE_MODEL, openai: OPENAI_MODEL, gemini: GEMINI_MODEL, machine: MACHINE_MODEL },
-          turns: state.turn, ranAt: new Date().toISOString() },
+          turns: state.turn, endedBy: state.endedBy || "turn cap", lastMoved: state.lastMoved || null,
+          ranAt: new Date().toISOString() },
   goals: { A: SCENARIOS[scenarioKey].A.goal, B: SCENARIOS[scenarioKey].B.goal },
   transcript,
   outcome: { built: ctx.design.id, name: NAME(ctx.design.id), ground: groundOf(ctx) },
+  ending: { turns: state.turn, endedBy: state.endedBy || "turn cap",
+            lastMoved: state.lastMoved || null,
+            keptTalking: state.lastMoved ? state.turn - state.lastMoved : state.turn },
   reading: { said: said.length, caught: caughtN, partly: someN, invented: inventedN, deaf: deafN, mute: state.mute || 0, retries: RETRIES,
              wordListAgreed: byModelUsed ? agreed : null },
   provenance: prov,

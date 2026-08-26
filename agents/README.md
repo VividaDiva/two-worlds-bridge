@@ -148,6 +148,39 @@ One more thing fell out of it: with no fixed opening to lean on, **the asking
 role broke the only-ask rule on three turns in eight** and had to be sent back.
 Holding a speech act is work when the syntax is not doing it for you.
 
+## When it ends, and why that took three tries
+
+A run used to stop when `--turns` ran out, which is a cap, not an ending — the
+recording just went dead mid-argument.
+
+First attempt: let each of them say when they are done. Role 2 set it on every
+single turn while going on arguing, and Role 1 never set it once — the OpenAI
+JSON example had `"done": false` written into it and anchored the model. Raising
+the bar to "you would say nothing further even if they spoke again" made nobody
+ever set it.
+
+Second attempt: stop when the crossing stops changing. It ended runs after five
+turns, because the builder often settles on turn one and the argument runs for
+twenty more without moving it.
+
+What works is both, with a floor: **four turns in which nobody states a need the
+builder has not already heard, AND the crossing has not moved, and not before
+turn eight.** People stop when they stop saying anything new, and this is that,
+observable rather than self-reported.
+
+  places  18 turns · last change turn 10, then 8 more
+  loads    9 turns · last change turn  4, then 5 more
+  refs    20 turns · last change turn 14, then 6 more
+
+The number worth keeping is the second one. **Every conversation carried on for
+five to eight turns after the last thing that made any difference.** The needs
+run out long before the talking does, and none of that tail reaches the thing
+being built.
+
+Worth knowing: neither party can end it by agreeing, because one may only ask
+and the other may only refuse. Nobody in this design has the move that would
+settle it.
+
 ## What thirteen runs of one case say
 
 Thirteen runs of `loads --case given`, two OpenAI participants, an OpenAI
