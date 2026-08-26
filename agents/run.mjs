@@ -283,17 +283,20 @@ async function machineClaude(system, user, schema = ReadSchema) {
     messages: [{ role: "user", content: user }],
     output_config: { format: betaZodOutputFormat(schema) },
   });
-  if (res.stop_reason === "refusal") {
+  // Three attempts, not one. These refusals are intermittent and cluster: the
+  // refs scenario declined six voice calls in twelve on a single retry, which
+  // left half the recording silent for no reason anybody could read off the page.
+  let r = res;
+  for (let n = 0; n < 3 && r.stop_reason === "refusal"; n++) {
     RETRIES++;
-    const again = await anthropic.beta.messages.parse({
+    r = await anthropic.beta.messages.parse({
       model: MACHINE_MODEL, max_tokens: 1024, system,
       messages: [{ role: "user", content: user }],
       output_config: { format: betaZodOutputFormat(schema) },
     });
-    if (again.stop_reason === "refusal") throw new Error("the builder declined twice");
-    return parsedOr(again, schema, "the builder");
   }
-  return parsedOr(res, schema, "the builder");
+  if (r.stop_reason === "refusal") throw new Error("the builder declined four times");
+  return parsedOr(r, schema, "the builder");
 }
 
 async function machineOpenAI(system, user, schema = ReadSchema) {
@@ -465,7 +468,7 @@ console.log(`  ${led.spoken} words spoken; Role 3's whole vocabulary for this ru
 if (state.violations.length) console.log(`  ${state.violations.length} turns broke the rules and were sent back.`);
 if (RETRIES) console.log(`  ${RETRIES} calls were declined once and succeeded on a retry.`);
 if (PAUSED) console.log(`  ${Math.round(PAUSED / 1000)}s of this run was spent waiting on a rate limit.`);
-if (state.mute) console.log(`  ${state.mute} turns Role 3 had nothing to say — declined twice.`);
+if (state.mute) console.log(`  ${state.mute} turns Role 3 was silent — the voice call was declined four times running.`);
 
 const session = {
   meta: { scenario: scenarioKey, case: caseKey, label: CASES[caseKey].label,
