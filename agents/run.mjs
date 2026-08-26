@@ -139,8 +139,7 @@ async function askClaude(system, user) {
   if (res.stop_reason === "refusal") {
     throw new Error(`Claude declined this turn (${res.stop_details?.category ?? "unknown"})`);
   }
-  if (!res.parsed_output) throw new Error("Claude returned no parsable turn");
-  return res.parsed_output;
+  return parsedOr(res, TurnSchema, "Claude");
 }
 
 async function askOpenAI(system, user) {
@@ -161,10 +160,30 @@ async function askOpenAI(system, user) {
 
 const PLAYERS = { claude: askClaude, openai: askOpenAI };
 
+// The SDK fills parsed_output only when the response comes back as a dedicated
+// structured-output block. Against claude-opus-5 today it does not: the model
+// returns the right JSON in an ordinary text block and parsed_output stays null.
+// So take the text and validate it ourselves. This works whether or not the
+// server applies the format, which is the behaviour worth having either way.
+function parsedOr(res, schema, what) {
+  if (res.parsed_output) return res.parsed_output;
+  const text = (res.content || []).filter(c => c.type === "text").map(c => c.text).join("").trim();
+  const json = text.match(/\{[\s\S]*\}/);           // in case it wraps the object in prose
+  if (!json) throw new Error(`${what} returned no JSON: ${text.slice(0, 120)}`);
+  return schema.parse(JSON.parse(json[0]));
+}
+
 // The machine, when it reads with a model. Deliberately a separate call with no
 // memory of the conversation: a builder parsing one request, not a third party
 // following the argument. Either provider can play it, so one key is enough to
 // run the whole thing.
+// Refusals here are intermittent — the identical prompt succeeds on a second
+// attempt — so one retry recovers nearly all of them. This is a retry to the
+// SAME model, not a fallback to a different one: rerouting would mean comparing
+// two players without knowing it, retrying is just asking again. Retries are
+// counted so a run that needed several is not indistinguishable from one that
+// needed none.
+let RETRIES = 0;
 async function machineClaude(system, user, schema = ReadSchema) {
   // Structured output lives under `beta` in SDK 0.71.
   const res = await anthropic.beta.messages.parse({
@@ -174,9 +193,17 @@ async function machineClaude(system, user, schema = ReadSchema) {
     messages: [{ role: "user", content: user }],
     output_config: { format: betaZodOutputFormat(schema) },
   });
-  if (res.stop_reason === "refusal") throw new Error("the machine declined to read a sentence");
-  if (!res.parsed_output) throw new Error("the machine returned nothing parsable");
-  return res.parsed_output;
+  if (res.stop_reason === "refusal") {
+    RETRIES++;
+    const again = await anthropic.beta.messages.parse({
+      model: MACHINE_MODEL, max_tokens: 1024, system,
+      messages: [{ role: "user", content: user }],
+      output_config: { format: betaZodOutputFormat(schema) },
+    });
+    if (again.stop_reason === "refusal") throw new Error("the machine declined twice");
+    return parsedOr(again, schema, "the machine");
+  }
+  return parsedOr(res, schema, "the machine");
 }
 
 async function machineOpenAI(system, user, schema = ReadSchema) {
@@ -292,7 +319,7 @@ for (let i = 0; i < maxTurns; i++) {
   if (before !== after) console.log(`     → the machine rebuilds: ${NAME(after)}`);
   // Only now, with the reading committed and the thing rebuilt, does it speak.
   let saidByMachine = "";
-  if (voiced) {
+  if (voiced) try {
     const groundKnown = ctx.world.water || ctx.world.rock;
     const tellGround = !groundKnown && !saidGroundUnknown;
     saidByMachine = await speakLLM({
@@ -304,6 +331,14 @@ for (let i = 0; i < maxTurns; i++) {
     }, (sys, usr) => MACHINES[reader](sys, usr, SaySchema));
     if (tellGround) saidGroundUnknown = true;
     if (saidByMachine) console.log(`     "${saidByMachine}"`);
+  } catch (e) {
+    // The reading is the measurement and a refusal there has to stop the run.
+    // The spoken line is display: it asserts nothing, nothing is scored from it,
+    // and losing one is a silent machine for a turn, not a corrupted comparison.
+    // These refusals are intermittent — the same prompt succeeds on a retry — so
+    // killing a fourteen-turn run over one is the wrong trade.
+    state.mute = (state.mute || 0) + 1;
+    console.log(`     (the machine said nothing this turn — ${e.message})`);
   }
   transcript.push({ who: "machine", turn: state.turn, text: NAME(after), say: saidByMachine,
                     changed: before !== after, taken });
@@ -329,6 +364,8 @@ if (byModelUsed) console.log(`  The word list would have agreed with it on ${agr
 console.log(`  ${unspoken} of ${prov.total} of its properties were never put into words by either of them.`);
 console.log(`  ${led.spoken} words spoken; the machine's whole vocabulary for this run was ${ctx.wants.size + ctx.avoids.size} features.`);
 if (state.violations.length) console.log(`  ${state.violations.length} turns broke the rules and were sent back.`);
+if (RETRIES) console.log(`  ${RETRIES} calls were declined once and succeeded on a retry.`);
+if (state.mute) console.log(`  ${state.mute} turns the machine had nothing to say — declined twice.`);
 
 const session = {
   meta: { scenario: scenarioKey, case: caseKey, label: CASES[caseKey].label,
@@ -338,7 +375,7 @@ const session = {
   goals: { A: SCENARIOS[scenarioKey].A.goal, B: SCENARIOS[scenarioKey].B.goal },
   transcript,
   outcome: { built: ctx.design.id, name: NAME(ctx.design.id), ground: groundOf(ctx) },
-  reading: { said: said.length, caught: caughtN, invented: inventedN, deaf: deafN,
+  reading: { said: said.length, caught: caughtN, invented: inventedN, deaf: deafN, mute: state.mute || 0, retries: RETRIES,
              wordListAgreed: byModelUsed ? agreed : null },
   provenance: prov,
   ledger: led,
