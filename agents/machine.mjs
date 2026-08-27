@@ -201,8 +201,17 @@ export async function chooseLLM(state, ask) {
     `\nWhich one do you build?`,
   ].join("\n");
   const out = await ask(CHOOSE_SYSTEM(state.kit), user);
-  const id = typeof out?.build === "string" ? out.build.trim() : "";
-  return state.kit.some(k => k.id === id) ? id : null;
+  const raw = typeof out?.build === "string" ? out.build.trim() : "";
+  // It was being shown display names — "A log on a prop" — and it answers with
+  // the slug it would naturally write: "log-on-a-prop". Nothing matched, this
+  // returned null, the caller silently kept the scoring rule's pick, and every
+  // run reported "chose against the rule on 0 of N turns". The builder had never
+  // once decided anything. Match forgivingly, and tell the caller when even that
+  // fails so it cannot be mistaken for agreement again.
+  const norm = x => String(x).toLowerCase().replace(/^an? /, "").replace(/[^a-z0-9]/g, "");
+  const hit = state.kit.find(k => norm(k.id) === norm(raw))
+           || state.kit.find(k => norm(k.id).includes(norm(raw)) || norm(raw).includes(norm(k.id)));
+  return hit ? hit.id : { unmatched: raw };
 }
 
 export const READERS = {

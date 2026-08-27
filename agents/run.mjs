@@ -968,7 +968,13 @@ for (let i = 0; i < maxTurns; i++) {
       said: transcript.filter(t => t.who === "A" || t.who === "B")
         .map(t => ({ who: t.who === "A" ? "Role 1" : "Role 2", text: t.text })),
     }, (sys, usr) => MACHINES[reader](sys, usr, ChooseSchema));
-    const picked = chose && KIT.find(k => NAME(k.id) === chose);
+    // A name it does not recognise must be loud. Quietly falling through to the
+    // rule is what hid this for every run so far.
+    if (chose && chose.unmatched !== undefined) {
+      state.unmatched = (state.unmatched || 0) + 1;
+      console.log(`     · Role 3 named "${chose.unmatched}", which is not in its workshop — the rule's pick stands`);
+    }
+    const picked = typeof chose === "string" && KIT.find(k => NAME(k.id) === chose);
     if (picked) cx.design = picked;
     state.chosen = (state.chosen || 0) + 1;
     if (cx.design.id !== byRule) {
@@ -1132,6 +1138,7 @@ if (LOOSE) {
   const flipped = withStance.filter(t => !t.stanceKept).length;
   console.log(`  Stance: kept on ${kept} of ${withStance.length}; ${flipped} had asking and refusing the wrong way round.`);
 }
+if (state.unmatched) console.log(`  ${state.unmatched} of Role 3's choices named something not in its workshop and were discarded.`);
 if (BUILDER === "model" && state.chosen)
   console.log(`  Role 3 chose against the rule on ${state.diverged || 0} of ${state.chosen} turns.`);
 console.log(`  ${unspoken} of ${prov.total} of its properties were never put into words by either of them.`);
