@@ -3077,6 +3077,18 @@ function replaySession(ss){
   t.forEach((turn, i) => {
     const role = turn.who, other = role === "A" ? "B" : "A";
     const spoken = turn.text || "";
+
+    // In "Conferring first" the builder is out of the room for the opening
+    // turns. This replayed them like any other — reading them, building from
+    // them, and printing a reply from somebody who was not there — which is the
+    // one thing that case is defined by NOT doing. Show the line, and nothing
+    // else happens until they come out with an agreed position.
+    if (turn.phase === "confer"){
+      pushSaid(role, {infer: (turn.meant || []).filter(f => f in FEATLABEL), why:"", says:[spoken]},
+               false, false, false, spoken, true, {meant: (turn.meant || []), heard: []}, "", false);
+      S.turn = i + 1;
+      return;
+    }
     const meant = (turn.meant || []).filter(f => f in FEATLABEL);
     const taken = (turn.taken || []).filter(f => f in FEATLABEL);
 
