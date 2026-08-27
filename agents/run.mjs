@@ -755,8 +755,12 @@ async function speakFree(player, role, ctx, state, cfg) {
       ` would still name if you had to drop the rest — and return only those.\n\nWhat did you mean by it?`, CodeSchema);
   }
 
-  const turn = { say, asks: (c.asks || []).slice(0, 3), refuses: (c.refuses || []).slice(0, 3),
-                 done: !!c.done, tookThemToMean: c.tookThemToMean || [] };
+  const ok = xs => (xs || []).filter(k => k in FEATURES).slice(0, 3);
+  const dropped = [...(c.asks || []), ...(c.refuses || [])].filter(k => !(k in FEATURES));
+  if (dropped.length) state.violations.push({ role, player, attempt: 1, say,
+    broke: dropped.map(k => `"${k}" is not one of the feature keys`) });
+  const turn = { say, asks: ok(c.asks), refuses: ok(c.refuses),
+                 done: !!c.done, tookThemToMean: ok(c.tookThemToMean) };
   // Trim from the tail if it still overran: three total, asks first.
   turn.refuses = turn.refuses.slice(0, Math.max(0, 3 - turn.asks.length));
   turn.asserts = [...turn.asks, ...turn.refuses];
@@ -888,7 +892,23 @@ for (let i = 0; i < maxTurns; i++) {
   const swap = LOOSE && cfg.swapPlayers;
   const player = (role === "A") === !swap ? playerA : playerB;
 
-  const { turn, attempts } = await speak(player, role, act, ctx, state, scenarioKey, cfg);
+  let turn, attempts;
+  try {
+    ({ turn, attempts } = await speak(player, role, act, ctx, state, scenarioKey, cfg));
+  } catch (e) {
+    state.refusedTurns = (state.refusedTurns || 0) + 1;
+    transcript.push({ turn: state.turn + 1, who: role, player, act, text: "",
+                      refused: true, why: e.message, meant: [], asserts: [], taken: [],
+                      byWord: null, byModel: null, caught: null });
+    state.turn++;
+    console.log(`  ${String(state.turn).padStart(2)} role ${role === "A" ? 1 : 2} (${player}): — would not speak (${e.message})`);
+    // Three in a row means it is not going to start, and carrying on would burn
+    // the rest of the budget on a conversation with one participant in it.
+    if (state.refusedTurns >= 3 && state.refusedTurns === Math.ceil(state.turn / 2)) {
+      state.endedBy = "a participant would not speak"; break;
+    }
+    continue;
+  }
   const sentence = turn.say.trim();
   // Said when they say they are said out, not when a counter runs out. It is not
   // sticky: anybody who has let it rest can be drawn back in by the other one
@@ -904,10 +924,25 @@ for (let i = 0; i < maxTurns; i++) {
   // only has to name the need. Under loose goals it has to hear both, which is
   // the harder half and the half this is actually about.
   const byWordRaw  = LOOSE ? readLooseKeyword(sentence) : readKeyword(sentence);
-  const byModelRaw = byModelUsed
-    ? (LOOSE ? await readLooseLLM(sentence, (sys, usr) => MACHINES[reader](sys, usr, LooseReadSchema))
-             : await readLLM(sentence, MACHINES[reader]))
-    : null;
+  let byModelRaw = null, unread = false;
+  if (byModelUsed) {
+    try {
+      byModelRaw = LOOSE
+        ? await readLooseLLM(sentence, (sys, usr) => MACHINES[reader](sys, usr, LooseReadSchema))
+        : await readLLM(sentence, MACHINES[reader]);
+    } catch (e) {
+      unread = true;
+      state.unread = (state.unread || 0) + 1;
+      console.log(`     (this sentence went unread — ${e.message})`);
+    }
+  }
+  if (unread) {
+    transcript.push({ turn: state.turn, who: role, player, act, text: sentence,
+                      unread: true, meant: turn.asserts, asserts: turn.asserts, taken: [],
+                      byWord: LOOSE ? [...byWordRaw.asks, ...byWordRaw.refuses] : byWordRaw,
+                      byModel: null, caught: null });
+    continue;
+  }
   const flat = r => (LOOSE ? [...r.asks, ...r.refuses] : r);
   const byWord  = flat(byWordRaw);
   const byModel = byModelRaw && flat(byModelRaw);
@@ -1017,6 +1052,34 @@ for (let i = 0; i < maxTurns; i++) {
   }
 }
 
+// What `together` is actually for.
+//
+// Reporting it as "the builder took 1 of 2 sentences as they were meant" is
+// arithmetically true and says nothing: the builder only ever receives two
+// lines, so a two-sentence sample gets read as catastrophic deafness. The
+// question the case exists to ask is what happens to a position two people
+// reached in rich two-way talk when it has to go through a one-way pipe — and
+// that is a chain, with a loss at each step.
+function conferChain() {
+  const confer = transcript.filter(t => t.phase === "confer");
+  if (!confer.length) return null;
+  const pact = transcript.filter(t => (t.who === "A" || t.who === "B") && t.phase !== "confer");
+  const U = (arr, k) => [...new Set(arr.flatMap(x => x[k] || []))];
+  const table = U(confer, "meant");
+  const both = table.filter(k =>
+    confer.some(x => x.who === "A" && (x.meant || []).includes(k)) &&
+    confer.some(x => x.who === "B" && (x.meant || []).includes(k)));
+  const sent = U(pact, "meant"), heard = U(pact, "taken");
+  const built = (KIT.find(k => k.id === main.design.id) || { has: [] }).has;
+  return {
+    table, both, sent, heard,
+    dropped: table.filter(k => !sent.includes(k)),     // lost in the squeeze
+    lost: sent.filter(k => !heard.includes(k)),        // lost in the channel
+    standing: built.filter(k => table.includes(k)),
+    conferTurns: confer.length, pactLines: pact.length,
+  };
+}
+
 /* ── what it came to ──────────────────────────────────────────────────── */
 const SOLO = !!CASES[caseKey].solo;
 const main = SOLO ? side.A : ctx;
@@ -1029,7 +1092,8 @@ const unspoken = prov.total - prov.named;
 // purpose: the builder was out of the room for those, and scoring it on
 // sentences it never received would make `together` look catastrophically deaf
 // for no reason except that most of the talking happened elsewhere.
-const said = transcript.filter(t => (t.who === "A" || t.who === "B") && t.phase !== "confer");
+const said = transcript.filter(t => (t.who === "A" || t.who === "B") && t.phase !== "confer"
+                                    && !t.unread && !t.refused);
 const conferred = transcript.filter(t => t.phase === "confer");
 const caughtN = said.filter(t => t.caught).length;
 const someN = said.filter(t => t.anyOf).length;
@@ -1046,7 +1110,16 @@ console.log(SOLO
   : `\n  ${NAME(ctx.design.id)} is standing, over ${groundOf(ctx)}.`);
 console.log(`  It ended after ${state.turn} turns — ${state.endedBy || "the turn cap ran out, mid-argument"}.`);
 if (state.lastMoved) console.log(`  The last turn that changed anything was ${state.lastMoved}; everything after it was talk.`);
-console.log(`  Role 3 took ${caughtN} of ${said.length} sentences as they were meant, and got some part of ${someN}.`);
+const CHAIN = conferChain();
+if (CHAIN) {
+  console.log(`  They put ${CHAIN.table.length} needs on the table between them; both of them named ${CHAIN.both.length}.`);
+  console.log(`  ${CHAIN.dropped.length} never made it into the two lines they sent — dropped in the squeeze, not misheard.`);
+  console.log(`  ${CHAIN.lost.length} more the builder did not take from the lines it did get.`);
+  console.log(`  ${CHAIN.standing.length} of the ${CHAIN.table.length} are properties of what stands.`);
+  console.log(`  (Role 3 took ${caughtN} of ${said.length} — a two-line sample, which is why the chain above is the measure.)`);
+} else {
+  console.log(`  Role 3 took ${caughtN} of ${said.length} sentences as they were meant, and got some part of ${someN}.`);
+}
 if (deafN) console.log(`  ${deafN} passed it by entirely.`);
 if (inventedN) console.log(`  They credited the two of them with ${inventedN} need${inventedN === 1 ? "" : "s"} neither of them stated.`);
 if (byModelUsed) console.log(`  The word list would have agreed with it on ${agreed} of ${said.length}.`);
@@ -1066,6 +1139,8 @@ console.log(`  ${led.spoken} words spoken; Role 3's whole vocabulary for this ru
 if (state.violations.length) console.log(`  ${state.violations.length} turns broke the rules and were sent back.`);
 if (RETRIES) console.log(`  ${RETRIES} calls were declined once and succeeded on a retry.`);
 if (PAUSED) console.log(`  ${Math.round(PAUSED / 1000)}s of this run was spent waiting on a rate limit.`);
+if (state.refusedTurns) console.log(`  ${state.refusedTurns} turn${state.refusedTurns === 1 ? "" : "s"} a participant would not speak and the turn was lost.`);
+if (state.unread) console.log(`  ${state.unread} sentence${state.unread === 1 ? "" : "s"} went unread — the classifier declined, so ${state.unread === 1 ? "it is" : "they are"} out of the count rather than scored as missed.`);
 if (state.mute) console.log(`  ${state.mute} turns Role 3 was silent — the voice call was declined four times running.`);
 
 const session = {
@@ -1095,8 +1170,11 @@ const session = {
             keptTalking: state.lastMoved ? state.turn - state.lastMoved : state.turn },
   reading: { said: said.length, conferred: conferred.length, caught: caughtN, partly: someN, invented: inventedN, deaf: deafN, mute: state.mute || 0, retries: RETRIES,
              wordListAgreed: byModelUsed ? agreed : null },
+  confer: CHAIN,
   provenance: prov,
   ledger: led,
+  refusedTurns: state.refusedTurns || 0,
+  unread: state.unread || 0,
   violations: state.violations,
 };
 

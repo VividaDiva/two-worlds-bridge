@@ -37,6 +37,9 @@ node --env-file=.env run.mjs --scenario places --case given --machine llm
 | `--case` | `given` · `swapped` · `separate` · `reply` | `given` |
 | `--goals` | `strict` · `loose` — whether either of them is told what to want | `strict` |
 | `--seed` | which pair of lives a loose run draws | the clock |
+| `--speech` | `coded` · `free` — whether the key list is in the room while they compose | `coded` |
+| `--builder` | `rule` · `model` — whether the scoring rule or Role 3 decides what gets built | `rule` |
+| `--confer` | turns they get alone together before the builder hears anything (`--case together`) | `6` |
 | `--machine` | `claude` · `openai` · `gemini` · `keyword` — who reads what the builder is told | `claude` |
 | `--turns` | how many turns to run | `16` |
 | `--a` / `--b` | `openai` · `claude` · `gemini` — who plays which role | `openai` / `claude` |
@@ -135,6 +138,42 @@ first attempt and it only ever reached four of the sixteen. Every run records it
 seed, so any pairing can be had back exactly.
 
 The situations describe a life and a stake. None of them says what to build.
+
+## The five cases
+
+`given` and `swapped` differ only in who asks and who refuses — which `--goals
+loose` removes, so under loose goals `swapped` exchanges the two MODELS between
+the chairs instead. Same question (is this about the situation or about one
+provider's habits?), the only version of it still available.
+
+The other three are different protocols, not different visibility flags:
+
+| case | what actually happens |
+|---|---|
+| `separate` | each is alone with the builder and neither knows the other exists — one crossing between them |
+| `together` | they talk it over first with the builder out of the room, then get one line each |
+| `alone` | separate rooms and **a crossing each** — what each would have got if the other had never existed |
+
+### What `together` measures
+
+Reporting it as "the builder took 1 of 2 sentences as they were meant" is true
+and useless: it only ever receives two lines, so a two-sentence sample reads as
+catastrophic deafness. The question is what happens to a position two people
+reached in rich two-way talk when it has to go through a one-way pipe, and that
+is a chain with a loss at each step:
+
+    They put 5 needs on the table between them; both of them named 3.
+    2 never made it into the two lines they sent — dropped in the squeeze, not misheard.
+    1 more the builder did not take from the lines it did get.
+    2 of the 5 are properties of what stands.
+
+Across four recorded runs, **more was lost squeezing the agreement into one line
+each than the builder lost reading it** — 4 dropped against 1 misheard in
+`places`, 3 against 1 in `refs`. That is the argument for a return channel, and
+it is not visible in any hit rate.
+
+Worth knowing: they only ever *both* named three of the five to eight needs on
+the table. Most of "what they agreed" was never actually agreed.
 
 ## The return channel
 
@@ -362,6 +401,25 @@ node inline-session.mjs --clear             # take them back out
 A **Recorded runs** tab appears in the page once there is something in it, and
 disappears again when there is not. Re-run this after regenerating the page from
 its source, or the sessions go with it.
+
+## When a model will not speak
+
+Anthropic's safety classifiers decline turns of these conversations under the
+categories `cyber` and `bio` — on people discussing carts, pails and mud. They
+are false positives, they cluster, and they clear on a retry more often than not.
+
+Retries go to the SAME model, six of them. Rerouting to another provider would
+swap a player mid-conversation without saying so, which would make every
+comparison in the run meaningless.
+
+What changed is the cost of losing. A participant that will not speak is now a
+lost **turn**: it is recorded with its refusal category, the conversation carries
+on, and the count goes into the session. A run only bails if one of them refuses
+three times and has never spoken, at which point it is a monologue. Before this,
+two runs in fifteen died outright and took every call already paid for with them.
+
+The reader is different and stays fatal. Its reading IS the measurement, so a run
+missing one is not a shorter run, it is a wrong one.
 
 ## Status
 
