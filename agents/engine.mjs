@@ -4,20 +4,103 @@
 
 // `made` is what it does with the matches. A builder that can name the finished
 // thing but not the act of making it is leaving out the whole of its work.
-export const KIT = [
-  { id: "log",     name: "A single log",          has: ["minimal","low","open","light","exposed"],   members: 1,
-    made: "one length flat across, bank to bank" },
-  { id: "rail",    name: "A log with a handrail", has: ["low","light","guarded"],                    members: 2,
-    made: "a length flat across, and a rail beside it on three uprights" },
-  { id: "braced",  name: "A braced walkway",      has: ["low","light","guarded","steady","many"],    members: 3,
-    made: "a length flat across, a rail beside it, and two struts driven down into the banks" },
-  { id: "prop",    name: "A log on a prop",       has: ["low","open","heavy","inGap","steady"],      members: 2,
-    made: "a length flat across, carried in the middle on a post standing in the gap" },
-  { id: "trestle", name: "A timber trestle",      has: ["heavy","inGap","steady","many","guarded"],  members: 6,
-    made: "a framed tower standing in the gap, with the walk carried over the top of it" },
-  { id: "hang",    name: "A hanging span",        has: ["high","open","light","sways","exposed"],    members: 4,
-    made: "two towers, a cable slung between them, and the walk hung off it" },
+// Six named structures used to be the whole world, and that was the reason a
+// scenario's talk could not change its ending. Three of the fourteen features
+// named exactly ONE of them and three more narrowed it to two, so `heavy` —
+// which is what `loads` is about — could only ever reach a prop or a trestle.
+// Eight runs of loads gave two distinct outcomes.
+//
+// A crossing is five independent choices now, which is forty-eight of them.
+// `heavy` reaches half. Everything downstream only ever iterates KIT, so build,
+// provenance and the builder's own choosing all work unchanged.
+export const AXES = ["level", "hand", "middle", "width", "bracing"];
+export const CHOICES = {
+  level:   { at:   "level with where you stand",  raised: "carried well above the ground" },
+  hand:    { none: "nothing at the hand",         rail:   "a rail at the hand the whole way" },
+  middle:  { none: "nothing set down in the gap", post:   "a post standing in the gap",
+             tower: "a framed tower standing in the gap" },
+  width:   { one:  "one person at a time",        two:    "two abreast" },
+  bracing: { none: "nothing bracing it",          struts: "struts driven into both banks" },
+};
+const BARE = { level: "at", hand: "none", middle: "none", width: "one", bracing: "none" };
+
+// Every feature is reachable more than one way — `steady` from a tower or from
+// struts, `heavy` only where something carries the weight AND there is room for
+// it — so which one the talk arrives at is decided by the talk.
+export function propsOf(d) {
+  const has = new Set();
+  has.add(d.level === "at" ? "low" : "high");
+  has.add(d.hand === "rail" ? "guarded" : "exposed");
+  if (d.hand === "none") has.add("open");
+  if (d.middle !== "none") has.add("inGap");
+  if (d.width === "two") has.add("many");
+  const held = d.bracing === "struts" || d.middle === "tower";
+  has.add(held ? "steady" : "sways");
+  if (held && (d.width === "two" || d.middle === "tower")) has.add("heavy");
+  if (d.width === "one" && d.bracing === "none") has.add("light");
+  if (AXES.every(k => d[k] === BARE[k])) has.add("minimal");
+  return [...has];
+}
+
+// Matchsticks, so "17 laid" still means something.
+const COST = {level:{at:1,raised:3}, hand:{none:0,rail:4}, middle:{none:0,post:1,tower:5},
+              width:{one:0,two:4}, bracing:{none:0,struts:3}};
+
+// The six that were the whole kit are corners of this space. Recordings made
+// before it existed still resolve, and a run that lands on one gets called by
+// its name rather than by a list of parts.
+export const FAMILIAR = [
+  { id:"log",     name:"A single log",          d:{level:"at",    hand:"none",middle:"none", width:"one",bracing:"none"},
+    made:"one length flat across, bank to bank" },
+  { id:"rail",    name:"A log with a handrail", d:{level:"at",    hand:"rail",middle:"none", width:"one",bracing:"none"},
+    made:"a length flat across, and a rail beside it on three uprights" },
+  { id:"braced",  name:"A braced walkway",      d:{level:"at",    hand:"rail",middle:"none", width:"two",bracing:"struts"},
+    made:"a length flat across, a rail beside it, and two struts driven down into the banks" },
+  { id:"prop",    name:"A log on a prop",       d:{level:"at",    hand:"none",middle:"post", width:"one",bracing:"none"},
+    made:"a length flat across, carried in the middle on a post standing in the gap" },
+  { id:"trestle", name:"A timber trestle",      d:{level:"at",    hand:"rail",middle:"tower",width:"two",bracing:"struts"},
+    made:"a framed tower standing in the gap, with the walk carried over the top of it" },
+  { id:"hang",    name:"A hanging span",        d:{level:"raised",hand:"none",middle:"none", width:"one",bracing:"none"},
+    made:"the walk carried well above the ground, with nothing at the hand" },
 ];
+const SHORTNAME = d => {
+  // "raised" is not a thing the crossing HAS, it is how it sits, so it belongs
+  // in front of the noun rather than in the list after it.
+  const head = d.level === "raised" ? "A raised crossing" : "A crossing";
+  const bits = [];
+  if (d.hand === "rail") bits.push("a rail");
+  if (d.middle === "post") bits.push("a post in the gap");
+  if (d.middle === "tower") bits.push("a tower in the gap");
+  if (d.width === "two") bits.push("two abreast");
+  if (d.bracing === "struts") bits.push("struts");
+  if (!bits.length) return d.level === "raised" ? "A raised crossing" : "A bare crossing";
+  return head + " with " + (bits.length === 1 ? bits[0]
+    : bits.slice(0, -1).join(", ") + " and " + bits[bits.length - 1]);
+};
+const sameShape = (x, y) => AXES.every(k => x[k] === y[k]);
+const slug = d => AXES.map(k => d[k]).join("-");
+const parts = d => AXES.map(k => CHOICES[k][d[k]]).filter(t => !/^nothing/.test(t)).join(", ")
+                || "one length laid flat across, and nothing else";
+
+export const KIT = (() => {
+  const out = [];
+  const walk = (i, acc) => i === AXES.length ? out.push({ ...acc })
+    : Object.keys(CHOICES[AXES[i]]).forEach(v => walk(i + 1, { ...acc, [AXES[i]]: v }));
+  walk(0, {});
+  return out.map(d => {
+    const fam = FAMILIAR.find(f => sameShape(f.d, d));
+    return {
+      id: fam ? fam.id : slug(d), shape: d,
+      name: fam ? fam.name : SHORTNAME(d),
+      made: fam ? fam.made : parts(d),
+      has: propsOf(d),
+      members: AXES.reduce((n, k) => n + COST[k][d[k]], 0),
+    };
+  });
+})();
+
+export const SHAPE = id => (KIT.find(k => k.id === id) || {}).shape || null;
+export const describe = d => parts(d);
 export const MADE = id => (KIT.find(k => k.id === id) || { made: "nothing" }).made;
 export const NAME = id => (KIT.find(k => k.id === id) || { name: "nothing" }).name;
 

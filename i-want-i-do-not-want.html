@@ -804,20 +804,92 @@ const groundAt = (c, x) => (x <= GAP_L || x >= GAP_R) ? GROUND_Y : bedOf(c);
 // `made` is what it does with the matches, in the builder's own terms. It builds
 // these things; being able to name the structure and not the act of making it is
 // the same silence the two people are held to.
-const KIT = [
-  {id:"log",     name:"A single log",          has:["minimal","low","open","light","exposed"],       members:1,
+// A crossing is five independent choices, which is forty-eight of them. Six
+// named structures used to be the whole world, and that was the reason a
+// scenario's talk could not change its ending: three of the fourteen features
+// named exactly ONE structure and three more narrowed it to two, so `heavy` —
+// which is what "two loads" is about — could only ever reach a prop or a
+// trestle. It reaches half of these. Mirrors agents/engine.mjs exactly.
+const AXES = ["level","hand","middle","width","bracing"];
+const CHOICES = {
+  level:   {at:"level with where you stand",  raised:"carried well above the ground"},
+  hand:    {none:"nothing at the hand",       rail:"a rail at the hand the whole way"},
+  middle:  {none:"nothing set down in the gap", post:"a post standing in the gap",
+            tower:"a framed tower standing in the gap"},
+  width:   {one:"one person at a time",       two:"two abreast"},
+  bracing: {none:"nothing bracing it",        struts:"struts driven into both banks"},
+};
+const BARE = {level:"at", hand:"none", middle:"none", width:"one", bracing:"none"};
+const COST = {level:{at:1,raised:3}, hand:{none:0,rail:4}, middle:{none:0,post:1,tower:5},
+              width:{one:0,two:4}, bracing:{none:0,struts:3}};
+
+function propsOf(d){
+  const has = new Set();
+  has.add(d.level === "at" ? "low" : "high");
+  has.add(d.hand === "rail" ? "guarded" : "exposed");
+  if (d.hand === "none") has.add("open");
+  if (d.middle !== "none") has.add("inGap");
+  if (d.width === "two") has.add("many");
+  const held = d.bracing === "struts" || d.middle === "tower";
+  has.add(held ? "steady" : "sways");
+  if (held && (d.width === "two" || d.middle === "tower")) has.add("heavy");
+  if (d.width === "one" && d.bracing === "none") has.add("light");
+  if (AXES.every(k => d[k] === BARE[k])) has.add("minimal");
+  return [...has];
+}
+
+// The six that were the whole kit are corners of this space, so recordings made
+// before it existed still resolve and still get called by name.
+const FAMILIAR = [
+  {id:"log",     name:"A single log",          d:{level:"at",    hand:"none",middle:"none", width:"one",bracing:"none"},
    made:"one length flat across, bank to bank"},
-  {id:"rail",    name:"A log with a handrail", has:["low","light","guarded"],                        members:2,
+  {id:"rail",    name:"A log with a handrail", d:{level:"at",    hand:"rail",middle:"none", width:"one",bracing:"none"},
    made:"a length flat across, and a rail beside it on three uprights"},
-  {id:"braced",  name:"A braced walkway",      has:["low","light","guarded","steady","many"],        members:3,
+  {id:"braced",  name:"A braced walkway",      d:{level:"at",    hand:"rail",middle:"none", width:"two",bracing:"struts"},
    made:"a length flat across, a rail beside it, and two struts driven down into the banks"},
-  {id:"prop",    name:"A log on a prop",       has:["low","open","heavy","inGap","steady"],          members:2,
+  {id:"prop",    name:"A log on a prop",       d:{level:"at",    hand:"none",middle:"post", width:"one",bracing:"none"},
    made:"a length flat across, carried in the middle on a post standing in the gap"},
-  {id:"trestle", name:"A timber trestle",      has:["heavy","inGap","steady","many","guarded"],      members:6,
+  {id:"trestle", name:"A timber trestle",      d:{level:"at",    hand:"rail",middle:"tower",width:"two",bracing:"struts"},
    made:"a framed tower standing in the gap, with the walk carried over the top of it"},
-  {id:"hang",    name:"A hanging span",        has:["high","open","light","sways","exposed"],        members:4,
-   made:"two towers, a cable slung between them, and the walk hung off it"},
+  {id:"hang",    name:"A hanging span",        d:{level:"raised",hand:"none",middle:"none", width:"one",bracing:"none"},
+   made:"the walk carried well above the ground, with nothing at the hand"},
 ];
+const SHORTNAME = d => {
+  // "raised" is not a thing the crossing HAS, it is how it sits, so it belongs
+  // in front of the noun rather than in the list after it.
+  const head = d.level === "raised" ? "A raised crossing" : "A crossing";
+  const bits = [];
+  if (d.hand === "rail") bits.push("a rail");
+  if (d.middle === "post") bits.push("a post in the gap");
+  if (d.middle === "tower") bits.push("a tower in the gap");
+  if (d.width === "two") bits.push("two abreast");
+  if (d.bracing === "struts") bits.push("struts");
+  if (!bits.length) return d.level === "raised" ? "A raised crossing" : "A bare crossing";
+  return head + " with " + (bits.length === 1 ? bits[0]
+    : bits.slice(0, -1).join(", ") + " and " + bits[bits.length - 1]);
+};
+const sameShape = (x,y) => AXES.every(k => x[k] === y[k]);
+const slugOf = d => AXES.map(k => d[k]).join("-");
+const partsOf = d => AXES.map(k => CHOICES[k][d[k]]).filter(t => !/^nothing/.test(t)).join(", ")
+                  || "one length laid flat across, and nothing else";
+
+const KIT = (() => {
+  const out = [];
+  (function walk(i, acc){
+    if (i === AXES.length) return out.push({...acc});
+    Object.keys(CHOICES[AXES[i]]).forEach(v => walk(i+1, {...acc, [AXES[i]]: v}));
+  })(0, {});
+  return out.map(d => {
+    const fam = FAMILIAR.find(f => sameShape(f.d, d));
+    return {id: fam ? fam.id : slugOf(d), shape: d,
+            name: fam ? fam.name : SHORTNAME(d),
+            made: fam ? fam.made : partsOf(d),
+            has: propsOf(d),
+            members: AXES.reduce((n,k) => n + COST[k][d[k]], 0)};
+  });
+})();
+const SHAPE_OF = id => (KIT.find(k => k.id === id) || {}).shape || null;
+
 const NAME = id => (KIT.find(k => k.id === id) || {name:"nothing"}).name;
 
 const FEATLABEL = {
@@ -2505,55 +2577,55 @@ function drawMatch(ctx, m, i){
 }
 
 function assemble(c){
+  // This used to branch on which of six structures it was. A crossing is five
+  // independent choices now, and the primitives here already matched those
+  // choices — a deck, a rail, struts, something in the middle — they were just
+  // keyed on the name instead of on the parts. So it composes, and all
+  // forty-eight draw without a case for each.
   const list = [];
   if (!c.design) return list;
-  const id = c.design.id;
-  const deck = c.design.has.includes("high") ? DECK_HIGH : DECK_LOW;
+  const d = c.design.shape || SHAPE_OF(c.design.id);
+  if (!d) return list;
+  const deck = d.level === "raised" ? DECK_HIGH : DECK_LOW;
   const bed = bedOf(c);
+  const MID = (GAP_L + GAP_R) / 2;
 
-  if (id === "hang"){
-    const tH = 96;
-    [GAP_L, GAP_R].forEach(x => lay(list, x, GROUND_Y, x, deck - tH));
-    let prev = null;
-    for (let i = 0; i <= 6; i++){
-      const t = i/6, x = GAP_L + SPAN*t, y = deck - tH + 74*4*t*(1-t);
-      if (prev) lay(list, prev.x, prev.y, x, y);
-      prev = {x,y};
-    }
-    lay(list, GAP_L, deck, GAP_R, deck);
-    for (let i = 1; i < 4; i++){
-      const t = i/4, x = GAP_L + SPAN*t, y = deck - tH + 74*4*t*(1-t);
-      lay(list, x, y, x, deck);
-    }
-    return list;
+  // The walk itself, and a second one alongside where two may pass.
+  lay(list, GAP_L, deck, GAP_R, deck);
+  if (d.width === "two"){
+    const off = 16;
+    lay(list, GAP_L, deck + off, GAP_R, deck + off);
+    [GAP_L + SPAN*0.25, MID, GAP_R - SPAN*0.25].forEach(x => lay(list, x, deck, x, deck + off));
   }
 
-  lay(list, GAP_L, deck, GAP_R, deck);                        // the log itself
-  if (id === "log") return list;
+  // Raised: it has to be got up to, and held up.
+  if (d.level === "raised"){
+    [GAP_L, GAP_R].forEach(x => lay(list, x, GROUND_Y, x, deck));
+  }
 
-  if (id === "rail" || id === "braced"){
+  // Something at the hand.
+  if (d.hand === "rail"){
     const rh = 52;
-    lay(list, GAP_L + 18, deck - rh, GAP_R - 18, deck - rh);  // the handrail
-    [GAP_L + 18, (GAP_L+GAP_R)/2, GAP_R - 18].forEach(x => lay(list, x, deck, x, deck - rh));
-    if (id === "braced"){
-      lay(list, GAP_L, deck, GAP_L + SPAN*0.34, deck + 70);
-      lay(list, GAP_R, deck, GAP_R - SPAN*0.34, deck + 70);
-      lay(list, GAP_L + SPAN*0.34, deck + 70, GAP_R - SPAN*0.34, deck + 70);
-    }
-    return list;
+    lay(list, GAP_L + 18, deck - rh, GAP_R - 18, deck - rh);
+    [GAP_L + 18, MID, GAP_R - 18].forEach(x => lay(list, x, deck, x, deck - rh));
   }
-  if (id === "prop"){
-    lay(list, (GAP_L+GAP_R)/2, deck, (GAP_L+GAP_R)/2, bed);
-    return list;
+
+  // Something set down in the gap.
+  if (d.middle === "post"){
+    lay(list, MID, deck, MID, bed);
+  } else if (d.middle === "tower"){
+    const l = MID - SPAN*0.17, r = MID + SPAN*0.17;
+    [l, r].forEach(x => lay(list, x, deck, x, bed));
+    lay(list, l, bed, r, deck);
+    lay(list, r, bed, l, deck);
+    lay(list, l, bed, r, bed);
   }
-  if (id === "trestle"){
-    const rh = 46;
-    lay(list, GAP_L + 16, deck - rh, GAP_R - 16, deck - rh);
-    [GAP_L + 16, GAP_R - 16].forEach(x => lay(list, x, deck, x, deck - rh));
-    [GAP_L + SPAN*0.33, GAP_L + SPAN*0.67].forEach(x => lay(list, x, deck, x, bed));
-    lay(list, GAP_L + SPAN*0.33, bed, GAP_L + SPAN*0.67, deck);
-    lay(list, GAP_L + SPAN*0.67, bed, GAP_L + SPAN*0.33, deck);
-    return list;
+
+  // Struts driven back into the banks.
+  if (d.bracing === "struts"){
+    lay(list, GAP_L, deck, GAP_L + SPAN*0.34, deck + 70);
+    lay(list, GAP_R, deck, GAP_R - SPAN*0.34, deck + 70);
+    lay(list, GAP_L + SPAN*0.34, deck + 70, GAP_R - SPAN*0.34, deck + 70);
   }
   return list;
 }

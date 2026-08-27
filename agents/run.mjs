@@ -156,14 +156,20 @@ function castFor(scenario, role, seed) {
 }
 
 const CASES = {
-  given:    { A: "want",  B: "avoid", hears: true,  label: "As given" },
+  // Both of these now carry the return channel. They used to be told only that
+  // "something stands there now", which left them describing needs into the air
+  // with no way to react to the thing itself. Answering what was just laid is
+  // the ordinary situation — you look at what somebody built you and say what is
+  // wrong with it — and it is the only version where the crossing can be argued
+  // over rather than merely requested.
+  given:    { A: "want",  B: "avoid", hears: true,  echo: true, label: "As given" },
   // Under strict goals this swaps the speech acts, to check that a finding
   // belongs to asking-or-refusing rather than to one provider's habits. Loose
   // goals took the speech acts away, which left `swapped` differing from
   // `given` by a field nothing reads any more — the same experiment, run twice,
   // for a third of the cost of a sweep. Under loose it swaps the models between
   // the two chairs instead: same question, the only version of it still available.
-  swapped:  { A: "avoid", B: "want",  hears: true,  swapPlayers: true, label: "Voices swapped" },
+  swapped:  { A: "avoid", B: "want",  hears: true,  echo: true, swapPlayers: true, label: "Voices swapped" },
   separate: { A: "want",  B: "avoid", hears: false, label: "Apart" },
   // The same brief as `given` in every respect but one: what Role 3 says comes
   // back to them. The other three cases hand the two of them only the NAME of
@@ -171,6 +177,8 @@ const CASES = {
   // toolmakers do get answers back through the hub, and his convergence comes
   // from that channel — so leaving it out was a choice, and this is the control
   // for it. Keep the other three: the comparison is the finding, not this case.
+  // Kept only so recordings made under it still load. It is now exactly `given`,
+  // which took the return channel on; do not run it.
   reply:    { A: "want",  B: "avoid", hears: true,  echo: true, label: "With a reply" },
   // The page has defined these two since the beginning and the runner never
   // knew how to produce them, which is why cases 4 and 5 have sat empty.
@@ -409,7 +417,9 @@ function freeSaySystem(situation, manner) {
     `2. Say it in your own voice, the way that person would actually say it out loud. Not a summary of a`,
     `   position — a thing somebody says. Do not begin the way you began last time.`,
     ``,
-    `Say however much or little you would say. Nobody is counting.`,
+    `3. You are calling this across water to somebody standing on the other side, not writing to them.`,
+    `   Two or three sentences. Say the one thing that matters most this turn and stop — you will get`,
+    `   another turn. A speech is not more persuasive here, it is just harder to hear.`,
   ].join("\n");
 }
 
@@ -458,8 +468,12 @@ function userPrompt({ standing, ownHistory, heardHistory, hears, turn, builderSa
   else if (!hears) lines.push(`\nYou are alone with the machine. You cannot hear anyone else, and as far as you know there is nobody else.`);
   // Only the `reply` case. They hear what was said back, so they can take issue
   // with the words rather than only with the thing.
-  if (echo && builderSaid.length)
+  if (echo && builderSaid.length) {
     lines.push(`\nWhat the one building it has said back to you:\n` + builderSaid.map(s => "  - " + s).join("\n"));
+    lines.push(`\nThe last of those is what is standing there now. Answer THAT — what it gets right, what it gets`
+      + ` wrong, what you would have them change about it. Do not go back to describing your need from the`
+      + ` beginning as though nothing had been built.`);
+  }
   if (PHASE === "confer")
     lines.push(`\nThe one who builds is NOT here and cannot hear any of this. Nothing is being built yet.`
       + ` You are talking to the other person — find out what they are up against, and work out between you`
