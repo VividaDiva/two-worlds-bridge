@@ -216,11 +216,37 @@ the builder were a model too, nothing in the run would be measurable.
 
 **Three readers on the same sentences.** The claim this project rests on is that
 losing the speaker's stance is a property of reading shallowly, not of putting a
-machine in the middle. That is much harder to argue with when three models built
-by three companies agree with each other and disagree with the word list. So run
-the same case with `--machine claude`, `--machine openai` and `--machine gemini`
-and compare: where all three take a sentence the same way and the word list does
-not, the word list is the outlier, not the finding.
+machine in the middle.
+
+This used to say the argument was hard to dispute because three models built by
+three companies agree with each other and disagree with the word list. It was
+never measured, and half of it is wrong. `cross-read.mjs` puts every sentence in
+the current recordings past all three, and past the word list:
+
+| reader | took as meant | got some of it | **stance inverted** |
+|---|---|---|---|
+| claude-opus-5 | 42/118 (36%) | 113/118 (96%) | **10 (8%)** |
+| gpt-4o | 19/118 (16%) | 102/118 (86%) | **10 (8%)** |
+| gemini-flash-lite | 16/118 (14%) | 95/118 (81%) | **8 (7%)** |
+| the word list | 2/118 (2%) | 54/118 (46%) | **37 (31%)** |
+
+**They do not agree with each other.** Thirteen sentences in 117 get an identical
+reading from all three; pairwise it is 17, 24 and 31. What they do is overlap —
+87 to 98 of 117 share at least one key — so they are not reading different
+sentences, they are disagreeing about how much a sentence states. And there is a
+capability gradient underneath it (36 / 16 / 14 per cent), so some of the spread
+is model strength rather than reading.
+
+**The word list is still the outlier, on the thing that matters.** It gets the
+DIRECTION wrong on a third of all sentences. Every model sits at seven or eight
+per cent — four times better, and the three of them agree about that even while
+disagreeing about content. The finding is not that machines read badly and models
+read well. It is that reading shallowly loses stance, and reading less shallowly
+loses less of it.
+
+Run it yourself with `node --env-file=.env cross-read.mjs`. It calls Gemini
+serially on purpose: six at a time returns empty on more than half the sentences
+and it looks exactly like a deaf reader rather than a rate limit.
 
 **How the builder reads is not fixed.** `--machine keyword` gives it the word list the
 browser page uses. A provider name gives it a model that sees one

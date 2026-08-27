@@ -603,6 +603,16 @@ function askGeminiWith(shape) {
 const TURN_JSON = { type:"object", properties:{ say:{type:"string"}, asserts:{type:"array", items:{type:"string"}}, done:{type:"boolean"}, tookThemToMean:{type:"array", items:{type:"string"}} }, required:["say","asserts","done","tookThemToMean"] };
 const READ_JSON = { type:"object", properties:{ needs:{type:"array", items:{type:"string"}} }, required:["needs"] };
 const SAY_JSON  = { type:"object", properties:{ say:{type:"string"} }, required:["say"] };
+// The builder is called with four different shapes now, and Gemini's path had
+// hand-written schemas for two of them — everything that was not SaySchema fell
+// through to {needs}. Under loose goals that meant --machine gemini returned the
+// wrong shape, parsed to nothing, and read every sentence as meaning nothing at
+// all. Silently: no error, just a deaf builder. Give it the other two.
+const LOOSEREAD_JSON = { type:"object", properties:{
+  asks:{type:"array", items:{type:"string"}}, refuses:{type:"array", items:{type:"string"}} },
+  required:["asks","refuses"] };
+const CHOOSE_JSON = { type:"object", properties:{
+  build:{type:"string"}, why:{type:"string"} }, required:["build","why"] };
 const askGemini = askGeminiWith({ json: TURN_JSON, zod: TurnSchema });
 
 const askGeminiTurn = (sys, usr, schema = TurnSchema) => {
@@ -688,7 +698,14 @@ async function machineOpenAI(system, user, schema = ReadSchema) {
 }
 
 async function machineGemini(system, user, schema = ReadSchema) {
-  const shape = schema === SaySchema ? { json: SAY_JSON, zod: SaySchema } : { json: READ_JSON, zod: ReadSchema };
+  // A lookup that throws, rather than a ternary that guesses. Adding a schema
+  // without a Gemini shape now fails loudly instead of reading as silence.
+  const shape =
+    schema === SaySchema        ? { json: SAY_JSON,       zod: SaySchema } :
+    schema === ReadSchema       ? { json: READ_JSON,      zod: ReadSchema } :
+    schema === LooseReadSchema  ? { json: LOOSEREAD_JSON, zod: LooseReadSchema } :
+    schema === ChooseSchema     ? { json: CHOOSE_JSON,    zod: ChooseSchema } : null;
+  if (!shape) throw new Error("gemini has no JSON shape for that schema — add one beside SAY_JSON");
   return askGeminiWith(shape)(system, user);
 }
 
@@ -747,7 +764,14 @@ async function speakFree(player, role, ctx, state, cfg) {
     if (attempt === 4) throw new Error(`${player} could not stop naming structures for role ${role}`);
   }
 
-  // Now, and only now, the list.
+  return { say, attempts: 1 };
+}
+
+// The second half of a free turn: the speaker, shown its own line, saying what
+// it meant by it. Kept apart from speakFree because it does not depend on the
+// reading and the reading does not depend on it — both need only the sentence —
+// so the caller runs them at the same time instead of one after the other.
+async function codeFree(player, role, say, state, cfg) {
   const heard = state.said[role === "A" ? "B" : "A"];
   const coded = await PLAYERS[player](codeSystem(),
     `Your line: "${say}"` +
@@ -780,7 +804,10 @@ async function speakFree(player, role, ctx, state, cfg) {
   turn.asserts = [...turn.asks, ...turn.refuses];
   // A line that means nothing buildable is a real thing for a person to say, and
   // under free speech there is no way to send it back without dictating content.
-  return { turn, attempts: 1 };
+  //
+  // Returns the turn itself, not the {turn, attempts} envelope speakFree used to
+  // hand back — the caller assigns it straight to `turn`.
+  return turn;
 }
 
 async function speak(player, role, act, ctx, state, scenario, cfg) {
@@ -886,7 +913,18 @@ if (cfg.confer) {
     const role = i % 2 === 0 ? "A" : "B";
     const swap = LOOSE && cfg.swapPlayers;
     const player = (role === "A") === !swap ? playerA : playerB;
-    const { turn } = await speak(player, role, cfg[role], ctx, state, scenarioKey, cfg);
+    // Splitting speakFree into say-then-code changed what it hands back, and
+    // this call site still unwrapped the old {turn} envelope — which is why all
+    // three `together` cells died on the first confer turn while the other
+    // twelve ran clean. Nothing overlaps here on purpose: nobody is reading
+    // these, so there is no second call to run alongside the coding.
+    let turn;
+    if (FREE) {
+      const said = await speakFree(player, role, ctx, state, cfg);
+      turn = await codeFree(player, role, String(said.say || "").trim(), state, cfg);
+    } else {
+      ({ turn } = await speak(player, role, cfg[role], ctx, state, scenarioKey, cfg));
+    }
     const sentence = turn.say.trim();
     state.said[role].push(sentence);
     state.turn++;
@@ -906,10 +944,8 @@ for (let i = 0; i < maxTurns; i++) {
   const swap = LOOSE && cfg.swapPlayers;
   const player = (role === "A") === !swap ? playerA : playerB;
 
-  let turn, attempts;
-  try {
-    ({ turn, attempts } = await speak(player, role, act, ctx, state, scenarioKey, cfg));
-  } catch (e) {
+  // A participant that will not speak costs a turn, not the run.
+  const lostTurn = e => {
     state.refusedTurns = (state.refusedTurns || 0) + 1;
     transcript.push({ turn: state.turn + 1, who: role, player, act, text: "",
                       refused: true, why: e.message, meant: [], asserts: [], taken: [],
@@ -918,12 +954,30 @@ for (let i = 0; i < maxTurns; i++) {
     console.log(`  ${String(state.turn).padStart(2)} role ${role === "A" ? 1 : 2} (${player}): — would not speak (${e.message})`);
     // Three in a row means it is not going to start, and carrying on would burn
     // the rest of the budget on a conversation with one participant in it.
-    if (state.refusedTurns >= 3 && state.refusedTurns === Math.ceil(state.turn / 2)) {
-      state.endedBy = "a participant would not speak"; break;
-    }
-    continue;
+    return state.refusedTurns >= 3 && state.refusedTurns === Math.ceil(state.turn / 2);
+  };
+  const settle = p => p.then(ok => ({ ok }), err => ({ err }));
+
+  let turn, attempts, sentence, reading = null;
+  if (FREE) {
+    // Saying it, then saying what you meant, then somebody reading it, was three
+    // round trips in a row. The last two both need only the sentence and neither
+    // needs the other, so the reading goes out while the speaker is still
+    // annotating its own line. Nothing about either answer changes; the turn
+    // just stops waiting twice for work that could have happened once.
+    let said;
+    try { said = await speakFree(player, role, ctx, state, cfg); }
+    catch (e) { if (lostTurn(e)) break; continue; }
+    sentence = String(said.say || "").trim();
+    if (byModelUsed) reading = settle(readLooseLLM(sentence,
+      (sys, usr) => MACHINES[reader](sys, usr, LooseReadSchema)));
+    try { turn = await codeFree(player, role, sentence, state, cfg); attempts = 1; }
+    catch (e) { if (reading) await reading; if (lostTurn(e)) break; continue; }
+  } else {
+    try { ({ turn, attempts } = await speak(player, role, act, ctx, state, scenarioKey, cfg)); }
+    catch (e) { if (lostTurn(e)) break; continue; }
+    sentence = turn.say.trim();
   }
-  const sentence = turn.say.trim();
   // Said when they say they are said out, not when a counter runs out. It is not
   // sticky: anybody who has let it rest can be drawn back in by the other one
   // saying something new, which is what the turn after a "done" is for.
@@ -940,15 +994,15 @@ for (let i = 0; i < maxTurns; i++) {
   const byWordRaw  = LOOSE ? readLooseKeyword(sentence) : readKeyword(sentence);
   let byModelRaw = null, unread = false;
   if (byModelUsed) {
-    try {
-      byModelRaw = LOOSE
-        ? await readLooseLLM(sentence, (sys, usr) => MACHINES[reader](sys, usr, LooseReadSchema))
-        : await readLLM(sentence, MACHINES[reader]);
-    } catch (e) {
+    // Already in flight under free speech; started here otherwise.
+    const r = await (reading || settle(LOOSE
+      ? readLooseLLM(sentence, (sys, usr) => MACHINES[reader](sys, usr, LooseReadSchema))
+      : readLLM(sentence, MACHINES[reader])));
+    if (r.err) {
       unread = true;
       state.unread = (state.unread || 0) + 1;
-      console.log(`     (this sentence went unread — ${e.message})`);
-    }
+      console.log(`     (this sentence went unread — ${r.err.message})`);
+    } else byModelRaw = r.ok;
   }
   if (unread) {
     transcript.push({ turn: state.turn, who: role, player, act, text: sentence,
