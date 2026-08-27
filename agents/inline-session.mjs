@@ -37,7 +37,12 @@ const keep = s => ({
   // two people reached in the other room survives one line each to the builder.
   ...(s.confer ? { confer: s.confer } : {}),
   transcript: (s.transcript || [])
-    .filter(t => t.who === "A" || t.who === "B" || (t.who === "machine" && t.say))
+    // Builder turns were kept only when the voice call had produced a line. But
+    // a turn where Role 3 was refused a sentence still BUILT something, and the
+    // page needs that to replay what actually went up rather than recomputing
+    // it. Dropping them left holes the replay filled with the scoring rule's
+    // guess, which is a different crossing whenever Role 3 chose for itself.
+    .filter(t => t.who === "A" || t.who === "B" || t.who === "machine")
     // `phase` and `side` were being dropped, which made two of the five cases
     // unrenderable: without `phase` the page cannot tell the confer half of a
     // `together` run from the two lines that actually reached the builder, and
