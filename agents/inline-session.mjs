@@ -49,7 +49,15 @@ const keep = s => ({
       : { turn: t.turn, who: t.who, player: t.player, text: t.text,
           meant: t.meant || t.asserts || [], taken: t.taken || [],
           byWord: t.byWord || null, byModel: t.byModel || null,
-          ...(t.phase ? { phase: t.phase } : {}) }),
+          ...(t.phase ? { phase: t.phase } : {}),
+          // Under loose goals either of them may ask and refuse in the same
+          // breath, so stance is per turn and not a property of the chair. Left
+          // out, the page falls back to the old fixed assignment and replays
+          // every refusal by role 1 as a request — inverting the one thing the
+          // whole study is about.
+          ...(t.takenAsks || t.takenRefuses ? {
+            meantAsks: t.meantAsks || [], meantRefuses: t.meantRefuses || [],
+            takenAsks: t.takenAsks || [], takenRefuses: t.takenRefuses || [] } : {}) }),
 });
 
 let sessions = [];
