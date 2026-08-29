@@ -961,12 +961,25 @@ if (cfg.confer) {
     // three `together` cells died on the first confer turn while the other
     // twelve ran clean. Nothing overlaps here on purpose: nobody is reading
     // these, so there is no second call to run alongside the coding.
+    // The main loop survives a refused turn; this one did not, because it was
+    // never wrapped. One classifier refusal in the confer half killed the whole
+    // run — and it is the half where the two of them do the actual negotiating,
+    // so losing it loses the case. A lost confer turn is a turn they did not
+    // get, same as anywhere else.
     let turn;
-    if (FREE) {
-      const said = await speakFree(player, role, ctx, state, cfg);
-      turn = await codeFree(player, role, String(said.say || "").trim(), state, cfg);
-    } else {
-      ({ turn } = await speak(player, role, cfg[role], ctx, state, scenarioKey, cfg));
+    try {
+      if (FREE) {
+        const said = await speakFree(player, role, ctx, state, cfg);
+        turn = await codeFree(player, role, String(said.say || "").trim(), state, cfg);
+      } else {
+        ({ turn } = await speak(player, role, cfg[role], ctx, state, scenarioKey, cfg));
+      }
+    } catch (e) {
+      fatalCheck(e);
+      state.refusedTurns = (state.refusedTurns || 0) + 1;
+      state.turn++;
+      console.log(`  ${String(state.turn).padStart(2)} role ${role === "A" ? 1 : 2} (${player}) · to each other: — would not speak (${e.message})`);
+      continue;
     }
     const sentence = turn.say.trim();
     state.said[role].push(sentence);
