@@ -400,9 +400,17 @@ function looseSystemPrompt(scenario, situation, hat) {
 }
 
 // Nothing about the kit, the keys, or the length. A person and a situation.
-function freeSaySystem(situation, manner) {
+function freeSaySystem(situation, manner, together) {
   return [
-    `You are one of two people trying to get a crossing built. A third person will build it. You are not them.`,
+    together
+      // They could always hear each other and never once spoke to each other:
+      // twelve turns of two people saying "you" to the builder in alternation
+      // while the other waited their go. Being able to overhear somebody is not
+      // being in a conversation with them, and nothing in the brief said it was.
+      ? `You are in a room with two other people. One of them needs to cross the same place you do, for their`
+        + ` own reasons, which are not yours. The other builds, and can ask nobody anything — they only listen.`
+        + ` Everything said in the room is heard by all three of you.`
+      : `You are one of two people trying to get a crossing built. A third person will build it. You are not them.`,
     ``,
     `Who you are: ${manner}`,
     `Your situation: ${situation}`,
@@ -420,6 +428,14 @@ function freeSaySystem(situation, manner) {
     `3. You are calling this across water to somebody standing on the other side, not writing to them.`,
     `   Two or three sentences. Say the one thing that matters most this turn and stop — you will get`,
     `   another turn. A speech is not more persuasive here, it is just harder to hear.`,
+    ...(together ? [
+    ``,
+    `Talk to whoever you are actually talking to. If the other one has just said something that bears on`,
+    `your trouble — or gets in its way — say so TO THEM: argue with it, ask them what they meant, tell them`,
+    `what it would cost you, agree with them where you do. Two people who need different things out of the`,
+    `same crossing have plenty to settle between themselves, and the one building it is listening the whole`,
+    `time. Do not deliver every line to the builder as though the other person were furniture.`,
+    ] : []),
   ].join("\n");
 }
 
@@ -464,15 +480,17 @@ function userPrompt({ standing, ownHistory, heardHistory, hears, turn, builderSa
     const opener = ownHistory[ownHistory.length - 1].split(/\s+/).slice(0, 3).join(" ");
     lines.push(`Your last line began "${opener}…". Do not begin this one that way.`);
   }
-  if (hears && heardHistory.length) lines.push(`\nWhat the other person has said, which you can hear:\n` + heardHistory.map(s => "  - " + s).join("\n"));
+  if (hears && heardHistory.length) lines.push(`\nWhat the other one has said, in the room, to you and to the builder both:\n` + heardHistory.map(s => "  - " + s).join("\n")
+    + `\nThe last of those was said a moment ago and is still hanging there.`);
   else if (!hears) lines.push(`\nYou are alone with the machine. You cannot hear anyone else, and as far as you know there is nobody else.`);
   // Only the `reply` case. They hear what was said back, so they can take issue
   // with the words rather than only with the thing.
   if (echo && builderSaid.length) {
     lines.push(`\nWhat the one building it has said back to you:\n` + builderSaid.map(s => "  - " + s).join("\n"));
-    lines.push(`\nThe last of those is what is standing there now. Answer THAT — what it gets right, what it gets`
-      + ` wrong, what you would have them change about it. Do not go back to describing your need from the`
-      + ` beginning as though nothing had been built.`);
+    lines.push(`\nThe last of those is what is standing there now, and it can be argued with — by you, or between`
+      + ` the two of you. Do not go back to describing your need from the beginning as though nothing had`
+      + ` been built. Whether you take that up with the builder or with the other one depends on whose`
+      + ` doing it is.`);
   }
   if (PHASE === "confer")
     lines.push(`\nThe one who builds is NOT here and cannot hear any of this. Nothing is being built yet.`
@@ -504,6 +522,21 @@ const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o";
 // lite model has its own allowance and is plenty for reading one sentence at a
 // time — which is all this asks of it.
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-flash-lite-latest";
+
+// Not every failure is a refusal. An empty credit balance, a bad key or a
+// revoked one will fail identically on every retry and for every turn, and the
+// turn-level handlers treat anything thrown as "would not speak" — so a billing
+// 400 got retried seven times a call, then written into the session as though a
+// participant had declined to talk. Ten of fifteen runs recorded refusals that
+// were an empty account. These stop the run where they are, and say so.
+const FATAL = /credit balance is too low|invalid_api_key|authentication_error|permission_error|billing/i;
+class Fatal extends Error {}
+const fatalCheck = e => {
+  if (e instanceof Fatal) throw e;
+  if (FATAL.test(String(e && e.message))) {
+    throw new Fatal(String(e.message).replace(/\s+/g, " ").slice(0, 180));
+  }
+};
 
 async function askClaude(system, user, schema = TurnSchema) {
   // Opus 5 runs adaptive thinking when `thinking` is omitted.
@@ -744,7 +777,7 @@ function violationsLoose(turn) {
 // so the retry loop that used to police the form has almost nothing left to do.
 async function speakFree(player, role, ctx, state, cfg) {
   const cast = castFor(state.scenario, role, SEED);
-  const sys = freeSaySystem(cast.situation, cast.manner);
+  const sys = freeSaySystem(cast.situation, cast.manner, !!cfg.hears);
   let note = "", say = "";
   for (let attempt = 1; attempt <= 4; attempt++) {
     const user = userPrompt({
@@ -885,6 +918,16 @@ const state = { scenario: scenarioKey, turn: 0, said: { A: [], B: [] }, violatio
                 builderSaid: [] };
 const transcript = [];
 
+process.on("uncaughtException", e => {
+  if (e instanceof Fatal) {
+    console.error(`\n  Stopped: ` + e.message);
+    console.error(`  This is not a refusal and retrying will not clear it. Nothing was recorded.\n`);
+    process.exit(2);
+  }
+  throw e;
+});
+process.on("unhandledRejection", e => { throw e; });
+
 console.log(`\n  ${(LOOSE ? LOOSE_SCENARIOS : SCENARIOS)[scenarioKey].blurb}`);
 console.log(LOOSE
   ? `  ${cfg.label} — loose goals, seed ${SEED} (role 1 ${cfg.swapPlayers ? playerB : playerA}, role 2 ${cfg.swapPlayers ? playerA : playerB})`
@@ -946,6 +989,7 @@ for (let i = 0; i < maxTurns; i++) {
 
   // A participant that will not speak costs a turn, not the run.
   const lostTurn = e => {
+    fatalCheck(e);
     state.refusedTurns = (state.refusedTurns || 0) + 1;
     transcript.push({ turn: state.turn + 1, who: role, player, act, text: "",
                       refused: true, why: e.message, meant: [], asserts: [], taken: [],
@@ -999,6 +1043,7 @@ for (let i = 0; i < maxTurns; i++) {
       ? readLooseLLM(sentence, (sys, usr) => MACHINES[reader](sys, usr, LooseReadSchema))
       : readLLM(sentence, MACHINES[reader])));
     if (r.err) {
+      fatalCheck(r.err);
       unread = true;
       state.unread = (state.unread || 0) + 1;
       console.log(`     (this sentence went unread — ${r.err.message})`);
@@ -1175,6 +1220,16 @@ const inventedN = said.reduce((n, t) => n + t.invented.length, 0);
 const deafN = said.filter(t => !t.taken.length).length;
 const agreed = said.filter(t => t.byModel && t.byWord.join() === t.byModel.join()).length;
 
+const nothingStands = SOLO ? (!side.A.design || !side.B.design) : !ctx.design;
+if (nothingStands) {
+  // Not a result. Every turn was lost before anything could be read, and
+  // saying "nothing is standing" as though that were the outcome would put a
+  // finding in the session file where a failure belongs.
+  console.log(`\n  Nothing was ever built: every turn was lost before it could be read.`);
+  console.log(`  ${state.refusedTurns || 0} turns nobody would speak, ${state.unread || 0} sentences went unread.`);
+  console.log(`  No session written — there is no conversation here to record.\n`);
+  process.exit(1);
+}
 console.log(SOLO
   ? `\n  Two crossings. Role 1 got ${NAME(side.A.design.id)} over ${groundOf(side.A)};`
     + ` Role 2 got ${NAME(side.B.design.id)} over ${groundOf(side.B)}.`
