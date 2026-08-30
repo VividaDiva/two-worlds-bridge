@@ -782,14 +782,12 @@
   </section>
 
   <aside class="side">
-    <div class="trace" id="trace" hidden></div>
     <div class="threads">
       <div class="log" id="log" aria-live="polite"></div>
       <div class="rooms" id="rooms" hidden>
         <div class="room a"><div class="room-h">Role 1&rsquo;s room</div><div class="log" id="logA"></div></div>
         <div class="room b"><div class="room-h">Role 2&rsquo;s room</div><div class="log" id="logB"></div></div>
       </div>
-      <div class="vhost" id="vhost"></div>
     </div>
     <div class="foot">
       <button class="ghost" id="againBtn">Run it again</button>
@@ -2320,7 +2318,11 @@ function renderStanding(){
       </div>`).join("")}</div>`;
 }
 
+// The run strip and the verdict panel are gone from the page. Both functions are
+// called from a dozen places and are left as no-ops rather than unpicking every
+// caller: cheaper to read, and nothing else has to change.
 function renderTrace(){
+  return;
   const host = document.getElementById("trace");
   // Conferring has no trace to draw and that is the point of it: they settle it
   // between themselves and the builder builds once, at the end, from what is
@@ -2537,6 +2539,7 @@ function dist(key){
 }
 
 function pushVerdict(){
+  return;
   if (S.silent) return;
   vhost.innerHTML = "";
   const solo = !!CASES[S.case].solo, cc = solo ? S.side.A : S.shared;
@@ -3446,7 +3449,8 @@ function reset(){
   if (SC().ground){                        // some scenarios put them on agreed ground
     [S.shared, S.side.A, S.side.B, S.mem.A, S.mem.B].forEach(c => { c.world[SC().ground] = true; });
   }
-  logEl.innerHTML = ""; logs.A.innerHTML = ""; logs.B.innerHTML = ""; vhost.innerHTML = "";
+  logEl.innerHTML = ""; logs.A.innerHTML = ""; logs.B.innerHTML = "";
+  if (vhost) vhost.innerHTML = "";
   if (!S.silent) renderTrace();      // empty, so it hides — or explains itself when conferring
   roomsEl.hidden = !split(); logEl.hidden = split();
   document.getElementById("playBtn").textContent = "Play";
