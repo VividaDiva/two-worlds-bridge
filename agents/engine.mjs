@@ -152,7 +152,13 @@ export function mkCtx() {
 
 // A want adds weight to a property; a refusal takes more away than a want adds,
 // so one fear can outlast several requests.
+// Clear at the top of each turn; hear() adds to it. build() uses it to break
+// ties in favour of whatever this turn actually asked for.
+export function newTurn(ctx) { ctx.justHeard = []; }
+
 export function hear(ctx, role, act, asserts) {
+  ctx.justHeard = ctx.justHeard || [];
+  if (act === "want") ctx.justHeard.push(...asserts);
   for (const f of asserts) {
     if (!ctx.namedBy.has(f)) ctx.namedBy.set(f, new Set());
     ctx.namedBy.get(f).add(role);
@@ -188,11 +194,25 @@ export function build(ctx) {
   // has actually been about — the one with most of its properties named out
   // loud. KIT order remains underneath as a last resort, and now decides almost
   // nothing.
+  // Ties are not the exception here, they are the weather: with forty-eight
+  // crossings and small integer scores the top two are level on nine turns in
+  // ten. "Keep what is already standing" was right for six structures and is a
+  // freeze for forty-eight — it built the first thing and then held it against
+  // everything said afterwards, so a third of the turns that told the builder
+  // something new moved nothing at all.
+  //
+  // What breaks a tie now is what was JUST said. Among the crossings level at
+  // the top, take the one carrying most of what this turn actually asked for;
+  // only if that cannot separate them does the standing one keep its place.
   const top = scored[0].s;
   const tied = scored.filter(r => r.s === top);
+  const fresh = new Set(ctx.justHeard || []);
+  const nowWanted = k => k.has.filter(f => fresh.has(f)).length;
   const named = k => k.has.filter(f => ctx.namedBy.has(f)).length;
-  const held = ctx.design && tied.find(r => r.k === ctx.design);
-  const pick = held || tied.slice().sort((x, y) => named(y.k) - named(x.k))[0];
+  const best = Math.max(...tied.map(r => nowWanted(r.k)));
+  const front = tied.filter(r => nowWanted(r.k) === best);
+  const held = ctx.design && front.find(r => r.k === ctx.design);
+  const pick = held || front.slice().sort((x, y) => named(y.k) - named(x.k))[0];
 
   ctx.design = pick.k;
   return { chosen: pick, ranked: scored };

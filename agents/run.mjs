@@ -25,7 +25,7 @@ import { z } from "zod";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import OpenAI from "openai";
 import { GoogleGenAI } from "@google/genai";
-import { KIT, NAME, MADE, FEATURES, FORBIDDEN, STRUCTURES, mkCtx, hear, build, provenance, groundOf, ledger } from "./engine.mjs";
+import { KIT, NAME, MADE, FEATURES, FORBIDDEN, STRUCTURES, mkCtx, hear, newTurn, build, provenance, groundOf, ledger } from "./engine.mjs";
 import { readKeyword, readLLM, readLooseKeyword, readLooseLLM, speakLLM, chooseLLM, READERS } from "./machine.mjs";
 
 /* ── what each of them came for, and what it is allowed to do ─────────── */
@@ -518,35 +518,48 @@ function codeSystem() {
 // and the two lines below never appear.
 let PHASE = "builder";
 
-function userPrompt({ standing, ownHistory, heardHistory, hears, turn, builderSaid = [], echo = false }) {
+// What a speaker is shown before they answer.
+//
+// This used to hand them three separate lists — what you said, what the other
+// one said, what the builder said back — and never the conversation itself. A
+// person answering had to reconstruct who said what after what, from parallel
+// columns, which is not something anybody does and not something a model does
+// well either. It is why the turns read like position statements rather than
+// replies: nothing in front of them showed what they were replying to.
+//
+// They get the exchange now, in the order it happened, with the speakers named.
+// The exchange as this role heard it, in order. Anything they could not hear
+// is left out rather than reordered — a speaker who was in another room must
+// not be handed the conversation they missed.
+function dialogueFor(role, cfg, log) {
+  const other = role === "A" ? "B" : "A";
+  const out = [];
+  for (const t of log) {
+    if (t.who === role && t.text) out.push({ who: "You", text: t.text, mine: true });
+    else if (t.who === other && t.text && cfg.hears) out.push({ who: "The other one", text: t.text });
+    else if (t.who === "machine" && t.say && cfg.echo) out.push({ who: "The builder", text: t.say, builder: true });
+  }
+  return out;
+}
+
+function userPrompt({ standing, dialogue = [], hears, turn, echo = false }) {
   const lines = [`Turn ${turn}.`];
-  // This used to read "What stands at the moment: A single log." — which handed
-  // them, every turn, both the shape of the answer and the exact vocabulary the
-  // rule three lines above forbids them to use. Every name in the kit leaks a
-  // banned word: log, handrail, walkway, prop, trestle, span. They had "A single
-  // log" in front of them for every turn of every run ever recorded here.
-  //
-  // They are not told what stands. Either the builder says something about it and
-  // they hear that, or they are working blind, which is the situation the whole
-  // study is about.
   lines.push(standing ? `Something stands there now.` : `Nothing has been built yet.`);
-  if (ownHistory.length) {
-    lines.push(`\nWhat you have already said (do not repeat it):\n` + ownHistory.map(s => "  - " + s).join("\n"));
-    const opener = ownHistory[ownHistory.length - 1].split(/\s+/).slice(0, 3).join(" ");
-    lines.push(`Your last line began "${opener}…". Do not begin this one that way.`);
+
+  if (dialogue.length) {
+    lines.push(`\nHow it has gone so far:\n` + dialogue.map(d => "  " + d.who + ": " + d.text).join("\n"));
+    const last = dialogue[dialogue.length - 1];
+    lines.push(`\nThe last of those was ${last.who}, a moment ago, and it is still hanging there.`);
+    const mine = dialogue.filter(d => d.mine);
+    if (mine.length) {
+      const opener = mine[mine.length - 1].text.split(/\s+/).slice(0, 3).join(" ");
+      lines.push(`Your own last line began "${opener}…". Do not begin this one that way, and do not repeat yourself.`);
+    }
   }
-  if (hears && heardHistory.length) lines.push(`\nWhat the other one has said, in the room, to you and to the builder both:\n` + heardHistory.map(s => "  - " + s).join("\n")
-    + `\nThe last of those was said a moment ago and is still hanging there.`);
-  else if (!hears) lines.push(`\nYou are alone with the machine. You cannot hear anyone else, and as far as you know there is nobody else.`);
-  // Only the `reply` case. They hear what was said back, so they can take issue
-  // with the words rather than only with the thing.
-  if (echo && builderSaid.length) {
-    lines.push(`\nWhat the one building it has said back to you:\n` + builderSaid.map(s => "  - " + s).join("\n"));
-    lines.push(`\nThe last of those is what is standing there now, and it can be argued with — by you, or between`
-      + ` the two of you. Do not go back to describing your need from the beginning as though nothing had`
-      + ` been built. Whether you take that up with the builder or with the other one depends on whose`
-      + ` doing it is.`);
-  }
+  if (!hears) lines.push(`\nYou cannot hear anyone else, and as far as you know there is nobody else here but the one building.`);
+  if (echo && dialogue.some(d => d.builder))
+    lines.push(`\nWhat the builder has said is what stands there now, and it can be argued with — by you, or between`
+      + ` the two of you. Do not describe your need from the beginning again as though nothing had been built.`);
   if (PHASE === "confer")
     lines.push(`\nThe one who builds is NOT here and cannot hear any of this. Nothing is being built yet.`
       + ` You are talking to the other person — find out what they are up against, and work out between you`
@@ -854,10 +867,8 @@ async function speakFree(player, role, ctx, state, cfg) {
   for (let attempt = 1; attempt <= 4; attempt++) {
     const user = userPrompt({
       standing: CX(role).design ? NAME(CX(role).design.id) : null,
-      ownHistory: state.said[role],
-      heardHistory: state.said[role === "A" ? "B" : "A"],
-      hears: cfg.hears, turn: state.turn + 1,
-      builderSaid: state.builderSaid, echo: !!cfg.echo,
+      dialogue: dialogueFor(role, cfg, state.log || []),
+      hears: cfg.hears, turn: state.turn + 1, echo: !!cfg.echo,
     }) + note;
     const out = await PLAYERS[player](sys, user, FreeSaySchema);
     say = String(out?.say || "").trim();
@@ -925,11 +936,9 @@ async function speak(player, role, act, ctx, state, scenario, cfg) {
   for (let attempt = 1; attempt <= 4; attempt++) {
     const user = userPrompt({
       standing: CX(role).design ? NAME(CX(role).design.id) : null,
-      ownHistory: state.said[role],
-      heardHistory: state.said[role === "A" ? "B" : "A"],
+      dialogue: dialogueFor(role, cfg, state.log || []),
       hears: cfg.hears,
       turn: state.turn + 1,
-      builderSaid: state.builderSaid,
       echo: !!cfg.echo,
     }) + note;
     const turn = await PLAYERS[player](sys, user, LOOSE ? LooseTurnSchema : TurnSchema);
@@ -991,6 +1000,9 @@ const CX = role => CASES[caseKey].solo ? side[role] : ctx;
 const state = { scenario: scenarioKey, turn: 0, said: { A: [], B: [] }, violations: [], done: { A: false, B: false },
                 builderSaid: [] };
 const transcript = [];
+// The speakers are shown the exchange itself, so they need the running record,
+// not three parallel lists of who-said-what.
+state.log = transcript;
 
 process.on("uncaughtException", e => {
   if (e instanceof Fatal) {
@@ -1150,6 +1162,7 @@ for (let i = 0; i < maxTurns; i++) {
   const taken = byModel || byWord;
 
   const cx = CX(role);
+  newTurn(cx);                       // ties are broken by what THIS turn asked for
   const heardBefore = new Set([...cx.wants.keys(), ...cx.avoids.keys()]);
   if (LOOSE) { hear(cx, role, "want", heardRaw.asks); hear(cx, role, "avoid", heardRaw.refuses); }
   else hear(cx, role, act, taken);
