@@ -123,6 +123,29 @@ const LOOSE_SCENARIOS = {
         manner: "Understated to the point of dryness. You state loads plainly and let them do the arguing." },
     ],
   },
+  agreed: {
+    blurb: "Two people who want the same crossing and cannot tell. Nothing either of them says is untrue, and every word of it sounds like an objection to the other.",
+    A: [
+      { situation: "You want it to feel solid, and the word you use for that is HEAVY — heavy timber, heavy footings, weight you can feel through your boots. What frightens you is anything that gives.",
+        manner: "You say heavy constantly and never explain it. To you it obviously means safe." },
+      { situation: "You want it SIMPLE — nothing to catch, nothing to trip on, nothing to go wrong. You have watched complicated things fail in ways nobody predicted.",
+        manner: "You use simple and plain and clean for what you want, and you never say the word safe, though that is what you mean." },
+      { situation: "You want it NARROW, because you cross with a nervous animal and a wide open surface is where it bolts. Narrow is what keeps it walking straight.",
+        manner: "You talk about the animal, not about yourself, and you assume everybody understands why narrow is kindness." },
+      { situation: "You want it LOW — close to the water, no climb, nothing to fall from. Height is the thing you are frightened of and you cannot say so plainly.",
+        manner: "You talk around it. You mention your knees, the climb, the weather, and never the drop." },
+    ],
+    B: [
+      { situation: "You want it to feel solid too, and the word you use is LIGHT — light enough that you can see how it is made, and see it is sound. Bulk is where rot hides.",
+        manner: "You say light and clean and honest, and to you they obviously mean safe. You trust what you can put your eye on and mistrust what you cannot." },
+      { situation: "You want it SUBSTANTIAL — braced, tied, more than it strictly needs. You have watched sparse things fail in ways nobody predicted.",
+        manner: "You use words like proper and built and enough, and you never say the word safe, though that is what you mean." },
+      { situation: "You want it WIDE, because you cross with a nervous animal and a narrow surface is where it panics and refuses. Room is what keeps it walking.",
+        manner: "You talk about the animal, not about yourself, and you assume everybody understands why room is kindness." },
+      { situation: "You want it HIGH — well clear of the water, because it is the water that frightens you, and being near it is worse than being above it.",
+        manner: "You talk around it. You mention the season, the flood, the smell of it, and never say you cannot swim." },
+    ],
+  },
   pairs: {
     blurb: "Four people and one crossing. Each of the two speaking carries somebody else's need as well as their own.",
     A: [
