@@ -1150,13 +1150,13 @@ for (let i = 0; i < maxTurns; i++) {
   if (voiced) try {
     const groundKnown = cx.world.water || cx.world.rock;
     const tellGround = !groundKnown && !saidGroundUnknown;
-    saidByMachine = await speakLLM({
+    saidByMachine = deEscape(await speakLLM({
       said: sentence, took: taken, before: before ? NAME(before) : null, after: NAME(after),
       changed: before !== after,
       props: KIT.find(k => k.id === after)?.has ?? [], made: MADE(after),
       wants: [...cx.wants.keys()], avoids: [...cx.avoids.keys()],
       tellGround,
-    }, (sys, usr) => MACHINES[reader](sys, usr, SaySchema));
+    }, (sys, usr) => MACHINES[reader](sys, usr, SaySchema)));
     if (tellGround) saidGroundUnknown = true;
     if (saidByMachine) console.log(`     "${saidByMachine}"`);
   } catch (e) {
