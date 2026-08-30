@@ -112,7 +112,9 @@ const LOOSE_SCENARIOS = {
     ],
     B: [
       { situation: "You bring a loaded cart through daily. In winter the ground goes soft.",
-        manner: "Dry, specific, fobbed off before. You cite the year, the mud, the axle, and you know what \"it'll do\" costs." },
+        // "You cite the year, the mud, the axle" produced a dated anecdote in half
+        // of all turns — in character, but a tic once it is every time.
+        manner: "Dry, specific, and fobbed off before, so you know what \"it'll do\" costs. You have particular winters you could name, but you do not reach for one every time you open your mouth." },
       { situation: "You move long timber over — awkward, unwieldy, and it will not turn a corner.",
         manner: "You talk about length and swing and clearance. Patient, and used to not being understood." },
       { situation: "You lead a horse across, and it will not set foot on anything that moves.",
@@ -430,11 +432,15 @@ function freeSaySystem(situation, manner, together) {
     `   another turn. A speech is not more persuasive here, it is just harder to hear.`,
     ...(together ? [
     ``,
-    `Talk to whoever you are actually talking to. If the other one has just said something that bears on`,
-    `your trouble — or gets in its way — say so TO THEM: argue with it, ask them what they meant, tell them`,
-    `what it would cost you, agree with them where you do. Two people who need different things out of the`,
-    `same crossing have plenty to settle between themselves, and the one building it is listening the whole`,
-    `time. Do not deliver every line to the builder as though the other person were furniture.`,
+    `Talk to whoever you are actually talking to. The other one is in the room and worth answering; the one`,
+    `building is listening the whole time. Do not deliver every line to the builder as though the other`,
+    `person were furniture.`,
+    ``,
+    `A turn can be one thing. Sometimes you only ask them something. Sometimes you only disagree. Sometimes`,
+    `you say the plain thing you came to say and let them answer it. You do not have to concede a point,`,
+    `pivot on a dash, produce a memory with a date in it and end on a demand — that is a shape, not a way of`,
+    `talking, and doing it every turn is how you sound like somebody performing a conversation instead of`,
+    `having one. Vary what a turn does. Some of them should be short.`,
     ] : []),
   ].join("\n");
 }
@@ -661,6 +667,17 @@ const PLAYERS = { claude: askClaude, openai: askOpenAI, gemini: askGeminiTurn };
 // returns the right JSON in an ordinary text block and parsed_output stays null.
 // So take the text and validate it ourselves. This works whether or not the
 // server applies the format, which is the behaviour worth having either way.
+// A model writing an em-dash sometimes emits the escape rather than the
+// character, inside a string that has already been through JSON.parse — so a
+// literal \u2014 lands in the transcript and renders as itself on the page.
+// Decode what survived, and drop control characters that mean nothing in a
+// spoken line.
+const deEscape = t => String(t)
+  .replace(/\\u([0-9a-fA-F]{4})/g, (_, h) => String.fromCharCode(parseInt(h, 16)))
+  .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, " ")
+  .replace(/[ \t]+/g, " ")
+  .trim();
+
 function parsedOr(res, schema, what) {
   if (res.parsed_output) return res.parsed_output;
   // Ran out of room rather than declined. This used to surface as the baffling
@@ -970,7 +987,7 @@ if (cfg.confer) {
     try {
       if (FREE) {
         const said = await speakFree(player, role, ctx, state, cfg);
-        turn = await codeFree(player, role, String(said.say || "").trim(), state, cfg);
+        turn = await codeFree(player, role, deEscape(said.say || ""), state, cfg);
       } else {
         ({ turn } = await speak(player, role, cfg[role], ctx, state, scenarioKey, cfg));
       }
@@ -1025,7 +1042,7 @@ for (let i = 0; i < maxTurns; i++) {
     let said;
     try { said = await speakFree(player, role, ctx, state, cfg); }
     catch (e) { if (lostTurn(e)) break; continue; }
-    sentence = String(said.say || "").trim();
+    sentence = deEscape(said.say || "");
     if (byModelUsed) reading = settle(readLooseLLM(sentence,
       (sys, usr) => MACHINES[reader](sys, usr, LooseReadSchema)));
     try { turn = await codeFree(player, role, sentence, state, cfg); attempts = 1; }
