@@ -674,6 +674,12 @@ const PLAYERS = { claude: askClaude, openai: askOpenAI, gemini: askGeminiTurn };
 // spoken line.
 const deEscape = t => String(t)
   .replace(/\\u([0-9a-fA-F]{4})/g, (_, h) => String.fromCharCode(parseInt(h, 16)))
+  .replace(/(^|[^0-9a-zA-Z])u2014/g, (_, p) => p + "—")
+  .replace(/(^|[^0-9a-zA-Z])u2019/g, (_, p) => p + "’")
+  .replace(/(^|[^0-9a-zA-Z])u201c/g, (_, p) => p + "“")
+  .replace(/(^|[^0-9a-zA-Z])u201d/g, (_, p) => p + "”")
+  .replace(/(^|[^0-9a-zA-Z])u2026/g, (_, p) => p + "…")
+  .replace(/(^|[^0-9a-zA-Z])u00a0/g, (_, p) => p + " ")
   .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, " ")
   .replace(/[ \t]+/g, " ")
   .trim();

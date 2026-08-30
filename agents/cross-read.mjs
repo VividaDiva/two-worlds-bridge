@@ -21,13 +21,17 @@ const argv = process.argv.slice(2);
 const LIMIT = argv.includes("--limit") ? Number(argv[argv.indexOf("--limit") + 1]) : Infinity;
 const CONC = 6;
 
-// Only what the page is showing: the newest loose+free run per cell.
+// Exactly what the page is showing. Picking "newest per cell" by file
+// mtime put a mixture of code versions on the page — descape.mjs and
+// rescore.mjs bumped mtimes when they rewrote old recordings, floating
+// stale runs to the top and displacing fresh ones. The batch log names
+// the file each cell wrote, so read that.
 const best = {};
-for (const f of fs.readdirSync("sessions").filter(x => x.endsWith(".json"))) {
-  const s = JSON.parse(fs.readFileSync("sessions/" + f, "utf8"));
-  if (s.meta?.goals !== "loose" || s.meta?.speech !== "free") continue;
-  const k = `${s.meta.scenario}/${s.meta.case}`, t = fs.statSync("sessions/" + f).mtimeMs;
-  if (!best[k] || t > best[k].t) best[k] = { f, t, s };
+for (const p of fs.readFileSync("sessions/batch/final.txt", "utf8")
+  .split("\n").filter(l => l.includes("session written to"))
+  .map(l => l.trim().replace("session written to ", ""))) {
+  const s = JSON.parse(fs.readFileSync(p, "utf8"));
+  best[`${s.meta.scenario}/${s.meta.case}`] = { f: p, s };
 }
 const rows = [];
 for (const { s } of Object.values(best))
@@ -48,6 +52,15 @@ const Loose = z.object({ asks: z.array(z.string()), refuses: z.array(z.string())
 const anthropic = new Anthropic(), openai = new OpenAI();
 const gem = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY });
 
+const geminiOnce = async (sys, usr) => {
+  const r = await gem.models.generateContent({ model: "gemini-flash-lite-latest",
+    contents: usr, config: { systemInstruction: sys, responseMimeType: "application/json",
+      responseJsonSchema: { type: "object", properties: {
+        asks: { type: "array", items: { type: "string" } },
+        refuses: { type: "array", items: { type: "string" } } }, required: ["asks", "refuses"] } } });
+  return JSON.parse(r.text);
+};
+
 const READERS = {
   claude: async (sys, usr) => {
     const r = await anthropic.beta.messages.parse({ model: "claude-opus-5", max_tokens: 8192,
@@ -63,16 +76,26 @@ const READERS = {
                  { role: "user", content: usr }] });
     return JSON.parse(r.choices[0].message.content);
   },
-  gemini: async (sys, usr) => {
-    const r = await gem.models.generateContent({ model: "gemini-flash-lite-latest",
-      contents: usr, config: { systemInstruction: sys, responseMimeType: "application/json",
-        responseJsonSchema: { type: "object", properties: {
-          asks: { type: "array", items: { type: "string" } },
-          refuses: { type: "array", items: { type: "string" } } }, required: ["asks", "refuses"] } } });
-    return JSON.parse(r.text);
-  },
+  // Six at a time hit the rate limiter and two thirds of this column
+  // came back empty — recorded as "read nothing", which is a reading,
+  // not a refusal to answer. Honour the retry delay and wait.
+  gemini: geminiOnce,
 };
 
+// Whichever reader is left unprotected gets rate-limited: gemini when it
+// was alone, claude when all three run at once. A 429 is not an answer.
+for (const k of Object.keys(READERS)) {
+  const once = READERS[k];
+  READERS[k] = async (sys, usr) => {
+    for (let n = 0; ; n++) {
+      try { return await once(sys, usr); }      catch (e) {
+        if (n === 5) throw e;
+        const wait = Number(String(e.message).match(/retryDelay":"(\d+)s/)?.[1] || (2 ** n)) * 1000;
+        await new Promise(r => setTimeout(r, Math.min(wait, 30000)));
+      }
+    }
+  };
+}
 const key = x => JSON.stringify([[...(x.asks || [])].sort(), [...(x.refuses || [])].sort()]);
 const out = [];
 let done = 0;

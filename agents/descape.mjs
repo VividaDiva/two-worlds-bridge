@@ -18,10 +18,17 @@ const clean = t => {
   }
   return out.replace(/[ \t]+/g, " ").trim();
 };
-const de = t => clean(String(t).replace(/\\u([0-9a-fA-F]{4})/g,
-  (_, h) => String.fromCharCode(parseInt(h, 16))));
+const de = t => clean(String(t)
+  .replace(/\\u([0-9a-fA-F]{4})/g, (_, h) => String.fromCharCode(parseInt(h, 16)))
+  .replace(/(^|[^0-9a-zA-Z])u2014/g, (_, p) => p + "—")
+  .replace(/(^|[^0-9a-zA-Z])u2019/g, (_, p) => p + "’")
+  .replace(/(^|[^0-9a-zA-Z])u201c/g, (_, p) => p + "“")
+  .replace(/(^|[^0-9a-zA-Z])u201d/g, (_, p) => p + "”")
+  .replace(/(^|[^0-9a-zA-Z])u2026/g, (_, p) => p + "…")
+  .replace(/(^|[^0-9a-zA-Z])u00a0/g, (_, p) => p + " ")
+  );
 
-const hasEsc = t => /\\u[0-9a-fA-F]{4}/.test(t);
+const hasEsc = t => /\\?u[0-9a-fA-F]{4}/.test(t);
 
 let files = 0, lines = 0;
 for (const f of fs.readdirSync("sessions").filter(x => x.endsWith(".json"))) {
