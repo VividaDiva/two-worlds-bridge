@@ -123,6 +123,29 @@ const LOOSE_SCENARIOS = {
         manner: "Understated to the point of dryness. You state loads plainly and let them do the arguing." },
     ],
   },
+  pairs: {
+    blurb: "Four people and one crossing. Each of the two speaking carries somebody else's need as well as their own.",
+    A: [
+      { situation: "You speak for yourself and for your mother, who is eighty and crosses on two sticks at her own pace. What you need and what she needs are not the same thing and you know it.",
+        manner: "You keep catching yourself arguing for one of them and not the other. You correct yourself out loud when you notice." },
+      { situation: "You cross with your nine-year-old, who runs at it, and with your father's dog, which will not go at all unless it can see the far side.",
+        manner: "Harried and specific. You talk about the two of them separately because their troubles are nothing alike." },
+      { situation: "You are the one who goes over, and you are also the one who has to get your blind uncle over it twice a week.",
+        manner: "You say \"for me\" and \"for him\" and you keep them apart, because confusing them is how somebody gets hurt." },
+      { situation: "Half the year you carry a baby across; the other half you drive the year's grain over on your back.",
+        manner: "You talk in seasons, and you are aware the two halves of your year want opposite things." },
+    ],
+    B: [
+      { situation: "You bring the cart through, and your sister brings the flock through the same gap an hour later. She is not here to speak for herself.",
+        manner: "Dry, and careful to be fair to her. You flag which half of what you are saying is hers." },
+      { situation: "You fish under it, and you also have to walk over it. What is good for the boat is not good for your feet.",
+        manner: "You are amused by the contradiction and say so. You will not pretend the two wants are one." },
+      { situation: "You carry the post over daily, and once a month you bring the doctor across, who will not come if it looks unsafe.",
+        manner: "Practical about your own crossing, anxious about hers, and the anxiety is the part you have trouble putting plainly." },
+      { situation: "The timber goes over on your shoulder, and the children of the village go over it unsupervised all summer.",
+        manner: "Blunt about the timber, and you keep circling back to the children without quite saying you are frightened." },
+    ],
+  },
   refs: {
     blurb: "Neither of you can describe it plainly. Each keeps gesturing at something the other has never seen.",
     A: [
@@ -417,8 +440,11 @@ function freeSaySystem(situation, manner, together) {
     `Who you are: ${manner}`,
     `Your situation: ${situation}`,
     ``,
-    `You have not decided what the thing should be, and you are not designing it. You know what your life is`,
-    `like and what would ruin it. The rest is worked out by talking, and you can be persuaded.`,
+`You want this built. So does the other one, for their own reasons, and the two of you have to live with`,
+`whatever goes up — you will both be using it. You do not know what it should BE, and you cannot design it,`,
+`because you have no words for the parts. What you have is your life, what would ruin it, and each other.`,
+`Work toward something. Say when a thing would do, not only when it would not. You can be persuaded, and`,
+`you can give something up to get the rest.`,
     ``,
     `Two rules only:`,
     `1. You may never name a thing that could be built. These words are banned: ${STRUCTURES.join(", ")}.`,
@@ -928,7 +954,9 @@ const byModelUsed = reader !== "keyword";
 const voiced = byModelUsed && argv.voice !== "off";
 let saidGroundUnknown = false;   // it should say that once, not every turn
 
-if (!SCENARIOS[scenarioKey]) throw new Error(`unknown scenario: ${scenarioKey}`);
+const SCEN_TABLE = LOOSE ? LOOSE_SCENARIOS : SCENARIOS;
+if (!SCEN_TABLE[scenarioKey])
+  throw new Error(`unknown scenario: ${scenarioKey} (${Object.keys(SCEN_TABLE).join(" | ")})`);
 if (!CASES[caseKey]) throw new Error(`unknown case: ${caseKey} (${Object.keys(CASES).join(" | ")})`);
 
 const cfg = CASES[caseKey];
@@ -1323,7 +1351,8 @@ const session = {
     cast: LOOSE ? { A: castFor(scenarioKey, "A", SEED), B: castFor(scenarioKey, "B", SEED) } : null,
           turns: state.turn, endedBy: state.endedBy || "turn cap", lastMoved: state.lastMoved || null,
           ranAt: new Date().toISOString() },
-  goals: { A: SCENARIOS[scenarioKey].A.goal, B: SCENARIOS[scenarioKey].B.goal },
+  goals: LOOSE ? null
+    : { A: SCENARIOS[scenarioKey].A.goal, B: SCENARIOS[scenarioKey].B.goal },
   transcript,
   outcome: SOLO
     ? { built: side.A.design.id, name: NAME(side.A.design.id), ground: groundOf(side.A),

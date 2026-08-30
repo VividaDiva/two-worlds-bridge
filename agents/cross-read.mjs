@@ -27,9 +27,11 @@ const CONC = 6;
 // stale runs to the top and displacing fresh ones. The batch log names
 // the file each cell wrote, so read that.
 const best = {};
-for (const p of fs.readFileSync("sessions/batch/final.txt", "utf8")
-  .split("\n").filter(l => l.includes("session written to"))
-  .map(l => l.trim().replace("session written to ", ""))) {
+const runFiles = fs.readdirSync("sessions/batch")
+  .filter(x => /^run-.*\.txt$/.test(x))
+  .map(f => (fs.readFileSync("sessions/batch/" + f, "utf8").match(/session written to (\S+)/) || [])[1])
+  .filter(Boolean);
+for (const p of runFiles) {
   const s = JSON.parse(fs.readFileSync(p, "utf8"));
   best[`${s.meta.scenario}/${s.meta.case}`] = { f: p, s };
 }
