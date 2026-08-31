@@ -19,11 +19,11 @@ CONC=${CONC:-5}
 mkdir -p "$OUT"; rm -f "$OUT"/run-*.txt
 started=$(date +%s)
 printf '%s\n' \
-  "places 5 given" "places 5 swapped" "places 5 separate" "places 5 together" "places 5 alone" \
-  "loads 3 given"  "loads 3 swapped"  "loads 3 separate"  "loads 3 together"  "loads 3 alone" \
-  "refs 9 given"   "refs 9 swapped"   "refs 9 separate"   "refs 9 together"   "refs 9 alone" \
-  "pairs 2 given"  "pairs 2 swapped"  "pairs 2 separate"  "pairs 2 together"  "pairs 2 alone" \
-  "agreed 1 given" "agreed 1 swapped" "agreed 1 separate" "agreed 1 together" "agreed 1 alone" \
+  "places 1 given" "places 4 swapped" "places 7 separate" "places 10 together" "places 13 alone" \
+  "loads 2 given"  "loads 5 swapped"  "loads 8 separate"  "loads 11 together"  "loads 14 alone" \
+  "refs 3 given"   "refs 6 swapped"   "refs 9 separate"   "refs 12 together"  "refs 15 alone" \
+  "pairs 0 given"  "pairs 5 swapped"  "pairs 9 separate"  "pairs 13 together" "pairs 2 alone" \
+  "agreed 1 given" "agreed 6 swapped" "agreed 10 separate" "agreed 14 together" "agreed 3 alone" \
   | xargs -P "$CONC" -L1 "$0" --one
 
 echo "FINAL BATCH COMPLETE in $(( ($(date +%s) - started) / 60 ))m"

@@ -13,7 +13,7 @@
 // A crossing is five independent choices now, which is forty-eight of them.
 // `heavy` reaches half. Everything downstream only ever iterates KIT, so build,
 // provenance and the builder's own choosing all work unchanged.
-export const AXES = ["level", "hand", "middle", "width", "bracing"];
+export const AXES = ["level", "hand", "middle", "width", "bracing", "surface", "ends", "cover"];
 export const CHOICES = {
   level:   { at:   "level with where you stand",  raised: "carried well above the ground" },
   hand:    { none: "nothing at the hand",         rail:   "a rail at the hand the whole way" },
@@ -21,8 +21,12 @@ export const CHOICES = {
              tower: "a framed tower standing in the gap" },
   width:   { one:  "one person at a time",        two:    "two abreast" },
   bracing: { none: "nothing bracing it",          struts: "struts driven into both banks" },
+  surface: { bare: "nothing laid on the walk",    rough: "a coarse surface that bites a wet boot" },
+  ends:    { rested: "the ends resting on the banks", footed: "the ends carried down to firm ground" },
+  cover:   { open:  "nothing overhead",           roof:  "a roof the whole length of it" },
 };
-const BARE = { level: "at", hand: "none", middle: "none", width: "one", bracing: "none" };
+const BARE = { level: "at", hand: "none", middle: "none", width: "one", bracing: "none",
+               surface: "bare", ends: "rested", cover: "open" };
 
 // Every feature is reachable more than one way — `steady` from a tower or from
 // struts, `heavy` only where something carries the weight AND there is room for
@@ -38,13 +42,17 @@ export function propsOf(d) {
   has.add(held ? "steady" : "sways");
   if (held && (d.width === "two" || d.middle === "tower")) has.add("heavy");
   if (d.width === "one" && d.bracing === "none") has.add("light");
+  if (d.surface === "rough") has.add("grip");
+  if (d.ends === "footed") has.add("footed");
+  if (d.cover === "roof") has.add("sheltered");
   if (AXES.every(k => d[k] === BARE[k])) has.add("minimal");
   return [...has];
 }
 
 // Matchsticks, so "17 laid" still means something.
 const COST = {level:{at:1,raised:3}, hand:{none:0,rail:4}, middle:{none:0,post:1,tower:5},
-              width:{one:0,two:4}, bracing:{none:0,struts:3}};
+              width:{one:0,two:4}, bracing:{none:0,struts:3},
+              surface:{bare:0,rough:7}, ends:{rested:0,footed:2}, cover:{open:0,roof:4}};
 
 // The six that were the whole kit are corners of this space. Recordings made
 // before it existed still resolve, and a run that lands on one gets called by
@@ -73,10 +81,15 @@ const SHORTNAME = d => {
   if (d.middle === "tower") bits.push("a tower in the gap");
   if (d.width === "two") bits.push("two abreast");
   if (d.bracing === "struts") bits.push("struts");
+  if (d.surface === "rough") bits.push("a coarse surface");
+  if (d.ends === "footed") bits.push("footed ends");
+  if (d.cover === "roof") bits.push("a roof");
   if (!bits.length) return d.level === "raised" ? "A raised crossing" : "A bare crossing";
   return head + " with " + (bits.length === 1 ? bits[0]
     : bits.slice(0, -1).join(", ") + " and " + bits[bits.length - 1]);
 };
+// The six named ones predate these axes; they take the bare setting on each.
+for (const f of FAMILIAR) f.d = { surface: "bare", ends: "rested", cover: "open", ...f.d };
 const sameShape = (x, y) => AXES.every(k => x[k] === y[k]);
 const slug = d => AXES.map(k => d[k]).join("-");
 const parts = d => AXES.map(k => CHOICES[k][d[k]]).filter(t => !/^nothing/.test(t)).join(", ")
@@ -121,6 +134,9 @@ export const FEATURES = {
   inGap:   "something stands in the middle of the gap",
   high:    "it is raised above where we stand",
   many:    "a great deal of material goes into it",
+  grip:      "it does not go slick underfoot when it is wet",
+  footed:    "its ends hold when the banks go soft",
+  sheltered: "the weather is kept off you as you cross",
 };
 
 // Nobody may say any of these. Checked on every generated line.

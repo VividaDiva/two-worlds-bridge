@@ -56,6 +56,7 @@ const keep = s => ({
           byWord: t.byWord || null, byModel: t.byModel || null,
           ...(t.phase ? { phase: t.phase } : {}),
           ...((t.tookThemToMean || []).length ? { tookThemToMean: t.tookThemToMean } : {}),
+          ...(t.meantPlainly ? { meantPlainly: t.meantPlainly } : {}),
           // Under loose goals either of them may ask and refuse in the same
           // breath, so stance is per turn and not a property of the chair. Left
           // out, the page falls back to the old fixed assignment and replays

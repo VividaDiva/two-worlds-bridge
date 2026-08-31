@@ -319,6 +319,14 @@ const FreeSaySchema = z.object({
 });
 
 const CodeSchema = z.object({
+  // The keys are my taxonomy, not theirs — every sentence anybody says is
+  // squeezed into seventeen slots I wrote, and the answer key is squeezed the
+  // same way, so "what they meant" has never quite been what they meant. Asking
+  // for it in their own words too makes the cost of that visible: where the
+  // plain sentence carries something no key can hold, the coding scheme is
+  // itself a conduit, and it is losing things.
+  meantPlainly: z.string().optional().default("")
+    .describe("What you meant by your line, in one plain sentence of your own words. Not the keys."),
   asks: z.array(z.string()).optional().default([]).describe("Feature keys your line asks FOR. May be empty."),
   refuses: z.array(z.string()).optional().default([]).describe("Feature keys your line rules OUT. May be empty."),
   done: z.boolean().optional().default(false)
@@ -359,7 +367,7 @@ const SaySchema = z.object({
 SHAPES.set(TurnSchema,      '{"say": "...", "asserts": ["key", ...], "done": <true or false>, "tookThemToMean": ["key", ...]}');
 SHAPES.set(LooseTurnSchema, '{"say": "...", "asks": ["key", ...], "refuses": ["key", ...], "done": <true or false>, "tookThemToMean": ["key", ...]}');
 SHAPES.set(FreeSaySchema,   '{"say": "..."}');
-SHAPES.set(CodeSchema,      '{"asks": ["key", ...], "refuses": ["key", ...], "done": <true or false>, "tookThemToMean": ["key", ...]}');
+SHAPES.set(CodeSchema,      '{"meantPlainly": "...", "asks": ["key", ...], "refuses": ["key", ...], "done": <true or false>, "tookThemToMean": ["key", ...]}');
 SHAPES.set(LooseReadSchema, '{"asks": ["key", ...], "refuses": ["key", ...]}');
 SHAPES.set(ChooseSchema,    '{"build": "the id exactly as written", "why": "..."}');
 SHAPES.set(ReadSchema,      '{"needs": ["key", ...]}');
@@ -509,7 +517,10 @@ function codeSystem() {
     ``,
     `Set done only if you would say nothing further even if they spoke again.`,
     ``,
-    `Use this list only:`,
+    `Before the keys: say in one plain sentence of your own what you meant by your line. Do not reach for`,
+    `the list to write it — say it the way you would say it to somebody who had not heard you.`,
+    ``,
+    `Then the keys. Use this list only:`,
     ...Object.entries(FEATURES).map(([k, v]) => `   ${k} — ${v}`),
   ].join("\n");
 }
@@ -914,6 +925,7 @@ async function codeFree(player, role, say, state, cfg) {
   if (dropped.length) state.violations.push({ role, player, attempt: 1, say,
     broke: dropped.map(k => `"${k}" is not one of the feature keys`) });
   const turn = { say, asks: ok(c.asks), refuses: ok(c.refuses),
+                 meantPlainly: String(c.meantPlainly || coded.meantPlainly || "").trim(),
                  done: !!c.done, tookThemToMean: ok(c.tookThemToMean) };
   // Trim from the tail if it still overran: three total, asks first.
   turn.refuses = turn.refuses.slice(0, Math.max(0, 3 - turn.asks.length));
@@ -1086,6 +1098,15 @@ for (let i = 0; i < maxTurns; i++) {
   const swap = LOOSE && cfg.swapPlayers;
   const player = (role === "A") === !swap ? playerA : playerB;
 
+  // Said they had nothing to add last time, and nothing has been said since that
+  // was aimed at them: let it stand rather than making them fill the slot.
+  if (state.done[role] && !state.freshFor?.[role] && state.turn > 2) {
+    state.passed = (state.passed || 0) + 1;
+    console.log(`  ${String(state.turn + 1).padStart(2)} role ${role === "A" ? 1 : 2} — nothing to add`);
+    state.turn++;
+    continue;
+  }
+
   // A participant that will not speak costs a turn, not the run.
   const lostTurn = e => {
     fatalCheck(e);
@@ -1202,6 +1223,7 @@ for (let i = 0; i < maxTurns; i++) {
   transcript.push({ turn: state.turn, who: role, player, act, text: sentence,
                     meant: turn.asserts, taken, byWord, byModel, caught, anyOf, done: !!turn.done,
                     tookThemToMean: (turn.tookThemToMean || []).filter(f => f in FEATURES),
+                    meantPlainly: turn.meantPlainly || "",
                     ...(LOOSE ? { meantAsks: turn.asks, meantRefuses: turn.refuses,
                                   takenAsks: heardRaw.asks, takenRefuses: heardRaw.refuses,
                                   stanceKept: turn.asks.every(f => !heardRaw.refuses.includes(f))
@@ -1245,6 +1267,10 @@ for (let i = 0; i < maxTurns; i++) {
                     changed: before !== after, taken,
                     ...(CASES[caseKey].solo ? { side: role } : {}) });
 
+  // Anything said now gives the OTHER one something to answer, so a pass they
+  // declared earlier no longer holds.
+  state.freshFor = state.freshFor || {};
+  state.freshFor[role] = false;
   state.still = before === after ? (state.still || 0) + 1 : 0;
   if (before !== after) state.lastMoved = state.turn;
 
@@ -1256,6 +1282,7 @@ for (let i = 0; i < maxTurns; i++) {
   // conversation.
   const fresh = taken.some(f => !heardBefore.has(f));
   state.stale = fresh ? 0 : (state.stale || 0) + 1;
+  if (fresh) state.freshFor[role === "A" ? "B" : "A"] = true;
 
   // In `together` they get one line each to the builder and then they are done:
   // the position was settled in the other room, and anything further would be
@@ -1369,6 +1396,7 @@ console.log(`  ${led.spoken} words spoken; Role 3's whole vocabulary for this ru
 if (state.violations.length) console.log(`  ${state.violations.length} turns broke the rules and were sent back.`);
 if (RETRIES) console.log(`  ${RETRIES} calls were declined once and succeeded on a retry.`);
 if (PAUSED) console.log(`  ${Math.round(PAUSED / 1000)}s of this run was spent waiting on a rate limit.`);
+if (state.passed) console.log(`  ${state.passed} turn${state.passed === 1 ? "" : "s"} somebody had nothing to add and let it stand.`);
 if (state.refusedTurns) console.log(`  ${state.refusedTurns} turn${state.refusedTurns === 1 ? "" : "s"} a participant would not speak and the turn was lost.`);
 if (state.unread) console.log(`  ${state.unread} sentence${state.unread === 1 ? "" : "s"} went unread — the classifier declined, so ${state.unread === 1 ? "it is" : "they are"} out of the count rather than scored as missed.`);
 if (state.mute) console.log(`  ${state.mute} turns Role 3 was silent — the voice call was declined four times running.`);
