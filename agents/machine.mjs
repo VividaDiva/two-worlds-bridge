@@ -96,7 +96,7 @@ export async function speakLLM(state, ask) {
     ``,
     state.changed
       ? `You have rebuilt. It was ${state.before || "nothing at all"}. You have laid: ${state.made}.`
-      : `You changed nothing. ${state.after} still stands: ${state.made}.`,
+      : `You changed nothing, and why is the only thing worth saying — not the parts, which they\nhave heard. What they just asked for is either already true of what stands, or it is ruled out by\nsomething already refused, or you have nothing in the workshop that would do it. Say which, about\nTHEIR point, in a line. Do not list what it is made of again.`,
     `What ${state.after} actually is: ${list(state.props)}.`,
     ``,
     `Asked of you so far: ${list(state.wants)}.`,
