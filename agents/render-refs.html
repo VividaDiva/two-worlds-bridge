@@ -1,0 +1,137 @@
+<meta charset="utf-8"><title>ref render</title>
+<style>body{margin:0;background:#fff}canvas{display:block;margin:8px}</style>
+<div id="out"></div>
+<script>
+const W = 1200, H = 700;
+const GAP_L = 430, GAP_R = 770, SPAN = GAP_R - GAP_L;
+const GROUND_Y = 392;
+const BED_STREAM = GROUND_Y + 128;      // Role 1's world: a shallow bed
+const BED_CLEFT  = GROUND_Y + 286;      // Role 2's world: a long drop
+const WATER_Y    = GROUND_Y + 66;
+const DECK_LOW   = GROUND_Y - 12;       // lying across, level with both banks
+const DECK_HIGH  = GROUND_Y - 132;      // slung above
+// The floor of the gap is as deep as the deepest ground anyone has claimed.
+function bedOf(c){
+  if (c.world.rock) return BED_CLEFT;
+  if (c.world.water) return BED_STREAM;
+  return GROUND_Y + 96;                 // undescribed: a shallow notch
+}
+const MATCH = 74, THICK = 9, HEAD = 6.6;
+const wob = i => Math.sin(i * 12.9898) * 0.03;
+function lay(list, x1, y1, x2, y2){
+  const len = Math.hypot(x2-x1, y2-y1);
+  const n = Math.max(1, Math.round(len / MATCH));
+  for (let i = 0; i < n; i++){
+    const t0 = i/n, t1 = (i+1)/n;
+    list.push({x1: x1+(x2-x1)*t0, y1: y1+(y2-y1)*t0, x2: x1+(x2-x1)*t1, y2: y1+(y2-y1)*t1});
+  }
+}
+function drawMatch(ctx, m, i){
+  const cx = (m.x1+m.x2)/2, cy = (m.y1+m.y2)/2, a = wob(i);
+  const rot = (px,py) => ({x: cx + (px-cx)*Math.cos(a) - (py-cy)*Math.sin(a),
+                           y: cy + (px-cx)*Math.sin(a) + (py-cy)*Math.cos(a)});
+  const p1 = rot(m.x1,m.y1), p2 = rot(m.x2,m.y2);
+  ctx.lineCap = "round";
+  ctx.strokeStyle = C.woodDark; ctx.lineWidth = THICK + 2.4;
+  ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke();
+  ctx.strokeStyle = C.wood; ctx.lineWidth = THICK;
+  ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke();
+  const head = i % 2 ? p1 : p2;
+  ctx.fillStyle = C.head;
+  ctx.beginPath(); ctx.arc(head.x, head.y, HEAD, 0, Math.PI*2); ctx.fill();
+}
+function assemble(c){
+  // This used to branch on which of six structures it was. A crossing is five
+  // independent choices now, and the primitives here already matched those
+  // choices — a deck, a rail, struts, something in the middle — they were just
+  // keyed on the name instead of on the parts. So it composes, and all
+  // forty-eight draw without a case for each.
+  const list = [];
+  if (!c.design) return list;
+  const d = c.design.shape || SHAPE_OF(c.design.id);
+  if (!d) return list;
+  const deck = d.level === "raised" ? DECK_HIGH : DECK_LOW;
+  const bed = bedOf(c);
+  const MID = (GAP_L + GAP_R) / 2;
+
+  // The walk itself, and a second one alongside where two may pass.
+  lay(list, GAP_L, deck, GAP_R, deck);
+  if (d.width === "two"){
+    const off = 16;
+    lay(list, GAP_L, deck + off, GAP_R, deck + off);
+    [GAP_L + SPAN*0.25, MID, GAP_R - SPAN*0.25].forEach(x => lay(list, x, deck, x, deck + off));
+  }
+
+  // Raised: it has to be got up to, and held up.
+  if (d.level === "raised"){
+    [GAP_L, GAP_R].forEach(x => lay(list, x, GROUND_Y, x, deck));
+  }
+
+  // Something at the hand.
+  if (d.hand === "rail"){
+    const rh = 52;
+    lay(list, GAP_L + 18, deck - rh, GAP_R - 18, deck - rh);
+    [GAP_L + 18, MID, GAP_R - 18].forEach(x => lay(list, x, deck, x, deck - rh));
+  }
+
+  // Something set down in the gap.
+  if (d.middle === "post"){
+    lay(list, MID, deck, MID, bed);
+  } else if (d.middle === "tower"){
+    const l = MID - SPAN*0.17, r = MID + SPAN*0.17;
+    [l, r].forEach(x => lay(list, x, deck, x, bed));
+    lay(list, l, bed, r, deck);
+    lay(list, r, bed, l, deck);
+    lay(list, l, bed, r, bed);
+  }
+
+  // A coarse surface: short marks along the walk.
+  if (d.surface === "rough"){
+    for (let i = 1; i < 8; i++){
+      const x = GAP_L + SPAN * i / 8;
+      lay(list, x, deck - 5, x + 10, deck - 5);
+    }
+  }
+  // Ends carried down past the banks to something firmer.
+  if (d.ends === "footed"){
+    [GAP_L, GAP_R].forEach(x => lay(list, x, deck, x, GROUND_Y + 34));
+  }
+  // A roof over the whole length.
+  if (d.cover === "roof"){
+    const rh = 74;
+    lay(list, GAP_L, deck - rh, GAP_R, deck - rh);
+    [GAP_L, MID, GAP_R].forEach(x => lay(list, x, deck - rh, x, deck - rh + 16));
+  }
+  // Struts driven back into the banks.
+  if (d.bracing === "struts"){
+    lay(list, GAP_L, deck, GAP_L + SPAN*0.34, deck + 70);
+    lay(list, GAP_R, deck, GAP_R - SPAN*0.34, deck + 70);
+    lay(list, GAP_L + SPAN*0.34, deck + 70, GAP_R - SPAN*0.34, deck + 70);
+  }
+  return list;
+}
+// palette, fixed (the page reads CSS vars; a reference image must not vary with theme)
+C = {land:"#d9d2c4", land2:"#c9c1b1", water:"#a9c4d2", rock:"#b8b0a2",
+     wood:"#b07a3c", woodDark:"#7d5227", head:"#3d2a15", ink:"#241f19"};
+
+// A reference image is the crossing and nothing else: no labels, no captions.
+const SCALE = 0.66;   // smaller picture, same drawing: ~400 image-tokens instead of 1100
+function renderRef(shape){
+  const cv = document.createElement("canvas");
+  cv.width = Math.round(W*SCALE); cv.height = Math.round(H*SCALE);
+  const ctx = cv.getContext("2d");
+  ctx.scale(SCALE, SCALE);
+  const c = { world: {water:true, rock:false}, design: {shape} };
+  ctx.fillStyle = "#eee8dc"; ctx.fillRect(0,0,W,H);
+  const bed = bedOf(c);
+  ctx.fillStyle = C.land;
+  ctx.fillRect(0, GROUND_Y, GAP_L, H-GROUND_Y);
+  ctx.fillRect(GAP_R, GROUND_Y, W-GAP_R, H-GROUND_Y);
+  ctx.fillStyle = C.land2; ctx.fillRect(GAP_L, bed, SPAN, H-bed);
+  ctx.fillStyle = C.water; ctx.fillRect(GAP_L, WATER_Y, SPAN, bed-WATER_Y);
+  assemble(c).forEach((m,i) => drawMatch(ctx, m, i));
+  document.getElementById("out").appendChild(cv);
+  return cv;
+}
+window.RENDER = shapes => shapes.map(s => renderRef(s).toDataURL("image/png"));
+</script>

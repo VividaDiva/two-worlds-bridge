@@ -96,7 +96,13 @@ export async function speakLLM(state, ask) {
     ``,
     state.changed
       ? `You have rebuilt. It was ${state.before || "nothing at all"}. You have laid: ${state.made}.`
-      : `You changed nothing, and why is the only thing worth saying — not the parts, which they\nhave heard. What they just asked for is either already true of what stands, or it is ruled out by\nsomething already refused, or you have nothing in the workshop that would do it. Say which, about\nTHEIR point, in a line. Do not list what it is made of again.`,
+      // This used to offer three finished sentences — "already true of what
+      // stands", "ruled out by something already refused", "nothing in the
+      // workshop" — and ask which. The model said one back nearly verbatim: a
+      // fifth of every builder line in a twenty-run set was a phrase from its
+      // own prompt, one of them seven times over. It is handed the facts now
+      // and has to find the reason and the words itself, like everybody else.
+      : `You changed nothing, and why is the only thing worth saying — not the parts, which they\nhave heard. Work out for yourself why what they asked for did not move you — what stands, what\nhas already been refused, and what you have to work with are all set out below — and say that\nmuch to them, about THEIR point, in a line of your own. Do not list what it is made of again.`,
     `What ${state.after} actually is: ${list(state.props)}.`,
     ``,
     `Asked of you so far: ${list(state.wants)}.`,

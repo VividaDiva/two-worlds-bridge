@@ -16,6 +16,7 @@
 // Keys come from the environment. Never commit them.
 
 import fs from "node:fs";
+import { REF_PAIRS, sharedOf } from "./ref-pairs.mjs";
 import path from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 // Zod 4. The SDK's schema helper calls z.toJSONSchema and resolves its own copy
@@ -25,7 +26,7 @@ import { z } from "zod";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import OpenAI from "openai";
 import { GoogleGenAI } from "@google/genai";
-import { KIT, NAME, MADE, FEATURES, FORBIDDEN, STRUCTURES, mkCtx, hear, newTurn, build, provenance, groundOf, ledger } from "./engine.mjs";
+import { KIT, NAME, MADE, FEATURES, FORBIDDEN, STRUCTURES, CHOICES, mkCtx, hear, newTurn, build, provenance, groundOf, ledger } from "./engine.mjs";
 import { readKeyword, readLLM, readLooseKeyword, readLooseLLM, speakLLM, chooseLLM, READERS } from "./machine.mjs";
 
 /* ── what each of them came for, and what it is allowed to do ─────────── */
@@ -78,118 +79,168 @@ const LOOSE_SCENARIOS = {
   places: {
     blurb: "Two people who cross in different places, with nothing agreed about what a crossing is.",
     A: [
-      { situation: "You cross a fast, knee-deep stream most days and you are usually late.",
-        manner: "Brisk, a little impatient, you do not explain yourself twice. You talk about your feet, the time, the weather this week." },
-      { situation: "You carry a small child over, twice a day, and the footing is what you think about.",
-        manner: "You are quiet and you circle back to the same worry. You talk about hands, and slipping, and what you would do if." },
-      { situation: "You cross before dawn, alone, in the dark, on your way to work.",
-        manner: "Flat and practical. You talk about what you cannot see, and about doing it half asleep." },
-      { situation: "You are old, your knees are poor, and you cross to the market and back once a week.",
-        manner: "Slow, wry, unhurried. You mention your age without self-pity and you know exactly what you can and cannot manage." },
+      // These four used to vary by who the person was — a child to carry, the
+      // dark, bad knees — which is the loads argument wearing this one's name.
+      // The argument is that they cross in different PLACES, so the place is
+      // what varies here and the person is only a voice.
+      { situation: "You cross a fast, knee-deep stream about four paces wide, and the bed under it is loose stone that rolls when you step.",
+        manner: "Brisk, a little impatient. You do not explain yourself twice.",
+        needs: ["steady", "grip"] },
+      { situation: "You cross a wide, slow ford — nowhere deep, but a long way from one bank to the other, and the middle is the worst of it.",
+        manner: "Quiet, and you circle back to the same worry, saying it three ways until it lands.",
+        needs: ["inGap", "steady"] },
+      { situation: "Your crossing is a low place where both banks sit level with the water, and for half the summer it is barely a trickle.",
+        manner: "Flat and practical. You state what happens and then stop.",
+        needs: ["low", "minimal"] },
+      { situation: "You cross where a spring keeps the near bank wet the whole year, and the last few feet before the water are always slick.",
+        manner: "Slow, wry, unhurried. You know exactly what you can manage, and you say so without complaint.",
+        needs: ["grip", "footed"] },
     ],
     B: [
       { situation: "You live beside a narrow drop in the rock and you have watched things fall into it.",
-        manner: "Careful, and you say why. You mention the wind, the season, what happened to somebody else." },
+        manner: "Careful, and you say why. You mention the wind, the season, what happened to somebody else.",
+        needs: ["guarded", "steady"] },
       { situation: "You cross where the water comes up without warning after rain, several times a spring.",
-        manner: "You talk in seasons and in past tense. You have been caught out and you tell it as a story." },
+        manner: "You talk in seasons and in past tense. You have been caught out and you tell it as a story.",
+        needs: ["high", "footed"] },
       { situation: "The far side of your crossing sits well above the near side, and you climb every time.",
-        manner: "You are blunt about effort. You measure things in how out of breath they leave you." },
+        manner: "You are blunt about effort. You measure things in how out of breath they leave you.",
+        needs: ["low", "steady"] },
       { situation: "Your crossing is over soft marsh ground that swallows whatever is set in it.",
-        manner: "Sceptical of anything that claims to last. You have seen good work sink and you say so." },
+        manner: "Sceptical of anything that claims to last. You have seen good work sink and you say so.",
+        needs: ["footed", "steady"] },
     ],
   },
   loads: {
     blurb: "The same water, and two people who do not arrive at it carrying the same thing.",
     A: [
       { situation: "You cross on foot, alone, carrying nothing but yourself.",
-        manner: "Short sentences. You resent fuss, think most of this is overthought, and say so by talking about how simple your own crossing is." },
+        manner: "Short sentences. You resent fuss, think most of this is overthought, and say so by talking about how simple your own crossing is.",
+        needs: ["minimal", "light"] },
       { situation: "You carry your tools over on your back every working morning.",
-        manner: "You talk about weight on your shoulders and about balance. You are matter-of-fact and slightly tired." },
+        manner: "You talk about weight on your shoulders and about balance. You are matter-of-fact and slightly tired.",
+        needs: ["steady", "grip"] },
       { situation: "You bring two full pails over, both hands taken, several times a day.",
-        manner: "You describe things in terms of what your hands are doing. You are precise and a little exasperated." },
+        manner: "You describe things in terms of what your hands are doing. You are precise and a little exasperated.",
+        needs: ["many", "steady"] },
       { situation: "Twice a year you drive a flock across, and they will not go one at a time.",
-        manner: "You talk in numbers and in animals. Dry, and faintly amused at how little anyone accounts for this." },
+        manner: "You talk in numbers and in animals. Dry, and faintly amused at how little anyone accounts for this.",
+        needs: ["many", "open"] },
     ],
     B: [
       { situation: "You bring a loaded cart through daily. In winter the ground goes soft.",
         // "You cite the year, the mud, the axle" produced a dated anecdote in half
         // of all turns — in character, but a tic once it is every time.
-        manner: "Dry, specific, and fobbed off before, so you know what \"it'll do\" costs. You have particular winters you could name, but you do not reach for one every time you open your mouth." },
+        manner: "Dry, specific, and fobbed off before, so you know what \"it'll do\" costs. You have particular winters you could name, but you do not reach for one every time you open your mouth.",
+        needs: ["heavy", "footed"] },
       { situation: "You move long timber over — awkward, unwieldy, and it will not turn a corner.",
-        manner: "You talk about length and swing and clearance. Patient, and used to not being understood." },
+        manner: "You talk about length and swing and clearance. Patient, and used to not being understood.",
+        needs: ["open", "heavy"] },
       { situation: "You lead a horse across, and it will not set foot on anything that moves.",
-        manner: "You speak for the animal more than for yourself. Firm, and unbothered about sounding sentimental." },
+        manner: "You speak for the animal more than for yourself. Firm, and unbothered about sounding sentimental.",
+        needs: ["steady", "grip"] },
       { situation: "You cart building stone, the heaviest thing anyone moves in this parish.",
-        manner: "Understated to the point of dryness. You state loads plainly and let them do the arguing." },
+        manner: "Understated to the point of dryness. You state loads plainly and let them do the arguing.",
+        needs: ["heavy", "steady"] },
     ],
   },
   agreed: {
+    // The only scenario whose two pools are written as matched opposites —
+    // HEAVY against LIGHT, NARROW against WIDE, LOW against HIGH. Walking the
+    // grid the way the others do paired LOW against LIGHT and SIMPLE against
+    // LIGHT, which do not contradict each other at all: four of the five
+    // recorded runs never instantiated the argument they were the evidence for.
+    aligned: true,
     blurb: "Two people who want the same crossing and cannot tell. Nothing either of them says is untrue, and every word of it sounds like an objection to the other.",
     A: [
       { situation: "You want it to feel solid, and the word you use for that is HEAVY — heavy timber, heavy footings, weight you can feel through your boots. What frightens you is anything that gives.",
-        manner: "You say heavy constantly and never explain it. To you it obviously means safe." },
+        manner: "You say heavy constantly and never explain it. To you it obviously means safe.",
+        needs: ["steady", "heavy"] },
       { situation: "You want it SIMPLE — nothing to catch, nothing to trip on, nothing to go wrong. You have watched complicated things fail in ways nobody predicted.",
-        manner: "You use simple and plain and clean for what you want, and you never say the word safe, though that is what you mean." },
+        manner: "You use simple and plain and clean for what you want, and you never say the word safe, though that is what you mean.",
+        needs: ["steady", "open"] },
       { situation: "You want it NARROW, because you cross with a nervous animal and a wide open surface is where it bolts. Narrow is what keeps it walking straight.",
-        manner: "You talk about the animal, not about yourself, and you assume everybody understands why narrow is kindness." },
+        manner: "You talk about the animal, not about yourself, and you assume everybody understands why narrow is kindness.",
+        needs: ["steady", "light"] },
       { situation: "You want it LOW — close to the water, no climb, nothing to fall from. Height is the thing you are frightened of and you cannot say so plainly.",
-        manner: "You talk around it. You mention your knees, the climb, the weather, and never the drop." },
+        manner: "You talk around it. You mention your knees, the climb, the weather, and never the drop.",
+        needs: ["steady", "low"] },
     ],
     B: [
       { situation: "You want it to feel solid too, and the word you use is LIGHT — light enough that you can see how it is made, and see it is sound. Bulk is where rot hides.",
-        manner: "You say light and clean and honest, and to you they obviously mean safe. You trust what you can put your eye on and mistrust what you cannot." },
+        manner: "You say light and clean and honest, and to you they obviously mean safe. You trust what you can put your eye on and mistrust what you cannot.",
+        needs: ["steady", "open"] },
       { situation: "You want it SUBSTANTIAL — braced, tied, more than it strictly needs. You have watched sparse things fail in ways nobody predicted.",
-        manner: "You use words like proper and built and enough, and you never say the word safe, though that is what you mean." },
+        manner: "You use words like proper and built and enough, and you never say the word safe, though that is what you mean.",
+        needs: ["steady", "many"] },
       { situation: "You want it WIDE, because you cross with a nervous animal and a narrow surface is where it panics and refuses. Room is what keeps it walking.",
-        manner: "You talk about the animal, not about yourself, and you assume everybody understands why room is kindness." },
+        manner: "You talk about the animal, not about yourself, and you assume everybody understands why room is kindness.",
+        needs: ["steady", "many"] },
       { situation: "You want it HIGH — well clear of the water, because it is the water that frightens you, and being near it is worse than being above it.",
-        manner: "You talk around it. You mention the season, the flood, the smell of it, and never say you cannot swim." },
+        manner: "You talk around it. You mention the season, the flood, the smell of it, and never say you cannot swim.",
+        needs: ["steady", "high"] },
     ],
   },
   pairs: {
     blurb: "Four people and one crossing. Each of the two speaking carries somebody else's need as well as their own.",
     A: [
       { situation: "You speak for yourself and for your mother, who is eighty and crosses on two sticks at her own pace. What you need and what she needs are not the same thing and you know it.",
-        manner: "You keep catching yourself arguing for one of them and not the other. You correct yourself out loud when you notice." },
+        manner: "You keep catching yourself arguing for one of them and not the other. You correct yourself out loud when you notice.",
+        needs: ["guarded", "low"] },
       { situation: "You cross with your nine-year-old, who runs at it, and with your father's dog, which will not go at all unless it can see the far side.",
-        manner: "Harried and specific. You talk about the two of them separately because their troubles are nothing alike." },
+        manner: "Harried and specific. You talk about the two of them separately because their troubles are nothing alike.",
+        needs: ["guarded", "open"] },
       { situation: "You are the one who goes over, and you are also the one who has to get your blind uncle over it twice a week.",
-        manner: "You say \"for me\" and \"for him\" and you keep them apart, because confusing them is how somebody gets hurt." },
+        manner: "You say \"for me\" and \"for him\" and you keep them apart, because confusing them is how somebody gets hurt.",
+        needs: ["guarded", "grip"] },
       { situation: "Half the year you carry a baby across; the other half you drive the year's grain over on your back.",
-        manner: "You talk in seasons, and you are aware the two halves of your year want opposite things." },
+        manner: "You talk in seasons, and you are aware the two halves of your year want opposite things.",
+        needs: ["guarded", "heavy"] },
     ],
     B: [
       { situation: "You bring the cart through, and your sister brings the flock through the same gap an hour later. She is not here to speak for herself.",
-        manner: "Dry, and careful to be fair to her. You flag which half of what you are saying is hers." },
+        manner: "Dry, and careful to be fair to her. You flag which half of what you are saying is hers.",
+        needs: ["heavy", "many"] },
       { situation: "You fish under it, and you also have to walk over it. What is good for the boat is not good for your feet.",
-        manner: "You are amused by the contradiction and say so. You will not pretend the two wants are one." },
+        manner: "You are amused by the contradiction and say so. You will not pretend the two wants are one.",
+        needs: ["high", "low"] },
       { situation: "You carry the post over daily, and once a month you bring the doctor across, who will not come if it looks unsafe.",
-        manner: "Practical about your own crossing, anxious about hers, and the anxiety is the part you have trouble putting plainly." },
+        manner: "Practical about your own crossing, anxious about hers, and the anxiety is the part you have trouble putting plainly.",
+        needs: ["guarded", "steady"] },
       { situation: "The timber goes over on your shoulder, and the children of the village go over it unsupervised all summer.",
-        manner: "Blunt about the timber, and you keep circling back to the children without quite saying you are frightened." },
+        manner: "Blunt about the timber, and you keep circling back to the children without quite saying you are frightened.",
+        needs: ["many", "guarded"] },
     ],
   },
   refs: {
     blurb: "Neither of you can describe it plainly. Each keeps gesturing at something the other has never seen.",
     A: [
       { situation: "You grew up beside a great stone-towered crossing with a road that lifts, and you assume everybody can picture it.",
-        manner: "You gesture, you compare, you are faintly proud. You say \"you know the one\" as if that settles it." },
+        manner: "You gesture, you compare, you are faintly proud. You say \"you know the one\" as if that settles it.",
+        needs: ["inGap", "high"] },
       { situation: "You once crossed a swaying rope-and-plank thing abroad and it has been your measure of the word ever since.",
-        manner: "You tell it as an anecdote and expect the anecdote to be an argument. Vivid, and a little showy." },
+        manner: "You tell it as an anecdote and expect the anecdote to be an argument. Vivid, and a little showy.",
+        needs: ["light", "sways"] },
       { situation: "The crossing of your childhood was roofed over, so you walked through it out of the rain.",
-        manner: "Nostalgic and specific about small comforts. You describe the sound it made." },
+        manner: "Nostalgic and specific about small comforts. You describe the sound it made.",
+        needs: ["sheltered", "guarded"] },
       { situation: "You see a vast railway viaduct from the train each week and it is what the word means to you.",
-        manner: "You describe scale and repetition. Impressed, and you assume the scale is the point." },
+        manner: "You describe scale and repetition. Impressed, and you assume the scale is the point.",
+        needs: ["inGap", "many"] },
     ],
     B: [
       { situation: "You grew up beside the great cable crossing everybody photographs, and you assume everybody can picture it.",
-        manner: "Warm and certain, describing it as though from a postcard you are holding." },
+        manner: "Warm and certain, describing it as though from a postcard you are holding.",
+        needs: ["high", "many"] },
       { situation: "The crossing you loved as a child was a line of flat stones you stepped across.",
-        manner: "You are fond and slightly defensive about how little it needed to be." },
+        manner: "You are fond and slightly defensive about how little it needed to be.",
+        needs: ["minimal", "low"] },
       { situation: "Your reference is a plain modern span, enormous and grey, that you find beautiful.",
-        manner: "You defend plainness on purpose. You are unsentimental and mildly combative about taste." },
+        manner: "You defend plainness on purpose. You are unsentimental and mildly combative about taste.",
+        needs: ["high", "steady"] },
       { situation: "You picture an old humpbacked crossing that packhorses used, narrow and steep over the top.",
-        manner: "You talk about it the way you would talk about a person. Affectionate, old-fashioned." },
+        manner: "You talk about it the way you would talk about a person. Affectionate, old-fashioned.",
+        needs: ["high", "light"] },
     ],
   },
 };
@@ -197,9 +248,48 @@ const LOOSE_SCENARIOS = {
 // One life per role per run. An offset was not enough: it moved both of them
 // together and only ever reached four of the sixteen pairings. B advances once
 // per full cycle of A instead, so consecutive seeds walk the whole grid.
+// With --pictures the refs pair stops being a sentence about a crossing and
+// becomes two crossings. Neither role is told what its two have in common; that
+// intersection is ground truth, kept for scoring and shown to nobody.
+// This wording is measured, not chosen for how it reads. Told to look at a
+// crossing and forbidden to name any part of it, Opus refused 4 times in 4 —
+// the bind reads as evasion, and the refusals came back under "cyber". Speaking
+// from having USED them, with the pictures placed after the sentence rather than
+// before it, refused 0 times in 10. Both halves of that were needed.
+const PICTURE_BRIEF =
+  "You have crossed both of these for years — they are the two you know in your feet. "
+  + "Whatever those two have in common is the thing you cannot do without; a crossing "
+  + "lacking it is one you will not use. The other person has two quite different ones, "
+  + "and has never had to say what theirs were like either.";
+
+function pictureCast(role, seed) {
+  const pairs = REF_PAIRS[role];
+  const other = REF_PAIRS[role === "B" ? "A" : "B"].length;
+  const p = pairs[(role === "B" ? Math.floor(seed / other) : seed) % pairs.length];
+  return { key: p.key, shared: sharedOf(p.pair),
+           images: p.pair.map((_, i) => fs.readFileSync(
+             new URL(`./refs/${p.key}${i === 0 ? "a" : "b"}.png`, import.meta.url)
+           ).toString("base64")) };
+}
+
+// What to print for a role's situation. Under --pictures the old sentence was
+// still being printed although nobody was ever shown it, which would have put a
+// description on the page that no model read.
+function shownTo(role) {
+  const cast = castFor(scenarioKey, role, SEED);
+  if (!(PICTURES && scenarioKey === "refs")) return cast.situation;
+  const p = pictureCast(role, SEED);
+  const words = Object.entries(p.shared).map(([ax, v]) => CHOICES[ax][v]).join("; ");
+  return `shown two crossings (${p.key}). What both of them have: ${words}.`;
+}
+
 function castFor(scenario, role, seed) {
-  const pool = LOOSE_SCENARIOS[scenario][role];
-  const other = LOOSE_SCENARIOS[scenario][role === "B" ? "A" : "B"].length;
+  const sc = LOOSE_SCENARIOS[scenario];
+  const pool = sc[role];
+  // Aligned scenarios take the same index on both sides, because their two
+  // pools are one list of pairs written down as two columns.
+  if (sc.aligned) return pool[seed % pool.length];
+  const other = sc[role === "B" ? "A" : "B"].length;
   return pool[(role === "B" ? Math.floor(seed / other) : seed) % pool.length];
 }
 
@@ -456,7 +546,7 @@ function looseSystemPrompt(scenario, situation, hat) {
 }
 
 // Nothing about the kit, the keys, or the length. A person and a situation.
-function freeSaySystem(situation, manner, together) {
+function freeSaySystem(situation, manner, together, mayName = false) {
   return [
     together
       // They could always hear each other and never once spoke to each other:
@@ -478,9 +568,22 @@ function freeSaySystem(situation, manner, together) {
 `you can give something up to get the rest.`,
     ``,
     `Two rules only:`,
-    `1. You may never name a thing that could be built. These words are banned: ${STRUCTURES.join(", ")}.`,
-    `   Where you are is yours to describe — the water, the drop, the season, all of it. What should be BUILT is not.`,
-    `   Say what happens to you and what you need from it, not what should be built.`,
+    // Under --pictures the ban is what makes the task impossible rather than
+    // hard: a person looking at a crossing, forbidden every word for a crossing,
+    // has nothing left but to invent a river and argue about that. So in that
+    // one mode the words are returned. It costs the comparison with the other
+    // four arguments, where the ban is what forces need-talk — which is why
+    // --pictures barred keeps the banned version runnable alongside it.
+    mayName
+      ? `1. You may name the parts if that is the only way to say it. You are still not the one designing it:`
+        + ` say what you need and what would go wrong without it, and leave what to make of that to them.`
+      : `1. You may never name a thing that could be built. These words are banned: ${STRUCTURES.join(", ")}.`,
+    mayName
+      ? `   Where you are is yours to describe too — the water, the drop, the season, all of it.`
+      : `   Where you are is yours to describe — the water, the drop, the season, all of it. What should be BUILT is not.`,
+    mayName
+      ? `   Say what happens to you on it, not only what it is.`
+      : `   Say what happens to you and what you need from it, not what should be built.`,
     `2. Say it in your own voice, the way that person would actually say it out loud. Not a summary of a`,
     `   position — a thing somebody says. Do not begin the way you began last time.`,
     ``,
@@ -617,6 +720,20 @@ const fatalCheck = e => {
   }
 };
 
+// A prompt is either a string, or a string with pictures after it. The order is
+// not cosmetic: pictures first refused 2 of 4, the same pictures after the
+// sentence refused 0 of 10.
+const contentClaude = u => typeof u === "string" ? u : [
+  { type: "text", text: u.text },
+  ...u.images.map(data => ({ type: "image",
+    source: { type: "base64", media_type: "image/png", data } })),
+];
+const contentOpenAI = u => typeof u === "string" ? u : [
+  { type: "text", text: u.text },
+  ...u.images.map(b => ({ type: "image_url",
+    image_url: { url: `data:image/png;base64,${b}` } })),
+];
+
 async function askClaude(system, user, schema = TurnSchema) {
   // Opus 5 runs adaptive thinking when `thinking` is omitted.
   // Structured output lives under `beta` in SDK 0.71.
@@ -624,7 +741,7 @@ async function askClaude(system, user, schema = TurnSchema) {
     model: CLAUDE_MODEL,
     max_tokens: 8192,
     system,
-    messages: [{ role: "user", content: user }],
+    messages: [{ role: "user", content: contentClaude(user) }],
     output_config: { format: betaZodOutputFormat(schema) },
   });
   // A refusal is never quietly rerouted to another provider — that would mean
@@ -642,7 +759,7 @@ async function askClaude(system, user, schema = TurnSchema) {
     RETRIES++;
     r = await anthropic.beta.messages.parse({
       model: CLAUDE_MODEL, max_tokens: 8192, system,
-      messages: [{ role: "user", content: user }],
+      messages: [{ role: "user", content: contentClaude(user) }],
       output_config: { format: betaZodOutputFormat(schema) },
     });
   }
@@ -660,7 +777,7 @@ async function askOpenAI(system, user, schema = TurnSchema) {
     response_format: { type: "json_object" },
     messages: [
       { role: "system", content: system + `\n\nReply with JSON only: ${shapeOf(schema)}` },
-      { role: "user", content: user },
+      { role: "user", content: contentOpenAI(user) },
     ],
   });
   const raw = res.choices?.[0]?.message?.content;
@@ -785,7 +902,7 @@ async function machineClaude(system, user, schema = ReadSchema) {
     model: MACHINE_MODEL,
     max_tokens: 8192,
     system,
-    messages: [{ role: "user", content: user }],
+    messages: [{ role: "user", content: contentClaude(user) }],
     output_config: { format: betaZodOutputFormat(schema) },
   });
   // Three attempts, not one. These refusals are intermittent and cluster: the
@@ -802,7 +919,7 @@ async function machineClaude(system, user, schema = ReadSchema) {
     RETRIES++;
     r = await anthropic.beta.messages.parse({
       model: MACHINE_MODEL, max_tokens: 8192, system,
-      messages: [{ role: "user", content: user }],
+      messages: [{ role: "user", content: contentClaude(user) }],
       output_config: { format: betaZodOutputFormat(schema) },
     });
   }
@@ -818,7 +935,7 @@ async function machineOpenAI(system, user, schema = ReadSchema) {
     response_format: { type: "json_object" },
     messages: [
       { role: "system", content: system + `\n\nReply with JSON only: ${shape}` },
-      { role: "user", content: user },
+      { role: "user", content: contentOpenAI(user) },
     ],
   });
   const raw = res.choices?.[0]?.message?.content;
@@ -873,7 +990,11 @@ function violationsLoose(turn) {
 // so the retry loop that used to police the form has almost nothing left to do.
 async function speakFree(player, role, ctx, state, cfg) {
   const cast = castFor(state.scenario, role, SEED);
-  const sys = freeSaySystem(cast.situation, cast.manner, !!cfg.hears);
+  const pics = PICTURES && state.scenario === "refs" ? pictureCast(role, SEED) : null;
+  if (pics && player === "gemini")
+    throw new Error("--pictures has no Gemini path: keep gemini on the chair, or add one");
+  const sys = freeSaySystem(pics ? PICTURE_BRIEF : cast.situation, cast.manner, !!cfg.hears,
+                            !!pics && !BARRED);
   let note = "", say = "";
   for (let attempt = 1; attempt <= 4; attempt++) {
     const user = userPrompt({
@@ -881,10 +1002,10 @@ async function speakFree(player, role, ctx, state, cfg) {
       dialogue: dialogueFor(role, cfg, state.log || []),
       hears: cfg.hears, turn: state.turn + 1, echo: !!cfg.echo,
     }) + note;
-    const out = await PLAYERS[player](sys, user, FreeSaySchema);
+    const out = await PLAYERS[player](sys, pics ? { text: user, images: pics.images } : user, FreeSaySchema);
     say = String(out?.say || "").trim();
     const words = say.toLowerCase().split(/\s+/).map(w => w.replace(/[^a-z0-9'-]/g, ""));
-    const named = STRUCTURES.filter(f => words.includes(f));
+    const named = (pics && !BARRED) ? [] : STRUCTURES.filter(f => words.includes(f));
     if (say && !named.length) break;
     state.violations.push({ role, player, attempt, say, broke: named.length ? named.map(f => `named "${f}"`) : ["said nothing"] });
     note = `\n\nYour last attempt named ${named.join(", ") || "nothing at all"}. Say it again, differently, without naming any structure or ground.`;
@@ -974,6 +1095,10 @@ const maxTurns = Number(argv.turns || 16);
 const LOOSE = (argv.goals || "strict") === "loose";
 // Who decides what gets built: the scoring rule, or Role 3 itself.
 const BUILDER = argv.builder || "rule";
+const PICTURES = "pictures" in argv && argv.pictures !== "off";
+// --pictures        they may name the parts (the referent is a picture, not a place)
+// --pictures barred they may not, as in every other argument — kept for the comparison
+const BARRED = argv.pictures === "barred";
 // Whether the two of them compose against the key list or away from it.
 const FREE = (argv.speech || "coded") === "free";
 if (argv.speech && !["coded", "free"].includes(argv.speech))
@@ -1029,8 +1154,8 @@ process.on("unhandledRejection", e => { throw e; });
 console.log(`\n  ${(LOOSE ? LOOSE_SCENARIOS : SCENARIOS)[scenarioKey].blurb}`);
 console.log(LOOSE
   ? `  ${cfg.label} — loose goals, seed ${SEED} (role 1 ${cfg.swapPlayers ? playerB : playerA}, role 2 ${cfg.swapPlayers ? playerA : playerB})`
-    + `\n  role 1: ${castFor(scenarioKey, "A", SEED).situation}`
-    + `\n  role 2: ${castFor(scenarioKey, "B", SEED).situation}`
+    + `\n  role 1: ${shownTo("A")}`
+    + `\n  role 2: ${shownTo("B")}`
   : `  ${cfg.label} — role 1 ${LEAD[cfg.A]}… (${playerA}), role 2 ${LEAD[cfg.B]}… (${playerB})`);
 console.log(`  ${cfg.hears ? "One room: each can hear the other." : "Apart: neither knows the other exists."}`
   + (cfg.echo ? " Role 3 answers, and they hear that too." : " Role 3 is not heard: they see only what stands."));
@@ -1405,6 +1530,15 @@ const session = {
   meta: { scenario: scenarioKey, case: caseKey, label: CASES[caseKey].label,
           players: { A: playerA, B: playerB }, machine: reader, machineIsModel: byModelUsed,
           models: { claude: CLAUDE_MODEL, openai: OPENAI_MODEL, gemini: GEMINI_MODEL, machine: MACHINE_MODEL },
+    // What each role was actually looking at, and what its two pictures agreed
+    // on. Written down because it is the only thing here that can be checked:
+    // the crossing that gets built is in the same eight axes as the referent.
+    pictures: PICTURES && scenarioKey === "refs"
+      ? Object.fromEntries(["A", "B"].map(r => {
+          const { key, shared } = pictureCast(r, SEED);   // not the base64
+          return [r, { key, shared }];
+        }))
+      : null,
     goals: LOOSE ? "loose" : "strict",
     // Was missing, so a free-speech run and a coded one were indistinguishable
     // once written to disk — which made "which of these is the new design?"
@@ -1412,7 +1546,8 @@ const session = {
     speech: FREE ? "free" : "coded",
     builder: BUILDER,
     seed: LOOSE ? SEED : null,
-    cast: LOOSE ? { A: castFor(scenarioKey, "A", SEED), B: castFor(scenarioKey, "B", SEED) } : null,
+    cast: LOOSE ? Object.fromEntries(["A", "B"].map(r =>
+      [r, { ...castFor(scenarioKey, r, SEED), situation: shownTo(r) }])) : null,
           turns: state.turn, endedBy: state.endedBy || "turn cap", lastMoved: state.lastMoved || null,
           ranAt: new Date().toISOString() },
   goals: LOOSE ? null
