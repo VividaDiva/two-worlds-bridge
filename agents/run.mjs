@@ -262,10 +262,9 @@ const PICTURE_BRIEF =
   + "lacking it is one you will not use. The other person has two quite different ones, "
   + "and has never had to say what theirs were like either.";
 
-function pictureCast(role, seed) {
+function pictureCast(role, pair) {
   const pairs = REF_PAIRS[role];
-  const other = REF_PAIRS[role === "B" ? "A" : "B"].length;
-  const p = pairs[(role === "B" ? Math.floor(seed / other) : seed) % pairs.length];
+  const p = pairs[pair % pairs.length];
   return { key: p.key, shared: sharedOf(p.pair),
            images: p.pair.map((_, i) => fs.readFileSync(
              new URL(`./refs/${p.key}${i === 0 ? "a" : "b"}.png`, import.meta.url)
@@ -276,21 +275,19 @@ function pictureCast(role, seed) {
 // still being printed although nobody was ever shown it, which would have put a
 // description on the page that no model read.
 function shownTo(role) {
-  const cast = castFor(scenarioKey, role, SEED);
+  const cast = castFor(scenarioKey, role, PAIR);
   if (!(PICTURES && scenarioKey === "refs")) return cast.situation;
-  const p = pictureCast(role, SEED);
+  const p = pictureCast(role, PAIR);
   const words = Object.entries(p.shared).map(([ax, v]) => CHOICES[ax][v]).join("; ");
   return `shown two crossings (${p.key}). What both of them have: ${words}.`;
 }
 
-function castFor(scenario, role, seed) {
-  const sc = LOOSE_SCENARIOS[scenario];
-  const pool = sc[role];
-  // Aligned scenarios take the same index on both sides, because their two
-  // pools are one list of pairs written down as two columns.
-  if (sc.aligned) return pool[seed % pool.length];
-  const other = sc[role === "B" ? "A" : "B"].length;
-  return pool[(role === "B" ? Math.floor(seed / other) : seed) % pool.length];
+// Both sides take the same index: pair 0 of `places` is the person at the water
+// and the person at the rock, and that is what `places` means. Walking a grid of
+// sixteen pairings was what let a case change the cast underneath it.
+function castFor(scenario, role, pair) {
+  const pool = LOOSE_SCENARIOS[scenario][role];
+  return pool[pair % pool.length];
 }
 
 const CASES = {
@@ -989,8 +986,8 @@ function violationsLoose(turn) {
 // a free line back — there is no length to violate and no speech act to breach,
 // so the retry loop that used to police the form has almost nothing left to do.
 async function speakFree(player, role, ctx, state, cfg) {
-  const cast = castFor(state.scenario, role, SEED);
-  const pics = PICTURES && state.scenario === "refs" ? pictureCast(role, SEED) : null;
+  const cast = castFor(state.scenario, role, PAIR);
+  const pics = PICTURES && state.scenario === "refs" ? pictureCast(role, PAIR) : null;
   if (pics && player === "gemini")
     throw new Error("--pictures has no Gemini path: keep gemini on the chair, or add one");
   const sys = freeSaySystem(pics ? PICTURE_BRIEF : cast.situation, cast.manner, !!cfg.hears,
@@ -1062,7 +1059,7 @@ async function codeFree(player, role, say, state, cfg) {
 async function speak(player, role, act, ctx, state, scenario, cfg) {
   if (FREE) return speakFree(player, role, ctx, state, cfg);
   const sys = LOOSE
-    ? (cast => looseSystemPrompt(scenario, cast.situation, cast.manner))(castFor(state.scenario, role, SEED))
+    ? (cast => looseSystemPrompt(scenario, cast.situation, cast.manner))(castFor(state.scenario, role, PAIR))
     : systemPrompt(role, act, scenario, SCENARIOS[state.scenario][role].situation,
                    SCENARIOS[state.scenario][role].goal, (HATS[state.scenario] || {})[role] || "");
   let note = "";
@@ -1107,8 +1104,16 @@ if (FREE && !LOOSE) throw new Error("--speech free needs --goals loose: a free l
 if (!["rule", "model"].includes(BUILDER)) throw new Error(`unknown --builder: ${BUILDER} (rule | model)`);
 // Which pair of lives this run draws. Left to the clock so repeated runs differ,
 // recorded in the session so any one of them can be had back with --seed.
-const SEED = Number.isFinite(Number(argv.seed)) && argv.seed !== undefined
-  ? Math.abs(Math.trunc(Number(argv.seed)))
+// Which of the four lives each side gets. It is deliberately NOT the case: an
+// argument's five cases used to run five different seeds, so `given` and
+// `together` differed in the protocol AND in who was speaking, and no
+// difference between them could be attributed to either. One pair per argument,
+// held across all five cases; --pair 1..3 reruns the whole grid with the next
+// pair, as a replicate rather than a confound.
+if (argv.seed !== undefined)
+  throw new Error("--seed selected the cast, which confounded case with cast. Use --pair 0..3.");
+const PAIR = Number.isFinite(Number(argv.pair)) && argv.pair !== undefined
+  ? Math.abs(Math.trunc(Number(argv.pair)))
   : Math.floor(Date.now() / 1000) % 100000;
 if (argv.goals && !["strict", "loose"].includes(argv.goals))
   throw new Error(`unknown --goals: ${argv.goals} (strict | loose)`);
@@ -1153,7 +1158,7 @@ process.on("unhandledRejection", e => { throw e; });
 
 console.log(`\n  ${(LOOSE ? LOOSE_SCENARIOS : SCENARIOS)[scenarioKey].blurb}`);
 console.log(LOOSE
-  ? `  ${cfg.label} — loose goals, seed ${SEED} (role 1 ${cfg.swapPlayers ? playerB : playerA}, role 2 ${cfg.swapPlayers ? playerA : playerB})`
+  ? `  ${cfg.label} — loose goals, pair ${PAIR} (role 1 ${cfg.swapPlayers ? playerB : playerA}, role 2 ${cfg.swapPlayers ? playerA : playerB})`
     + `\n  role 1: ${shownTo("A")}`
     + `\n  role 2: ${shownTo("B")}`
   : `  ${cfg.label} — role 1 ${LEAD[cfg.A]}… (${playerA}), role 2 ${LEAD[cfg.B]}… (${playerB})`);
@@ -1535,7 +1540,7 @@ const session = {
     // the crossing that gets built is in the same eight axes as the referent.
     pictures: PICTURES && scenarioKey === "refs"
       ? Object.fromEntries(["A", "B"].map(r => {
-          const { key, shared } = pictureCast(r, SEED);   // not the base64
+          const { key, shared } = pictureCast(r, PAIR);   // not the base64
           return [r, { key, shared }];
         }))
       : null,
@@ -1545,9 +1550,9 @@ const session = {
     // unanswerable without reading the transcripts.
     speech: FREE ? "free" : "coded",
     builder: BUILDER,
-    seed: LOOSE ? SEED : null,
+    pair: LOOSE ? PAIR : null,
     cast: LOOSE ? Object.fromEntries(["A", "B"].map(r =>
-      [r, { ...castFor(scenarioKey, r, SEED), situation: shownTo(r) }])) : null,
+      [r, { ...castFor(scenarioKey, r, PAIR), situation: shownTo(r) }])) : null,
           turns: state.turn, endedBy: state.endedBy || "turn cap", lastMoved: state.lastMoved || null,
           ranAt: new Date().toISOString() },
   goals: LOOSE ? null
