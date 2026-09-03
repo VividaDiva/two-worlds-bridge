@@ -133,7 +133,7 @@ const LOOSE_SCENARIOS = {
         // of all turns — in character, but a tic once it is every time.
         manner: "Dry, specific, and fobbed off before, so you know what \"it'll do\" costs. You have particular winters you could name, but you do not reach for one every time you open your mouth.",
         needs: ["heavy", "footed"] },
-      { situation: "You move long timber over — awkward, unwieldy, and it will not turn a corner.",
+      { situation: "You move long ladders over — awkward, unwieldy, and they will not turn a corner.",
         manner: "You talk about length and swing and clearance. Patient, and used to not being understood.",
         needs: ["open", "heavy"] },
       { situation: "You lead a horse across, and it will not set foot on anything that moves.",
@@ -145,42 +145,49 @@ const LOOSE_SCENARIOS = {
     ],
   },
   agreed: {
-    // The only scenario whose two pools are written as matched opposites —
-    // HEAVY against LIGHT, NARROW against WIDE, LOW against HIGH. Walking the
-    // grid the way the others do paired LOW against LIGHT and SIMPLE against
-    // LIGHT, which do not contradict each other at all: four of the five
-    // recorded runs never instantiated the argument they were the evidence for.
+    // The one argument where the two of them want the SAME crossing. That has to
+    // be true in the needs, not just in the prose: they used to get [steady,heavy]
+    // against [steady,open], which is one key of two — the same overlap as
+    // `places`, so nothing distinguished this argument from two people who merely
+    // happen to agree about one thing. Worse, NARROW/WIDE and LOW/HIGH were
+    // encoded as opposite needs, and no crossing in the 384 could satisfy both:
+    // half the argument asserted an agreement that was impossible.
+    //
+    // Each pair now opens with one sentence, word for word the same on both
+    // sides, and carries the same need. What differs is only what would convince
+    // them, and the word each has always used for it.
     aligned: true,
     blurb: "Two people who want the same crossing and cannot tell. Nothing either of them says is untrue, and every word of it sounds like an objection to the other.",
     A: [
-      { situation: "You want it to feel solid, and the word you use for that is HEAVY — heavy timber, heavy footings, weight you can feel through your boots. What frightens you is anything that gives.",
+      { situation: "You want a crossing that does not shift under you, and whose ends are still holding when the banks go soft with rain. The only thing that convinces you of that is weight — heft you can feel through your boots, mass that does not answer back when you put your foot down. You call it HEAVY.",
         manner: "You say heavy constantly and never explain it. To you it obviously means safe.",
-        needs: ["steady", "heavy"] },
-      { situation: "You want it SIMPLE — nothing to catch, nothing to trip on, nothing to go wrong. You have watched complicated things fail in ways nobody predicted.",
+        needs: ["steady", "footed"] },
+      { situation: "You want a crossing that catches nobody out, underfoot or in the wet. The only thing that convinces you of that is fewness — nothing to trip on, nothing to snag, barely anything there that could fail. You call it SIMPLE.",
         manner: "You use simple and plain and clean for what you want, and you never say the word safe, though that is what you mean.",
-        needs: ["steady", "open"] },
-      { situation: "You want it NARROW, because you cross with a nervous animal and a wide open surface is where it bolts. Narrow is what keeps it walking straight.",
-        manner: "You talk about the animal, not about yourself, and you assume everybody understands why narrow is kindness.",
-        needs: ["steady", "light"] },
-      { situation: "You want it LOW — close to the water, no climb, nothing to fall from. Height is the thing you are frightened of and you cannot say so plainly.",
+        needs: ["steady", "grip"] },
+      { situation: "You want a crossing your nervous animal will walk without balking. The only thing that convinces you of that is closeness — something near at either side that keeps it going straight and stops it drifting. You call it NARROW.",
+        manner: "You talk about the animal, not about yourself, and you assume everybody understands why.",
+        needs: ["steady", "guarded"] },
+      { situation: "You want a crossing you can go over without fear. What frightens you is the height, and you cannot say so plainly, so what you ask for is to be near the water — no climb, nothing to fall from. You call it LOW.",
         manner: "You talk around it. You mention your knees, the climb, the weather, and never the drop.",
-        needs: ["steady", "low"] },
+        needs: ["steady", "guarded"] },
     ],
     B: [
-      { situation: "You want it to feel solid too, and the word you use is LIGHT — light enough that you can see how it is made, and see it is sound. Bulk is where rot hides.",
+      { situation: "You want a crossing that does not shift under you, and whose ends are still holding when the banks go soft with rain. The only thing that convinces you of that is seeing it — every piece in plain view, nothing packed out of sight where rot could start. You call it LIGHT.",
         manner: "You say light and clean and honest, and to you they obviously mean safe. You trust what you can put your eye on and mistrust what you cannot.",
-        needs: ["steady", "open"] },
-      { situation: "You want it SUBSTANTIAL — braced, tied, more than it strictly needs. You have watched sparse things fail in ways nobody predicted.",
+        needs: ["steady", "footed"] },
+      { situation: "You want a crossing that catches nobody out, underfoot or in the wet. The only thing that convinces you of that is plenty — braced, tied, more of everything than it strictly needs, so that whatever gives there is something else still holding. You call it SUBSTANTIAL.",
         manner: "You use words like proper and built and enough, and you never say the word safe, though that is what you mean.",
-        needs: ["steady", "many"] },
-      { situation: "You want it WIDE, because you cross with a nervous animal and a narrow surface is where it panics and refuses. Room is what keeps it walking.",
-        manner: "You talk about the animal, not about yourself, and you assume everybody understands why room is kindness.",
-        needs: ["steady", "many"] },
-      { situation: "You want it HIGH — well clear of the water, because it is the water that frightens you, and being near it is worse than being above it.",
+        needs: ["steady", "grip"] },
+      { situation: "You want a crossing your nervous animal will walk without balking. The only thing that convinces you of that is room — space enough that it never feels shut in and never refuses. You call it WIDE.",
+        manner: "You talk about the animal, not about yourself, and you assume everybody understands why.",
+        needs: ["steady", "guarded"] },
+      { situation: "You want a crossing you can go over without fear. What frightens you is the water, and you cannot say so plainly, so what you ask for is to be well clear of it, high above. You call it HIGH.",
         manner: "You talk around it. You mention the season, the flood, the smell of it, and never say you cannot swim.",
-        needs: ["steady", "high"] },
+        needs: ["steady", "guarded"] },
     ],
   },
+
   pairs: {
     blurb: "Four people and one crossing. Each of the two speaking carries somebody else's need as well as their own.",
     A: [
@@ -204,15 +211,19 @@ const LOOSE_SCENARIOS = {
       { situation: "You fish under it, and you also have to walk over it. What is good for the boat is not good for your feet.",
         manner: "You are amused by the contradiction and say so. You will not pretend the two wants are one.",
         needs: ["high", "low"] },
-      { situation: "You carry the post over daily, and once a month you bring the doctor across, who will not come if it looks unsafe.",
+      { situation: "You carry the mail over daily, and once a month you bring the doctor across, who will not come if it looks unsafe.",
         manner: "Practical about your own crossing, anxious about hers, and the anxiety is the part you have trouble putting plainly.",
         needs: ["guarded", "steady"] },
-      { situation: "The timber goes over on your shoulder, and the children of the village go over it unsupervised all summer.",
-        manner: "Blunt about the timber, and you keep circling back to the children without quite saying you are frightened.",
+      { situation: "The long ladders go over on your shoulder, and the children of the village go over it unsupervised all summer.",
+        manner: "Blunt about the ladders, and you keep circling back to the children without quite saying you are frightened.",
         needs: ["many", "guarded"] },
     ],
   },
   refs: {
+    // Two of these briefs name a structure — a cable crossing, a modern span —
+    // and that is deliberate, not an oversight like the timber a loads persona
+    // was carrying. Here the thing they picture IS a crossing, and the argument
+    // is that they must get it across without the word for it. Do not "fix".
     blurb: "Neither of you can describe it plainly. Each keeps gesturing at something the other has never seen.",
     A: [
       { situation: "You grew up beside a great stone-towered crossing with a road that lifts, and you assume everybody can picture it.",
