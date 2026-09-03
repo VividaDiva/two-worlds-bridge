@@ -3331,11 +3331,20 @@ function paintRuns(){
   host.querySelectorAll("[data-run]").forEach(b => b.onclick = () => showRun(+b.dataset.run));
 }
 
-// Land on a conversation: the one asked for, or the first recorded for this case.
+// Land on a conversation: the one asked for, or else the one where all three
+// seats hold different models. Both are recorded for every case, and the run
+// that lands first is the one most people will read; the three-company run is
+// the design, and the one where the builder shares a model with role 2 is a
+// comparison against it.
+const THREE_WAY = x => x.meta.models
+  && x.meta.models[x.meta.players.A] !== x.meta.models[x.meta.players.B]
+  && x.meta.models[x.meta.players.B] !== x.meta.models.machine
+  && x.meta.models[x.meta.players.A] !== x.meta.models.machine;
 function showRun(i){
   const here = SESSIONS.map((x, n) => [x, n])
     .filter(([x]) => x.meta.scenario === S.scenario && x.meta.case === S.case).map(([, n]) => n);
-  const pick = here.includes(i) ? i : here[0];
+  const distinct = here.find(n => THREE_WAY(SESSIONS[n]));
+  const pick = here.includes(i) ? i : (distinct != null ? distinct : here[0]);
   if (pick == null){
     // Nothing recorded for this case. This used to repaint only the run picker
     // and return, which left the PREVIOUS case's conversation sitting in the
