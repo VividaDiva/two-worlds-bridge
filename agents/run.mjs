@@ -26,7 +26,7 @@ import { z } from "zod";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import OpenAI from "openai";
 import { GoogleGenAI } from "@google/genai";
-import { KIT, NAME, MADE, FEATURES, FORBIDDEN, STRUCTURES, CHOICES, mkCtx, hear, newTurn, build, provenance, groundOf, ledger } from "./engine.mjs";
+import { KIT, NAME, MADE, FEATURES, FORBIDDEN, STRUCTURES, CHOICES, AXES, mkCtx, hear, newTurn, build, provenance, groundOf, ledger } from "./engine.mjs";
 import { readKeyword, readLLM, readLooseKeyword, readLooseLLM, speakLLM, chooseLLM, READERS } from "./machine.mjs";
 
 /* ── what each of them came for, and what it is allowed to do ─────────── */
@@ -267,11 +267,41 @@ const LOOSE_SCENARIOS = {
 // the bind reads as evasion, and the refusals came back under "cyber". Speaking
 // from having USED them, with the pictures placed after the sentence rather than
 // before it, refused 0 times in 10. Both halves of that were needed.
+const DRAWING_BRIEF =
+  "One crossing is in front of you, and it is the one you have always used. It is "
+  + "what the word means to you and what you will be measuring anything else against. "
+  + "The other person cannot see it, and is looking at one of their own.";
+
 const PICTURE_BRIEF =
   "You have crossed both of these for years — they are the two you know in your feet. "
   + "Whatever those two have in common is the thing you cannot do without; a crossing "
   + "lacking it is one you will not use. The other person has two quite different ones, "
   + "and has never had to say what theirs were like either.";
+
+// A drawing you supplied, rather than one generated from the kit. One image per
+// role, read once by read-drawing.mjs into the same eight axes, so the goal is a
+// picture and the score is still arithmetic. The manifest is the authority: if
+// its reading of your drawing is wrong, edit it, and nothing looks at the image
+// again.
+const DRAW_DIR = new URL("./drawings/", import.meta.url).pathname;
+const MIME = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+               ".webp": "image/webp", ".gif": "image/gif" };
+let DRAW_MANIFEST = null;
+function drawingCast(role) {
+  if (!DRAW_MANIFEST) {
+    const f = DRAW_DIR + "manifest.json";
+    if (!fs.existsSync(f))
+      throw new Error("--drawings needs drawings/manifest.json — put two images in agents/drawings/ and run: node read-drawing.mjs");
+    DRAW_MANIFEST = JSON.parse(fs.readFileSync(f, "utf8"));
+  }
+  const key = role === "A" ? "role1" : "role2";
+  const e = DRAW_MANIFEST[key];
+  if (!e) throw new Error(`drawings/manifest.json has no ${key} — run read-drawing.mjs again`);
+  const ext = e.file.slice(e.file.lastIndexOf(".")).toLowerCase();
+  return { key, shape: e.shape, needs: e.needs, file: e.file, note: e.note || "",
+           media: MIME[ext] || "image/png",
+           images: [fs.readFileSync(DRAW_DIR + e.file).toString("base64")] };
+}
 
 function pictureCast(role, pair) {
   const pairs = REF_PAIRS[role];
@@ -287,6 +317,15 @@ function pictureCast(role, pair) {
 // description on the page that no model read.
 function shownTo(role) {
   const cast = castFor(scenarioKey, role, PAIR);
+  if (DRAWINGS && scenarioKey === "refs") {
+    const d = drawingCast(role);
+    // The note is what the reader first thought, and it goes stale the moment a
+    // line of the manifest is corrected by hand — printing both had the header
+    // saying "no roof" directly above "a roof the whole length of it". The
+    // shape is the thing that was actually used, so only the shape is reported.
+    return `shown your drawing ${d.file}. `
+      + `What it is: ${AXES.map(ax => CHOICES[ax][d.shape[ax]]).join("; ")}.`;
+  }
   if (!(PICTURES && scenarioKey === "refs")) return cast.situation;
   const p = pictureCast(role, PAIR);
   const words = Object.entries(p.shared).map(([ax, v]) => CHOICES[ax][v]).join("; ");
@@ -734,12 +773,12 @@ const fatalCheck = e => {
 const contentClaude = u => typeof u === "string" ? u : [
   { type: "text", text: u.text },
   ...u.images.map(data => ({ type: "image",
-    source: { type: "base64", media_type: "image/png", data } })),
+    source: { type: "base64", media_type: u.media || "image/png", data } })),
 ];
 const contentOpenAI = u => typeof u === "string" ? u : [
   { type: "text", text: u.text },
   ...u.images.map(b => ({ type: "image_url",
-    image_url: { url: `data:image/png;base64,${b}` } })),
+    image_url: { url: `data:${u.media || "image/png"};base64,${b}` } })),
 ];
 
 async function askClaude(system, user, schema = TurnSchema) {
@@ -998,11 +1037,13 @@ function violationsLoose(turn) {
 // so the retry loop that used to police the form has almost nothing left to do.
 async function speakFree(player, role, ctx, state, cfg) {
   const cast = castFor(state.scenario, role, PAIR);
-  const pics = PICTURES && state.scenario === "refs" ? pictureCast(role, PAIR) : null;
+  const pics = state.scenario !== "refs" ? null
+    : DRAWINGS ? drawingCast(role)
+    : PICTURES ? pictureCast(role, PAIR) : null;
   if (pics && player === "gemini")
     throw new Error("--pictures has no Gemini path: keep gemini on the chair, or add one");
-  const sys = freeSaySystem(pics ? PICTURE_BRIEF : cast.situation, cast.manner, !!cfg.hears,
-                            !!pics && !BARRED);
+  const sys = freeSaySystem(pics ? (DRAWINGS ? DRAWING_BRIEF : PICTURE_BRIEF) : cast.situation,
+                            cast.manner, !!cfg.hears, !!pics && !BARRED);
   let note = "", say = "";
   for (let attempt = 1; attempt <= 4; attempt++) {
     const user = userPrompt({
@@ -1010,7 +1051,7 @@ async function speakFree(player, role, ctx, state, cfg) {
       dialogue: dialogueFor(role, cfg, state.log || []),
       hears: cfg.hears, turn: state.turn + 1, echo: !!cfg.echo,
     }) + note;
-    const out = await PLAYERS[player](sys, pics ? { text: user, images: pics.images } : user, FreeSaySchema);
+    const out = await PLAYERS[player](sys, pics ? { text: user, images: pics.images, media: pics.media } : user, FreeSaySchema);
     say = String(out?.say || "").trim();
     const words = say.toLowerCase().split(/\s+/).map(w => w.replace(/[^a-z0-9'-]/g, ""));
     const named = (pics && !BARRED) ? [] : STRUCTURES.filter(f => words.includes(f));
@@ -1104,6 +1145,11 @@ const LOOSE = (argv.goals || "strict") === "loose";
 // Who decides what gets built: the scoring rule, or Role 3 itself.
 const BUILDER = argv.builder || "rule";
 const PICTURES = "pictures" in argv && argv.pictures !== "off";
+// --drawings uses your own two images from agents/drawings/ instead of the pair
+// generated from the kit. refs only: it is the argument about referents.
+const DRAWINGS = "drawings" in argv && argv.drawings !== "off";
+if (DRAWINGS && scenarioKey !== "refs")
+  throw new Error("--drawings only applies to --scenario refs");
 // --pictures        they may name the parts (the referent is a picture, not a place)
 // --pictures barred they may not, as in every other argument — kept for the comparison
 const BARRED = argv.pictures === "barred";
@@ -1571,8 +1617,14 @@ const session = {
     speech: FREE ? "free" : "coded",
     builder: BUILDER,
     pair: LOOSE ? PAIR : null,
+    // Under --drawings the goal IS the picture, so the need recorded for scoring
+    // has to be the picture's and not the text life's, or the run would be
+    // marked against a goal nobody was given.
     cast: LOOSE ? Object.fromEntries(["A", "B"].map(r =>
-      [r, { ...castFor(scenarioKey, r, PAIR), situation: shownTo(r) }])) : null,
+      [r, { ...castFor(scenarioKey, r, PAIR), situation: shownTo(r),
+            ...(DRAWINGS && scenarioKey === "refs"
+                ? { needs: drawingCast(r).needs, drawing: drawingCast(r).file,
+                    shape: drawingCast(r).shape } : {}) }])) : null,
           turns: state.turn, endedBy: state.endedBy || "turn cap", lastMoved: state.lastMoved || null,
           ranAt: new Date().toISOString() },
   goals: LOOSE ? null

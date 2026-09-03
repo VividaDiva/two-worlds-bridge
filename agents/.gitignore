@@ -1,3 +1,12 @@
 .env
 node_modules/
 sessions/
+
+# your own drawings and what was read off them: yours, not the repo the
+# instrument lives in
+drawings/*.png
+drawings/*.jpg
+drawings/*.jpeg
+drawings/*.webp
+drawings/*.gif
+drawings/manifest.json
