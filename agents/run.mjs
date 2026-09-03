@@ -1120,7 +1120,12 @@ if (argv.goals && !["strict", "loose"].includes(argv.goals))
 const playerA = argv.a || "openai";
 const playerB = argv.b || "claude";
 // `llm` stays as an alias for the Anthropic reader, which is what it used to mean.
-const reader = ({ llm: "claude" })[argv.machine] || argv.machine || "claude";
+// Three seats, three companies. The default used to be "claude", which put the
+// same model in seat 2 and seat 3: the builder shared a lexicon with one of the
+// two people it was trying to understand, which is the one thing this is
+// supposed to be measuring the absence of. Role 1 openai, role 2 claude,
+// role 3 gemini unless told otherwise.
+const reader = ({ llm: "claude" })[argv.machine] || argv.machine || "gemini";
 if (!READERS[reader]) throw new Error(`unknown machine: ${reader} (keyword | claude | openai | gemini)`);
 const byModelUsed = reader !== "keyword";
 // The machine says its piece unless told not to. It is a second call per turn,
@@ -1534,7 +1539,11 @@ if (state.mute) console.log(`  ${state.mute} turns Role 3 was silent — the voi
 const session = {
   meta: { scenario: scenarioKey, case: caseKey, label: CASES[caseKey].label,
           players: { A: playerA, B: playerB }, machine: reader, machineIsModel: byModelUsed,
-          models: { claude: CLAUDE_MODEL, openai: OPENAI_MODEL, gemini: GEMINI_MODEL, machine: MACHINE_MODEL },
+          // `machine` used to be MACHINE_MODEL flat, which defaults to Opus and
+    // is only the right answer when Claude is in the chair: every Gemini-built
+    // run on record claims Role 3 was claude-opus-5. The chair is `reader`.
+    models: { claude: CLAUDE_MODEL, openai: OPENAI_MODEL, gemini: GEMINI_MODEL,
+              machine: ({ claude: MACHINE_MODEL, gemini: GEMINI_MODEL, openai: OPENAI_MODEL })[reader] || reader },
     // What each role was actually looking at, and what its two pictures agreed
     // on. Written down because it is the only thing here that can be checked:
     // the crossing that gets built is in the same eight axes as the referent.
