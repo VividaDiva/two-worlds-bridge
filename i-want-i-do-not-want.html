@@ -1375,7 +1375,7 @@ const W_AVOID = (() => {
 })();
 
 const S = {
-  scenario:"places", case:"given", results:{}, runs:{}, tick:0,
+  scenario:"places", case:"open-1st", results:{}, runs:{}, tick:0,
   temper:{A:"firm", B:"firm"},   // a setting, like the case — reset does not clear it
   mem:{A:null, B:null}, asked:{A:0, B:0}, dodged:0,
   recent:{A:[], B:[]}, spent:{A:false, B:false}, lastSaid:{A:[], B:[]},
@@ -2331,63 +2331,12 @@ function dist(key){
 }
 
 function pushVerdict(){
+  // The verdict panel was taken out. This kept its whole body behind an early
+  // return for a long time, which made it a trap: the dead lines still named
+  // the old five cases, and an edit made here renders nowhere. Callers remain,
+  // so it stays as an explicit no-op rather than being deleted out from under
+  // them.
   return;
-  if (S.silent) return;
-  vhost.innerHTML = "";
-  const solo = !!CASES[S.case].solo, cc = solo ? S.side.A : S.shared;
-  const r = S.results[KEY(S.case)] || {};
-  const el = document.createElement("div");
-  el.className = "verdict";
-  const unnamedA = r.prov ? r.prov.total - r.prov.named : 0;
-  el.innerHTML = `<span class="k">${CASES[S.case].label.toLowerCase()} · after ${S.turn} turns</span>
-    <h3>${solo
-      ? `${NAME(S.side.A.design && S.side.A.design.id)} in one room, ${NAME(S.side.B.design && S.side.B.design.id).toLowerCase()} in the other.`
-      : `${cc.design ? NAME(cc.design.id) : "Nothing"} is standing, over ${groundPhrase(cc)}.`}</h3>
-    ${SC().refs ? (PIC_RUN()
-      ? `<p>Each of them was shown two crossings and told nothing about them. What their own two have in
-         common is what they need — nobody said so, and neither of them can see the other pair. The builder
-         never sees any of it. What it built came from their <em>words</em>; what they were actually looking
-         at is set out above, and the two can be compared property by property.</p>`
-      : `<p>Each of them keeps reaching for a crossing they grew up with and assuming the other can
-       picture it. They describe a great deal — but about a thing only they have seen, and the builder has its own
-       picture of what those descriptions amount to. What it built came from their <em>words</em>, which point
-       somewhere quite different from their <em>pictures</em> — shown in red under everything they said.</p>`) : ""}
-    ${LOOSE_RUN()
-      ? `<p>Neither of them was told what to want. Each got a life and something at stake in it, and what to
-         build was theirs to talk out. ${PIC_RUN()
-           ? `Here alone they were allowed to name the parts: forbidden the words while looking straight at a
-              crossing, the model stopped answering altogether.`
-           : `Neither was ever allowed to name a single part of it.`}</p>
-         ${LOOSE_RUN().meta.cast ? `<p class="briefs">Role 1 was given: <em>${LOOSE_RUN().meta.cast.A.situation}</em><br>
-         Role 2 was given: <em>${LOOSE_RUN().meta.cast.B.situation}</em></p>` : ""}`
-      : `<p>Role 1 came for <b>${SC().want.A}</b> and ${S.hit.A ? `had it at turn ${S.hit.A}` : "never had it"}.
-         Role 2 came for <b>${SC().want.B}</b> and ${S.hit.B ? `had it at turn ${S.hit.B}` : "never had it"}.
-         Neither was ever allowed to name a single part of what they wanted built.</p>`}
-    <p>${unnamedA === (r.prov ? r.prov.total : 0) && r.prov && r.prov.total
-      ? "Not one property of what is standing was ever put into words. Every part of it was inferred from a description of a need."
-      : `${unnamedA} of ${r.prov ? r.prov.total : 0} of its properties came from nothing either of them said.`}</p>
-    ${(() => {
-      // A recorded `together` run carries the whole chain. Reporting only the
-      // builder's hit rate on it would be reporting a two-line sample as if it
-      // were deafness, when most of the loss happens before the builder is in
-      // the room at all.
-      const ch = LOOSE_RUN() && LOOSE_RUN().confer;
-      if (ch) return `<p>They settled it between themselves first, over ${ch.conferTurns} turns the builder never heard.
-        <b>${ch.table.length}</b> need${ch.table.length === 1 ? "" : "s"} went on the table between them, and both of them
-        named <b>${ch.both.length}</b>.</p>
-        <p><b>${ch.dropped.length}</b> of those never made it into the ${ch.pactLines} lines they sent — dropped getting an
-        agreement down to one thing each, not misheard. A further <b>${ch.lost.length}</b> the builder did not take from the
-        lines it did get. <b>${ch.standing.length}</b> of the ${ch.table.length} are properties of what stands.
-        ${ch.dropped.length > ch.lost.length
-          ? "More was lost squeezing what they agreed into one line each than the builder lost reading it."
-          : "The builder's reading lost more than the squeeze did."}</p>`;
-      return CASES[S.case].confer ? `<p>They settled it between themselves first. To speak with one voice they had to drop
-       <b>${(S.dropped||[]).length}</b> thing${(S.dropped||[]).length===1?"":"s"} they disagreed about — and the builder never heard any of it.
-       What it built came from what was left.</p>` : "";
-    })()}
-    ${r.revised ? `<p>${r.revised === 1 ? "One of them" : "Both of them"} changed their mind: told plainly why the crossing was the way it was, ${r.revised === 1 ? "it" : "they"} came to want what was already standing. That only happens where the builder is free to explain — refused an answer, nobody accommodates anything.</p>` : ``}
-    <p class="k">${["given","swapped","separate","together","alone"].every(k => S.results[KEY(k)]) ? "all five cases run — the comparison is above the scene" : "now run another case"}</p>`;
-  vhost.appendChild(el);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2889,7 +2838,8 @@ const RUNS_BY = () => {
   });
   return m;
 };
-const CASE_ORDER = ["given", "swapped", "separate", "together", "alone"];
+const CASE_ORDER = ["r2-builder", "r2-role1", "open-1st", "r1-builder", "r1-role2",
+                    "open-2nd", "r1-role2-2nd", "r1-builder-2nd", "together", "alone"];
 
 // Every recorded conversation for one case, replayed and tallied — the same
 // comparison the simulated version made, from arguments that happened.
@@ -2921,7 +2871,7 @@ function replaySession(ss){
   const built = (ss.transcript || []).filter(x => isBuilder(x));
 
   S.scenario = SCENARIOS[ss.meta.scenario] ? ss.meta.scenario : S.scenario;
-  S.case = CASES[ss.meta.case] ? ss.meta.case : "given";
+  S.case = CASES[ss.meta.case] ? ss.meta.case : "open-1st";
   S.replay = ss;
   reset();
   S.replay = ss;                          // reset clears it
@@ -3156,20 +3106,26 @@ function renderCmp(){
       <td class="k">${d.invented} credited that nobody said</td></tr>`;
   }).join("");
 
-  const g = recordedDist(S.scenario, "given"), a2 = recordedDist(S.scenario, "separate");
+  // `open-1st` is the plain arrangement — everybody hears everything — and
+  // `r2-builder` is that same arrangement with one thing taken away: Role 2 can
+  // no longer hear Role 1. Same room, same builder, same opener. It is a
+  // cleaner contrast than the old one, where BOTH went deaf at once and the
+  // room changed with them.
+  const g = recordedDist(S.scenario, "open-1st"), a2 = recordedDist(S.scenario, "r2-builder");
   const finds = [];
   if (g) finds.push(["Nothing here was written in advance",
     `Every line is a model's own. Role 1 is played by one company's, Role 2 by another's, and the builder
      reads them with a third — none of them shown the others' instructions. Across the conversations recorded
-     for <b>${CASES.given.label.toLowerCase()}</b>, the builder took a median of <b>${g.caught} of ${g.said}</b>
+     for <b>${CASES["open-1st"].label.toLowerCase()}</b>, the builder took a median of <b>${g.caught} of ${g.said}</b>
      sentences as they were meant${g.agreedWithList != null ? `, and a keyword reader would have agreed with it
      on <b>${g.agreedWithList}</b>` : ""}.`]);
-  if (g && a2) finds.push(["Being in the room", (
+  if (g && a2) finds.push(["When one of them cannot hear the other", (
     (g.built[0] && a2.built[0] && g.built[0][0] !== a2.built[0][0])
-      ? `In one room they end at <b>${g.built[0][0].toLowerCase()}</b>, apart at <b>${a2.built[0][0].toLowerCase()}</b>.`
-      : `Both arrangements reached <b>${g.built[0] ? g.built[0][0].toLowerCase() : "the same thing"}</b> here.`)
-    + ` Apart, neither can hear the other at all — so whatever the builder gets, it gets from two people
-       who do not know the other is talking.`]);
+      ? `With everyone hearing everything they end at <b>${g.built[0][0].toLowerCase()}</b>; with Role 2
+         deaf to Role 1, at <b>${a2.built[0][0].toLowerCase()}</b>.`
+      : `Both reached <b>${g.built[0] ? g.built[0][0].toLowerCase() : "the same thing"}</b> here.`)
+    + ` Only one thing differs between them: Role 2 still hears the builder, still speaks into the same
+       room, and simply never hears what Role 1 said.`]);
   const fh = document.getElementById("finds");
   if (fh) fh.innerHTML = finds.map(([h, t]) => `<div class="find"><h5>${h}</h5><p>${t}</p></div>`).join("");
 
@@ -3477,7 +3433,7 @@ new MutationObserver(() => { readPalette(); paint(); })
 if (SESSIONS.length){
   const first = Math.floor(Math.random() * SESSIONS.length);
   S.scenario = SESSIONS[first].meta.scenario;
-  S.case = CASES[SESSIONS[first].meta.case] ? SESSIONS[first].meta.case : "given";
+  S.case = CASES[SESSIONS[first].meta.case] ? SESSIONS[first].meta.case : "open-1st";
   S.view = "scene";
   paintScenarios(); paintCaseLabels();
   showRun(first);

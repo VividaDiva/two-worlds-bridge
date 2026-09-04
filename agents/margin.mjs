@@ -9,7 +9,10 @@ const p = fs.readFileSync("../i-want-i-do-not-want.html", "utf8");
 const a = p.indexOf("/* SESSIONS */"), b = p.indexOf("/* /SESSIONS */");
 const S = JSON.parse(p.slice(a + 14, b).trim().replace(/^const SESSIONS = /, "").replace(/;$/, ""));
 
-const s = S.find(x => x.meta.scenario === "agreed" && x.meta.case === "separate");
+// `separate` was removed when the cases were redefined by who hears whom. The
+// nearest thing in the new set is `r2-builder`: still one room and one
+// crossing, but Role 2 never hears Role 1.
+const s = S.find(x => x.meta.scenario === "agreed" && x.meta.case === "r2-builder");
 const ctx = mkCtx();
 console.log(`  ${s.meta.scenario}/${s.meta.case} — margin between the top two after each turn\n`);
 console.log("  turn  new needs heard      margin  could one more need flip it?");
