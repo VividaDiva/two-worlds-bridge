@@ -605,9 +605,12 @@ function freeSaySystem(situation, manner, together, mayName = false) {
         + ` Everything said in the room is heard by all three of you.`
       : `You are one of two people trying to get a crossing built. A third person will build it. You are not them.`,
     ``,
-    `Who you are: ${manner}`,
-    `Your situation: ${situation}`,
-    ``,
+    // With a drawing, the picture IS the brief. Naming a personality and
+    // describing a situation would be me telling them what they are looking at
+    // and who to be while they look — which is the thing being measured. Both
+    // lines drop out and nothing replaces them: no words about the picture at
+    // all, from anybody, before they have said a word about it themselves.
+    ...(situation === null ? [] : [`Who you are: ${manner}`, `Your situation: ${situation}`, ``]),
 `You want this built. So does the other one, for their own reasons, and the two of you have to live with`,
 `whatever goes up — you will both be using it. You do not know what it should BE, and you cannot design it,`,
 `because you have no words for the parts. What you have is your life, what would ruin it, and each other.`,
@@ -1042,8 +1045,9 @@ async function speakFree(player, role, ctx, state, cfg) {
     : PICTURES ? pictureCast(role, PAIR) : null;
   if (pics && player === "gemini")
     throw new Error("--pictures has no Gemini path: keep gemini on the chair, or add one");
-  const sys = freeSaySystem(pics ? (DRAWINGS ? DRAWING_BRIEF : PICTURE_BRIEF) : cast.situation,
-                            cast.manner, !!cfg.hears, !!pics && !BARRED);
+  const sys = freeSaySystem(
+    pics ? (DRAWINGS ? null : PICTURE_BRIEF) : cast.situation,
+    DRAWINGS && pics ? null : cast.manner, !!cfg.hears, !!pics && !BARRED);
   let note = "", say = "";
   for (let attempt = 1; attempt <= 4; attempt++) {
     const user = userPrompt({
