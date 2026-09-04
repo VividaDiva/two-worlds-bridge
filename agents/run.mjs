@@ -189,34 +189,58 @@ const LOOSE_SCENARIOS = {
   },
 
   pairs: {
-    blurb: "Four people and one crossing. Each of the two speaking carries somebody else's need as well as their own.",
+    // Two personas per role, not one person speaking on somebody's behalf. The
+    // first version had a narrator — "you speak for yourself and for your
+    // mother" — which is one voice carrying two needs, and a model handed that
+    // simply averages them into a single reasonable request. Here the two are
+    // separate people who take turns through the same mouth: the builder hears
+    // one channel called Role 1 and is in fact being addressed by two people
+    // who want different things and never speak to each other.
+    twoPersonas: true,
+    blurb: "Four people and one crossing, speaking through two mouths. Each mouth is two people by turns, and they do not want the same thing.",
     A: [
-      { situation: "You speak for yourself and for your mother, who is eighty and crosses on two sticks at her own pace. What you need and what she needs are not the same thing and you know it.",
-        manner: "You keep catching yourself arguing for one of them and not the other. You correct yourself out loud when you notice.",
-        needs: ["guarded", "low"] },
-      { situation: "You cross with your nine-year-old, who runs at it, and with your father's dog, which will not go at all unless it can see the far side.",
-        manner: "Harried and specific. You talk about the two of them separately because their troubles are nothing alike.",
-        needs: ["guarded", "open"] },
-      { situation: "You are the one who goes over, and you are also the one who has to get your blind uncle over it twice a week.",
-        manner: "You say \"for me\" and \"for him\" and you keep them apart, because confusing them is how somebody gets hurt.",
-        needs: ["guarded", "grip"] },
-      { situation: "Half the year you carry a baby across; the other half you drive the year's grain over on your back.",
-        manner: "You talk in seasons, and you are aware the two halves of your year want opposite things.",
-        needs: ["guarded", "heavy"] },
+      { pair: [
+          { who: "the daughter", situation: "You cross this every day at your own pace and you are in a hurry.",
+            manner: "Quick, impatient, a little short. You have somewhere to be.", needs: ["low", "grip"] },
+          { who: "her mother, eighty, on two sticks", situation: "You cross once a week and it takes you a long time. What you are frightened of is going over the side.",
+            manner: "Slow, apologetic, and you circle back to the same fear without naming it.", needs: ["guarded", "steady"] } ] },
+      { pair: [
+          { who: "the father", situation: "You carry a nine-year-old who runs at everything, and you are the one who has to catch him.",
+            manner: "Watchful. You describe what the child does, not what you want.", needs: ["guarded", "many"] },
+          { who: "his son, nine", situation: "You run at it. You want to get across fast and you do not want to be held.",
+            manner: "Blunt and a bit rude about being fussed over. Short sentences.", needs: ["low", "open"] } ] },
+      { pair: [
+          { who: "the postman", situation: "You cross daily whatever the weather, always carrying, always in a hurry.",
+            manner: "Matter-of-fact, weather-first, no ceremony.", needs: ["grip", "steady"] },
+          { who: "the doctor he fetches", situation: "You come once a month and you will not come at all if it looks unsafe to you.",
+            manner: "Careful and a little fastidious. You say what would make you turn back.", needs: ["guarded", "footed"] } ] },
+      { pair: [
+          { who: "the woman with the baby", situation: "Half the year you carry an infant across and both your arms are full.",
+            manner: "Quiet, and you talk about your hands and what you cannot do with them.", needs: ["steady", "many"] },
+          { who: "the same woman at harvest", situation: "The other half of the year you carry the year's grain over on your back.",
+            manner: "Tired and practical. You talk in loads and in trips.", needs: ["heavy", "footed"] } ] },
     ],
     B: [
-      { situation: "You bring the cart through, and your sister brings the flock through the same gap an hour later. She is not here to speak for herself.",
-        manner: "Dry, and careful to be fair to her. You flag which half of what you are saying is hers.",
-        needs: ["heavy", "many"] },
-      { situation: "You fish under it, and you also have to walk over it. What is good for the boat is not good for your feet.",
-        manner: "You are amused by the contradiction and say so. You will not pretend the two wants are one.",
-        needs: ["high", "low"] },
-      { situation: "You carry the mail over daily, and once a month you bring the doctor across, who will not come if it looks unsafe.",
-        manner: "Practical about your own crossing, anxious about hers, and the anxiety is the part you have trouble putting plainly.",
-        needs: ["guarded", "steady"] },
-      { situation: "The long ladders go over on your shoulder, and the children of the village go over it unsupervised all summer.",
-        manner: "Blunt about the ladders, and you keep circling back to the children without quite saying you are frightened.",
-        needs: ["many", "guarded"] },
+      { pair: [
+          { who: "the carter", situation: "You bring a loaded cart through here daily and the ground goes soft in winter.",
+            manner: "Dry and specific. You know what fobbing off costs.", needs: ["heavy", "footed"] },
+          { who: "his sister with the flock", situation: "You drive sheep through the same gap an hour later and they will not go one at a time.",
+            manner: "Dry, faintly amused, and you talk in animals rather than in numbers.", needs: ["many", "open"] } ] },
+      { pair: [
+          { who: "the fisherman", situation: "You fish from a boat under it and you need to get the boat through.",
+            manner: "Unhurried. You talk about the water and what is above it.", needs: ["high", "inGap"] },
+          { who: "the same man on foot", situation: "You also walk over it twice a day and the climb is the part you resent.",
+            manner: "Grumbling, amused at your own contradiction, and you admit it.", needs: ["low", "grip"] } ] },
+      { pair: [
+          { who: "the blind uncle", situation: "You cross twice a week and you cannot see any of it. What you know of a crossing is what your hands and feet find.",
+            manner: "Calm and exact about touch. You describe what your hands expect.", needs: ["guarded", "grip"] },
+          { who: "his nephew who brings him", situation: "You bring him over and you are the one who would have to get him out of the water.",
+            manner: "Protective, and you talk about what would happen rather than what you want.", needs: ["steady", "footed"] } ] },
+      { pair: [
+          { who: "the timber-carrier", situation: "You bring long ladders over on your shoulder and they will not turn a corner.",
+            manner: "Patient, used to not being understood. You talk about length and swing.", needs: ["many", "open"] },
+          { who: "a village child", situation: "You and the others are on it unsupervised all summer and nobody is watching.",
+            manner: "Cheerful, oblivious to danger, and you say what you actually do on it.", needs: ["low", "steady"] } ] },
     ],
   },
   refs: {
@@ -317,6 +341,8 @@ function pictureCast(role, pair) {
 // description on the page that no model read.
 function shownTo(role) {
   const cast = castFor(scenarioKey, role, PAIR);
+  if (TWO(scenarioKey) && cast.pair)
+    return cast.pair.map(p => `${p.who} (${p.situation})`).join("  ·  turn about with  ·  ");
   if (DRAWINGS && scenarioKey === "refs") {
     const d = drawingCast(role);
     // The note is what the reader first thought, and it goes stale the moment a
@@ -339,6 +365,23 @@ function castFor(scenario, role, pair) {
   const pool = LOOSE_SCENARIOS[scenario][role];
   return pool[pair % pool.length];
 }
+
+// `pairs` gives a role two people rather than one, and they take the role's
+// turns in turn. The builder is told nothing about this: it hears one channel
+// and has no way to know the voice changed under it, which is the argument.
+// Which of a role's two people just spoke. Set by the turn itself, because it
+// is the only thing that knows: reading it back off the log at record time
+// reads a log the turn has not been written into yet.
+let PERSONA = null;
+const TWO = scenario => !!LOOSE_SCENARIOS[scenario] && !!LOOSE_SCENARIOS[scenario].twoPersonas;
+function personaFor(scenario, role, pair, nth) {
+  const cast = castFor(scenario, role, pair);
+  if (!TWO(scenario) || !cast.pair) return cast;
+  return { ...cast.pair[nth % cast.pair.length], both: cast.pair };
+}
+// How many turns this role has already had, so the two alternate.
+const turnsTaken = (state, role) =>
+  (state.log || []).filter(t => t.who === role && t.text).length;
 
 // Who can hear whom, and who speaks first.
 //
@@ -1046,7 +1089,7 @@ function violationsLoose(turn) {
 // a free line back — there is no length to violate and no speech act to breach,
 // so the retry loop that used to police the form has almost nothing left to do.
 async function speakFree(player, role, ctx, state, cfg) {
-  const cast = castFor(state.scenario, role, PAIR);
+  const cast = personaFor(state.scenario, role, PAIR, turnsTaken(state, role));
   const pics = state.scenario !== "refs" ? null
     : DRAWINGS ? drawingCast(role)
     : PICTURES ? pictureCast(role, PAIR) : null;
@@ -1072,7 +1115,7 @@ async function speakFree(player, role, ctx, state, cfg) {
     if (attempt === 4) throw new Error(`${player} could not stop naming structures for role ${role}`);
   }
 
-  return { say, attempts: 1 };
+  return { say, attempts: 1, persona: cast.who || null };
 }
 
 // The second half of a free turn: the speaker, shown its own line, saying what
@@ -1122,7 +1165,7 @@ async function codeFree(player, role, say, state, cfg) {
 async function speak(player, role, act, ctx, state, scenario, cfg) {
   if (FREE) return speakFree(player, role, ctx, state, cfg);
   const sys = LOOSE
-    ? (cast => looseSystemPrompt(scenario, cast.situation, cast.manner))(castFor(state.scenario, role, PAIR))
+    ? (cast => looseSystemPrompt(scenario, cast.situation, cast.manner))(personaFor(state.scenario, role, PAIR, turnsTaken(state, role)))
     : systemPrompt(role, act, scenario, SCENARIOS[state.scenario][role].situation,
                    SCENARIOS[state.scenario][role].goal, (HATS[state.scenario] || {})[role] || "");
   let note = "";
@@ -1279,6 +1322,7 @@ if (cfg.confer) {
     try {
       if (FREE) {
         const said = await speakFree(player, role, ctx, state, cfg);
+        PERSONA = said.persona || null;
         turn = await codeFree(player, role, deEscape(said.say || ""), state, cfg);
       } else {
         ({ turn } = await speak(player, role, cfg[role], ctx, state, scenarioKey, cfg));
@@ -1294,7 +1338,7 @@ if (cfg.confer) {
     state.said[role].push(sentence);
     state.turn++;
     transcript.push({ turn: state.turn, who: role, player, act: cfg[role], text: sentence,
-                      phase: "confer", meant: turn.asserts, asserts: turn.asserts,
+                      persona: PERSONA, phase: "confer", meant: turn.asserts, asserts: turn.asserts,
                       tookThemToMean: (turn.tookThemToMean || []).filter(f => f in FEATURES),
                       taken: [], byWord: null, byModel: null, caught: null });
     console.log(`  ${String(state.turn).padStart(2)} role ${role === "A" ? 1 : 2} (${player}) · to each other: ${sentence}`);
@@ -1323,7 +1367,7 @@ for (let i = 0; i < maxTurns; i++) {
     fatalCheck(e);
     state.refusedTurns = (state.refusedTurns || 0) + 1;
     transcript.push({ turn: state.turn + 1, who: role, player, act, text: "",
-                      refused: true, why: e.message, meant: [], asserts: [], taken: [],
+                      persona: PERSONA, refused: true, why: e.message, meant: [], asserts: [], taken: [],
                       byWord: null, byModel: null, caught: null });
     state.turn++;
     console.log(`  ${String(state.turn).padStart(2)} role ${role === "A" ? 1 : 2} (${player}): — would not speak (${e.message})`);
@@ -1341,7 +1385,7 @@ for (let i = 0; i < maxTurns; i++) {
     // annotating its own line. Nothing about either answer changes; the turn
     // just stops waiting twice for work that could have happened once.
     let said;
-    try { said = await speakFree(player, role, ctx, state, cfg); }
+    try { said = await speakFree(player, role, ctx, state, cfg); PERSONA = said.persona || null; }
     catch (e) { if (lostTurn(e)) break; continue; }
     sentence = deEscape(said.say || "");
     if (byModelUsed) reading = settle(readLooseLLM(sentence,
@@ -1382,7 +1426,7 @@ for (let i = 0; i < maxTurns; i++) {
   }
   if (unread) {
     transcript.push({ turn: state.turn, who: role, player, act, text: sentence,
-                      unread: true, meant: turn.asserts, asserts: turn.asserts, taken: [],
+                      persona: PERSONA, unread: true, meant: turn.asserts, asserts: turn.asserts, taken: [],
                       byWord: LOOSE ? [...byWordRaw.asks, ...byWordRaw.refuses] : byWordRaw,
                       byModel: null, caught: null });
     continue;
@@ -1431,7 +1475,7 @@ for (let i = 0; i < maxTurns; i++) {
 
   const caught = turn.asserts.length > 0 && turn.asserts.every(f => taken.includes(f)) && taken.length > 0;
   const anyOf = turn.asserts.some(f => taken.includes(f));
-  transcript.push({ turn: state.turn, who: role, player, act, text: sentence,
+  transcript.push({ turn: state.turn, who: role, player, act, text: sentence, persona: PERSONA,
                     meant: turn.asserts, taken, byWord, byModel, caught, anyOf, done: !!turn.done,
                     tookThemToMean: (turn.tookThemToMean || []).filter(f => f in FEATURES),
                     meantPlainly: turn.meantPlainly || "",
@@ -1646,7 +1690,12 @@ const session = {
     // has to be the picture's and not the text life's, or the run would be
     // marked against a goal nobody was given.
     cast: LOOSE ? Object.fromEntries(["A", "B"].map(r =>
-      [r, { ...castFor(scenarioKey, r, PAIR), situation: shownTo(r),
+      [r, { ...(TWO(scenarioKey)
+              ? (c => ({ personas: c.pair,
+                         needs: [...new Set(c.pair.flatMap(x => x.needs))],
+                         manner: c.pair.map(x => x.who).join(" and ") }))(castFor(scenarioKey, r, PAIR))
+              : castFor(scenarioKey, r, PAIR)),
+            situation: shownTo(r),
             ...(DRAWINGS && scenarioKey === "refs"
                 ? { needs: drawingCast(r).needs, drawing: drawingCast(r).file,
                     shape: drawingCast(r).shape } : {}) }])) : null,

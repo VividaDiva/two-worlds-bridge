@@ -52,6 +52,10 @@ const keep = s => ({
       ? { turn: t.turn, who: "machine", text: t.text, say: t.say, changed: !!t.changed,
           ...(t.side ? { side: t.side } : {}) }
       : { turn: t.turn, who: t.who, player: t.player, text: t.text,
+          // In `pairs` a role is two people taking turns, and which of them
+          // spoke is the whole argument — dropped here, the page shows one
+          // voice saying contradictory things for no visible reason.
+          ...(t.persona ? { persona: t.persona } : {}),
           meant: t.meant || t.asserts || [], taken: t.taken || [],
           byWord: t.byWord || null, byModel: t.byModel || null,
           ...(t.phase ? { phase: t.phase } : {}),
