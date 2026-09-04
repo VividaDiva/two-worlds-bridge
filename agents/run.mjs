@@ -340,46 +340,53 @@ function castFor(scenario, role, pair) {
   return pool[pair % pool.length];
 }
 
+// Who can hear whom, and who speaks first.
+//
+// `hears` is whether you get the other role's lines; `echo` is whether you get
+// the builder's. These were one pair of switches for both of them, which could
+// only say "one room" or "two rooms". They are per-role now, so a case can
+// deprive ONE of the two of something the other still has — which is the
+// interesting shape, and the one the old five could not express.
+//
+// In cases 1-8 the unconstrained role hears everything. The case IS the
+// asymmetry: one person is deaf to something the other can hear, and what gets
+// built is the question.
+const ALL  = { hears: true,  echo: true  };
+const ONLY_BUILDER = { hears: false, echo: true  };   // the other role is silent to you
+const ONLY_OTHER   = { hears: true,  echo: false };   // the builder is silent to you
+
 const CASES = {
-  // Both of these now carry the return channel. They used to be told only that
-  // "something stands there now", which left them describing needs into the air
-  // with no way to react to the thing itself. Answering what was just laid is
-  // the ordinary situation — you look at what somebody built you and say what is
-  // wrong with it — and it is the only version where the crossing can be argued
-  // over rather than merely requested.
-  given:    { A: "want",  B: "avoid", hears: true,  echo: true, label: "As given" },
-  // Under strict goals this swaps the speech acts, to check that a finding
-  // belongs to asking-or-refusing rather than to one provider's habits. Loose
-  // goals took the speech acts away, which left `swapped` differing from
-  // `given` by a field nothing reads any more — the same experiment, run twice,
-  // for a third of the cost of a sweep. Under loose it swaps the models between
-  // the two chairs instead: same question, the only version of it still available.
-  swapped:  { A: "avoid", B: "want",  hears: true,  echo: true, swapPlayers: true, label: "Voices swapped" },
-  separate: { A: "want",  B: "avoid", hears: false, label: "Apart" },
-  // The same brief as `given` in every respect but one: what Role 3 says comes
-  // back to them. The other three cases hand the two of them only the NAME of
-  // what stands, so they argue at an object that never speaks. Reddy's
-  // toolmakers do get answers back through the hub, and his convergence comes
-  // from that channel — so leaving it out was a choice, and this is the control
-  // for it. Keep the other three: the comparison is the finding, not this case.
-  // Kept only so recordings made under it still load. It is now exactly `given`,
-  // which took the return channel on; do not run it.
-  reply:    { A: "want",  B: "avoid", hears: true,  echo: true, label: "With a reply" },
-  // The page has defined these two since the beginning and the runner never
-  // knew how to produce them, which is why cases 4 and 5 have sat empty.
-  //
-  // together: they talk it over between themselves first, with the builder out
-  // of the room and nothing being built, and only then go to it. What reaches
-  // the builder is a position two people already agreed — the interesting case
-  // for Reddy, because rich two-way talk gets squeezed through a one-way pipe
-  // and you can measure exactly what survives.
-  //
-  // alone: separate rooms and a crossing EACH. Not one crossing built from two
-  // people who cannot hear each other (that is `separate`) but two crossings,
-  // so you can see what each would have got if the other had never existed.
-  together: { A: "want",  B: "avoid", hears: true,  confer: true, label: "Conferring first" },
-  alone:    { A: "want",  B: "avoid", hears: false, solo: true,   label: "Each alone" },
+  "r2-builder":     { A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ONLY_BUILDER },
+                      label: "Role 2 hears only the builder" },
+  "r2-role1":       { A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ONLY_OTHER },
+                      label: "Role 2 hears only Role 1" },
+  "open-1st":       { A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ALL },
+                      label: "Everyone hears everything" },
+  "r1-builder":     { A: "want", B: "avoid", starts: "A", see: { A: ONLY_BUILDER, B: ALL },
+                      label: "Role 1 hears only the builder" },
+  "r1-role2":       { A: "want", B: "avoid", starts: "A", see: { A: ONLY_OTHER, B: ALL },
+                      label: "Role 1 hears only Role 2" },
+  "open-2nd":       { A: "want", B: "avoid", starts: "B", see: { A: ALL, B: ALL },
+                      label: "Everyone hears everything, Role 2 opens" },
+  "r1-role2-2nd":   { A: "want", B: "avoid", starts: "B", see: { A: ONLY_OTHER, B: ALL },
+                      label: "Role 1 hears only Role 2, Role 2 opens" },
+  "r1-builder-2nd": { A: "want", B: "avoid", starts: "B", see: { A: ONLY_BUILDER, B: ALL },
+                      label: "Role 1 hears only the builder, Role 2 opens" },
+  // The two that are about something other than who can hear whom.
+  together: { A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ALL }, confer: true,
+              label: "Conferring first" },
+  alone:    { A: "want", B: "avoid", starts: "A", see: { A: ONLY_BUILDER, B: ONLY_BUILDER },
+              solo: true, label: "Each alone" },
 };
+
+// What one role can hear. Older recordings carry the flat pair; read either.
+const SEE = (cfg, role) => cfg.see ? cfg.see[role] : { hears: !!cfg.hears, echo: !!cfg.echo };
+// Whose turn it is. `starts` decides who opens, and they alternate from there.
+const ROLE_AT = (cfg, i) => {
+  const first = cfg.starts || "A";
+  return i % 2 === 0 ? first : (first === "A" ? "B" : "A");
+};
+
 
 const LEAD = { want: "I want", avoid: "I do not want" };
 
@@ -700,8 +707,8 @@ function dialogueFor(role, cfg, log) {
   const out = [];
   for (const t of log) {
     if (t.who === role && t.text) out.push({ who: "You", text: t.text, mine: true });
-    else if (t.who === other && t.text && cfg.hears) out.push({ who: "The other one", text: t.text });
-    else if (t.who === "machine" && t.say && cfg.echo) out.push({ who: "The builder", text: t.say, builder: true });
+    else if (t.who === other && t.text && SEE(cfg, role).hears) out.push({ who: "The other one", text: t.text });
+    else if (t.who === "machine" && t.say && SEE(cfg, role).echo) out.push({ who: "The builder", text: t.say, builder: true });
   }
   return out;
 }
@@ -1047,13 +1054,13 @@ async function speakFree(player, role, ctx, state, cfg) {
     throw new Error("--pictures has no Gemini path: keep gemini on the chair, or add one");
   const sys = freeSaySystem(
     pics ? (DRAWINGS ? null : PICTURE_BRIEF) : cast.situation,
-    DRAWINGS && pics ? null : cast.manner, !!cfg.hears, !!pics && !BARRED);
+    DRAWINGS && pics ? null : cast.manner, SEE(cfg, role).hears, !!pics && !BARRED);
   let note = "", say = "";
   for (let attempt = 1; attempt <= 4; attempt++) {
     const user = userPrompt({
       standing: CX(role).design ? NAME(CX(role).design.id) : null,
       dialogue: dialogueFor(role, cfg, state.log || []),
-      hears: cfg.hears, turn: state.turn + 1, echo: !!cfg.echo,
+      hears: SEE(cfg, role).hears, turn: state.turn + 1, echo: SEE(cfg, role).echo,
     }) + note;
     const out = await PLAYERS[player](sys, pics ? { text: user, images: pics.images, media: pics.media } : user, FreeSaySchema);
     say = String(out?.say || "").trim();
@@ -1076,7 +1083,7 @@ async function codeFree(player, role, say, state, cfg) {
   const heard = state.said[role === "A" ? "B" : "A"];
   const coded = await PLAYERS[player](codeSystem(),
     `Your line: "${say}"` +
-    (cfg.hears && heard.length ? `\n\nThe other person's last line: "${heard[heard.length - 1]}"` : `\n\nYou have heard nothing from anybody else.`) +
+    (SEE(cfg, role).hears && heard.length ? `\n\nThe other person's last line: "${heard[heard.length - 1]}"` : `\n\nYou have heard nothing from anybody else.`) +
     `\n\nWhat did you mean by yours?`, CodeSchema);
 
   // The coding call is asked for one to three keys and will happily return eight
@@ -1123,9 +1130,9 @@ async function speak(player, role, act, ctx, state, scenario, cfg) {
     const user = userPrompt({
       standing: CX(role).design ? NAME(CX(role).design.id) : null,
       dialogue: dialogueFor(role, cfg, state.log || []),
-      hears: cfg.hears,
+      hears: SEE(cfg, role).hears,
       turn: state.turn + 1,
-      echo: !!cfg.echo,
+      echo: SEE(cfg, role).echo,
     }) + note;
     const turn = await PLAYERS[player](sys, user, LOOSE ? LooseTurnSchema : TurnSchema);
     if (LOOSE) { turn.asks ||= []; turn.refuses ||= []; turn.asserts = [...turn.asks, ...turn.refuses]; }
@@ -1228,11 +1235,19 @@ console.log(LOOSE
     + `\n  role 1: ${shownTo("A")}`
     + `\n  role 2: ${shownTo("B")}`
   : `  ${cfg.label} — role 1 ${LEAD[cfg.A]}… (${playerA}), role 2 ${LEAD[cfg.B]}… (${playerB})`);
-console.log(`  ${cfg.hears ? "One room: each can hear the other." : "Apart: neither knows the other exists."}`
-  + (cfg.echo ? " Role 3 answers, and they hear that too." : " Role 3 is not heard: they see only what stands."));
+const heardBy = role => {
+  const v = SEE(cfg, role);
+  return v.hears && v.echo ? "hears the other one and the builder both"
+       : v.hears ? "hears the other one, but never the builder"
+       : v.echo ? "hears the builder, but never the other one"
+       : "hears neither of them";
+};
+console.log(`  Role 1 ${heardBy("A")}. Role 2 ${heardBy("B")}.`
+  + ` Role ${(cfg.starts || "A") === "A" ? "1" : "2"} speaks first.`);
 // `reply` with no voice would be the return channel with nothing in it, which
 // would read as a null result rather than as a misconfiguration.
-if (cfg.echo && !voiced) throw new Error("--case reply needs Role 3's voice: drop --voice off, and do not use --machine keyword");
+if ((SEE(cfg, "A").echo || SEE(cfg, "B").echo) && !voiced)
+  throw new Error("this case needs Role 3's voice: drop --voice off, and do not use --machine keyword");
 console.log(`  Role 3 reads what they say with ${READERS[reader]}. Nobody tells it what they meant.`);
 if (FREE) console.log(`  They speak with no key list in front of them; what they meant is asked of them afterwards.`);
 console.log(BUILDER === "model"
@@ -1247,7 +1262,7 @@ if (cfg.confer) {
   console.log(`  --- they talk it over, ${conferTurns} turns, with the builder out of the room ---`);
   PHASE = "confer";
   for (let i = 0; i < conferTurns; i++) {
-    const role = i % 2 === 0 ? "A" : "B";
+    const role = ROLE_AT(cfg, i);
     const swap = LOOSE && cfg.swapPlayers;
     const player = (role === "A") === !swap ? playerA : playerB;
     // Splitting speakFree into say-then-code changed what it hands back, and
@@ -1289,7 +1304,7 @@ if (cfg.confer) {
 }
 
 for (let i = 0; i < maxTurns; i++) {
-  const role = i % 2 === 0 ? "A" : "B";
+  const role = ROLE_AT(cfg, i);
   const act = cfg[role];
   const swap = LOOSE && cfg.swapPlayers;
   const player = (role === "A") === !swap ? playerA : playerB;
@@ -1621,6 +1636,12 @@ const session = {
     speech: FREE ? "free" : "coded",
     builder: BUILDER,
     pair: LOOSE ? PAIR : null,
+    // `together` and `alone` kept their names when the cases were redefined, so
+    // a recording made under the old meaning is indistinguishable from a new one
+    // by its key alone. Write down what the case actually WAS.
+    see: cfg.see || { A: { hears: !!cfg.hears, echo: !!cfg.echo },
+                      B: { hears: !!cfg.hears, echo: !!cfg.echo } },
+    starts: cfg.starts || "A",
     // Under --drawings the goal IS the picture, so the need recorded for scoring
     // has to be the picture's and not the text life's, or the run would be
     // marked against a goal nobody was given.
