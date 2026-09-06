@@ -11,6 +11,14 @@ sentence here was generated at run time — nothing is scripted.
 
 ---
 
+## Reading the conversations
+
+`conversations.html` — open it in a browser. Pick an argument, a case and a cast
+and read the exchange: what each person said, what they said they meant (asked
+after, never shown to the builder), and what the builder took them to mean, with
+the misses marked. In `pairs` the speaker's name is shown, because a role there
+is two people taking turns. It prints cleanly if you want to annotate on paper.
+
 ## The three files
 
 ### `runs.csv` — one row per conversation (200)
