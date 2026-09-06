@@ -443,6 +443,14 @@
   .goalline .g.b{border-color:color-mix(in srgb,var(--roleB) 45%,transparent)}
   .goalline .g b{font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase}
   .goalline .g.a b{color:var(--roleA)} .goalline .g.b b{color:var(--roleB)}
+  /* A brief runs to seven lines, and in `pairs` it is two people's, which made
+     these two boxes 267px of a 628px rail — the largest thing in the panel and
+     the least worth the room. Three lines; the whole of it on hover. */
+  .goalline .g{overflow:hidden}
+  .goalline .g .brief{
+    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
+    overflow:hidden; margin:2px 0 4px; font-size:13px; line-height:1.5;
+  }
   .goalline .g em{
     font-style:normal; font-family:"IBM Plex Mono",monospace; font-size:10px; color:var(--muted);
     border:1px solid var(--line); border-radius:4px; padding:0 5px;
@@ -721,12 +729,19 @@
   .marg.tied{color:var(--fault); font-style:italic}
 
   /* the badge already owns the bottom-left corner */
+  /* It lists every crossing in the kit — 386 rows — with no height limit, in a
+     box positioned absolutely over the scene. It rendered 6,730px tall and
+     spilled down over everything below it. It keeps all its rows and scrolls
+     within the picture it belongs to. */
   .standing{
     position:absolute; right:12px; top:12px; z-index:2; width:206px;
+    max-height:calc(100% - 24px); overflow-y:auto; overscroll-behavior:contain;
     background:color-mix(in srgb, var(--surface) 92%, transparent);
     border:1px solid var(--line); border-radius:10px; padding:8px 10px 9px;
-    backdrop-filter:blur(3px);
+    backdrop-filter:blur(3px); scrollbar-width:thin;
   }
+  .standing .st-head{position:sticky; top:-8px; z-index:1; margin:-8px -10px 4px;
+    padding:8px 10px 4px; background:color-mix(in srgb, var(--surface) 96%, transparent)}
   .st-head{
     font-family:var(--mono); font-size:8.5px; letter-spacing:.11em; text-transform:uppercase;
     color:var(--muted); margin-bottom:6px;
