@@ -67,10 +67,12 @@
   p{text-wrap:pretty}
   /* the instrument register */
   .m, .scen button, .case b, .case .res, .key, .vtab, .ghost, .tmp, .freq,
-  .who b.persona{font-weight:600; color:var(--ink-2)}
   .goalline em, .goalline i, th, .badge, .who, .an-stat dt{
     font-family:var(--mono); font-variant-ligatures:none;
   }
+  /* Its own rule. Appended to the list above it took that rule's body with it,
+     and every chip, tab and button in the instrument quietly lost its face. */
+  .who b.persona{font-weight:600; color:var(--ink-2)}
   button{font:inherit; color:inherit}
   :focus-visible{outline:2px solid var(--signal); outline-offset:2px}
 
@@ -252,15 +254,27 @@
     margin:0; font-size:14px; color:var(--muted); max-width:64ch; line-height:1.5;
   }
   .caseline b{color:var(--ink); font-weight:600}
-  .cases{display:grid; grid-template-columns:repeat(5,1fr); gap:8px}
-  @media (max-width:1320px){ .cases{grid-template-columns:repeat(3,1fr)} }
-  @media (max-width:900px){ .cases{grid-template-columns:repeat(2,1fr)} }
+  /* Ten of these used to be a two-row wall, each carrying the whole sentence
+     that explains it — and the chosen one repeated that sentence underneath.
+     One strip now: a number, who can hear whom, two words. The sentence is
+     said once, below, for the case actually chosen. */
+  .cases{display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr);
+    gap:5px; overflow-x:auto; scrollbar-width:thin; padding-bottom:2px}
+  @media (max-width:1100px){ .cases{grid-auto-columns:92px} }
   .case{
-    text-align:left; border:1px solid var(--line); border-radius:10px; padding:7px 9px 6px;
-    background:var(--panel); cursor:pointer; transition:border-color .15s, background .15s;
-    display:flex; flex-direction:column; gap:3px;
+    text-align:left; border:1px solid var(--line); border-radius:9px; padding:6px 7px 7px;
+    background:var(--panel); cursor:pointer; display:flex; flex-direction:column; gap:2px;
+    transition:border-color .14s, background .14s, transform .14s;
+    position:relative; min-width:0;
   }
-  .case svg{width:100%; max-width:118px; height:auto; overflow:visible}
+  .case:hover{border-color:var(--muted); transform:translateY(-1px)}
+  /* the run each case produced, reduced to whether there is one */
+  /* a run either exists for this case or it does not; the word "recorded"
+     truncated to "1 RECOR…" in every tile, which told nobody anything */
+  .case .res{font-family:var(--mono); font-size:9px; color:var(--muted); opacity:.75;
+    white-space:nowrap; letter-spacing:0; margin-top:auto; padding-top:4px}
+  .case .res.done{color:var(--signal); opacity:.9}
+  .case svg{width:100%; max-width:none; height:auto; overflow:visible}
   .case svg rect{fill:none; stroke:var(--line); stroke-width:1.5}
   .case svg line{stroke:var(--muted); stroke-width:1.5; opacity:.6}
   .case svg line.dash{stroke-dasharray:3 3; opacity:.35}
@@ -270,7 +284,14 @@
   .case svg circle.rai{fill:none; stroke:var(--ink); stroke-width:1.8}
   .case svg text{font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; text-anchor:middle}
   .case svg text.ta{fill:var(--roleA)} .case svg text.tb{fill:var(--roleB)}
-  .case b{font-size:10.5px; font-weight:600; letter-spacing:.05em; text-transform:uppercase}
+  /* Two words on a tile 92px wide. Uppercase with letter-spacing needed a line
+     and a half of room it does not have, and broke "builder" across two lines. */
+  .case b{display:flex; align-items:baseline; gap:5px; min-width:0;
+    font-size:10px; font-weight:500; letter-spacing:0; text-transform:none;
+    line-height:1.3; color:var(--ink); hyphens:none}
+  .case b i{font-family:var(--mono); font-style:normal; font-size:9px; flex:none;
+    color:var(--muted); font-variant-numeric:tabular-nums}
+  .case[aria-pressed="true"] b i{color:var(--signal)}
   .case span{display:none}          /* the selected one's line is shown under the rail */
   .case > span{font-size:11.5px; color:var(--muted); line-height:1.4}
   .case .res{
@@ -699,9 +720,9 @@
   .st-s{text-align:right; font-variant-numeric:tabular-nums}
   .runs{display:flex; gap:5px; flex-wrap:wrap}
   .runs button{
-    background:transparent; border:1px solid var(--line); border-radius:8px; padding:3px 9px 4px;
+    background:transparent; border:1px solid var(--line); border-radius:8px; padding:4px 11px 5px;
     font-family:var(--mono); font-size:11px; cursor:pointer; color:var(--muted);
-    display:flex; flex-direction:column; align-items:flex-start; line-height:1.25; transition:all .15s;
+    line-height:1.25; transition:all .15s; white-space:nowrap;
   }
   .runs button i{font-style:normal; font-size:8.5px; letter-spacing:.05em; opacity:.75}
   .runs button:hover{border-color:var(--ink); color:var(--ink)}
@@ -1150,33 +1171,33 @@ const ALL = {hears:true, echo:true};
 const ONLY_BUILDER = {hears:false, echo:true};
 const ONLY_OTHER   = {hears:true,  echo:false};
 const CASES = {
-  "r2-builder":     {label:"Role 2 hears only the builder", A:"want", B:"avoid", starts:"A",
+  "r2-builder":     {short:"2 hears builder", label:"Role 2 hears only the builder", A:"want", B:"avoid", starts:"A",
                      see:{A:ALL, B:ONLY_BUILDER},
                      note:"Role 2 never hears Role 1 — only what the builder says back. Role 1 hears everything"},
-  "r2-role1":       {label:"Role 2 hears only Role 1", A:"want", B:"avoid", starts:"A",
+  "r2-role1":       {short:"2 hears 1", label:"Role 2 hears only Role 1", A:"want", B:"avoid", starts:"A",
                      see:{A:ALL, B:ONLY_OTHER},
                      note:"Role 2 hears Role 1 but never the builder, so it argues at a thing that never answers"},
-  "open-1st":       {label:"Everyone hears everything", A:"want", B:"avoid", starts:"A",
+  "open-1st":       {short:"all hear all", label:"Everyone hears everything", A:"want", B:"avoid", starts:"A",
                      see:{A:ALL, B:ALL},
                      note:"one room, nothing withheld from anybody. Role 1 opens"},
-  "r1-builder":     {label:"Role 1 hears only the builder", A:"want", B:"avoid", starts:"A",
+  "r1-builder":     {short:"1 hears builder", label:"Role 1 hears only the builder", A:"want", B:"avoid", starts:"A",
                      see:{A:ONLY_BUILDER, B:ALL},
                      note:"case 1 the other way round: Role 1 is the one who cannot hear the other"},
-  "r1-role2":       {label:"Role 1 hears only Role 2", A:"want", B:"avoid", starts:"A",
+  "r1-role2":       {short:"1 hears 2", label:"Role 1 hears only Role 2", A:"want", B:"avoid", starts:"A",
                      see:{A:ONLY_OTHER, B:ALL},
                      note:"Role 1 hears the other one but never the builder"},
-  "open-2nd":       {label:"Everyone hears everything, Role 2 opens", A:"want", B:"avoid", starts:"B",
+  "open-2nd":       {short:"all hear all &middot; 2 opens", label:"Everyone hears everything, Role 2 opens", A:"want", B:"avoid", starts:"B",
                      see:{A:ALL, B:ALL},
                      note:"case 3 again, with the other one speaking first — the only thing that changed"},
-  "r1-role2-2nd":   {label:"Role 1 hears only Role 2, Role 2 opens", A:"want", B:"avoid", starts:"B",
+  "r1-role2-2nd":   {short:"1 hears 2 &middot; 2 opens", label:"Role 1 hears only Role 2, Role 2 opens", A:"want", B:"avoid", starts:"B",
                      see:{A:ONLY_OTHER, B:ALL},
                      note:"case 5 again, opened by the one who can be heard"},
-  "r1-builder-2nd": {label:"Role 1 hears only the builder, Role 2 opens", A:"want", B:"avoid", starts:"B",
+  "r1-builder-2nd": {short:"1 hears builder &middot; 2 opens", label:"Role 1 hears only the builder, Role 2 opens", A:"want", B:"avoid", starts:"B",
                      see:{A:ONLY_BUILDER, B:ALL},
                      note:"case 4 again, opened by the one Role 1 cannot hear"},
-  together: {label:"Conferring first", A:"want", B:"avoid", starts:"A", see:{A:ALL, B:ALL}, confer:true,
+  together: {short:"confer first", label:"Conferring first", A:"want", B:"avoid", starts:"A", see:{A:ALL, B:ALL}, confer:true,
              note:"they talk it over between themselves first, out of the builder's hearing, and go to it with one agreed position"},
-  alone:    {label:"Each alone", A:"want", B:"avoid", starts:"A", see:{A:ONLY_BUILDER, B:ONLY_BUILDER},
+  alone:    {short:"each alone", label:"Each alone", A:"want", B:"avoid", starts:"A", see:{A:ONLY_BUILDER, B:ONLY_BUILDER},
              split:true, solo:true,
              note:"separate rooms and a crossing each — what each would get if the other did not exist"},
 };
@@ -3102,8 +3123,11 @@ function renderBadges(){
   document.querySelectorAll(".case .res").forEach(el => {
     const d = recordedDist(S.scenario, el.dataset.res);
     el.classList.toggle("done", !!d);
-    el.textContent = !d ? "not recorded"
-      : `${(d.built[0] ? d.built[0][0] : "nothing").replace(/^An? /, "")} · ${d.n} recorded`;
+    // the crossing's whole name on every tile was the noisiest thing in the
+    // panel, and it is shown properly for the chosen case anyway
+    el.textContent = !d ? "—" : (d.n > 1 ? `${d.n} runs` : "1 run");
+    el.title = !d ? "nothing recorded for this one"
+      : `${(d.built[0] ? d.built[0][0] : "nothing")} · ${d.n} recorded`;
   });
 }
 function renderCmp(){
@@ -3265,7 +3289,7 @@ function buildCases(){
         <circle cx="80" cy="29" r="6" class="rb"/>
         <text x="${first ? 24 : 80}" y="10" class="${first ? "ta" : "tb"}">\u25b8</text>
       </svg>
-      <b>${i + 1} \u00b7 ${c.label}</b><span>${c.note}</span>
+      <b><i>${i + 1}</i>${c.short || c.label}</b><span hidden>${c.note}</span>
       <em class="res" data-res="${k}">not run</em></button>`;
   }).join("");
 }
@@ -3324,9 +3348,8 @@ function paintRuns(){
   const ORD = x => x.meta.cast && x.meta.cast.A && x.meta.cast.A.drawing ? 90 : (x.meta.pair ?? 99);
   here.sort((a, b) => ORD(a[0]) - ORD(b[0]));   // cast 1 first, drawings last
   host.innerHTML = here.map(([x, i]) =>
-    `<button type="button" data-run="${i}" aria-pressed="${i === S.rec}" title="${WHO(x)}&#10;&#10;${SEATS(x)}">${
-      CASTOF(x)}<i>${
-      x.outcome ? x.outcome.name.replace(/^An? /, "").toLowerCase() : "—"}</i></button>`).join("");
+    `<button type="button" data-run="${i}" aria-pressed="${i === S.rec}" title="${x.outcome ? x.outcome.name + "&#10;&#10;" : ""}${WHO(x)}&#10;&#10;${SEATS(x)}">${
+      CASTOF(x)}</button>`).join("");
   host.querySelectorAll("[data-run]").forEach(b => b.onclick = () => showRun(+b.dataset.run));
 }
 
@@ -3433,7 +3456,13 @@ function paintGoals(){
 
 function paintCaseLabels(){
   const c = CASES[S.case];
-  document.querySelectorAll(".case").forEach(b => b.querySelector("span").textContent = CASES[b.dataset.c].note);
+  // buildCases marks the FIRST tile selected and only the click handler ever
+  // moved it, so landing on any other case left the highlight on tile 1 while
+  // the sentence underneath described a different one.
+  document.querySelectorAll(".case").forEach(b => {
+    b.querySelector("span").textContent = CASES[b.dataset.c].note;
+    b.setAttribute("aria-pressed", String(b.dataset.c === S.case));
+  });
   // only the selected case explains itself; the other four are just tiles
   document.getElementById("caseNote").innerHTML = `<b>${c.label}.</b> ${c.note}`;
   paintGoals();
