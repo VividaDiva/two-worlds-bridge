@@ -19,6 +19,19 @@ after, never shown to the builder), and what the builder took them to mean, with
 the misses marked. In `pairs` the speaker's name is shown, because a role there
 is two people taking turns. It prints cleanly if you want to annotate on paper.
 
+## One PNG per conversation
+
+    cd agents && node shoot.mjs ../export/png          # all 200
+    cd agents && node shoot.mjs ../export/png --only refs   # one argument
+
+Full height, nothing cut off, at 2x. The title of each is the argument, the
+case and the cast; the filename is `argument__case__castN.png`. They come to
+about 278MB for the set, so they are not in the repo — the script is, and takes
+a couple of minutes.
+
+It drives Chrome's debug protocol rather than `--screenshot`, which only
+captures the window and would cut every conversation short.
+
 ## The three files
 
 ### `runs.csv` — one row per conversation (200)

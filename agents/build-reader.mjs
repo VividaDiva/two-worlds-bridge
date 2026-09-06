@@ -65,6 +65,9 @@ body{margin:0;background:var(--paper);color:var(--ink);
 .wrap{max-width:820px;margin:0 auto;padding:34px 22px 90px}
 h1{font-size:30px;font-weight:500;margin:0 0 6px;letter-spacing:-.01em}
 h1 em{font-style:italic;color:var(--ink-3)}
+h2#title{font-size:22px;font-weight:500;margin:0 0 4px;letter-spacing:-.005em}
+h2#title span{color:var(--ink-3);font-style:italic}
+.runid{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);margin:0 0 20px}
 .sub{color:var(--ink-2);margin:0 0 26px;max-width:60ch}
 .k{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
 .bar{position:sticky;top:0;z-index:5;background:var(--paper);
@@ -104,6 +107,8 @@ button.nav:hover{border-color:var(--ink-3)}
 .end{border-top:1px solid var(--line);margin-top:34px;padding-top:18px}
 .end h3{font-size:19px;font-weight:500;margin:0 0 6px}
 .legend{font-size:12px;color:var(--ink-3);margin-top:26px;line-height:1.75}
+body.bare .bar, body.bare h1, body.bare .sub, body.bare .legend{display:none}
+body.bare .wrap{padding-top:26px}
 @media print{
   .bar{position:static;border:0} button.nav,select{display:none}
   body{background:#fff;color:#000;font-size:12pt} .wrap{max-width:none;padding:0}
@@ -119,7 +124,7 @@ sentence was generated at run time.</p>
   <button class="nav" id="prev">&larr;</button><button class="nav" id="next">&rarr;</button>
   <span class="k" id="count"></span>
 </div>
-<div id="out"></div>
+<h2 id="title"></h2><div id="out"></div>
 <p class="legend" id="legend"></p>
 </div>
 <script id="d" type="application/json">__DATA__</script>
@@ -132,7 +137,10 @@ const F = k => D.FEATURES[k] || k;
 const ARGS = ["places","loads","agreed","pairs","refs"];
 const CASES = ["r2-builder","r2-role1","open-1st","r1-builder","r1-role2",
                "open-2nd","r1-role2-2nd","r1-builder-2nd","together","alone"];
-let S = { arg:"places", cs:"open-1st", cast:0 };
+const Q = new URLSearchParams(location.search);
+let S = { arg: Q.get("arg") || "places", cs: Q.get("case") || "open-1st",
+          cast: +(Q.get("cast") || 0) };
+if (Q.get("bare") === "1") document.body.classList.add("bare");
 
 const opt = (el, vals, label, cur) => {
   el.innerHTML = vals.map(v => \`<option value="\${v}"\${v==cur?" selected":""}>\${esc(label(v))}</option>\`).join("");
@@ -193,6 +201,11 @@ function render(){
       <h3>\${esc(r.built||"nothing")}\${r.builtB?\` &nbsp;/&nbsp; \${esc(r.builtB)}\`:""}</h3>
       <div class="stands">over \${esc(r.ground||"ground nobody described")}\${r.builtB?" · a crossing each, built in separate rooms":""}</div></div>\`;
   $("count").textContent = r.id;
+  $("title").innerHTML = \`\${esc(D.ARG[r.arg])} <span>&mdash; \${esc(D.LABEL[r.cs])} &mdash; cast \${r.cast + 1}</span>\`;
+  const idEl = document.querySelector(".runid") || Object.assign(
+    document.createElement("p"), { className: "runid" });
+  idEl.textContent = r.id; $("title").after(idEl);
+  history.replaceState(null, "", \`?arg=\${r.arg}&case=\${r.cs}&cast=\${r.cast}\`);
 }
 $("legend").innerHTML = 'A tag is green when the builder took a need the speaker '
   + 'meant, red when it heard something they did not mean or missed something they did. '
