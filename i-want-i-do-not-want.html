@@ -637,19 +637,41 @@
   /* what was meant, then what the other one took from it. The two words that
      used to introduce them are in the legend now, once, instead of on every
      turn of every run. */
-  .reading{
-    display:flex; flex-wrap:wrap; align-items:center; gap:3px;
-    font-family:var(--mono); font-size:9px; letter-spacing:.04em;
+  /* A turn is three things: the sentence, what the speaker says they meant by
+     it, and what became of each part. The old strip laid what was meant beside
+     what was heard and reddened whichever tag came last, which told a reader
+     nothing about either. Every key is marked for itself now. */
+  .meant-plain{
+    margin:5px 0 0; font-size:12.5px; line-height:1.5; color:var(--muted);
+    display:grid; grid-template-columns:auto 1fr; gap:3px 9px; align-items:baseline;
   }
-  .reading i{
+  /* label in its own column, tags in theirs, so a wrapping strip does not
+     strand "builder heard" on a line by itself */
+  .took{
+    margin:5px 0 0; display:grid; grid-template-columns:auto 1fr; gap:3px 9px;
+    align-items:baseline; font-family:var(--mono); font-size:9px; letter-spacing:.04em;
+  }
+  .took .keys{display:flex; flex-wrap:wrap; gap:3px}
+  .turn.b .took{grid-template-columns:1fr auto}
+  .turn.b .took .lbl{order:2}
+  .turn.b .took .keys{order:1; justify-content:flex-end}
+  .turn.b .meant-plain{grid-template-columns:1fr auto}
+  .turn.b .meant-plain .lbl{order:2}
+  .turn.b .meant-plain span:not(.lbl){order:1; text-align:right}
+  .meant-plain .lbl, .took .lbl{
+    font-family:var(--mono); font-size:8.5px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--muted); opacity:.75; white-space:nowrap;
+  }
+  .took i{
     font-style:normal; border:1px solid var(--line); border-radius:3px; padding:1px 5px;
     color:var(--muted); white-space:nowrap;
   }
-  .reading b{color:var(--line); font-weight:400; margin:0 1px}
-  .reading.off i:last-child, .reading.off b{color:var(--fault); border-color:color-mix(in srgb,var(--fault) 40%,transparent)}
-  .turn.b .reading{justify-content:flex-end}
-  .reading.ok{color:var(--muted)}
-  .reading.off{color:var(--fault); border-left-color:var(--fault)}
+  .took i.kept{color:var(--signal); border-color:color-mix(in srgb,var(--signal) 38%,transparent)}
+  .took i.lost{color:var(--fault); border-color:color-mix(in srgb,var(--fault) 38%,transparent);
+    text-decoration:line-through; text-decoration-thickness:1px; opacity:.85}
+  .took i.added{color:var(--roleA-ink); border-color:color-mix(in srgb,var(--roleA) 38%,transparent);
+    border-style:dashed}
+  .turn.b .took, .turn.b .meant-plain{justify-content:flex-end}
   .turn.b .reading{border-left:none; border-right:2px solid var(--line); padding:0 7px 0 0; text-align:right}
   .turn.b .reading.off{border-right-color:var(--fault)}
   .turn.confer .bub{opacity:.92; border:1px dashed color-mix(in srgb,var(--ink) 30%,transparent)}
@@ -1953,11 +1975,22 @@ function pushSaid(role, line, repeat, pressing, answering, spoken, confer, readi
   // to contradict itself for no reason.
   el.innerHTML = `<span class="who">${role === "A" ? "Role 1" : "Role 2"}${line.persona ? ` · <b class="persona">${line.persona}</b>` : ""}${confer ? " · to the other, not the builder" : ""}${line.adopted ? " · taking up the other one's need" : ""}${harder ? " · saying it again, harder" : answering ? ` · answering Role ${role === "A" ? "2" : "1"}` : repeat ? (pressing ? " · pressing it again" : " · saying it again") : ""}</span>
     <div class="bub">${up ? `<span class="up"></span>` : ""}${S.replay ? "" : `<span class="lead">${LEAD[CASES[S.case][role]]}</span>`}<span class="body"></span></div>
-    ${line.meant ? `<span class="meant">pictured: ${line.meant}</span>` : ""}
-    ${reading && reading.heard && reading.heard.length ? `<span class="reading${
-        reading.meant.every(f => reading.heard.includes(f)) ? " ok" : " off"}">${
-        reading.meant.map(f => `<i>${FEATLABEL[f] || f}</i>`).join("")}<b>&rarr;</b>${
-        reading.heard.map(f => `<i>${FEATLABEL[f] || f}</i>`).join("")}</span>` : ""}`;
+    ${line.plainly ? `<p class="meant-plain"><span class="lbl">meant</span><span>${line.plainly}</span></p>` : ""}
+    ${(() => {
+        const meant = (reading && reading.meant) || line.infer || [];
+        const word = { kept: "carried", lost: "not heard", added: "heard, but not meant" };
+        const strip = (took, label) => {
+          if (!took || !took.length) return "";
+          const every = [...new Set([...meant, ...took])];
+          const mark = f => meant.includes(f) && took.includes(f) ? "kept"
+                          : meant.includes(f) ? "lost" : "added";
+          return `<p class="took"><span class="lbl">${label}</span><span class="keys">${
+            every.map(f => `<i class="${mark(f)}" title="${word[mark(f)]}">${
+              FEATLABEL[f] || f}</i>`).join("")}</span></p>`;
+        };
+        return strip(line.byBuilder, "builder heard")
+             + strip(reading && reading.heard, "the other heard");
+      })()}`;
   el.title = line.why;
   el.querySelector(".body").textContent = spoken || voice(line);
   if (up) el.querySelector(".up").textContent = up;
@@ -2921,7 +2954,7 @@ function replaySession(ss){
     // else happens until they come out with an agreed position.
     if (turn.phase === "confer"){
       pushSaid(role, {infer: (turn.meant || []).filter(f => f in FEATLABEL), why:"", says:[spoken],
-                      persona: turn.persona || null},
+                      persona: turn.persona || null, plainly: turn.meantPlainly || ""},
                false, false, false, spoken, true, {meant: (turn.meant || []), heard: []}, "", false);
       S.turn = i + 1;
       return;
@@ -2979,7 +3012,8 @@ function replaySession(ss){
     S.turn = i + 1;
 
     const say = built.find(b => b.turn === turn.turn && b.say);
-    pushSaid(role, {infer:meant, why:"", says:[spoken], persona: turn.persona || null},
+    pushSaid(role, {infer:meant, why:"", says:[spoken], persona: turn.persona || null,
+                    plainly: turn.meantPlainly || "", byBuilder: turn.taken || []},
              false, false, false, spoken, false,
              {meant, heard}, "", false);
     pushBuild(prevId, after, best, role, null, S.seen[role], c, taken, meant,
