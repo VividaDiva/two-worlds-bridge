@@ -115,6 +115,23 @@
   .sec-sub .ghost{margin-left:8px; vertical-align:baseline}
 
   .findings{padding:52px 0 46px; border-bottom:1px solid var(--line)}
+  .crit{list-style:none; max-width:74ch; margin:32px auto 0; padding:0 26px;
+    display:grid; grid-template-columns:repeat(3,1fr); gap:30px}
+  .crit li{position:relative; padding-top:16px; border-top:2px solid var(--line)}
+  .crit .q{font-family:var(--read); font-size:15.5px; font-weight:600; line-height:1.35;
+    margin:0 0 12px; color:var(--ink)}
+  .crit .n{font-family:var(--serif); font-size:40px; line-height:1; color:var(--signal);
+    margin-bottom:11px; letter-spacing:-.01em}
+  .crit .n i{font-style:normal; font-size:22px; opacity:.65; margin-left:1px}
+  .crit .ev{font-family:var(--read); font-size:13.5px; line-height:1.55; color:var(--muted); margin:0 0 11px}
+  .crit .ev b{color:var(--ink); font-weight:600}
+  .crit .v{font-family:var(--read); font-size:13.5px; line-height:1.5; margin:0;
+    padding-top:10px; border-top:1px solid var(--line-soft); color:var(--ink)}
+  .crit .v::before{font-family:var(--mono); font-size:10px; letter-spacing:.12em;
+    text-transform:uppercase; display:block; margin-bottom:4px}
+  .crit .v.yes::before{content:"holds"; color:var(--signal)}
+  .crit .v.part::before{content:"holds in part"; color:var(--muted)}
+  @media(max-width:760px){ .crit{grid-template-columns:1fr; gap:24px} }
   .figs{max-width:74ch; margin:30px auto 0; padding:0 26px;
     display:grid; grid-template-columns:repeat(3,1fr); gap:22px}
   .figs figure{margin:0; padding-top:15px; border-top:2px solid var(--signal)}
@@ -717,21 +734,43 @@
 
 <section class="findings" id="findings">
   <div class="sec-h"><span class="num">01</span><h2>What came of it</h2>
-    <p class="sec-sub">200 conversations. Each need scored against its own chance floor,
-      since the arguments differ in how easy their needs are to hit by accident.</p></div>
-  <div class="figs">
-    <figure><b>+9.8</b><figcaption>points above chance for <i>already agreed</i>, where the
-      two of them want the same crossing and cannot tell. <span class="p">p&lt;0.0001</span></figcaption></figure>
-    <figure><b>+7.6</b><figcaption>for <i>two places</i>, where they cross in different
-      places and need different things of it. <span class="p">p=0.006</span></figcaption></figure>
-    <figure class="null"><b>+2.9</b><figcaption>for <i>two references</i> &mdash; each
-      gesturing at a crossing the other has never seen. The one that does not hold.
-      <span class="p">p=0.22</span></figcaption></figure>
-  </div>
-  <p class="pooled">Pooled and stratified by argument: <b>53.2%</b> of needs met against a
-    <b>48.5%</b> floor &mdash; <b>+4.7 points, p&nbsp;=&nbsp;0.0001</b>. A need reaches the
-    built crossing above chance, and by a little. Where it fails hardest is where the
-    speaker is pointing at something the listener cannot see.</p>
+    <p class="sec-sub">200 conversations, judged against what they were for.
+      Each need is scored on the crossing that ended up standing.</p></div>
+
+  <ol class="crit">
+    <li>
+      <p class="q">Do they end up where they started?</p>
+      <div class="n">38<i>%</i></div>
+      <p class="ev">of what a speaker meant on its first turn is still in what it means
+        on its last. Half of what they first asked for &mdash; <b>51%</b> &mdash; is in
+        the crossing that finally stood.</p>
+      <p class="v part">Partly. Positions move a great deal in ten turns, and what
+        survives is about half of the opening claim.</p>
+    </li>
+    <li>
+      <p class="q">Does the task survive being misunderstood?</p>
+      <div class="n">r&nbsp;=&nbsp;0.05</div>
+      <p class="ev">Runs where the builder caught <b>28%</b> of what was meant served
+        <b>50%</b> of needs. Runs where it caught <b>70%</b> served <b>52%</b>.</p>
+      <p class="v yes">Yes, and that is the surprise. Being understood sentence by
+        sentence does not predict getting what you needed.</p>
+    </li>
+    <li>
+      <p class="q">Does it serve both of them?</p>
+      <div class="n">56<i>%</i></div>
+      <p class="ev">of conversations leave both people at least half served. In
+        <b>34%</b> one of the two is sacrificed for the other; in <b>10%</b> neither
+        is served.</p>
+      <p class="v part">Usually, not reliably. A third of the time somebody pays for
+        the other&rsquo;s crossing.</p>
+    </li>
+  </ol>
+
+  <p class="pooled">Across all of it, a need reaches the built crossing more often than
+    chance would put it there &mdash; <b>53.2%</b> against a <b>48.5%</b> floor,
+    <b>+4.7 points, p&nbsp;=&nbsp;0.0001</b>. It holds for <i>already agreed</i>
+    (+9.8) and <i>two places</i> (+7.6). It does not hold for <i>two references</i>,
+    where each is gesturing at a crossing the other has never seen.</p>
 </section>
 
 <section class="sec-h lead-in">
