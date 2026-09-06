@@ -152,6 +152,41 @@
 
   .lead-in{padding-top:46px; padding-bottom:8px}
 
+  /* The argument and the case are not settings of one panel — they choose which
+     of the two hundred conversations you are looking at. They sit above it now,
+     at the width of the page, and what they choose is shown beneath: the
+     crossing that ended up standing, and the talk that got there. */
+  .controls{box-sizing:border-box; max-width:1500px; margin:20px auto 0; padding:0 22px; width:100%}
+  .controls .rail{
+    border:1px solid var(--line); border-radius:14px; background:var(--panel);
+    padding:14px 16px 13px; display:flex; flex-direction:column; gap:9px;
+    box-shadow:var(--shadow);
+  }
+  .controls .rail-row{display:flex; align-items:flex-start; gap:12px}
+  .controls .rail-row > .lbl{
+    flex:none; width:74px; padding-top:5px;
+    font-family:var(--mono); font-size:9.5px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--muted);
+  }
+  .controls .rail-row > .scen, .controls .rail-row > .runs{flex:1; min-width:0}
+  .controls .cases{flex:1; min-width:0}
+  .controls .caseline{
+    margin:2px 0 0; padding-left:86px; font-size:13.5px; line-height:1.5;
+    color:var(--muted); max-width:none;
+  }
+  .controls .caseline b{color:var(--ink)}
+  @media (max-width:860px){
+    .controls .rail-row{flex-direction:column; gap:5px; align-items:stretch}
+    .controls .rail-row > .lbl{width:auto; padding-top:0}
+    .controls .caseline{padding-left:0}
+    /* stacked, the strip is no longer a row's flex item and sizes to its ten
+       tiles instead of the page — 920px of them, which took the whole document
+       sideways. It clips and scrolls on its own here. */
+    .controls .cases, .controls .scen, .controls .runs{width:100%; min-width:0; max-width:100%}
+  }
+  /* the panel below is now the outcome and the talk, nothing else */
+  .app{margin-top:12px}
+
   .closing{border-top:1px solid var(--line); margin-top:38px; padding:46px 0 76px;
     background:var(--surface)}
   .closing .cols{max-width:74ch; margin:26px auto 0; padding:0 26px;
@@ -838,9 +873,8 @@
     <button class="ghost" id="resetBtn">Start this one again</button></p>
 </section>
 
-<main class="app">
-  <section class="stage">
-    <div class="rail">
+<section class="controls">
+  <div class="rail">
       <div class="rail-row"><span class="lbl">Argument</span><div class="scen" id="scen"></div></div>
       <div class="rail-row"><span class="lbl">Case</span>
 
@@ -851,13 +885,17 @@
       </div>
       <div class="rail-row"><span class="lbl">Conversation</span><div class="runs" id="runs"></div></div>
       <p class="caseline" id="caseNote"></p>
+  </div>
+</section>
+
+<main class="app">
+  <section class="stage">
       <div class="goalline">
       <span class="g a"><b>Role 1</b> a single log across the stream
         <em id="actA">may only ask</em><i class="hit no" id="hitA">not built</i></span>
       <span class="g b"><b>Role 2</b> a single log across the cleft
         <em id="actB">may only refuse</em><i class="hit no" id="hitB">not built</i></span>
       </div>
-    </div>
     <div class="views">
       <div class="tabrow" role="tablist" aria-label="What to show">
       <button class="vtab" data-v="scene" role="tab" aria-selected="true">What was built</button>
