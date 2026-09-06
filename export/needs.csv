@@ -1,0 +1,961 @@
+run_id,cast,argument,case,role,need,need_meaning,met
+agreed-alone-1788551298365,0,agreed,alone,role1,steady,it does not move underfoot,0
+agreed-alone-1788551298365,0,agreed,alone,role1,footed,its ends hold when the banks go soft,0
+agreed-alone-1788551298365,0,agreed,alone,role2,steady,it does not move underfoot,1
+agreed-alone-1788551298365,0,agreed,alone,role2,footed,its ends hold when the banks go soft,1
+agreed-alone-1788566829395,1,agreed,alone,role1,steady,it does not move underfoot,0
+agreed-alone-1788566829395,1,agreed,alone,role1,grip,it does not go slick underfoot when it is wet,1
+agreed-alone-1788566829395,1,agreed,alone,role2,steady,it does not move underfoot,1
+agreed-alone-1788566829395,1,agreed,alone,role2,grip,it does not go slick underfoot when it is wet,1
+agreed-alone-1788567782239,2,agreed,alone,role1,steady,it does not move underfoot,1
+agreed-alone-1788567782239,2,agreed,alone,role1,guarded,something at the hand; an edge to hold,1
+agreed-alone-1788567782239,2,agreed,alone,role2,steady,it does not move underfoot,0
+agreed-alone-1788567782239,2,agreed,alone,role2,guarded,something at the hand; an edge to hold,0
+agreed-alone-1788569432867,3,agreed,alone,role1,steady,it does not move underfoot,0
+agreed-alone-1788569432867,3,agreed,alone,role1,guarded,something at the hand; an edge to hold,0
+agreed-alone-1788569432867,3,agreed,alone,role2,steady,it does not move underfoot,0
+agreed-alone-1788569432867,3,agreed,alone,role2,guarded,something at the hand; an edge to hold,0
+agreed-open-1st-1788551101885,0,agreed,open-1st,role1,steady,it does not move underfoot,1
+agreed-open-1st-1788551101885,0,agreed,open-1st,role1,footed,its ends hold when the banks go soft,1
+agreed-open-1st-1788551101885,0,agreed,open-1st,role2,steady,it does not move underfoot,1
+agreed-open-1st-1788551101885,0,agreed,open-1st,role2,footed,its ends hold when the banks go soft,1
+agreed-open-1st-1788566694453,1,agreed,open-1st,role1,steady,it does not move underfoot,1
+agreed-open-1st-1788566694453,1,agreed,open-1st,role1,grip,it does not go slick underfoot when it is wet,0
+agreed-open-1st-1788566694453,1,agreed,open-1st,role2,steady,it does not move underfoot,1
+agreed-open-1st-1788566694453,1,agreed,open-1st,role2,grip,it does not go slick underfoot when it is wet,0
+agreed-open-1st-1788567654202,2,agreed,open-1st,role1,steady,it does not move underfoot,0
+agreed-open-1st-1788567654202,2,agreed,open-1st,role1,guarded,something at the hand; an edge to hold,1
+agreed-open-1st-1788567654202,2,agreed,open-1st,role2,steady,it does not move underfoot,0
+agreed-open-1st-1788567654202,2,agreed,open-1st,role2,guarded,something at the hand; an edge to hold,1
+agreed-open-1st-1788569305833,3,agreed,open-1st,role1,steady,it does not move underfoot,0
+agreed-open-1st-1788569305833,3,agreed,open-1st,role1,guarded,something at the hand; an edge to hold,0
+agreed-open-1st-1788569305833,3,agreed,open-1st,role2,steady,it does not move underfoot,0
+agreed-open-1st-1788569305833,3,agreed,open-1st,role2,guarded,something at the hand; an edge to hold,0
+agreed-open-2nd-1788551185735,0,agreed,open-2nd,role1,steady,it does not move underfoot,0
+agreed-open-2nd-1788551185735,0,agreed,open-2nd,role1,footed,its ends hold when the banks go soft,1
+agreed-open-2nd-1788551185735,0,agreed,open-2nd,role2,steady,it does not move underfoot,0
+agreed-open-2nd-1788551185735,0,agreed,open-2nd,role2,footed,its ends hold when the banks go soft,1
+agreed-open-2nd-1788566742959,1,agreed,open-2nd,role1,steady,it does not move underfoot,1
+agreed-open-2nd-1788566742959,1,agreed,open-2nd,role1,grip,it does not go slick underfoot when it is wet,1
+agreed-open-2nd-1788566742959,1,agreed,open-2nd,role2,steady,it does not move underfoot,1
+agreed-open-2nd-1788566742959,1,agreed,open-2nd,role2,grip,it does not go slick underfoot when it is wet,1
+agreed-open-2nd-1788567744983,2,agreed,open-2nd,role1,steady,it does not move underfoot,0
+agreed-open-2nd-1788567744983,2,agreed,open-2nd,role1,guarded,something at the hand; an edge to hold,1
+agreed-open-2nd-1788567744983,2,agreed,open-2nd,role2,steady,it does not move underfoot,0
+agreed-open-2nd-1788567744983,2,agreed,open-2nd,role2,guarded,something at the hand; an edge to hold,1
+agreed-open-2nd-1788569364155,3,agreed,open-2nd,role1,steady,it does not move underfoot,0
+agreed-open-2nd-1788569364155,3,agreed,open-2nd,role1,guarded,something at the hand; an edge to hold,0
+agreed-open-2nd-1788569364155,3,agreed,open-2nd,role2,steady,it does not move underfoot,0
+agreed-open-2nd-1788569364155,3,agreed,open-2nd,role2,guarded,something at the hand; an edge to hold,0
+agreed-r1-builder-1788551115210,0,agreed,r1-builder,role1,steady,it does not move underfoot,1
+agreed-r1-builder-1788551115210,0,agreed,r1-builder,role1,footed,its ends hold when the banks go soft,1
+agreed-r1-builder-1788551115210,0,agreed,r1-builder,role2,steady,it does not move underfoot,1
+agreed-r1-builder-1788551115210,0,agreed,r1-builder,role2,footed,its ends hold when the banks go soft,1
+agreed-r1-builder-1788566685919,1,agreed,r1-builder,role1,steady,it does not move underfoot,0
+agreed-r1-builder-1788566685919,1,agreed,r1-builder,role1,grip,it does not go slick underfoot when it is wet,1
+agreed-r1-builder-1788566685919,1,agreed,r1-builder,role2,steady,it does not move underfoot,0
+agreed-r1-builder-1788566685919,1,agreed,r1-builder,role2,grip,it does not go slick underfoot when it is wet,1
+agreed-r1-builder-1788567712927,2,agreed,r1-builder,role1,steady,it does not move underfoot,0
+agreed-r1-builder-1788567712927,2,agreed,r1-builder,role1,guarded,something at the hand; an edge to hold,1
+agreed-r1-builder-1788567712927,2,agreed,r1-builder,role2,steady,it does not move underfoot,0
+agreed-r1-builder-1788567712927,2,agreed,r1-builder,role2,guarded,something at the hand; an edge to hold,1
+agreed-r1-builder-1788569507542,3,agreed,r1-builder,role1,steady,it does not move underfoot,0
+agreed-r1-builder-1788569507542,3,agreed,r1-builder,role1,guarded,something at the hand; an edge to hold,0
+agreed-r1-builder-1788569507542,3,agreed,r1-builder,role2,steady,it does not move underfoot,0
+agreed-r1-builder-1788569507542,3,agreed,r1-builder,role2,guarded,something at the hand; an edge to hold,0
+agreed-r1-builder-2nd-1788551224167,0,agreed,r1-builder-2nd,role1,steady,it does not move underfoot,1
+agreed-r1-builder-2nd-1788551224167,0,agreed,r1-builder-2nd,role1,footed,its ends hold when the banks go soft,1
+agreed-r1-builder-2nd-1788551224167,0,agreed,r1-builder-2nd,role2,steady,it does not move underfoot,1
+agreed-r1-builder-2nd-1788551224167,0,agreed,r1-builder-2nd,role2,footed,its ends hold when the banks go soft,1
+agreed-r1-builder-2nd-1788566794514,1,agreed,r1-builder-2nd,role1,steady,it does not move underfoot,0
+agreed-r1-builder-2nd-1788566794514,1,agreed,r1-builder-2nd,role1,grip,it does not go slick underfoot when it is wet,1
+agreed-r1-builder-2nd-1788566794514,1,agreed,r1-builder-2nd,role2,steady,it does not move underfoot,0
+agreed-r1-builder-2nd-1788566794514,1,agreed,r1-builder-2nd,role2,grip,it does not go slick underfoot when it is wet,1
+agreed-r1-builder-2nd-1788567792429,2,agreed,r1-builder-2nd,role1,steady,it does not move underfoot,0
+agreed-r1-builder-2nd-1788567792429,2,agreed,r1-builder-2nd,role1,guarded,something at the hand; an edge to hold,1
+agreed-r1-builder-2nd-1788567792429,2,agreed,r1-builder-2nd,role2,steady,it does not move underfoot,0
+agreed-r1-builder-2nd-1788567792429,2,agreed,r1-builder-2nd,role2,guarded,something at the hand; an edge to hold,1
+agreed-r1-builder-2nd-1788569467469,3,agreed,r1-builder-2nd,role1,steady,it does not move underfoot,1
+agreed-r1-builder-2nd-1788569467469,3,agreed,r1-builder-2nd,role1,guarded,something at the hand; an edge to hold,1
+agreed-r1-builder-2nd-1788569467469,3,agreed,r1-builder-2nd,role2,steady,it does not move underfoot,1
+agreed-r1-builder-2nd-1788569467469,3,agreed,r1-builder-2nd,role2,guarded,something at the hand; an edge to hold,1
+agreed-r1-role2-1788551205081,0,agreed,r1-role2,role1,steady,it does not move underfoot,1
+agreed-r1-role2-1788551205081,0,agreed,r1-role2,role1,footed,its ends hold when the banks go soft,0
+agreed-r1-role2-1788551205081,0,agreed,r1-role2,role2,steady,it does not move underfoot,1
+agreed-r1-role2-1788551205081,0,agreed,r1-role2,role2,footed,its ends hold when the banks go soft,0
+agreed-r1-role2-1788566729382,1,agreed,r1-role2,role1,steady,it does not move underfoot,1
+agreed-r1-role2-1788566729382,1,agreed,r1-role2,role1,grip,it does not go slick underfoot when it is wet,1
+agreed-r1-role2-1788566729382,1,agreed,r1-role2,role2,steady,it does not move underfoot,1
+agreed-r1-role2-1788566729382,1,agreed,r1-role2,role2,grip,it does not go slick underfoot when it is wet,1
+agreed-r1-role2-1788567744729,2,agreed,r1-role2,role1,steady,it does not move underfoot,0
+agreed-r1-role2-1788567744729,2,agreed,r1-role2,role1,guarded,something at the hand; an edge to hold,0
+agreed-r1-role2-1788567744729,2,agreed,r1-role2,role2,steady,it does not move underfoot,0
+agreed-r1-role2-1788567744729,2,agreed,r1-role2,role2,guarded,something at the hand; an edge to hold,0
+agreed-r1-role2-1788569357286,3,agreed,r1-role2,role1,steady,it does not move underfoot,0
+agreed-r1-role2-1788569357286,3,agreed,r1-role2,role1,guarded,something at the hand; an edge to hold,1
+agreed-r1-role2-1788569357286,3,agreed,r1-role2,role2,steady,it does not move underfoot,0
+agreed-r1-role2-1788569357286,3,agreed,r1-role2,role2,guarded,something at the hand; an edge to hold,1
+agreed-r1-role2-2nd-1788551206694,0,agreed,r1-role2-2nd,role1,steady,it does not move underfoot,1
+agreed-r1-role2-2nd-1788551206694,0,agreed,r1-role2-2nd,role1,footed,its ends hold when the banks go soft,1
+agreed-r1-role2-2nd-1788551206694,0,agreed,r1-role2-2nd,role2,steady,it does not move underfoot,1
+agreed-r1-role2-2nd-1788551206694,0,agreed,r1-role2-2nd,role2,footed,its ends hold when the banks go soft,1
+agreed-r1-role2-2nd-1788566793543,1,agreed,r1-role2-2nd,role1,steady,it does not move underfoot,1
+agreed-r1-role2-2nd-1788566793543,1,agreed,r1-role2-2nd,role1,grip,it does not go slick underfoot when it is wet,0
+agreed-r1-role2-2nd-1788566793543,1,agreed,r1-role2-2nd,role2,steady,it does not move underfoot,1
+agreed-r1-role2-2nd-1788566793543,1,agreed,r1-role2-2nd,role2,grip,it does not go slick underfoot when it is wet,0
+agreed-r1-role2-2nd-1788567721750,2,agreed,r1-role2-2nd,role1,steady,it does not move underfoot,1
+agreed-r1-role2-2nd-1788567721750,2,agreed,r1-role2-2nd,role1,guarded,something at the hand; an edge to hold,0
+agreed-r1-role2-2nd-1788567721750,2,agreed,r1-role2-2nd,role2,steady,it does not move underfoot,1
+agreed-r1-role2-2nd-1788567721750,2,agreed,r1-role2-2nd,role2,guarded,something at the hand; an edge to hold,0
+agreed-r1-role2-2nd-1788569464908,3,agreed,r1-role2-2nd,role1,steady,it does not move underfoot,1
+agreed-r1-role2-2nd-1788569464908,3,agreed,r1-role2-2nd,role1,guarded,something at the hand; an edge to hold,1
+agreed-r1-role2-2nd-1788569464908,3,agreed,r1-role2-2nd,role2,steady,it does not move underfoot,1
+agreed-r1-role2-2nd-1788569464908,3,agreed,r1-role2-2nd,role2,guarded,something at the hand; an edge to hold,1
+agreed-r2-builder-1788551090765,0,agreed,r2-builder,role1,steady,it does not move underfoot,0
+agreed-r2-builder-1788551090765,0,agreed,r2-builder,role1,footed,its ends hold when the banks go soft,1
+agreed-r2-builder-1788551090765,0,agreed,r2-builder,role2,steady,it does not move underfoot,0
+agreed-r2-builder-1788551090765,0,agreed,r2-builder,role2,footed,its ends hold when the banks go soft,1
+agreed-r2-builder-1788566635334,1,agreed,r2-builder,role1,steady,it does not move underfoot,1
+agreed-r2-builder-1788566635334,1,agreed,r2-builder,role1,grip,it does not go slick underfoot when it is wet,0
+agreed-r2-builder-1788566635334,1,agreed,r2-builder,role2,steady,it does not move underfoot,1
+agreed-r2-builder-1788566635334,1,agreed,r2-builder,role2,grip,it does not go slick underfoot when it is wet,0
+agreed-r2-builder-1788567648315,2,agreed,r2-builder,role1,steady,it does not move underfoot,1
+agreed-r2-builder-1788567648315,2,agreed,r2-builder,role1,guarded,something at the hand; an edge to hold,1
+agreed-r2-builder-1788567648315,2,agreed,r2-builder,role2,steady,it does not move underfoot,1
+agreed-r2-builder-1788567648315,2,agreed,r2-builder,role2,guarded,something at the hand; an edge to hold,1
+agreed-r2-builder-1788569341290,3,agreed,r2-builder,role1,steady,it does not move underfoot,0
+agreed-r2-builder-1788569341290,3,agreed,r2-builder,role1,guarded,something at the hand; an edge to hold,1
+agreed-r2-builder-1788569341290,3,agreed,r2-builder,role2,steady,it does not move underfoot,0
+agreed-r2-builder-1788569341290,3,agreed,r2-builder,role2,guarded,something at the hand; an edge to hold,1
+agreed-r2-role1-1788551096047,0,agreed,r2-role1,role1,steady,it does not move underfoot,1
+agreed-r2-role1-1788551096047,0,agreed,r2-role1,role1,footed,its ends hold when the banks go soft,1
+agreed-r2-role1-1788551096047,0,agreed,r2-role1,role2,steady,it does not move underfoot,1
+agreed-r2-role1-1788551096047,0,agreed,r2-role1,role2,footed,its ends hold when the banks go soft,1
+agreed-r2-role1-1788566699131,1,agreed,r2-role1,role1,steady,it does not move underfoot,1
+agreed-r2-role1-1788566699131,1,agreed,r2-role1,role1,grip,it does not go slick underfoot when it is wet,1
+agreed-r2-role1-1788566699131,1,agreed,r2-role1,role2,steady,it does not move underfoot,1
+agreed-r2-role1-1788566699131,1,agreed,r2-role1,role2,grip,it does not go slick underfoot when it is wet,1
+agreed-r2-role1-1788567683181,2,agreed,r2-role1,role1,steady,it does not move underfoot,1
+agreed-r2-role1-1788567683181,2,agreed,r2-role1,role1,guarded,something at the hand; an edge to hold,0
+agreed-r2-role1-1788567683181,2,agreed,r2-role1,role2,steady,it does not move underfoot,1
+agreed-r2-role1-1788567683181,2,agreed,r2-role1,role2,guarded,something at the hand; an edge to hold,0
+agreed-r2-role1-1788569374919,3,agreed,r2-role1,role1,steady,it does not move underfoot,0
+agreed-r2-role1-1788569374919,3,agreed,r2-role1,role1,guarded,something at the hand; an edge to hold,1
+agreed-r2-role1-1788569374919,3,agreed,r2-role1,role2,steady,it does not move underfoot,0
+agreed-r2-role1-1788569374919,3,agreed,r2-role1,role2,guarded,something at the hand; an edge to hold,1
+agreed-together-1788551204585,0,agreed,together,role1,steady,it does not move underfoot,1
+agreed-together-1788551204585,0,agreed,together,role1,footed,its ends hold when the banks go soft,1
+agreed-together-1788551204585,0,agreed,together,role2,steady,it does not move underfoot,1
+agreed-together-1788551204585,0,agreed,together,role2,footed,its ends hold when the banks go soft,1
+agreed-together-1788566781801,1,agreed,together,role1,steady,it does not move underfoot,1
+agreed-together-1788566781801,1,agreed,together,role1,grip,it does not go slick underfoot when it is wet,0
+agreed-together-1788566781801,1,agreed,together,role2,steady,it does not move underfoot,1
+agreed-together-1788566781801,1,agreed,together,role2,grip,it does not go slick underfoot when it is wet,0
+agreed-together-1788567791364,2,agreed,together,role1,steady,it does not move underfoot,0
+agreed-together-1788567791364,2,agreed,together,role1,guarded,something at the hand; an edge to hold,0
+agreed-together-1788567791364,2,agreed,together,role2,steady,it does not move underfoot,0
+agreed-together-1788567791364,2,agreed,together,role2,guarded,something at the hand; an edge to hold,0
+agreed-together-1788569433811,3,agreed,together,role1,steady,it does not move underfoot,1
+agreed-together-1788569433811,3,agreed,together,role1,guarded,something at the hand; an edge to hold,0
+agreed-together-1788569433811,3,agreed,together,role2,steady,it does not move underfoot,1
+agreed-together-1788569433811,3,agreed,together,role2,guarded,something at the hand; an edge to hold,0
+loads-alone-1788551078243,0,loads,alone,role1,minimal,as little built as possible,0
+loads-alone-1788551078243,0,loads,alone,role1,light,it needs to hold one person only,0
+loads-alone-1788551078243,0,loads,alone,role2,heavy,it needs to take loads and carts,1
+loads-alone-1788551078243,0,loads,alone,role2,footed,its ends hold when the banks go soft,1
+loads-alone-1788566591085,1,loads,alone,role1,steady,it does not move underfoot,0
+loads-alone-1788566591085,1,loads,alone,role1,grip,it does not go slick underfoot when it is wet,1
+loads-alone-1788566591085,1,loads,alone,role2,open,nothing closing it in; you can see out,1
+loads-alone-1788566591085,1,loads,alone,role2,heavy,it needs to take loads and carts,0
+loads-alone-1788567644172,2,loads,alone,role1,many,a great deal of material goes into it,0
+loads-alone-1788567644172,2,loads,alone,role1,steady,it does not move underfoot,1
+loads-alone-1788567644172,2,loads,alone,role2,steady,it does not move underfoot,1
+loads-alone-1788567644172,2,loads,alone,role2,grip,it does not go slick underfoot when it is wet,1
+loads-alone-1788568592481,3,loads,alone,role1,many,a great deal of material goes into it,0
+loads-alone-1788568592481,3,loads,alone,role1,open,nothing closing it in; you can see out,1
+loads-alone-1788568592481,3,loads,alone,role2,heavy,it needs to take loads and carts,1
+loads-alone-1788568592481,3,loads,alone,role2,steady,it does not move underfoot,1
+loads-open-1st-1788550892791,0,loads,open-1st,role1,minimal,as little built as possible,0
+loads-open-1st-1788550892791,0,loads,open-1st,role1,light,it needs to hold one person only,0
+loads-open-1st-1788550892791,0,loads,open-1st,role2,heavy,it needs to take loads and carts,1
+loads-open-1st-1788550892791,0,loads,open-1st,role2,footed,its ends hold when the banks go soft,0
+loads-open-1st-1788566515370,1,loads,open-1st,role1,steady,it does not move underfoot,0
+loads-open-1st-1788566515370,1,loads,open-1st,role1,grip,it does not go slick underfoot when it is wet,1
+loads-open-1st-1788566515370,1,loads,open-1st,role2,open,nothing closing it in; you can see out,0
+loads-open-1st-1788566515370,1,loads,open-1st,role2,heavy,it needs to take loads and carts,0
+loads-open-1st-1788567510264,2,loads,open-1st,role1,many,a great deal of material goes into it,0
+loads-open-1st-1788567510264,2,loads,open-1st,role1,steady,it does not move underfoot,1
+loads-open-1st-1788567510264,2,loads,open-1st,role2,steady,it does not move underfoot,1
+loads-open-1st-1788567510264,2,loads,open-1st,role2,grip,it does not go slick underfoot when it is wet,0
+loads-open-1st-1788568457303,3,loads,open-1st,role1,many,a great deal of material goes into it,1
+loads-open-1st-1788568457303,3,loads,open-1st,role1,open,nothing closing it in; you can see out,0
+loads-open-1st-1788568457303,3,loads,open-1st,role2,heavy,it needs to take loads and carts,1
+loads-open-1st-1788568457303,3,loads,open-1st,role2,steady,it does not move underfoot,1
+loads-open-2nd-1788550976679,0,loads,open-2nd,role1,minimal,as little built as possible,0
+loads-open-2nd-1788550976679,0,loads,open-2nd,role1,light,it needs to hold one person only,0
+loads-open-2nd-1788550976679,0,loads,open-2nd,role2,heavy,it needs to take loads and carts,0
+loads-open-2nd-1788550976679,0,loads,open-2nd,role2,footed,its ends hold when the banks go soft,1
+loads-open-2nd-1788566539142,1,loads,open-2nd,role1,steady,it does not move underfoot,1
+loads-open-2nd-1788566539142,1,loads,open-2nd,role1,grip,it does not go slick underfoot when it is wet,0
+loads-open-2nd-1788566539142,1,loads,open-2nd,role2,open,nothing closing it in; you can see out,0
+loads-open-2nd-1788566539142,1,loads,open-2nd,role2,heavy,it needs to take loads and carts,0
+loads-open-2nd-1788567562252,2,loads,open-2nd,role1,many,a great deal of material goes into it,0
+loads-open-2nd-1788567562252,2,loads,open-2nd,role1,steady,it does not move underfoot,1
+loads-open-2nd-1788567562252,2,loads,open-2nd,role2,steady,it does not move underfoot,1
+loads-open-2nd-1788567562252,2,loads,open-2nd,role2,grip,it does not go slick underfoot when it is wet,0
+loads-open-2nd-1788568498810,3,loads,open-2nd,role1,many,a great deal of material goes into it,1
+loads-open-2nd-1788568498810,3,loads,open-2nd,role1,open,nothing closing it in; you can see out,0
+loads-open-2nd-1788568498810,3,loads,open-2nd,role2,heavy,it needs to take loads and carts,1
+loads-open-2nd-1788568498810,3,loads,open-2nd,role2,steady,it does not move underfoot,1
+loads-r1-builder-1788550914294,0,loads,r1-builder,role1,minimal,as little built as possible,0
+loads-r1-builder-1788550914294,0,loads,r1-builder,role1,light,it needs to hold one person only,0
+loads-r1-builder-1788550914294,0,loads,r1-builder,role2,heavy,it needs to take loads and carts,0
+loads-r1-builder-1788550914294,0,loads,r1-builder,role2,footed,its ends hold when the banks go soft,1
+loads-r1-builder-1788566526539,1,loads,r1-builder,role1,steady,it does not move underfoot,1
+loads-r1-builder-1788566526539,1,loads,r1-builder,role1,grip,it does not go slick underfoot when it is wet,1
+loads-r1-builder-1788566526539,1,loads,r1-builder,role2,open,nothing closing it in; you can see out,0
+loads-r1-builder-1788566526539,1,loads,r1-builder,role2,heavy,it needs to take loads and carts,0
+loads-r1-builder-1788567525773,2,loads,r1-builder,role1,many,a great deal of material goes into it,1
+loads-r1-builder-1788567525773,2,loads,r1-builder,role1,steady,it does not move underfoot,1
+loads-r1-builder-1788567525773,2,loads,r1-builder,role2,steady,it does not move underfoot,1
+loads-r1-builder-1788567525773,2,loads,r1-builder,role2,grip,it does not go slick underfoot when it is wet,1
+loads-r1-builder-1788568477163,3,loads,r1-builder,role1,many,a great deal of material goes into it,1
+loads-r1-builder-1788568477163,3,loads,r1-builder,role1,open,nothing closing it in; you can see out,0
+loads-r1-builder-1788568477163,3,loads,r1-builder,role2,heavy,it needs to take loads and carts,1
+loads-r1-builder-1788568477163,3,loads,r1-builder,role2,steady,it does not move underfoot,1
+loads-r1-builder-2nd-1788550996716,0,loads,r1-builder-2nd,role1,minimal,as little built as possible,0
+loads-r1-builder-2nd-1788550996716,0,loads,r1-builder-2nd,role1,light,it needs to hold one person only,0
+loads-r1-builder-2nd-1788550996716,0,loads,r1-builder-2nd,role2,heavy,it needs to take loads and carts,0
+loads-r1-builder-2nd-1788550996716,0,loads,r1-builder-2nd,role2,footed,its ends hold when the banks go soft,1
+loads-r1-builder-2nd-1788566616279,1,loads,r1-builder-2nd,role1,steady,it does not move underfoot,1
+loads-r1-builder-2nd-1788566616279,1,loads,r1-builder-2nd,role1,grip,it does not go slick underfoot when it is wet,1
+loads-r1-builder-2nd-1788566616279,1,loads,r1-builder-2nd,role2,open,nothing closing it in; you can see out,1
+loads-r1-builder-2nd-1788566616279,1,loads,r1-builder-2nd,role2,heavy,it needs to take loads and carts,0
+loads-r1-builder-2nd-1788567613730,2,loads,r1-builder-2nd,role1,many,a great deal of material goes into it,0
+loads-r1-builder-2nd-1788567613730,2,loads,r1-builder-2nd,role1,steady,it does not move underfoot,1
+loads-r1-builder-2nd-1788567613730,2,loads,r1-builder-2nd,role2,steady,it does not move underfoot,1
+loads-r1-builder-2nd-1788567613730,2,loads,r1-builder-2nd,role2,grip,it does not go slick underfoot when it is wet,1
+loads-r1-builder-2nd-1788568548506,3,loads,r1-builder-2nd,role1,many,a great deal of material goes into it,0
+loads-r1-builder-2nd-1788568548506,3,loads,r1-builder-2nd,role1,open,nothing closing it in; you can see out,0
+loads-r1-builder-2nd-1788568548506,3,loads,r1-builder-2nd,role2,heavy,it needs to take loads and carts,0
+loads-r1-builder-2nd-1788568548506,3,loads,r1-builder-2nd,role2,steady,it does not move underfoot,1
+loads-r1-role2-1788550973993,0,loads,r1-role2,role1,minimal,as little built as possible,0
+loads-r1-role2-1788550973993,0,loads,r1-role2,role1,light,it needs to hold one person only,0
+loads-r1-role2-1788550973993,0,loads,r1-role2,role2,heavy,it needs to take loads and carts,1
+loads-r1-role2-1788550973993,0,loads,r1-role2,role2,footed,its ends hold when the banks go soft,1
+loads-r1-role2-1788566508067,1,loads,r1-role2,role1,steady,it does not move underfoot,1
+loads-r1-role2-1788566508067,1,loads,r1-role2,role1,grip,it does not go slick underfoot when it is wet,0
+loads-r1-role2-1788566508067,1,loads,r1-role2,role2,open,nothing closing it in; you can see out,1
+loads-r1-role2-1788566508067,1,loads,r1-role2,role2,heavy,it needs to take loads and carts,0
+loads-r1-role2-1788567531058,2,loads,r1-role2,role1,many,a great deal of material goes into it,0
+loads-r1-role2-1788567531058,2,loads,r1-role2,role1,steady,it does not move underfoot,1
+loads-r1-role2-1788567531058,2,loads,r1-role2,role2,steady,it does not move underfoot,1
+loads-r1-role2-1788567531058,2,loads,r1-role2,role2,grip,it does not go slick underfoot when it is wet,1
+loads-r1-role2-1788568510446,3,loads,r1-role2,role1,many,a great deal of material goes into it,0
+loads-r1-role2-1788568510446,3,loads,r1-role2,role1,open,nothing closing it in; you can see out,1
+loads-r1-role2-1788568510446,3,loads,r1-role2,role2,heavy,it needs to take loads and carts,0
+loads-r1-role2-1788568510446,3,loads,r1-role2,role2,steady,it does not move underfoot,1
+loads-r1-role2-2nd-1788550997023,0,loads,r1-role2-2nd,role1,minimal,as little built as possible,0
+loads-r1-role2-2nd-1788550997023,0,loads,r1-role2-2nd,role1,light,it needs to hold one person only,0
+loads-r1-role2-2nd-1788550997023,0,loads,r1-role2-2nd,role2,heavy,it needs to take loads and carts,0
+loads-r1-role2-2nd-1788550997023,0,loads,r1-role2-2nd,role2,footed,its ends hold when the banks go soft,1
+loads-r1-role2-2nd-1788566606606,1,loads,r1-role2-2nd,role1,steady,it does not move underfoot,1
+loads-r1-role2-2nd-1788566606606,1,loads,r1-role2-2nd,role1,grip,it does not go slick underfoot when it is wet,1
+loads-r1-role2-2nd-1788566606606,1,loads,r1-role2-2nd,role2,open,nothing closing it in; you can see out,1
+loads-r1-role2-2nd-1788566606606,1,loads,r1-role2-2nd,role2,heavy,it needs to take loads and carts,0
+loads-r1-role2-2nd-1788567622280,2,loads,r1-role2-2nd,role1,many,a great deal of material goes into it,1
+loads-r1-role2-2nd-1788567622280,2,loads,r1-role2-2nd,role1,steady,it does not move underfoot,1
+loads-r1-role2-2nd-1788567622280,2,loads,r1-role2-2nd,role2,steady,it does not move underfoot,1
+loads-r1-role2-2nd-1788567622280,2,loads,r1-role2-2nd,role2,grip,it does not go slick underfoot when it is wet,1
+loads-r1-role2-2nd-1788568561891,3,loads,r1-role2-2nd,role1,many,a great deal of material goes into it,1
+loads-r1-role2-2nd-1788568561891,3,loads,r1-role2-2nd,role1,open,nothing closing it in; you can see out,0
+loads-r1-role2-2nd-1788568561891,3,loads,r1-role2-2nd,role2,heavy,it needs to take loads and carts,1
+loads-r1-role2-2nd-1788568561891,3,loads,r1-role2-2nd,role2,steady,it does not move underfoot,1
+loads-r2-builder-1788550898675,0,loads,r2-builder,role1,minimal,as little built as possible,0
+loads-r2-builder-1788550898675,0,loads,r2-builder,role1,light,it needs to hold one person only,0
+loads-r2-builder-1788550898675,0,loads,r2-builder,role2,heavy,it needs to take loads and carts,1
+loads-r2-builder-1788550898675,0,loads,r2-builder,role2,footed,its ends hold when the banks go soft,1
+loads-r2-builder-1788566430019,1,loads,r2-builder,role1,steady,it does not move underfoot,1
+loads-r2-builder-1788566430019,1,loads,r2-builder,role1,grip,it does not go slick underfoot when it is wet,0
+loads-r2-builder-1788566430019,1,loads,r2-builder,role2,open,nothing closing it in; you can see out,0
+loads-r2-builder-1788566430019,1,loads,r2-builder,role2,heavy,it needs to take loads and carts,0
+loads-r2-builder-1788567451576,2,loads,r2-builder,role1,many,a great deal of material goes into it,0
+loads-r2-builder-1788567451576,2,loads,r2-builder,role1,steady,it does not move underfoot,1
+loads-r2-builder-1788567451576,2,loads,r2-builder,role2,steady,it does not move underfoot,1
+loads-r2-builder-1788567451576,2,loads,r2-builder,role2,grip,it does not go slick underfoot when it is wet,1
+loads-r2-builder-1788568394209,3,loads,r2-builder,role1,many,a great deal of material goes into it,1
+loads-r2-builder-1788568394209,3,loads,r2-builder,role1,open,nothing closing it in; you can see out,1
+loads-r2-builder-1788568394209,3,loads,r2-builder,role2,heavy,it needs to take loads and carts,1
+loads-r2-builder-1788568394209,3,loads,r2-builder,role2,steady,it does not move underfoot,1
+loads-r2-role1-1788550877693,0,loads,r2-role1,role1,minimal,as little built as possible,0
+loads-r2-role1-1788550877693,0,loads,r2-role1,role1,light,it needs to hold one person only,0
+loads-r2-role1-1788550877693,0,loads,r2-role1,role2,heavy,it needs to take loads and carts,1
+loads-r2-role1-1788550877693,0,loads,r2-role1,role2,footed,its ends hold when the banks go soft,1
+loads-r2-role1-1788566480901,1,loads,r2-role1,role1,steady,it does not move underfoot,0
+loads-r2-role1-1788566480901,1,loads,r2-role1,role1,grip,it does not go slick underfoot when it is wet,1
+loads-r2-role1-1788566480901,1,loads,r2-role1,role2,open,nothing closing it in; you can see out,0
+loads-r2-role1-1788566480901,1,loads,r2-role1,role2,heavy,it needs to take loads and carts,0
+loads-r2-role1-1788567500701,2,loads,r2-role1,role1,many,a great deal of material goes into it,0
+loads-r2-role1-1788567500701,2,loads,r2-role1,role1,steady,it does not move underfoot,1
+loads-r2-role1-1788567500701,2,loads,r2-role1,role2,steady,it does not move underfoot,1
+loads-r2-role1-1788567500701,2,loads,r2-role1,role2,grip,it does not go slick underfoot when it is wet,1
+loads-r2-role1-1788568462335,3,loads,r2-role1,role1,many,a great deal of material goes into it,0
+loads-r2-role1-1788568462335,3,loads,r2-role1,role1,open,nothing closing it in; you can see out,0
+loads-r2-role1-1788568462335,3,loads,r2-role1,role2,heavy,it needs to take loads and carts,0
+loads-r2-role1-1788568462335,3,loads,r2-role1,role2,steady,it does not move underfoot,1
+loads-together-1788550981435,0,loads,together,role1,minimal,as little built as possible,0
+loads-together-1788550981435,0,loads,together,role1,light,it needs to hold one person only,0
+loads-together-1788550981435,0,loads,together,role2,heavy,it needs to take loads and carts,0
+loads-together-1788550981435,0,loads,together,role2,footed,its ends hold when the banks go soft,1
+loads-together-1788566598637,1,loads,together,role1,steady,it does not move underfoot,0
+loads-together-1788566598637,1,loads,together,role1,grip,it does not go slick underfoot when it is wet,1
+loads-together-1788566598637,1,loads,together,role2,open,nothing closing it in; you can see out,0
+loads-together-1788566598637,1,loads,together,role2,heavy,it needs to take loads and carts,0
+loads-together-1788567605259,2,loads,together,role1,many,a great deal of material goes into it,1
+loads-together-1788567605259,2,loads,together,role1,steady,it does not move underfoot,1
+loads-together-1788567605259,2,loads,together,role2,steady,it does not move underfoot,1
+loads-together-1788567605259,2,loads,together,role2,grip,it does not go slick underfoot when it is wet,1
+loads-together-1788568548138,3,loads,together,role1,many,a great deal of material goes into it,1
+loads-together-1788568548138,3,loads,together,role1,open,nothing closing it in; you can see out,1
+loads-together-1788568548138,3,loads,together,role2,heavy,it needs to take loads and carts,1
+loads-together-1788568548138,3,loads,together,role2,steady,it does not move underfoot,1
+pairs-alone-1788558638739,0,pairs,alone,role1,low,"level with where we stand, no climbing",1
+pairs-alone-1788558638739,0,pairs,alone,role1,grip,it does not go slick underfoot when it is wet,0
+pairs-alone-1788558638739,0,pairs,alone,role1,guarded,something at the hand; an edge to hold,1
+pairs-alone-1788558638739,0,pairs,alone,role1,steady,it does not move underfoot,1
+pairs-alone-1788558638739,0,pairs,alone,role2,heavy,it needs to take loads and carts,1
+pairs-alone-1788558638739,0,pairs,alone,role2,footed,its ends hold when the banks go soft,1
+pairs-alone-1788558638739,0,pairs,alone,role2,many,a great deal of material goes into it,1
+pairs-alone-1788558638739,0,pairs,alone,role2,open,nothing closing it in; you can see out,0
+pairs-alone-1788567022842,1,pairs,alone,role1,guarded,something at the hand; an edge to hold,0
+pairs-alone-1788567022842,1,pairs,alone,role1,many,a great deal of material goes into it,0
+pairs-alone-1788567022842,1,pairs,alone,role1,low,"level with where we stand, no climbing",1
+pairs-alone-1788567022842,1,pairs,alone,role1,open,nothing closing it in; you can see out,1
+pairs-alone-1788567022842,1,pairs,alone,role2,high,it is raised above where we stand,1
+pairs-alone-1788567022842,1,pairs,alone,role2,inGap,something stands in the middle of the gap,0
+pairs-alone-1788567022842,1,pairs,alone,role2,low,"level with where we stand, no climbing",0
+pairs-alone-1788567022842,1,pairs,alone,role2,grip,it does not go slick underfoot when it is wet,0
+pairs-alone-1788567980664,2,pairs,alone,role1,grip,it does not go slick underfoot when it is wet,0
+pairs-alone-1788567980664,2,pairs,alone,role1,steady,it does not move underfoot,1
+pairs-alone-1788567980664,2,pairs,alone,role1,guarded,something at the hand; an edge to hold,1
+pairs-alone-1788567980664,2,pairs,alone,role1,footed,its ends hold when the banks go soft,1
+pairs-alone-1788567980664,2,pairs,alone,role2,guarded,something at the hand; an edge to hold,1
+pairs-alone-1788567980664,2,pairs,alone,role2,grip,it does not go slick underfoot when it is wet,0
+pairs-alone-1788567980664,2,pairs,alone,role2,steady,it does not move underfoot,0
+pairs-alone-1788567980664,2,pairs,alone,role2,footed,its ends hold when the banks go soft,0
+pairs-alone-1788568871727,3,pairs,alone,role1,steady,it does not move underfoot,0
+pairs-alone-1788568871727,3,pairs,alone,role1,many,a great deal of material goes into it,0
+pairs-alone-1788568871727,3,pairs,alone,role1,heavy,it needs to take loads and carts,0
+pairs-alone-1788568871727,3,pairs,alone,role1,footed,its ends hold when the banks go soft,0
+pairs-alone-1788568871727,3,pairs,alone,role2,many,a great deal of material goes into it,0
+pairs-alone-1788568871727,3,pairs,alone,role2,open,nothing closing it in; you can see out,1
+pairs-alone-1788568871727,3,pairs,alone,role2,low,"level with where we stand, no climbing",1
+pairs-alone-1788568871727,3,pairs,alone,role2,steady,it does not move underfoot,0
+pairs-open-1st-1788558518124,0,pairs,open-1st,role1,low,"level with where we stand, no climbing",1
+pairs-open-1st-1788558518124,0,pairs,open-1st,role1,grip,it does not go slick underfoot when it is wet,1
+pairs-open-1st-1788558518124,0,pairs,open-1st,role1,guarded,something at the hand; an edge to hold,1
+pairs-open-1st-1788558518124,0,pairs,open-1st,role1,steady,it does not move underfoot,1
+pairs-open-1st-1788558518124,0,pairs,open-1st,role2,heavy,it needs to take loads and carts,1
+pairs-open-1st-1788558518124,0,pairs,open-1st,role2,footed,its ends hold when the banks go soft,1
+pairs-open-1st-1788558518124,0,pairs,open-1st,role2,many,a great deal of material goes into it,1
+pairs-open-1st-1788558518124,0,pairs,open-1st,role2,open,nothing closing it in; you can see out,0
+pairs-open-1st-1788566886714,1,pairs,open-1st,role1,guarded,something at the hand; an edge to hold,1
+pairs-open-1st-1788566886714,1,pairs,open-1st,role1,many,a great deal of material goes into it,1
+pairs-open-1st-1788566886714,1,pairs,open-1st,role1,low,"level with where we stand, no climbing",0
+pairs-open-1st-1788566886714,1,pairs,open-1st,role1,open,nothing closing it in; you can see out,0
+pairs-open-1st-1788566886714,1,pairs,open-1st,role2,high,it is raised above where we stand,1
+pairs-open-1st-1788566886714,1,pairs,open-1st,role2,inGap,something stands in the middle of the gap,0
+pairs-open-1st-1788566886714,1,pairs,open-1st,role2,low,"level with where we stand, no climbing",0
+pairs-open-1st-1788566886714,1,pairs,open-1st,role2,grip,it does not go slick underfoot when it is wet,0
+pairs-open-1st-1788567892633,2,pairs,open-1st,role1,grip,it does not go slick underfoot when it is wet,1
+pairs-open-1st-1788567892633,2,pairs,open-1st,role1,steady,it does not move underfoot,1
+pairs-open-1st-1788567892633,2,pairs,open-1st,role1,guarded,something at the hand; an edge to hold,1
+pairs-open-1st-1788567892633,2,pairs,open-1st,role1,footed,its ends hold when the banks go soft,1
+pairs-open-1st-1788567892633,2,pairs,open-1st,role2,guarded,something at the hand; an edge to hold,1
+pairs-open-1st-1788567892633,2,pairs,open-1st,role2,grip,it does not go slick underfoot when it is wet,1
+pairs-open-1st-1788567892633,2,pairs,open-1st,role2,steady,it does not move underfoot,1
+pairs-open-1st-1788567892633,2,pairs,open-1st,role2,footed,its ends hold when the banks go soft,1
+pairs-open-1st-1788568787093,3,pairs,open-1st,role1,steady,it does not move underfoot,1
+pairs-open-1st-1788568787093,3,pairs,open-1st,role1,many,a great deal of material goes into it,0
+pairs-open-1st-1788568787093,3,pairs,open-1st,role1,heavy,it needs to take loads and carts,0
+pairs-open-1st-1788568787093,3,pairs,open-1st,role1,footed,its ends hold when the banks go soft,0
+pairs-open-1st-1788568787093,3,pairs,open-1st,role2,many,a great deal of material goes into it,0
+pairs-open-1st-1788568787093,3,pairs,open-1st,role2,open,nothing closing it in; you can see out,0
+pairs-open-1st-1788568787093,3,pairs,open-1st,role2,low,"level with where we stand, no climbing",1
+pairs-open-1st-1788568787093,3,pairs,open-1st,role2,steady,it does not move underfoot,1
+pairs-open-2nd-1788558592406,0,pairs,open-2nd,role1,low,"level with where we stand, no climbing",0
+pairs-open-2nd-1788558592406,0,pairs,open-2nd,role1,grip,it does not go slick underfoot when it is wet,1
+pairs-open-2nd-1788558592406,0,pairs,open-2nd,role1,guarded,something at the hand; an edge to hold,1
+pairs-open-2nd-1788558592406,0,pairs,open-2nd,role1,steady,it does not move underfoot,1
+pairs-open-2nd-1788558592406,0,pairs,open-2nd,role2,heavy,it needs to take loads and carts,1
+pairs-open-2nd-1788558592406,0,pairs,open-2nd,role2,footed,its ends hold when the banks go soft,1
+pairs-open-2nd-1788558592406,0,pairs,open-2nd,role2,many,a great deal of material goes into it,1
+pairs-open-2nd-1788558592406,0,pairs,open-2nd,role2,open,nothing closing it in; you can see out,0
+pairs-open-2nd-1788566955066,1,pairs,open-2nd,role1,guarded,something at the hand; an edge to hold,1
+pairs-open-2nd-1788566955066,1,pairs,open-2nd,role1,many,a great deal of material goes into it,0
+pairs-open-2nd-1788566955066,1,pairs,open-2nd,role1,low,"level with where we stand, no climbing",0
+pairs-open-2nd-1788566955066,1,pairs,open-2nd,role1,open,nothing closing it in; you can see out,0
+pairs-open-2nd-1788566955066,1,pairs,open-2nd,role2,high,it is raised above where we stand,1
+pairs-open-2nd-1788566955066,1,pairs,open-2nd,role2,inGap,something stands in the middle of the gap,1
+pairs-open-2nd-1788566955066,1,pairs,open-2nd,role2,low,"level with where we stand, no climbing",0
+pairs-open-2nd-1788566955066,1,pairs,open-2nd,role2,grip,it does not go slick underfoot when it is wet,1
+pairs-open-2nd-1788567918345,2,pairs,open-2nd,role1,grip,it does not go slick underfoot when it is wet,1
+pairs-open-2nd-1788567918345,2,pairs,open-2nd,role1,steady,it does not move underfoot,1
+pairs-open-2nd-1788567918345,2,pairs,open-2nd,role1,guarded,something at the hand; an edge to hold,1
+pairs-open-2nd-1788567918345,2,pairs,open-2nd,role1,footed,its ends hold when the banks go soft,0
+pairs-open-2nd-1788567918345,2,pairs,open-2nd,role2,guarded,something at the hand; an edge to hold,1
+pairs-open-2nd-1788567918345,2,pairs,open-2nd,role2,grip,it does not go slick underfoot when it is wet,1
+pairs-open-2nd-1788567918345,2,pairs,open-2nd,role2,steady,it does not move underfoot,1
+pairs-open-2nd-1788567918345,2,pairs,open-2nd,role2,footed,its ends hold when the banks go soft,0
+pairs-open-2nd-1788568808960,3,pairs,open-2nd,role1,steady,it does not move underfoot,0
+pairs-open-2nd-1788568808960,3,pairs,open-2nd,role1,many,a great deal of material goes into it,0
+pairs-open-2nd-1788568808960,3,pairs,open-2nd,role1,heavy,it needs to take loads and carts,0
+pairs-open-2nd-1788568808960,3,pairs,open-2nd,role1,footed,its ends hold when the banks go soft,0
+pairs-open-2nd-1788568808960,3,pairs,open-2nd,role2,many,a great deal of material goes into it,0
+pairs-open-2nd-1788568808960,3,pairs,open-2nd,role2,open,nothing closing it in; you can see out,1
+pairs-open-2nd-1788568808960,3,pairs,open-2nd,role2,low,"level with where we stand, no climbing",1
+pairs-open-2nd-1788568808960,3,pairs,open-2nd,role2,steady,it does not move underfoot,0
+pairs-r1-builder-1788558517391,0,pairs,r1-builder,role1,low,"level with where we stand, no climbing",1
+pairs-r1-builder-1788558517391,0,pairs,r1-builder,role1,grip,it does not go slick underfoot when it is wet,0
+pairs-r1-builder-1788558517391,0,pairs,r1-builder,role1,guarded,something at the hand; an edge to hold,1
+pairs-r1-builder-1788558517391,0,pairs,r1-builder,role1,steady,it does not move underfoot,1
+pairs-r1-builder-1788558517391,0,pairs,r1-builder,role2,heavy,it needs to take loads and carts,0
+pairs-r1-builder-1788558517391,0,pairs,r1-builder,role2,footed,its ends hold when the banks go soft,1
+pairs-r1-builder-1788558517391,0,pairs,r1-builder,role2,many,a great deal of material goes into it,0
+pairs-r1-builder-1788558517391,0,pairs,r1-builder,role2,open,nothing closing it in; you can see out,0
+pairs-r1-builder-1788566872505,1,pairs,r1-builder,role1,guarded,something at the hand; an edge to hold,1
+pairs-r1-builder-1788566872505,1,pairs,r1-builder,role1,many,a great deal of material goes into it,0
+pairs-r1-builder-1788566872505,1,pairs,r1-builder,role1,low,"level with where we stand, no climbing",0
+pairs-r1-builder-1788566872505,1,pairs,r1-builder,role1,open,nothing closing it in; you can see out,0
+pairs-r1-builder-1788566872505,1,pairs,r1-builder,role2,high,it is raised above where we stand,1
+pairs-r1-builder-1788566872505,1,pairs,r1-builder,role2,inGap,something stands in the middle of the gap,0
+pairs-r1-builder-1788566872505,1,pairs,r1-builder,role2,low,"level with where we stand, no climbing",0
+pairs-r1-builder-1788566872505,1,pairs,r1-builder,role2,grip,it does not go slick underfoot when it is wet,1
+pairs-r1-builder-1788567870486,2,pairs,r1-builder,role1,grip,it does not go slick underfoot when it is wet,1
+pairs-r1-builder-1788567870486,2,pairs,r1-builder,role1,steady,it does not move underfoot,1
+pairs-r1-builder-1788567870486,2,pairs,r1-builder,role1,guarded,something at the hand; an edge to hold,1
+pairs-r1-builder-1788567870486,2,pairs,r1-builder,role1,footed,its ends hold when the banks go soft,0
+pairs-r1-builder-1788567870486,2,pairs,r1-builder,role2,guarded,something at the hand; an edge to hold,1
+pairs-r1-builder-1788567870486,2,pairs,r1-builder,role2,grip,it does not go slick underfoot when it is wet,1
+pairs-r1-builder-1788567870486,2,pairs,r1-builder,role2,steady,it does not move underfoot,1
+pairs-r1-builder-1788567870486,2,pairs,r1-builder,role2,footed,its ends hold when the banks go soft,0
+pairs-r1-builder-1788568754311,3,pairs,r1-builder,role1,steady,it does not move underfoot,0
+pairs-r1-builder-1788568754311,3,pairs,r1-builder,role1,many,a great deal of material goes into it,0
+pairs-r1-builder-1788568754311,3,pairs,r1-builder,role1,heavy,it needs to take loads and carts,0
+pairs-r1-builder-1788568754311,3,pairs,r1-builder,role1,footed,its ends hold when the banks go soft,1
+pairs-r1-builder-1788568754311,3,pairs,r1-builder,role2,many,a great deal of material goes into it,0
+pairs-r1-builder-1788568754311,3,pairs,r1-builder,role2,open,nothing closing it in; you can see out,1
+pairs-r1-builder-1788568754311,3,pairs,r1-builder,role2,low,"level with where we stand, no climbing",1
+pairs-r1-builder-1788568754311,3,pairs,r1-builder,role2,steady,it does not move underfoot,0
+pairs-r1-builder-2nd-1788558626707,0,pairs,r1-builder-2nd,role1,low,"level with where we stand, no climbing",1
+pairs-r1-builder-2nd-1788558626707,0,pairs,r1-builder-2nd,role1,grip,it does not go slick underfoot when it is wet,1
+pairs-r1-builder-2nd-1788558626707,0,pairs,r1-builder-2nd,role1,guarded,something at the hand; an edge to hold,1
+pairs-r1-builder-2nd-1788558626707,0,pairs,r1-builder-2nd,role1,steady,it does not move underfoot,1
+pairs-r1-builder-2nd-1788558626707,0,pairs,r1-builder-2nd,role2,heavy,it needs to take loads and carts,0
+pairs-r1-builder-2nd-1788558626707,0,pairs,r1-builder-2nd,role2,footed,its ends hold when the banks go soft,1
+pairs-r1-builder-2nd-1788558626707,0,pairs,r1-builder-2nd,role2,many,a great deal of material goes into it,0
+pairs-r1-builder-2nd-1788558626707,0,pairs,r1-builder-2nd,role2,open,nothing closing it in; you can see out,0
+pairs-r1-builder-2nd-1788567015228,1,pairs,r1-builder-2nd,role1,guarded,something at the hand; an edge to hold,0
+pairs-r1-builder-2nd-1788567015228,1,pairs,r1-builder-2nd,role1,many,a great deal of material goes into it,0
+pairs-r1-builder-2nd-1788567015228,1,pairs,r1-builder-2nd,role1,low,"level with where we stand, no climbing",0
+pairs-r1-builder-2nd-1788567015228,1,pairs,r1-builder-2nd,role1,open,nothing closing it in; you can see out,1
+pairs-r1-builder-2nd-1788567015228,1,pairs,r1-builder-2nd,role2,high,it is raised above where we stand,1
+pairs-r1-builder-2nd-1788567015228,1,pairs,r1-builder-2nd,role2,inGap,something stands in the middle of the gap,0
+pairs-r1-builder-2nd-1788567015228,1,pairs,r1-builder-2nd,role2,low,"level with where we stand, no climbing",0
+pairs-r1-builder-2nd-1788567015228,1,pairs,r1-builder-2nd,role2,grip,it does not go slick underfoot when it is wet,1
+pairs-r1-builder-2nd-1788567949450,2,pairs,r1-builder-2nd,role1,grip,it does not go slick underfoot when it is wet,1
+pairs-r1-builder-2nd-1788567949450,2,pairs,r1-builder-2nd,role1,steady,it does not move underfoot,1
+pairs-r1-builder-2nd-1788567949450,2,pairs,r1-builder-2nd,role1,guarded,something at the hand; an edge to hold,1
+pairs-r1-builder-2nd-1788567949450,2,pairs,r1-builder-2nd,role1,footed,its ends hold when the banks go soft,1
+pairs-r1-builder-2nd-1788567949450,2,pairs,r1-builder-2nd,role2,guarded,something at the hand; an edge to hold,1
+pairs-r1-builder-2nd-1788567949450,2,pairs,r1-builder-2nd,role2,grip,it does not go slick underfoot when it is wet,1
+pairs-r1-builder-2nd-1788567949450,2,pairs,r1-builder-2nd,role2,steady,it does not move underfoot,1
+pairs-r1-builder-2nd-1788567949450,2,pairs,r1-builder-2nd,role2,footed,its ends hold when the banks go soft,1
+pairs-r1-builder-2nd-1788568890198,3,pairs,r1-builder-2nd,role1,steady,it does not move underfoot,1
+pairs-r1-builder-2nd-1788568890198,3,pairs,r1-builder-2nd,role1,many,a great deal of material goes into it,1
+pairs-r1-builder-2nd-1788568890198,3,pairs,r1-builder-2nd,role1,heavy,it needs to take loads and carts,1
+pairs-r1-builder-2nd-1788568890198,3,pairs,r1-builder-2nd,role1,footed,its ends hold when the banks go soft,1
+pairs-r1-builder-2nd-1788568890198,3,pairs,r1-builder-2nd,role2,many,a great deal of material goes into it,1
+pairs-r1-builder-2nd-1788568890198,3,pairs,r1-builder-2nd,role2,open,nothing closing it in; you can see out,0
+pairs-r1-builder-2nd-1788568890198,3,pairs,r1-builder-2nd,role2,low,"level with where we stand, no climbing",1
+pairs-r1-builder-2nd-1788568890198,3,pairs,r1-builder-2nd,role2,steady,it does not move underfoot,1
+pairs-r1-role2-1788558523584,0,pairs,r1-role2,role1,low,"level with where we stand, no climbing",0
+pairs-r1-role2-1788558523584,0,pairs,r1-role2,role1,grip,it does not go slick underfoot when it is wet,1
+pairs-r1-role2-1788558523584,0,pairs,r1-role2,role1,guarded,something at the hand; an edge to hold,1
+pairs-r1-role2-1788558523584,0,pairs,r1-role2,role1,steady,it does not move underfoot,1
+pairs-r1-role2-1788558523584,0,pairs,r1-role2,role2,heavy,it needs to take loads and carts,1
+pairs-r1-role2-1788558523584,0,pairs,r1-role2,role2,footed,its ends hold when the banks go soft,1
+pairs-r1-role2-1788558523584,0,pairs,r1-role2,role2,many,a great deal of material goes into it,1
+pairs-r1-role2-1788558523584,0,pairs,r1-role2,role2,open,nothing closing it in; you can see out,0
+pairs-r1-role2-1788566932314,1,pairs,r1-role2,role1,guarded,something at the hand; an edge to hold,1
+pairs-r1-role2-1788566932314,1,pairs,r1-role2,role1,many,a great deal of material goes into it,0
+pairs-r1-role2-1788566932314,1,pairs,r1-role2,role1,low,"level with where we stand, no climbing",0
+pairs-r1-role2-1788566932314,1,pairs,r1-role2,role1,open,nothing closing it in; you can see out,0
+pairs-r1-role2-1788566932314,1,pairs,r1-role2,role2,high,it is raised above where we stand,1
+pairs-r1-role2-1788566932314,1,pairs,r1-role2,role2,inGap,something stands in the middle of the gap,0
+pairs-r1-role2-1788566932314,1,pairs,r1-role2,role2,low,"level with where we stand, no climbing",0
+pairs-r1-role2-1788566932314,1,pairs,r1-role2,role2,grip,it does not go slick underfoot when it is wet,0
+pairs-r1-role2-1788567897395,2,pairs,r1-role2,role1,grip,it does not go slick underfoot when it is wet,0
+pairs-r1-role2-1788567897395,2,pairs,r1-role2,role1,steady,it does not move underfoot,1
+pairs-r1-role2-1788567897395,2,pairs,r1-role2,role1,guarded,something at the hand; an edge to hold,1
+pairs-r1-role2-1788567897395,2,pairs,r1-role2,role1,footed,its ends hold when the banks go soft,1
+pairs-r1-role2-1788567897395,2,pairs,r1-role2,role2,guarded,something at the hand; an edge to hold,1
+pairs-r1-role2-1788567897395,2,pairs,r1-role2,role2,grip,it does not go slick underfoot when it is wet,0
+pairs-r1-role2-1788567897395,2,pairs,r1-role2,role2,steady,it does not move underfoot,1
+pairs-r1-role2-1788567897395,2,pairs,r1-role2,role2,footed,its ends hold when the banks go soft,1
+pairs-r1-role2-1788568777782,3,pairs,r1-role2,role1,steady,it does not move underfoot,1
+pairs-r1-role2-1788568777782,3,pairs,r1-role2,role1,many,a great deal of material goes into it,0
+pairs-r1-role2-1788568777782,3,pairs,r1-role2,role1,heavy,it needs to take loads and carts,0
+pairs-r1-role2-1788568777782,3,pairs,r1-role2,role1,footed,its ends hold when the banks go soft,0
+pairs-r1-role2-1788568777782,3,pairs,r1-role2,role2,many,a great deal of material goes into it,0
+pairs-r1-role2-1788568777782,3,pairs,r1-role2,role2,open,nothing closing it in; you can see out,1
+pairs-r1-role2-1788568777782,3,pairs,r1-role2,role2,low,"level with where we stand, no climbing",1
+pairs-r1-role2-1788568777782,3,pairs,r1-role2,role2,steady,it does not move underfoot,1
+pairs-r1-role2-2nd-1788558646065,0,pairs,r1-role2-2nd,role1,low,"level with where we stand, no climbing",1
+pairs-r1-role2-2nd-1788558646065,0,pairs,r1-role2-2nd,role1,grip,it does not go slick underfoot when it is wet,1
+pairs-r1-role2-2nd-1788558646065,0,pairs,r1-role2-2nd,role1,guarded,something at the hand; an edge to hold,1
+pairs-r1-role2-2nd-1788558646065,0,pairs,r1-role2-2nd,role1,steady,it does not move underfoot,1
+pairs-r1-role2-2nd-1788558646065,0,pairs,r1-role2-2nd,role2,heavy,it needs to take loads and carts,1
+pairs-r1-role2-2nd-1788558646065,0,pairs,r1-role2-2nd,role2,footed,its ends hold when the banks go soft,1
+pairs-r1-role2-2nd-1788558646065,0,pairs,r1-role2-2nd,role2,many,a great deal of material goes into it,1
+pairs-r1-role2-2nd-1788558646065,0,pairs,r1-role2-2nd,role2,open,nothing closing it in; you can see out,0
+pairs-r1-role2-2nd-1788566981905,1,pairs,r1-role2-2nd,role1,guarded,something at the hand; an edge to hold,0
+pairs-r1-role2-2nd-1788566981905,1,pairs,r1-role2-2nd,role1,many,a great deal of material goes into it,1
+pairs-r1-role2-2nd-1788566981905,1,pairs,r1-role2-2nd,role1,low,"level with where we stand, no climbing",0
+pairs-r1-role2-2nd-1788566981905,1,pairs,r1-role2-2nd,role1,open,nothing closing it in; you can see out,1
+pairs-r1-role2-2nd-1788566981905,1,pairs,r1-role2-2nd,role2,high,it is raised above where we stand,1
+pairs-r1-role2-2nd-1788566981905,1,pairs,r1-role2-2nd,role2,inGap,something stands in the middle of the gap,0
+pairs-r1-role2-2nd-1788566981905,1,pairs,r1-role2-2nd,role2,low,"level with where we stand, no climbing",0
+pairs-r1-role2-2nd-1788566981905,1,pairs,r1-role2-2nd,role2,grip,it does not go slick underfoot when it is wet,0
+pairs-r1-role2-2nd-1788567982395,2,pairs,r1-role2-2nd,role1,grip,it does not go slick underfoot when it is wet,1
+pairs-r1-role2-2nd-1788567982395,2,pairs,r1-role2-2nd,role1,steady,it does not move underfoot,1
+pairs-r1-role2-2nd-1788567982395,2,pairs,r1-role2-2nd,role1,guarded,something at the hand; an edge to hold,1
+pairs-r1-role2-2nd-1788567982395,2,pairs,r1-role2-2nd,role1,footed,its ends hold when the banks go soft,1
+pairs-r1-role2-2nd-1788567982395,2,pairs,r1-role2-2nd,role2,guarded,something at the hand; an edge to hold,1
+pairs-r1-role2-2nd-1788567982395,2,pairs,r1-role2-2nd,role2,grip,it does not go slick underfoot when it is wet,1
+pairs-r1-role2-2nd-1788567982395,2,pairs,r1-role2-2nd,role2,steady,it does not move underfoot,1
+pairs-r1-role2-2nd-1788567982395,2,pairs,r1-role2-2nd,role2,footed,its ends hold when the banks go soft,1
+pairs-r1-role2-2nd-1788568869939,3,pairs,r1-role2-2nd,role1,steady,it does not move underfoot,0
+pairs-r1-role2-2nd-1788568869939,3,pairs,r1-role2-2nd,role1,many,a great deal of material goes into it,1
+pairs-r1-role2-2nd-1788568869939,3,pairs,r1-role2-2nd,role1,heavy,it needs to take loads and carts,0
+pairs-r1-role2-2nd-1788568869939,3,pairs,r1-role2-2nd,role1,footed,its ends hold when the banks go soft,1
+pairs-r1-role2-2nd-1788568869939,3,pairs,r1-role2-2nd,role2,many,a great deal of material goes into it,1
+pairs-r1-role2-2nd-1788568869939,3,pairs,r1-role2-2nd,role2,open,nothing closing it in; you can see out,0
+pairs-r1-role2-2nd-1788568869939,3,pairs,r1-role2-2nd,role2,low,"level with where we stand, no climbing",1
+pairs-r1-role2-2nd-1788568869939,3,pairs,r1-role2-2nd,role2,steady,it does not move underfoot,0
+pairs-r2-builder-1788558486825,0,pairs,r2-builder,role1,low,"level with where we stand, no climbing",0
+pairs-r2-builder-1788558486825,0,pairs,r2-builder,role1,grip,it does not go slick underfoot when it is wet,0
+pairs-r2-builder-1788558486825,0,pairs,r2-builder,role1,guarded,something at the hand; an edge to hold,1
+pairs-r2-builder-1788558486825,0,pairs,r2-builder,role1,steady,it does not move underfoot,1
+pairs-r2-builder-1788558486825,0,pairs,r2-builder,role2,heavy,it needs to take loads and carts,1
+pairs-r2-builder-1788558486825,0,pairs,r2-builder,role2,footed,its ends hold when the banks go soft,0
+pairs-r2-builder-1788558486825,0,pairs,r2-builder,role2,many,a great deal of material goes into it,1
+pairs-r2-builder-1788558486825,0,pairs,r2-builder,role2,open,nothing closing it in; you can see out,0
+pairs-r2-builder-1788566830213,1,pairs,r2-builder,role1,guarded,something at the hand; an edge to hold,1
+pairs-r2-builder-1788566830213,1,pairs,r2-builder,role1,many,a great deal of material goes into it,1
+pairs-r2-builder-1788566830213,1,pairs,r2-builder,role1,low,"level with where we stand, no climbing",0
+pairs-r2-builder-1788566830213,1,pairs,r2-builder,role1,open,nothing closing it in; you can see out,0
+pairs-r2-builder-1788566830213,1,pairs,r2-builder,role2,high,it is raised above where we stand,1
+pairs-r2-builder-1788566830213,1,pairs,r2-builder,role2,inGap,something stands in the middle of the gap,0
+pairs-r2-builder-1788566830213,1,pairs,r2-builder,role2,low,"level with where we stand, no climbing",0
+pairs-r2-builder-1788566830213,1,pairs,r2-builder,role2,grip,it does not go slick underfoot when it is wet,1
+pairs-r2-builder-1788567828678,2,pairs,r2-builder,role1,grip,it does not go slick underfoot when it is wet,1
+pairs-r2-builder-1788567828678,2,pairs,r2-builder,role1,steady,it does not move underfoot,1
+pairs-r2-builder-1788567828678,2,pairs,r2-builder,role1,guarded,something at the hand; an edge to hold,1
+pairs-r2-builder-1788567828678,2,pairs,r2-builder,role1,footed,its ends hold when the banks go soft,0
+pairs-r2-builder-1788567828678,2,pairs,r2-builder,role2,guarded,something at the hand; an edge to hold,1
+pairs-r2-builder-1788567828678,2,pairs,r2-builder,role2,grip,it does not go slick underfoot when it is wet,1
+pairs-r2-builder-1788567828678,2,pairs,r2-builder,role2,steady,it does not move underfoot,1
+pairs-r2-builder-1788567828678,2,pairs,r2-builder,role2,footed,its ends hold when the banks go soft,0
+pairs-r2-builder-1788568724305,3,pairs,r2-builder,role1,steady,it does not move underfoot,1
+pairs-r2-builder-1788568724305,3,pairs,r2-builder,role1,many,a great deal of material goes into it,0
+pairs-r2-builder-1788568724305,3,pairs,r2-builder,role1,heavy,it needs to take loads and carts,0
+pairs-r2-builder-1788568724305,3,pairs,r2-builder,role1,footed,its ends hold when the banks go soft,0
+pairs-r2-builder-1788568724305,3,pairs,r2-builder,role2,many,a great deal of material goes into it,0
+pairs-r2-builder-1788568724305,3,pairs,r2-builder,role2,open,nothing closing it in; you can see out,1
+pairs-r2-builder-1788568724305,3,pairs,r2-builder,role2,low,"level with where we stand, no climbing",1
+pairs-r2-builder-1788568724305,3,pairs,r2-builder,role2,steady,it does not move underfoot,1
+pairs-r2-role1-1788558517334,0,pairs,r2-role1,role1,low,"level with where we stand, no climbing",1
+pairs-r2-role1-1788558517334,0,pairs,r2-role1,role1,grip,it does not go slick underfoot when it is wet,1
+pairs-r2-role1-1788558517334,0,pairs,r2-role1,role1,guarded,something at the hand; an edge to hold,0
+pairs-r2-role1-1788558517334,0,pairs,r2-role1,role1,steady,it does not move underfoot,1
+pairs-r2-role1-1788558517334,0,pairs,r2-role1,role2,heavy,it needs to take loads and carts,1
+pairs-r2-role1-1788558517334,0,pairs,r2-role1,role2,footed,its ends hold when the banks go soft,1
+pairs-r2-role1-1788558517334,0,pairs,r2-role1,role2,many,a great deal of material goes into it,1
+pairs-r2-role1-1788558517334,0,pairs,r2-role1,role2,open,nothing closing it in; you can see out,1
+pairs-r2-role1-1788566906506,1,pairs,r2-role1,role1,guarded,something at the hand; an edge to hold,1
+pairs-r2-role1-1788566906506,1,pairs,r2-role1,role1,many,a great deal of material goes into it,1
+pairs-r2-role1-1788566906506,1,pairs,r2-role1,role1,low,"level with where we stand, no climbing",0
+pairs-r2-role1-1788566906506,1,pairs,r2-role1,role1,open,nothing closing it in; you can see out,0
+pairs-r2-role1-1788566906506,1,pairs,r2-role1,role2,high,it is raised above where we stand,1
+pairs-r2-role1-1788566906506,1,pairs,r2-role1,role2,inGap,something stands in the middle of the gap,0
+pairs-r2-role1-1788566906506,1,pairs,r2-role1,role2,low,"level with where we stand, no climbing",0
+pairs-r2-role1-1788566906506,1,pairs,r2-role1,role2,grip,it does not go slick underfoot when it is wet,1
+pairs-r2-role1-1788567852323,2,pairs,r2-role1,role1,grip,it does not go slick underfoot when it is wet,0
+pairs-r2-role1-1788567852323,2,pairs,r2-role1,role1,steady,it does not move underfoot,1
+pairs-r2-role1-1788567852323,2,pairs,r2-role1,role1,guarded,something at the hand; an edge to hold,1
+pairs-r2-role1-1788567852323,2,pairs,r2-role1,role1,footed,its ends hold when the banks go soft,0
+pairs-r2-role1-1788567852323,2,pairs,r2-role1,role2,guarded,something at the hand; an edge to hold,1
+pairs-r2-role1-1788567852323,2,pairs,r2-role1,role2,grip,it does not go slick underfoot when it is wet,0
+pairs-r2-role1-1788567852323,2,pairs,r2-role1,role2,steady,it does not move underfoot,1
+pairs-r2-role1-1788567852323,2,pairs,r2-role1,role2,footed,its ends hold when the banks go soft,0
+pairs-r2-role1-1788568771070,3,pairs,r2-role1,role1,steady,it does not move underfoot,1
+pairs-r2-role1-1788568771070,3,pairs,r2-role1,role1,many,a great deal of material goes into it,0
+pairs-r2-role1-1788568771070,3,pairs,r2-role1,role1,heavy,it needs to take loads and carts,0
+pairs-r2-role1-1788568771070,3,pairs,r2-role1,role1,footed,its ends hold when the banks go soft,0
+pairs-r2-role1-1788568771070,3,pairs,r2-role1,role2,many,a great deal of material goes into it,0
+pairs-r2-role1-1788568771070,3,pairs,r2-role1,role2,open,nothing closing it in; you can see out,1
+pairs-r2-role1-1788568771070,3,pairs,r2-role1,role2,low,"level with where we stand, no climbing",1
+pairs-r2-role1-1788568771070,3,pairs,r2-role1,role2,steady,it does not move underfoot,1
+pairs-together-1788558595573,0,pairs,together,role1,low,"level with where we stand, no climbing",1
+pairs-together-1788558595573,0,pairs,together,role1,grip,it does not go slick underfoot when it is wet,0
+pairs-together-1788558595573,0,pairs,together,role1,guarded,something at the hand; an edge to hold,1
+pairs-together-1788558595573,0,pairs,together,role1,steady,it does not move underfoot,1
+pairs-together-1788558595573,0,pairs,together,role2,heavy,it needs to take loads and carts,1
+pairs-together-1788558595573,0,pairs,together,role2,footed,its ends hold when the banks go soft,0
+pairs-together-1788558595573,0,pairs,together,role2,many,a great deal of material goes into it,1
+pairs-together-1788558595573,0,pairs,together,role2,open,nothing closing it in; you can see out,0
+pairs-together-1788566982644,1,pairs,together,role1,guarded,something at the hand; an edge to hold,0
+pairs-together-1788566982644,1,pairs,together,role1,many,a great deal of material goes into it,0
+pairs-together-1788566982644,1,pairs,together,role1,low,"level with where we stand, no climbing",1
+pairs-together-1788566982644,1,pairs,together,role1,open,nothing closing it in; you can see out,1
+pairs-together-1788566982644,1,pairs,together,role2,high,it is raised above where we stand,0
+pairs-together-1788566982644,1,pairs,together,role2,inGap,something stands in the middle of the gap,0
+pairs-together-1788566982644,1,pairs,together,role2,low,"level with where we stand, no climbing",1
+pairs-together-1788566982644,1,pairs,together,role2,grip,it does not go slick underfoot when it is wet,0
+pairs-together-1788567971997,2,pairs,together,role1,grip,it does not go slick underfoot when it is wet,0
+pairs-together-1788567971997,2,pairs,together,role1,steady,it does not move underfoot,1
+pairs-together-1788567971997,2,pairs,together,role1,guarded,something at the hand; an edge to hold,0
+pairs-together-1788567971997,2,pairs,together,role1,footed,its ends hold when the banks go soft,0
+pairs-together-1788567971997,2,pairs,together,role2,guarded,something at the hand; an edge to hold,0
+pairs-together-1788567971997,2,pairs,together,role2,grip,it does not go slick underfoot when it is wet,0
+pairs-together-1788567971997,2,pairs,together,role2,steady,it does not move underfoot,1
+pairs-together-1788567971997,2,pairs,together,role2,footed,its ends hold when the banks go soft,0
+pairs-together-1788568856422,3,pairs,together,role1,steady,it does not move underfoot,0
+pairs-together-1788568856422,3,pairs,together,role1,many,a great deal of material goes into it,0
+pairs-together-1788568856422,3,pairs,together,role1,heavy,it needs to take loads and carts,0
+pairs-together-1788568856422,3,pairs,together,role1,footed,its ends hold when the banks go soft,1
+pairs-together-1788568856422,3,pairs,together,role2,many,a great deal of material goes into it,0
+pairs-together-1788568856422,3,pairs,together,role2,open,nothing closing it in; you can see out,1
+pairs-together-1788568856422,3,pairs,together,role2,low,"level with where we stand, no climbing",1
+pairs-together-1788568856422,3,pairs,together,role2,steady,it does not move underfoot,0
+places-alone-1788550789067,0,places,alone,role1,steady,it does not move underfoot,1
+places-alone-1788550789067,0,places,alone,role1,grip,it does not go slick underfoot when it is wet,1
+places-alone-1788550789067,0,places,alone,role2,guarded,something at the hand; an edge to hold,1
+places-alone-1788550789067,0,places,alone,role2,steady,it does not move underfoot,0
+places-alone-1788566401480,1,places,alone,role1,inGap,something stands in the middle of the gap,0
+places-alone-1788566401480,1,places,alone,role1,steady,it does not move underfoot,0
+places-alone-1788566401480,1,places,alone,role2,high,it is raised above where we stand,1
+places-alone-1788566401480,1,places,alone,role2,footed,its ends hold when the banks go soft,0
+places-alone-1788567394029,2,places,alone,role1,low,"level with where we stand, no climbing",0
+places-alone-1788567394029,2,places,alone,role1,minimal,as little built as possible,0
+places-alone-1788567394029,2,places,alone,role2,low,"level with where we stand, no climbing",0
+places-alone-1788567394029,2,places,alone,role2,steady,it does not move underfoot,0
+places-alone-1788568377990,3,places,alone,role1,grip,it does not go slick underfoot when it is wet,1
+places-alone-1788568377990,3,places,alone,role1,footed,its ends hold when the banks go soft,1
+places-alone-1788568377990,3,places,alone,role2,footed,its ends hold when the banks go soft,1
+places-alone-1788568377990,3,places,alone,role2,steady,it does not move underfoot,0
+places-open-1st-1788550696588,0,places,open-1st,role1,steady,it does not move underfoot,1
+places-open-1st-1788550696588,0,places,open-1st,role1,grip,it does not go slick underfoot when it is wet,1
+places-open-1st-1788550696588,0,places,open-1st,role2,guarded,something at the hand; an edge to hold,1
+places-open-1st-1788550696588,0,places,open-1st,role2,steady,it does not move underfoot,1
+places-open-1st-1788566299467,1,places,open-1st,role1,inGap,something stands in the middle of the gap,0
+places-open-1st-1788566299467,1,places,open-1st,role1,steady,it does not move underfoot,1
+places-open-1st-1788566299467,1,places,open-1st,role2,high,it is raised above where we stand,0
+places-open-1st-1788566299467,1,places,open-1st,role2,footed,its ends hold when the banks go soft,1
+places-open-1st-1788567324398,2,places,open-1st,role1,low,"level with where we stand, no climbing",0
+places-open-1st-1788567324398,2,places,open-1st,role1,minimal,as little built as possible,0
+places-open-1st-1788567324398,2,places,open-1st,role2,low,"level with where we stand, no climbing",0
+places-open-1st-1788567324398,2,places,open-1st,role2,steady,it does not move underfoot,1
+places-open-1st-1788568258598,3,places,open-1st,role1,grip,it does not go slick underfoot when it is wet,1
+places-open-1st-1788568258598,3,places,open-1st,role1,footed,its ends hold when the banks go soft,1
+places-open-1st-1788568258598,3,places,open-1st,role2,footed,its ends hold when the banks go soft,1
+places-open-1st-1788568258598,3,places,open-1st,role2,steady,it does not move underfoot,1
+places-open-2nd-1788550787543,0,places,open-2nd,role1,steady,it does not move underfoot,1
+places-open-2nd-1788550787543,0,places,open-2nd,role1,grip,it does not go slick underfoot when it is wet,0
+places-open-2nd-1788550787543,0,places,open-2nd,role2,guarded,something at the hand; an edge to hold,1
+places-open-2nd-1788550787543,0,places,open-2nd,role2,steady,it does not move underfoot,1
+places-open-2nd-1788566361358,1,places,open-2nd,role1,inGap,something stands in the middle of the gap,0
+places-open-2nd-1788566361358,1,places,open-2nd,role1,steady,it does not move underfoot,1
+places-open-2nd-1788566361358,1,places,open-2nd,role2,high,it is raised above where we stand,1
+places-open-2nd-1788566361358,1,places,open-2nd,role2,footed,its ends hold when the banks go soft,1
+places-open-2nd-1788567363005,2,places,open-2nd,role1,low,"level with where we stand, no climbing",0
+places-open-2nd-1788567363005,2,places,open-2nd,role1,minimal,as little built as possible,0
+places-open-2nd-1788567363005,2,places,open-2nd,role2,low,"level with where we stand, no climbing",0
+places-open-2nd-1788567363005,2,places,open-2nd,role2,steady,it does not move underfoot,1
+places-open-2nd-1788568307909,3,places,open-2nd,role1,grip,it does not go slick underfoot when it is wet,0
+places-open-2nd-1788568307909,3,places,open-2nd,role1,footed,its ends hold when the banks go soft,1
+places-open-2nd-1788568307909,3,places,open-2nd,role2,footed,its ends hold when the banks go soft,1
+places-open-2nd-1788568307909,3,places,open-2nd,role2,steady,it does not move underfoot,0
+places-r1-builder-1788550698320,0,places,r1-builder,role1,steady,it does not move underfoot,1
+places-r1-builder-1788550698320,0,places,r1-builder,role1,grip,it does not go slick underfoot when it is wet,0
+places-r1-builder-1788550698320,0,places,r1-builder,role2,guarded,something at the hand; an edge to hold,1
+places-r1-builder-1788550698320,0,places,r1-builder,role2,steady,it does not move underfoot,1
+places-r1-builder-1788566336190,1,places,r1-builder,role1,inGap,something stands in the middle of the gap,0
+places-r1-builder-1788566336190,1,places,r1-builder,role1,steady,it does not move underfoot,0
+places-r1-builder-1788566336190,1,places,r1-builder,role2,high,it is raised above where we stand,1
+places-r1-builder-1788566336190,1,places,r1-builder,role2,footed,its ends hold when the banks go soft,0
+places-r1-builder-1788567314115,2,places,r1-builder,role1,low,"level with where we stand, no climbing",0
+places-r1-builder-1788567314115,2,places,r1-builder,role1,minimal,as little built as possible,0
+places-r1-builder-1788567314115,2,places,r1-builder,role2,low,"level with where we stand, no climbing",0
+places-r1-builder-1788567314115,2,places,r1-builder,role2,steady,it does not move underfoot,0
+places-r1-builder-1788568284890,3,places,r1-builder,role1,grip,it does not go slick underfoot when it is wet,0
+places-r1-builder-1788568284890,3,places,r1-builder,role1,footed,its ends hold when the banks go soft,1
+places-r1-builder-1788568284890,3,places,r1-builder,role2,footed,its ends hold when the banks go soft,1
+places-r1-builder-1788568284890,3,places,r1-builder,role2,steady,it does not move underfoot,0
+places-r1-builder-2nd-1788550795234,0,places,r1-builder-2nd,role1,steady,it does not move underfoot,1
+places-r1-builder-2nd-1788550795234,0,places,r1-builder-2nd,role1,grip,it does not go slick underfoot when it is wet,0
+places-r1-builder-2nd-1788550795234,0,places,r1-builder-2nd,role2,guarded,something at the hand; an edge to hold,1
+places-r1-builder-2nd-1788550795234,0,places,r1-builder-2nd,role2,steady,it does not move underfoot,1
+places-r1-builder-2nd-1788566416308,1,places,r1-builder-2nd,role1,inGap,something stands in the middle of the gap,0
+places-r1-builder-2nd-1788566416308,1,places,r1-builder-2nd,role1,steady,it does not move underfoot,1
+places-r1-builder-2nd-1788566416308,1,places,r1-builder-2nd,role2,high,it is raised above where we stand,0
+places-r1-builder-2nd-1788566416308,1,places,r1-builder-2nd,role2,footed,its ends hold when the banks go soft,0
+places-r1-builder-2nd-1788567429169,2,places,r1-builder-2nd,role1,low,"level with where we stand, no climbing",1
+places-r1-builder-2nd-1788567429169,2,places,r1-builder-2nd,role1,minimal,as little built as possible,0
+places-r1-builder-2nd-1788567429169,2,places,r1-builder-2nd,role2,low,"level with where we stand, no climbing",1
+places-r1-builder-2nd-1788567429169,2,places,r1-builder-2nd,role2,steady,it does not move underfoot,1
+places-r1-builder-2nd-1788568372597,3,places,r1-builder-2nd,role1,grip,it does not go slick underfoot when it is wet,1
+places-r1-builder-2nd-1788568372597,3,places,r1-builder-2nd,role1,footed,its ends hold when the banks go soft,0
+places-r1-builder-2nd-1788568372597,3,places,r1-builder-2nd,role2,footed,its ends hold when the banks go soft,0
+places-r1-builder-2nd-1788568372597,3,places,r1-builder-2nd,role2,steady,it does not move underfoot,0
+places-r1-role2-1788550670369,0,places,r1-role2,role1,steady,it does not move underfoot,1
+places-r1-role2-1788550670369,0,places,r1-role2,role1,grip,it does not go slick underfoot when it is wet,1
+places-r1-role2-1788550670369,0,places,r1-role2,role2,guarded,something at the hand; an edge to hold,1
+places-r1-role2-1788550670369,0,places,r1-role2,role2,steady,it does not move underfoot,1
+places-r1-role2-1788566336449,1,places,r1-role2,role1,inGap,something stands in the middle of the gap,0
+places-r1-role2-1788566336449,1,places,r1-role2,role1,steady,it does not move underfoot,1
+places-r1-role2-1788566336449,1,places,r1-role2,role2,high,it is raised above where we stand,1
+places-r1-role2-1788566336449,1,places,r1-role2,role2,footed,its ends hold when the banks go soft,1
+places-r1-role2-1788567313595,2,places,r1-role2,role1,low,"level with where we stand, no climbing",0
+places-r1-role2-1788567313595,2,places,r1-role2,role1,minimal,as little built as possible,0
+places-r1-role2-1788567313595,2,places,r1-role2,role2,low,"level with where we stand, no climbing",0
+places-r1-role2-1788567313595,2,places,r1-role2,role2,steady,it does not move underfoot,0
+places-r1-role2-1788568279124,3,places,r1-role2,role1,grip,it does not go slick underfoot when it is wet,1
+places-r1-role2-1788568279124,3,places,r1-role2,role1,footed,its ends hold when the banks go soft,1
+places-r1-role2-1788568279124,3,places,r1-role2,role2,footed,its ends hold when the banks go soft,1
+places-r1-role2-1788568279124,3,places,r1-role2,role2,steady,it does not move underfoot,0
+places-r1-role2-2nd-1788550806776,0,places,r1-role2-2nd,role1,steady,it does not move underfoot,1
+places-r1-role2-2nd-1788550806776,0,places,r1-role2-2nd,role1,grip,it does not go slick underfoot when it is wet,1
+places-r1-role2-2nd-1788550806776,0,places,r1-role2-2nd,role2,guarded,something at the hand; an edge to hold,1
+places-r1-role2-2nd-1788550806776,0,places,r1-role2-2nd,role2,steady,it does not move underfoot,1
+places-r1-role2-2nd-1788566377413,1,places,r1-role2-2nd,role1,inGap,something stands in the middle of the gap,1
+places-r1-role2-2nd-1788566377413,1,places,r1-role2-2nd,role1,steady,it does not move underfoot,1
+places-r1-role2-2nd-1788566377413,1,places,r1-role2-2nd,role2,high,it is raised above where we stand,0
+places-r1-role2-2nd-1788566377413,1,places,r1-role2-2nd,role2,footed,its ends hold when the banks go soft,1
+places-r1-role2-2nd-1788567389880,2,places,r1-role2-2nd,role1,low,"level with where we stand, no climbing",0
+places-r1-role2-2nd-1788567389880,2,places,r1-role2-2nd,role1,minimal,as little built as possible,0
+places-r1-role2-2nd-1788567389880,2,places,r1-role2-2nd,role2,low,"level with where we stand, no climbing",0
+places-r1-role2-2nd-1788567389880,2,places,r1-role2-2nd,role2,steady,it does not move underfoot,0
+places-r1-role2-2nd-1788568358437,3,places,r1-role2-2nd,role1,grip,it does not go slick underfoot when it is wet,1
+places-r1-role2-2nd-1788568358437,3,places,r1-role2-2nd,role1,footed,its ends hold when the banks go soft,1
+places-r1-role2-2nd-1788568358437,3,places,r1-role2-2nd,role2,footed,its ends hold when the banks go soft,1
+places-r1-role2-2nd-1788568358437,3,places,r1-role2-2nd,role2,steady,it does not move underfoot,0
+places-r2-builder-1788550667991,0,places,r2-builder,role1,steady,it does not move underfoot,1
+places-r2-builder-1788550667991,0,places,r2-builder,role1,grip,it does not go slick underfoot when it is wet,1
+places-r2-builder-1788550667991,0,places,r2-builder,role2,guarded,something at the hand; an edge to hold,0
+places-r2-builder-1788550667991,0,places,r2-builder,role2,steady,it does not move underfoot,1
+places-r2-builder-1788566276796,1,places,r2-builder,role1,inGap,something stands in the middle of the gap,0
+places-r2-builder-1788566276796,1,places,r2-builder,role1,steady,it does not move underfoot,1
+places-r2-builder-1788566276796,1,places,r2-builder,role2,high,it is raised above where we stand,1
+places-r2-builder-1788566276796,1,places,r2-builder,role2,footed,its ends hold when the banks go soft,1
+places-r2-builder-1788567272298,2,places,r2-builder,role1,low,"level with where we stand, no climbing",1
+places-r2-builder-1788567272298,2,places,r2-builder,role1,minimal,as little built as possible,0
+places-r2-builder-1788567272298,2,places,r2-builder,role2,low,"level with where we stand, no climbing",1
+places-r2-builder-1788567272298,2,places,r2-builder,role2,steady,it does not move underfoot,0
+places-r2-builder-1788568201223,3,places,r2-builder,role1,grip,it does not go slick underfoot when it is wet,1
+places-r2-builder-1788568201223,3,places,r2-builder,role1,footed,its ends hold when the banks go soft,1
+places-r2-builder-1788568201223,3,places,r2-builder,role2,footed,its ends hold when the banks go soft,1
+places-r2-builder-1788568201223,3,places,r2-builder,role2,steady,it does not move underfoot,1
+places-r2-role1-1788550688804,0,places,r2-role1,role1,steady,it does not move underfoot,1
+places-r2-role1-1788550688804,0,places,r2-role1,role1,grip,it does not go slick underfoot when it is wet,1
+places-r2-role1-1788550688804,0,places,r2-role1,role2,guarded,something at the hand; an edge to hold,1
+places-r2-role1-1788550688804,0,places,r2-role1,role2,steady,it does not move underfoot,1
+places-r2-role1-1788566315782,1,places,r2-role1,role1,inGap,something stands in the middle of the gap,0
+places-r2-role1-1788566315782,1,places,r2-role1,role1,steady,it does not move underfoot,1
+places-r2-role1-1788566315782,1,places,r2-role1,role2,high,it is raised above where we stand,1
+places-r2-role1-1788566315782,1,places,r2-role1,role2,footed,its ends hold when the banks go soft,0
+places-r2-role1-1788567285220,2,places,r2-role1,role1,low,"level with where we stand, no climbing",0
+places-r2-role1-1788567285220,2,places,r2-role1,role1,minimal,as little built as possible,0
+places-r2-role1-1788567285220,2,places,r2-role1,role2,low,"level with where we stand, no climbing",0
+places-r2-role1-1788567285220,2,places,r2-role1,role2,steady,it does not move underfoot,0
+places-r2-role1-1788568257221,3,places,r2-role1,role1,grip,it does not go slick underfoot when it is wet,1
+places-r2-role1-1788568257221,3,places,r2-role1,role1,footed,its ends hold when the banks go soft,0
+places-r2-role1-1788568257221,3,places,r2-role1,role2,footed,its ends hold when the banks go soft,0
+places-r2-role1-1788568257221,3,places,r2-role1,role2,steady,it does not move underfoot,0
+places-together-1788550792315,0,places,together,role1,steady,it does not move underfoot,1
+places-together-1788550792315,0,places,together,role1,grip,it does not go slick underfoot when it is wet,1
+places-together-1788550792315,0,places,together,role2,guarded,something at the hand; an edge to hold,1
+places-together-1788550792315,0,places,together,role2,steady,it does not move underfoot,1
+places-together-1788566418079,1,places,together,role1,inGap,something stands in the middle of the gap,0
+places-together-1788566418079,1,places,together,role1,steady,it does not move underfoot,1
+places-together-1788566418079,1,places,together,role2,high,it is raised above where we stand,1
+places-together-1788566418079,1,places,together,role2,footed,its ends hold when the banks go soft,1
+places-together-1788567401007,2,places,together,role1,low,"level with where we stand, no climbing",1
+places-together-1788567401007,2,places,together,role1,minimal,as little built as possible,0
+places-together-1788567401007,2,places,together,role2,low,"level with where we stand, no climbing",1
+places-together-1788567401007,2,places,together,role2,steady,it does not move underfoot,1
+places-together-1788568344986,3,places,together,role1,grip,it does not go slick underfoot when it is wet,1
+places-together-1788568344986,3,places,together,role1,footed,its ends hold when the banks go soft,0
+places-together-1788568344986,3,places,together,role2,footed,its ends hold when the banks go soft,0
+places-together-1788568344986,3,places,together,role2,steady,it does not move underfoot,0
+refs-alone-1788551641252,0,refs,alone,role1,inGap,something stands in the middle of the gap,0
+refs-alone-1788551641252,0,refs,alone,role1,high,it is raised above where we stand,1
+refs-alone-1788551641252,0,refs,alone,role2,high,it is raised above where we stand,1
+refs-alone-1788551641252,0,refs,alone,role2,many,a great deal of material goes into it,0
+refs-alone-1788567234391,1,refs,alone,role1,light,it needs to hold one person only,0
+refs-alone-1788567234391,1,refs,alone,role1,sways,it moves when the wind gets up,0
+refs-alone-1788567234391,1,refs,alone,role2,minimal,as little built as possible,0
+refs-alone-1788567234391,1,refs,alone,role2,low,"level with where we stand, no climbing",1
+refs-alone-1788568183579,2,refs,alone,role1,sheltered,the weather is kept off you as you cross,0
+refs-alone-1788568183579,2,refs,alone,role1,guarded,something at the hand; an edge to hold,0
+refs-alone-1788568183579,2,refs,alone,role2,high,it is raised above where we stand,0
+refs-alone-1788568183579,2,refs,alone,role2,steady,it does not move underfoot,1
+refs-alone-1788569069641,3,refs,alone,role1,inGap,something stands in the middle of the gap,0
+refs-alone-1788569069641,3,refs,alone,role1,many,a great deal of material goes into it,0
+refs-alone-1788569069641,3,refs,alone,role2,high,it is raised above where we stand,1
+refs-alone-1788569069641,3,refs,alone,role2,light,it needs to hold one person only,1
+refs-open-1st-1788551479550,0,refs,open-1st,role1,inGap,something stands in the middle of the gap,0
+refs-open-1st-1788551479550,0,refs,open-1st,role1,high,it is raised above where we stand,1
+refs-open-1st-1788551479550,0,refs,open-1st,role2,high,it is raised above where we stand,1
+refs-open-1st-1788551479550,0,refs,open-1st,role2,many,a great deal of material goes into it,0
+refs-open-1st-1788567093931,1,refs,open-1st,role1,light,it needs to hold one person only,0
+refs-open-1st-1788567093931,1,refs,open-1st,role1,sways,it moves when the wind gets up,0
+refs-open-1st-1788567093931,1,refs,open-1st,role2,minimal,as little built as possible,0
+refs-open-1st-1788567093931,1,refs,open-1st,role2,low,"level with where we stand, no climbing",1
+refs-open-1st-1788568075813,2,refs,open-1st,role1,sheltered,the weather is kept off you as you cross,1
+refs-open-1st-1788568075813,2,refs,open-1st,role1,guarded,something at the hand; an edge to hold,0
+refs-open-1st-1788568075813,2,refs,open-1st,role2,high,it is raised above where we stand,0
+refs-open-1st-1788568075813,2,refs,open-1st,role2,steady,it does not move underfoot,1
+refs-open-1st-1788568963800,3,refs,open-1st,role1,inGap,something stands in the middle of the gap,0
+refs-open-1st-1788568963800,3,refs,open-1st,role1,many,a great deal of material goes into it,0
+refs-open-1st-1788568963800,3,refs,open-1st,role2,high,it is raised above where we stand,0
+refs-open-1st-1788568963800,3,refs,open-1st,role2,light,it needs to hold one person only,0
+refs-open-2nd-1788551613295,0,refs,open-2nd,role1,inGap,something stands in the middle of the gap,0
+refs-open-2nd-1788551613295,0,refs,open-2nd,role1,high,it is raised above where we stand,0
+refs-open-2nd-1788551613295,0,refs,open-2nd,role2,high,it is raised above where we stand,0
+refs-open-2nd-1788551613295,0,refs,open-2nd,role2,many,a great deal of material goes into it,1
+refs-open-2nd-1788567167873,1,refs,open-2nd,role1,light,it needs to hold one person only,0
+refs-open-2nd-1788567167873,1,refs,open-2nd,role1,sways,it moves when the wind gets up,0
+refs-open-2nd-1788567167873,1,refs,open-2nd,role2,minimal,as little built as possible,0
+refs-open-2nd-1788567167873,1,refs,open-2nd,role2,low,"level with where we stand, no climbing",1
+refs-open-2nd-1788568133967,2,refs,open-2nd,role1,sheltered,the weather is kept off you as you cross,1
+refs-open-2nd-1788568133967,2,refs,open-2nd,role1,guarded,something at the hand; an edge to hold,0
+refs-open-2nd-1788568133967,2,refs,open-2nd,role2,high,it is raised above where we stand,0
+refs-open-2nd-1788568133967,2,refs,open-2nd,role2,steady,it does not move underfoot,1
+refs-open-2nd-1788569001535,3,refs,open-2nd,role1,inGap,something stands in the middle of the gap,0
+refs-open-2nd-1788569001535,3,refs,open-2nd,role1,many,a great deal of material goes into it,1
+refs-open-2nd-1788569001535,3,refs,open-2nd,role2,high,it is raised above where we stand,1
+refs-open-2nd-1788569001535,3,refs,open-2nd,role2,light,it needs to hold one person only,0
+refs-r1-builder-1788551537720,0,refs,r1-builder,role1,inGap,something stands in the middle of the gap,0
+refs-r1-builder-1788551537720,0,refs,r1-builder,role1,high,it is raised above where we stand,0
+refs-r1-builder-1788551537720,0,refs,r1-builder,role2,high,it is raised above where we stand,0
+refs-r1-builder-1788551537720,0,refs,r1-builder,role2,many,a great deal of material goes into it,0
+refs-r1-builder-1788567136532,1,refs,r1-builder,role1,light,it needs to hold one person only,0
+refs-r1-builder-1788567136532,1,refs,r1-builder,role1,sways,it moves when the wind gets up,0
+refs-r1-builder-1788567136532,1,refs,r1-builder,role2,minimal,as little built as possible,0
+refs-r1-builder-1788567136532,1,refs,r1-builder,role2,low,"level with where we stand, no climbing",1
+refs-r1-builder-1788568083392,2,refs,r1-builder,role1,sheltered,the weather is kept off you as you cross,1
+refs-r1-builder-1788568083392,2,refs,r1-builder,role1,guarded,something at the hand; an edge to hold,0
+refs-r1-builder-1788568083392,2,refs,r1-builder,role2,high,it is raised above where we stand,1
+refs-r1-builder-1788568083392,2,refs,r1-builder,role2,steady,it does not move underfoot,1
+refs-r1-builder-1788569012117,3,refs,r1-builder,role1,inGap,something stands in the middle of the gap,0
+refs-r1-builder-1788569012117,3,refs,r1-builder,role1,many,a great deal of material goes into it,0
+refs-r1-builder-1788569012117,3,refs,r1-builder,role2,high,it is raised above where we stand,1
+refs-r1-builder-1788569012117,3,refs,r1-builder,role2,light,it needs to hold one person only,0
+refs-r1-builder-2nd-1788551680267,0,refs,r1-builder-2nd,role1,inGap,something stands in the middle of the gap,1
+refs-r1-builder-2nd-1788551680267,0,refs,r1-builder-2nd,role1,high,it is raised above where we stand,1
+refs-r1-builder-2nd-1788551680267,0,refs,r1-builder-2nd,role2,high,it is raised above where we stand,1
+refs-r1-builder-2nd-1788551680267,0,refs,r1-builder-2nd,role2,many,a great deal of material goes into it,1
+refs-r1-builder-2nd-1788567181299,1,refs,r1-builder-2nd,role1,light,it needs to hold one person only,0
+refs-r1-builder-2nd-1788567181299,1,refs,r1-builder-2nd,role1,sways,it moves when the wind gets up,0
+refs-r1-builder-2nd-1788567181299,1,refs,r1-builder-2nd,role2,minimal,as little built as possible,0
+refs-r1-builder-2nd-1788567181299,1,refs,r1-builder-2nd,role2,low,"level with where we stand, no climbing",1
+refs-r1-builder-2nd-1788568174691,2,refs,r1-builder-2nd,role1,sheltered,the weather is kept off you as you cross,1
+refs-r1-builder-2nd-1788568174691,2,refs,r1-builder-2nd,role1,guarded,something at the hand; an edge to hold,1
+refs-r1-builder-2nd-1788568174691,2,refs,r1-builder-2nd,role2,high,it is raised above where we stand,1
+refs-r1-builder-2nd-1788568174691,2,refs,r1-builder-2nd,role2,steady,it does not move underfoot,1
+refs-r1-builder-2nd-1788569107325,3,refs,r1-builder-2nd,role1,inGap,something stands in the middle of the gap,1
+refs-r1-builder-2nd-1788569107325,3,refs,r1-builder-2nd,role1,many,a great deal of material goes into it,1
+refs-r1-builder-2nd-1788569107325,3,refs,r1-builder-2nd,role2,high,it is raised above where we stand,1
+refs-r1-builder-2nd-1788569107325,3,refs,r1-builder-2nd,role2,light,it needs to hold one person only,0
+refs-r1-role2-1788551543142,0,refs,r1-role2,role1,inGap,something stands in the middle of the gap,0
+refs-r1-role2-1788551543142,0,refs,r1-role2,role1,high,it is raised above where we stand,0
+refs-r1-role2-1788551543142,0,refs,r1-role2,role2,high,it is raised above where we stand,0
+refs-r1-role2-1788551543142,0,refs,r1-role2,role2,many,a great deal of material goes into it,1
+refs-r1-role2-1788567137435,1,refs,r1-role2,role1,light,it needs to hold one person only,0
+refs-r1-role2-1788567137435,1,refs,r1-role2,role1,sways,it moves when the wind gets up,0
+refs-r1-role2-1788567137435,1,refs,r1-role2,role2,minimal,as little built as possible,0
+refs-r1-role2-1788567137435,1,refs,r1-role2,role2,low,"level with where we stand, no climbing",1
+refs-r1-role2-1788568067163,2,refs,r1-role2,role1,sheltered,the weather is kept off you as you cross,0
+refs-r1-role2-1788568067163,2,refs,r1-role2,role1,guarded,something at the hand; an edge to hold,0
+refs-r1-role2-1788568067163,2,refs,r1-role2,role2,high,it is raised above where we stand,0
+refs-r1-role2-1788568067163,2,refs,r1-role2,role2,steady,it does not move underfoot,0
+refs-r1-role2-1788568982058,3,refs,r1-role2,role1,inGap,something stands in the middle of the gap,0
+refs-r1-role2-1788568982058,3,refs,r1-role2,role1,many,a great deal of material goes into it,0
+refs-r1-role2-1788568982058,3,refs,r1-role2,role2,high,it is raised above where we stand,1
+refs-r1-role2-1788568982058,3,refs,r1-role2,role2,light,it needs to hold one person only,0
+refs-r1-role2-2nd-1788551604532,0,refs,r1-role2-2nd,role1,inGap,something stands in the middle of the gap,0
+refs-r1-role2-2nd-1788551604532,0,refs,r1-role2-2nd,role1,high,it is raised above where we stand,0
+refs-r1-role2-2nd-1788551604532,0,refs,r1-role2-2nd,role2,high,it is raised above where we stand,0
+refs-r1-role2-2nd-1788551604532,0,refs,r1-role2-2nd,role2,many,a great deal of material goes into it,0
+refs-r1-role2-2nd-1788567198818,1,refs,r1-role2-2nd,role1,light,it needs to hold one person only,0
+refs-r1-role2-2nd-1788567198818,1,refs,r1-role2-2nd,role1,sways,it moves when the wind gets up,0
+refs-r1-role2-2nd-1788567198818,1,refs,r1-role2-2nd,role2,minimal,as little built as possible,0
+refs-r1-role2-2nd-1788567198818,1,refs,r1-role2-2nd,role2,low,"level with where we stand, no climbing",1
+refs-r1-role2-2nd-1788568163998,2,refs,r1-role2-2nd,role1,sheltered,the weather is kept off you as you cross,1
+refs-r1-role2-2nd-1788568163998,2,refs,r1-role2-2nd,role1,guarded,something at the hand; an edge to hold,1
+refs-r1-role2-2nd-1788568163998,2,refs,r1-role2-2nd,role2,high,it is raised above where we stand,0
+refs-r1-role2-2nd-1788568163998,2,refs,r1-role2-2nd,role2,steady,it does not move underfoot,0
+refs-r1-role2-2nd-1788569061301,3,refs,r1-role2-2nd,role1,inGap,something stands in the middle of the gap,0
+refs-r1-role2-2nd-1788569061301,3,refs,r1-role2-2nd,role1,many,a great deal of material goes into it,1
+refs-r1-role2-2nd-1788569061301,3,refs,r1-role2-2nd,role2,high,it is raised above where we stand,1
+refs-r1-role2-2nd-1788569061301,3,refs,r1-role2-2nd,role2,light,it needs to hold one person only,0
+refs-r2-builder-1788551497479,0,refs,r2-builder,role1,inGap,something stands in the middle of the gap,0
+refs-r2-builder-1788551497479,0,refs,r2-builder,role1,high,it is raised above where we stand,0
+refs-r2-builder-1788551497479,0,refs,r2-builder,role2,high,it is raised above where we stand,0
+refs-r2-builder-1788551497479,0,refs,r2-builder,role2,many,a great deal of material goes into it,0
+refs-r2-builder-1788567066265,1,refs,r2-builder,role1,light,it needs to hold one person only,0
+refs-r2-builder-1788567066265,1,refs,r2-builder,role1,sways,it moves when the wind gets up,0
+refs-r2-builder-1788567066265,1,refs,r2-builder,role2,minimal,as little built as possible,0
+refs-r2-builder-1788567066265,1,refs,r2-builder,role2,low,"level with where we stand, no climbing",1
+refs-r2-builder-1788568029270,2,refs,r2-builder,role1,sheltered,the weather is kept off you as you cross,0
+refs-r2-builder-1788568029270,2,refs,r2-builder,role1,guarded,something at the hand; an edge to hold,0
+refs-r2-builder-1788568029270,2,refs,r2-builder,role2,high,it is raised above where we stand,1
+refs-r2-builder-1788568029270,2,refs,r2-builder,role2,steady,it does not move underfoot,0
+refs-r2-builder-1788568885872,3,refs,r2-builder,role1,inGap,something stands in the middle of the gap,0
+refs-r2-builder-1788568885872,3,refs,r2-builder,role1,many,a great deal of material goes into it,0
+refs-r2-builder-1788568885872,3,refs,r2-builder,role2,high,it is raised above where we stand,0
+refs-r2-builder-1788568885872,3,refs,r2-builder,role2,light,it needs to hold one person only,1
+refs-r2-role1-1788551534976,0,refs,r2-role1,role1,inGap,something stands in the middle of the gap,0
+refs-r2-role1-1788551534976,0,refs,r2-role1,role1,high,it is raised above where we stand,1
+refs-r2-role1-1788551534976,0,refs,r2-role1,role2,high,it is raised above where we stand,1
+refs-r2-role1-1788551534976,0,refs,r2-role1,role2,many,a great deal of material goes into it,0
+refs-r2-role1-1788567094321,1,refs,r2-role1,role1,light,it needs to hold one person only,0
+refs-r2-role1-1788567094321,1,refs,r2-role1,role1,sways,it moves when the wind gets up,0
+refs-r2-role1-1788567094321,1,refs,r2-role1,role2,minimal,as little built as possible,0
+refs-r2-role1-1788567094321,1,refs,r2-role1,role2,low,"level with where we stand, no climbing",1
+refs-r2-role1-1788568032058,2,refs,r2-role1,role1,sheltered,the weather is kept off you as you cross,1
+refs-r2-role1-1788568032058,2,refs,r2-role1,role1,guarded,something at the hand; an edge to hold,0
+refs-r2-role1-1788568032058,2,refs,r2-role1,role2,high,it is raised above where we stand,0
+refs-r2-role1-1788568032058,2,refs,r2-role1,role2,steady,it does not move underfoot,0
+refs-r2-role1-1788568979932,3,refs,r2-role1,role1,inGap,something stands in the middle of the gap,0
+refs-r2-role1-1788568979932,3,refs,r2-role1,role1,many,a great deal of material goes into it,0
+refs-r2-role1-1788568979932,3,refs,r2-role1,role2,high,it is raised above where we stand,1
+refs-r2-role1-1788568979932,3,refs,r2-role1,role2,light,it needs to hold one person only,1
+refs-together-1788551622614,0,refs,together,role1,inGap,something stands in the middle of the gap,0
+refs-together-1788551622614,0,refs,together,role1,high,it is raised above where we stand,0
+refs-together-1788551622614,0,refs,together,role2,high,it is raised above where we stand,0
+refs-together-1788551622614,0,refs,together,role2,many,a great deal of material goes into it,0
+refs-together-1788567214342,1,refs,together,role1,light,it needs to hold one person only,0
+refs-together-1788567214342,1,refs,together,role1,sways,it moves when the wind gets up,0
+refs-together-1788567214342,1,refs,together,role2,minimal,as little built as possible,0
+refs-together-1788567214342,1,refs,together,role2,low,"level with where we stand, no climbing",1
+refs-together-1788568156377,2,refs,together,role1,sheltered,the weather is kept off you as you cross,1
+refs-together-1788568156377,2,refs,together,role1,guarded,something at the hand; an edge to hold,0
+refs-together-1788568156377,2,refs,together,role2,high,it is raised above where we stand,0
+refs-together-1788568156377,2,refs,together,role2,steady,it does not move underfoot,1
+refs-together-1788569067966,3,refs,together,role1,inGap,something stands in the middle of the gap,0
+refs-together-1788569067966,3,refs,together,role1,many,a great deal of material goes into it,0
+refs-together-1788569067966,3,refs,together,role2,high,it is raised above where we stand,0
+refs-together-1788569067966,3,refs,together,role2,light,it needs to hold one person only,1
