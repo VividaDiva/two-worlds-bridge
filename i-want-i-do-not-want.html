@@ -715,6 +715,19 @@
   .took i.added{color:var(--roleA-ink); border-color:color-mix(in srgb,var(--roleA) 38%,transparent);
     border-style:dashed}
   .turn.b .took, .turn.b .meant-plain{justify-content:flex-end}
+
+  /* Role 3 is a builder and a third person in the room. Its sentence gets the
+     same weight as theirs; what it heard is marked key by key the way theirs
+     is; what it did about it follows, rather than leading. */
+  .ai .bub.m{
+    background:color-mix(in srgb, var(--signal) 9%, var(--panel));
+    border:1px solid color-mix(in srgb, var(--signal) 22%, transparent);
+    border-radius:12px; padding:9px 12px 10px; margin:3px 0 6px;
+  }
+  .ai .bub.m .body{font-family:var(--read); font-size:15px; line-height:1.55; color:var(--ink)}
+  .ai .took{margin:0 0 7px; font-size:9px}
+  .ai .took i, .ai .took .lbl{font-size:inherit}
+  .ai .act{color:var(--muted); font-size:13px; line-height:1.5}
   .turn.b .reading{border-left:none; border-right:2px solid var(--line); padding:0 7px 0 0; text-align:right}
   .turn.b .reading.off{border-right-color:var(--fault)}
   .turn.confer .bub{opacity:.92; border:1px dashed color-mix(in srgb,var(--ink) 30%,transparent)}
@@ -876,6 +889,14 @@
 <section class="controls">
   <div class="rail">
       <div class="rail-row"><span class="lbl">Argument</span><div class="scen" id="scen"></div></div>
+      <div class="rail-row goals"><span class="lbl">They need</span>
+      <div class="goalline">
+      <span class="g a"><b>Role 1</b> a single log across the stream
+        <em id="actA">may only ask</em><i class="hit no" id="hitA">not built</i></span>
+      <span class="g b"><b>Role 2</b> a single log across the cleft
+        <em id="actB">may only refuse</em><i class="hit no" id="hitB">not built</i></span>
+      </div>
+      </div>
       <div class="rail-row"><span class="lbl">Case</span>
 
     <div class="cases" id="cases">
@@ -890,12 +911,6 @@
 
 <main class="app">
   <section class="stage">
-      <div class="goalline">
-      <span class="g a"><b>Role 1</b> a single log across the stream
-        <em id="actA">may only ask</em><i class="hit no" id="hitA">not built</i></span>
-      <span class="g b"><b>Role 2</b> a single log across the cleft
-        <em id="actB">may only refuse</em><i class="hit no" id="hitB">not built</i></span>
-      </div>
     <div class="views">
       <div class="tabrow" role="tablist" aria-label="What to show">
       <button class="vtab" data-v="scene" role="tab" aria-selected="true">What was built</button>
@@ -2289,9 +2304,10 @@ function pushBuild(before, after, best, role, drifted, seenBefore, c, taken, mea
   const missed = (meant || []).filter(f => !(taken || []).includes(f));
   const read = !taken ? "" : !taken.length
     ? `<p class="mread off">There is nothing in that it knows how to want.</p>`
-    : `<p class="mread${missed.length ? " off" : ""}">It takes that to be about
-        <b>${taken.map(f => FEATLABEL[f] || f).join(" and ")}</b>${
-        missed.length ? `, and does not catch ${missed.map(f => FEATLABEL[f] || f).join(" or ")}` : ""}.</p>`;
+    : `<p class="took"><span class="lbl">it heard</span><span class="keys">${
+        taken.map(f => `<i class="kept">${FEATLABEL[f] || f}</i>`).join("")}${
+        missed.map(f => `<i class="lost" title="not heard">${FEATLABEL[f] || f}</i>`).join("")
+      }</span></p>`;
   // What it understood, then what it did about it. The name of the thing is a
   // caption on the diagram, not the headline: naming a structure is precisely
   // what neither of the other two is allowed to do, and having the builder
@@ -2300,12 +2316,14 @@ function pushBuild(before, after, best, role, drifted, seenBefore, c, taken, mea
   const act = solo !== null ? solo
     : changed ? action(before, after, c.matches, (why && why.wasMatches) || 0)
               : stoodStill(after, taken, why);
-  el.innerHTML = `<span class="who">the builder</span>
+  const spoke = (why && why.said) || "";
+  el.innerHTML = `<span class="who">Role 3 &middot; <b class="persona">the builder</b></span>
+    ${spoke ? `<div class="bub m"><span class="body">${spoke}</span></div>` : ""}
     ${read}
     <div class="did">
       ${after ? miniDiff(before, after, c.world) : ""}
       <div class="didtext">
-        <p class="act ${solo && drifted ? "drift" : ""}">${(why && why.said) || act}</p>
+        <p class="act ${solo && drifted ? "drift" : ""}">${spoke ? act : (act || "")}</p>
         <span class="std">${after ? NAME(after).toLowerCase() : "nothing it can make"} &nbsp;·&nbsp; ${c.matches} matches</span>
       </div>
     </div>
