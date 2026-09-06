@@ -3,7 +3,7 @@
 // than queried. The CSVs are for counting; this is for looking at what was
 // actually said and where it went wrong.
 import fs from "node:fs";
-import { FEATURES } from "./engine.mjs";
+import { FEATURES, propsOf, AXES, KIT } from "./engine.mjs";
 
 const inDir = process.argv[2] || "/tmp/allruns";
 const out = process.argv[3] || "../export/conversations.html";
@@ -19,6 +19,11 @@ const LABEL = {
 const ARG = { places:"Two places", loads:"Two loads", agreed:"Already agreed",
               pairs:"Two each", refs:"Two references" };
 
+const shapeOf = b => !b ? null
+  : b.split("-").length === AXES.length
+    ? Object.fromEntries(b.split("-").map((v, i) => [AXES[i], v]))
+    : (KIT.find(e => e.id === b) || {}).shape || null;
+
 const runs = fs.readdirSync(inDir).filter(f => f.endsWith(".json")).map(f => {
   const s = JSON.parse(fs.readFileSync(`${inDir}/${f}`, "utf8"));
   const m = s.meta;
@@ -28,6 +33,9 @@ const runs = fs.readdirSync(inDir).filter(f => f.endsWith(".json")).map(f => {
     who: { 1: m.cast?.A, 2: m.cast?.B },
     built: s.outcome?.name, ground: s.outcome?.ground,
     builtB: s.outcome?.solo ? s.outcome.nameB : null,
+    // what the crossing actually is, so the page can say which needs it served
+    props: shapeOf(s.outcome?.built) ? propsOf(shapeOf(s.outcome.built)) : [],
+    propsB: s.outcome?.solo && shapeOf(s.outcome.builtB) ? propsOf(shapeOf(s.outcome.builtB)) : null,
     turns: s.transcript.map(t => t.who === "machine"
       ? { r: 0, say: t.say || "", now: t.text || "", changed: !!t.changed }
       : { r: t.who === "A" ? 1 : 2, p: t.persona || "", say: t.text || "",
@@ -78,7 +86,18 @@ select{font-size:12px;padding:6px 9px;border:1px solid var(--line);border-radius
 button.nav{font-size:12px;padding:6px 11px;border:1px solid var(--line);border-radius:7px;
   background:var(--panel);color:var(--ink);cursor:pointer}
 button.nav:hover{border-color:var(--ink-3)}
-.setup{border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:30px;background:var(--panel)}
+.result{border:1px solid var(--line);border-radius:12px;padding:18px 20px 16px;margin:0 0 14px;background:var(--panel)}
+.result .stood{font-size:24px;line-height:1.3;font-weight:500;margin:5px 0 3px;letter-spacing:-.01em}
+.result .over{font-size:13px;color:var(--ink-3);margin-bottom:16px}
+.score{display:grid;grid-template-columns:1fr 1fr;gap:16px;border-top:1px solid var(--line);padding-top:14px}
+@media(max-width:640px){.score{grid-template-columns:1fr}}
+.score .tally{font-size:12.5px;color:var(--ink-2);margin:3px 0 6px}
+.score .tally b{font-weight:500;font-size:15px}
+.need{display:block;font-size:13px;line-height:1.5;margin:2px 0;padding-left:17px;position:relative}
+.need::before{position:absolute;left:0;top:0;font-family:"IBM Plex Mono",monospace;font-size:11px}
+.need.y{color:var(--ink-2)} .need.y::before{content:"✓";color:var(--hit)}
+.need.n{color:var(--ink-3)} .need.n::before{content:"✕";color:var(--miss)}
+.setup{border:1px solid var(--line);border-radius:12px;padding:15px 18px;margin-bottom:30px}
 .setup .row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 @media(max-width:640px){.setup .row{grid-template-columns:1fr}}
 .who1{color:var(--a)} .who2{color:var(--b)} .whom{color:var(--m)}
@@ -122,7 +141,6 @@ sentence was generated at run time.</p>
 <div class="bar">
   <select id="arg"></select><select id="cs"></select><select id="cast"></select>
   <button class="nav" id="prev">&larr;</button><button class="nav" id="next">&rarr;</button>
-  <span class="k" id="count"></span>
 </div>
 <h2 id="title"></h2><div id="out"></div>
 <p class="legend" id="legend"></p>
@@ -168,8 +186,7 @@ function render(){
     const sit = two ? two.map(p => \`<b>\${esc(p.who)}</b> — \${esc(p.situation)}\`).join("<br>")
                     : esc(w.situation || "");
     return \`<div><div class="k who\${n}">Role \${n}</div>
-      <div class="sit">\${sit}</div>
-      <div class="needs">needs <b>\${(w.needs||[]).map(k=>esc(F(k))).join("</b>, <b>")}</b></div></div>\`;
+      <div class="sit">\${sit}</div></div>\`;
   };
   const turns = r.turns.map(t => {
     if (t.r === 0) return \`<div class="turn r0">
@@ -194,13 +211,25 @@ function render(){
       \${tags?\`<div class="gloss"><span class="k">read as</span><span>\${tags}</span></div>\`:""}
     </div>\`;
   }).join("");
-  o.innerHTML = \`<div class="setup"><div class="row">\${person(1)}\${person(2)}</div>
+  // The outcome goes at the top: what was built, and how much of what each of
+  // them needed it turned out to have. Then who they were, then how it went.
+  const scored = n => {
+    const w = r.who[n] || {}, ns = w.needs || [];
+    const got = (n === 2 && r.propsB) ? r.propsB : r.props;
+    const met = ns.filter(k => got.includes(k));
+    return \`<div><div class="k who\${n}">Role \${n}\${r.propsB?" · its own crossing":""}</div>
+      <div class="tally"><b>\${met.length} of \${ns.length}</b> of what it needed</div>
+      \${ns.map(k => \`<span class="need \${got.includes(k)?"y":"n"}">\${esc(F(k))}</span>\`).join("")}</div>\`;
+  };
+  o.innerHTML = \`<div class="result">
+      <div class="k">what stood at the end</div>
+      <div class="stood">\${esc(r.built||"nothing")}\${r.builtB?\` &nbsp;/&nbsp; \${esc(r.builtB)}\`:""}</div>
+      <div class="over">over \${esc(r.ground||"ground nobody described")}\${r.builtB?" · a crossing each, built in separate rooms":""}</div>
+      <div class="score">\${scored(1)}\${scored(2)}</div></div>
+    <div class="setup"><div class="row">\${person(1)}\${person(2)}</div>
       <div class="hears">Role 1 \${hears(r.see,1)}. Role 2 \${hears(r.see,2)}. Role \${r.opens} speaks first.</div></div>
-    \${turns}
-    <div class="end"><div class="k">what stood at the end</div>
-      <h3>\${esc(r.built||"nothing")}\${r.builtB?\` &nbsp;/&nbsp; \${esc(r.builtB)}\`:""}</h3>
-      <div class="stands">over \${esc(r.ground||"ground nobody described")}\${r.builtB?" · a crossing each, built in separate rooms":""}</div></div>\`;
-  $("count").textContent = r.id;
+    <div class="k" style="margin:0 0 14px">how it went</div>
+    \${turns}\`;
   $("title").innerHTML = \`\${esc(D.ARG[r.arg])} <span>&mdash; \${esc(D.LABEL[r.cs])} &mdash; cast \${r.cast + 1}</span>\`;
   const idEl = document.querySelector(".runid") || Object.assign(
     document.createElement("p"), { className: "runid" });
