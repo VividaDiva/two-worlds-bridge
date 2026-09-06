@@ -82,6 +82,66 @@
   .bar h1 em{font-style:italic; opacity:.72}
   .bar p{margin:3px 0 0; font-size:13.5px; color:var(--muted); max-width:64ch; line-height:1.45}
   .bar .pre{display:none}   /* moved into the notes at the foot of the stage */
+
+  /* ─────────────────────────────────────────────────────────────
+     The page had one heading and then three rows of controls, so a
+     reader arrived at an instrument with no idea what it was for or
+     what it had found. These give it a spine: the claim, the result,
+     the thing itself, and what it cannot say.
+     ───────────────────────────────────────────────────────────── */
+  .masthead{padding:64px 26px 42px; border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg, var(--panel) 0%, var(--surface) 100%)}
+  .mast-in{max-width:74ch; margin:0 auto}
+  .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--muted); margin:0 0 18px}
+  .masthead h1{font-family:var(--serif); font-size:clamp(42px,7vw,76px); line-height:1;
+    font-weight:400; margin:0 0 20px; letter-spacing:-.015em}
+  .masthead h1 em{font-style:italic; color:var(--muted)}
+  .standfirst{font-family:var(--read); font-size:19px; line-height:1.62;
+    color:var(--ink); margin:0 0 30px; max-width:62ch}
+  .seats{display:flex; gap:34px; flex-wrap:wrap; margin:0;
+    border-top:1px solid var(--line-soft); padding-top:18px}
+  .seats dt{font-family:var(--mono); font-size:10.5px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--muted); margin-bottom:3px}
+  .seats dd{font-family:var(--mono); font-size:13px; margin:0; color:var(--ink)}
+
+  .sec-h{max-width:74ch; margin:0 auto; padding:0 26px}
+  .sec-h .num{font-family:var(--mono); font-size:11px; letter-spacing:.16em;
+    color:var(--muted); display:block; margin-bottom:9px}
+  .sec-h h2{font-family:var(--serif); font-size:clamp(27px,3.6vw,38px); font-weight:400;
+    line-height:1.12; margin:0 0 12px; letter-spacing:-.01em}
+  .sec-sub{font-family:var(--read); font-size:16px; line-height:1.62; color:var(--muted);
+    margin:0; max-width:60ch}
+  .sec-sub .ghost{margin-left:8px; vertical-align:baseline}
+
+  .findings{padding:52px 0 46px; border-bottom:1px solid var(--line)}
+  .figs{max-width:74ch; margin:30px auto 0; padding:0 26px;
+    display:grid; grid-template-columns:repeat(3,1fr); gap:22px}
+  .figs figure{margin:0; padding-top:15px; border-top:2px solid var(--signal)}
+  .figs figure.null{border-top-color:var(--line)}
+  .figs b{font-family:var(--serif); font-size:44px; line-height:.95; display:block;
+    margin-bottom:9px; color:var(--signal); font-weight:400}
+  .figs figure.null b{color:var(--muted)}
+  .figs figcaption{font-family:var(--read); font-size:14px; line-height:1.55; color:var(--muted)}
+  .figs i{font-style:italic; color:var(--ink)}
+  .figs .p{font-family:var(--mono); font-size:11px; display:block; margin-top:6px; opacity:.8}
+  .pooled{max-width:74ch; margin:30px auto 0; padding:20px 26px 0;
+    font-family:var(--read); font-size:16.5px; line-height:1.62;
+    border-top:1px solid var(--line-soft)}
+  .pooled b{font-weight:600}
+  @media(max-width:760px){ .figs{grid-template-columns:1fr; gap:18px} }
+
+  .lead-in{padding-top:46px; padding-bottom:8px}
+
+  .closing{border-top:1px solid var(--line); margin-top:38px; padding:46px 0 76px;
+    background:var(--surface)}
+  .closing .cols{max-width:74ch; margin:26px auto 0; padding:0 26px;
+    display:grid; grid-template-columns:repeat(3,1fr); gap:26px}
+  .closing h3{font-family:var(--read); font-size:16px; font-weight:600; margin:0 0 8px;
+    line-height:1.35}
+  .closing p{font-family:var(--read); font-size:14px; line-height:1.6; color:var(--muted); margin:0}
+  .closing em{color:var(--ink); font-style:italic}
+  @media(max-width:760px){ .closing .cols{grid-template-columns:1fr} }
   .tools{display:flex; gap:7px; align-items:center; flex-wrap:wrap}
   .ghost{
     background:transparent; border:1px solid var(--line); border-radius:999px; padding:5px 13px;
@@ -92,10 +152,19 @@
   .ghost.primary:hover{opacity:.87}
   .ghost[aria-pressed="true"]{color:var(--signal); border-color:var(--signal)}
 
-  .app{display:grid; grid-template-columns:minmax(0,1.5fr) minmax(360px,1fr); flex:1; min-height:0}
-  @media (min-width:961px){ body{height:100dvh; overflow:hidden} }
-  /* short windows: let the page scroll rather than hiding the scene below the fold */
-  @media (min-width:961px) and (max-height:720px){ body{height:auto; overflow:visible} .app{min-height:720px} }
+  /* This was a fixed-height app shell — body height:100dvh, overflow hidden,
+     the instrument filling whatever was left. That works for one screen with
+     nothing above or below it, and it is why anything written around the
+     instrument collapsed it to nothing. The page is a document now and the
+     instrument is a panel in it, with a height of its own and its own scroll
+     inside. Everything within it still sizes off the panel, not the window. */
+  .app{display:grid; grid-template-columns:minmax(0,1.5fr) minmax(360px,1fr);
+       min-height:0; height:min(84dvh, 880px);
+       max-width:1500px; margin:22px auto 0; width:calc(100% - 44px);
+       border:1px solid var(--line); border-radius:14px; overflow:hidden;
+       background:var(--panel); box-shadow:var(--shadow)}
+  @media (max-width:960px){ .app{height:auto; width:100%; margin:16px 0 0;
+       border-left:0; border-right:0; border-radius:0} }
   .stage{display:flex; flex-direction:column; min-width:0; min-height:0; padding:14px 18px 12px; gap:10px; overflow-y:auto}
   .side{display:flex; flex-direction:column; min-width:0; min-height:0; border-left:1px solid var(--line); background:var(--surface)}
 
@@ -631,16 +700,49 @@
 .bar .pre{display:block; margin-top:6px; color:var(--dim); font-size:12px; max-width:62ch}
 </style>
 
-<header class="bar">
-  <div>
+<header class="masthead">
+  <div class="mast-in">
+    <p class="eyebrow">Reddy&rsquo;s conduit metaphor, run as an experiment</p>
     <h1>I Want, <em>I Do Not Want</em></h1>
-    <p>Three people and one crossing. Two of them describe what they need, one kind of sentence each. The third has to
-       build something out of it, and cannot ask them a single question.</p>
-  </div>
-  <div class="tools">
-    <button class="ghost" id="resetBtn">Start this one again</button>
+    <p class="standfirst">Three people and one crossing. Two of them describe what they need.
+      The third builds from their words alone and may ask nothing. Nobody but the builder
+      may name a part of a crossing &mdash; so a need has to be reconstructed out of what
+      it would be like to live with it, which is Reddy&rsquo;s claim exactly.</p>
+    <dl class="seats">
+      <div><dt>Role 1</dt><dd>gpt&#8209;4o</dd></div>
+      <div><dt>Role 2</dt><dd>claude&#8209;opus&#8209;5</dd></div>
+      <div><dt>Role 3, who builds</dt><dd>gemini&#8209;flash&#8209;lite</dd></div>
+    </dl>
   </div>
 </header>
+
+<section class="findings" id="findings">
+  <div class="sec-h"><span class="num">01</span><h2>What came of it</h2>
+    <p class="sec-sub">200 conversations. Five arguments, ten ways of hearing each other,
+      four casts of two. Each need is scored against its own chance floor, because the
+      arguments differ in how easy their needs are to hit by accident.</p></div>
+  <div class="figs">
+    <figure><b>+9.8</b><figcaption>points above chance for <i>already agreed</i>, where the
+      two of them want the same crossing and cannot tell. <span class="p">p&lt;0.0001</span></figcaption></figure>
+    <figure><b>+7.6</b><figcaption>for <i>two places</i>, where they cross in different
+      places and need different things of it. <span class="p">p=0.006</span></figcaption></figure>
+    <figure class="null"><b>+2.9</b><figcaption>for <i>two references</i> &mdash; each
+      gesturing at a crossing the other has never seen. The one that does not hold.
+      <span class="p">p=0.22</span></figcaption></figure>
+  </div>
+  <p class="pooled">Pooled and stratified by argument: <b>53.2%</b> of needs met against a
+    <b>48.5%</b> floor &mdash; <b>+4.7 points, p&nbsp;=&nbsp;0.0001</b>. A need reaches the
+    built crossing above chance, and by a little. Where it fails hardest is where the
+    speaker is pointing at something the listener cannot see.</p>
+</section>
+
+<section class="sec-h lead-in">
+  <span class="num">02</span><h2>The instrument</h2>
+  <p class="sec-sub">Pick an argument, a way of hearing each other, and a cast. Every
+    sentence below was generated at run time; nothing is scripted. What each of them
+    meant is asked of them afterwards and never shown to the builder.
+    <button class="ghost" id="resetBtn">Start this one again</button></p>
+</section>
 
 <main class="app">
   <section class="stage">
@@ -855,6 +957,34 @@
     </div>
   </aside>
 </main>
+
+<section class="closing">
+  <div class="sec-h"><span class="num">03</span><h2>What it cannot say</h2></div>
+  <div class="cols">
+    <div>
+      <h3>Role 2 loses a quarter of its turns</h3>
+      <p>Claude declined 230 turns of a conversation about footbridges under a &ldquo;cyber&rdquo;
+        classification, after seven retries each. Role 1 lost none. Worse, the loss tracks the
+        case &mdash; half of Role 2&rsquo;s turns in one arrangement, three per cent in another
+        &mdash; so a difference between two cases is partly a difference in how often Role 2 was
+        allowed to speak. The comparisons between arguments hold. The comparisons between
+        <em>cases</em> do not.</p>
+    </div>
+    <div>
+      <h3>The needs are an interpretation</h3>
+      <p>Each role carries a latent need written in the engine&rsquo;s own keys, never shown to
+        anybody in the run and used only to score it afterwards. Those keys are a reading of a
+        situation written in prose. A different reading moves the numbers, and they are worth
+        disagreeing with.</p>
+    </div>
+    <div>
+      <h3>No control for the model in the seat</h3>
+      <p>An earlier design swapped which model sat in which chair. The ten arrangements here do
+        not, so &ldquo;Role 1&rsquo;s needs travel better&rdquo; and &ldquo;gpt&#8209;4o&rsquo;s
+        needs travel better&rdquo; cannot yet be told apart.</p>
+    </div>
+  </div>
+</section>
 
 <script>
 (() => {
