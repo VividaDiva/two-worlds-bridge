@@ -1812,7 +1812,10 @@ const session = {
           return [r, { key, shared }];
         }))
       : null,
-    goals: LOOSE ? "loose" : "strict",
+    // TOLD runs on the loose machinery, so LOOSE is true for both and this
+    // recorded every told run as loose — the one field that tells the two sets
+    // apart, saying they were the same set.
+    goals: TOLD ? "told" : LOOSE ? "loose" : "strict",
     // Was missing, so a free-speech run and a coded one were indistinguishable
     // once written to disk — which made "which of these is the new design?"
     // unanswerable without reading the transcripts.

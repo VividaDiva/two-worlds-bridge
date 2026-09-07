@@ -1,0 +1,481 @@
+run_id,cast,argument,case,role,need,need_meaning,met
+agreed-alone-1788814120761,0,agreed,alone,role1,water,the ground between us is water,1
+agreed-alone-1788814120761,0,agreed,alone,role2,water,the ground between us is water,0
+agreed-alone-1788814134224,1,agreed,alone,role1,water,the ground between us is water,1
+agreed-alone-1788814134224,1,agreed,alone,role2,water,the ground between us is water,0
+agreed-alone-1788814160210,2,agreed,alone,role1,water,the ground between us is water,1
+agreed-alone-1788814160210,2,agreed,alone,role2,water,the ground between us is water,0
+agreed-alone-1788814165004,3,agreed,alone,role1,water,the ground between us is water,1
+agreed-alone-1788814165004,3,agreed,alone,role2,water,the ground between us is water,0
+agreed-bridge-1-1788813826918,0,agreed,bridge-1,role1,water,the ground between us is water,1
+agreed-bridge-1-1788813826918,0,agreed,bridge-1,role2,water,the ground between us is water,1
+agreed-bridge-1-1788813830722,3,agreed,bridge-1,role1,water,the ground between us is water,0
+agreed-bridge-1-1788813830722,3,agreed,bridge-1,role2,water,the ground between us is water,0
+agreed-bridge-1-1788813837744,2,agreed,bridge-1,role1,water,the ground between us is water,0
+agreed-bridge-1-1788813837744,2,agreed,bridge-1,role2,water,the ground between us is water,0
+agreed-bridge-1-1788813845890,1,agreed,bridge-1,role1,water,the ground between us is water,1
+agreed-bridge-1-1788813845890,1,agreed,bridge-1,role2,water,the ground between us is water,1
+agreed-bridge-1788813728785,0,agreed,bridge,role1,water,the ground between us is water,1
+agreed-bridge-1788813728785,0,agreed,bridge,role2,water,the ground between us is water,1
+agreed-bridge-1788813743682,2,agreed,bridge,role1,water,the ground between us is water,1
+agreed-bridge-1788813743682,2,agreed,bridge,role2,water,the ground between us is water,1
+agreed-bridge-1788813744697,1,agreed,bridge,role1,water,the ground between us is water,1
+agreed-bridge-1788813744697,1,agreed,bridge,role2,water,the ground between us is water,1
+agreed-bridge-1788813782760,3,agreed,bridge,role1,water,the ground between us is water,1
+agreed-bridge-1788813782760,3,agreed,bridge,role2,water,the ground between us is water,1
+agreed-bridge-2-1788813878223,0,agreed,bridge-2,role1,water,the ground between us is water,1
+agreed-bridge-2-1788813878223,0,agreed,bridge-2,role2,water,the ground between us is water,1
+agreed-bridge-2-1788813921881,1,agreed,bridge-2,role1,water,the ground between us is water,1
+agreed-bridge-2-1788813921881,1,agreed,bridge-2,role2,water,the ground between us is water,1
+agreed-bridge-2-1788813954070,2,agreed,bridge-2,role1,water,the ground between us is water,0
+agreed-bridge-2-1788813954070,2,agreed,bridge-2,role2,water,the ground between us is water,0
+agreed-bridge-2-1788813963949,3,agreed,bridge-2,role1,water,the ground between us is water,0
+agreed-bridge-2-1788813963949,3,agreed,bridge-2,role2,water,the ground between us is water,0
+agreed-open-1788813376237,0,agreed,open,role1,water,the ground between us is water,0
+agreed-open-1788813376237,0,agreed,open,role2,water,the ground between us is water,0
+agreed-open-1788813412502,2,agreed,open,role1,water,the ground between us is water,1
+agreed-open-1788813412502,2,agreed,open,role2,water,the ground between us is water,1
+agreed-open-1788813414306,3,agreed,open,role1,water,the ground between us is water,1
+agreed-open-1788813414306,3,agreed,open,role2,water,the ground between us is water,1
+agreed-open-1788813438841,1,agreed,open,role1,water,the ground between us is water,1
+agreed-open-1788813438841,1,agreed,open,role2,water,the ground between us is water,1
+agreed-r1-blind-1788813524692,0,agreed,r1-blind,role1,water,the ground between us is water,1
+agreed-r1-blind-1788813524692,0,agreed,r1-blind,role2,water,the ground between us is water,1
+agreed-r1-blind-1788813577958,1,agreed,r1-blind,role1,water,the ground between us is water,1
+agreed-r1-blind-1788813577958,1,agreed,r1-blind,role2,water,the ground between us is water,1
+agreed-r1-blind-1788813599602,2,agreed,r1-blind,role1,water,the ground between us is water,1
+agreed-r1-blind-1788813599602,2,agreed,r1-blind,role2,water,the ground between us is water,1
+agreed-r1-blind-1788813637474,3,agreed,r1-blind,role1,water,the ground between us is water,0
+agreed-r1-blind-1788813637474,3,agreed,r1-blind,role2,water,the ground between us is water,0
+agreed-r2-blind-1788813475824,0,agreed,r2-blind,role1,water,the ground between us is water,1
+agreed-r2-blind-1788813475824,0,agreed,r2-blind,role2,water,the ground between us is water,1
+agreed-r2-blind-1788813493948,1,agreed,r2-blind,role1,water,the ground between us is water,1
+agreed-r2-blind-1788813493948,1,agreed,r2-blind,role2,water,the ground between us is water,1
+agreed-r2-blind-1788813519117,3,agreed,r2-blind,role1,water,the ground between us is water,1
+agreed-r2-blind-1788813519117,3,agreed,r2-blind,role2,water,the ground between us is water,1
+agreed-r2-blind-1788813530141,2,agreed,r2-blind,role1,water,the ground between us is water,1
+agreed-r2-blind-1788813530141,2,agreed,r2-blind,role2,water,the ground between us is water,1
+agreed-silent-1788813956206,0,agreed,silent,role1,water,the ground between us is water,1
+agreed-silent-1788813956206,0,agreed,silent,role2,water,the ground between us is water,1
+agreed-silent-1788814004929,1,agreed,silent,role1,water,the ground between us is water,1
+agreed-silent-1788814004929,1,agreed,silent,role2,water,the ground between us is water,1
+agreed-silent-1788814033423,2,agreed,silent,role1,water,the ground between us is water,1
+agreed-silent-1788814033423,2,agreed,silent,role2,water,the ground between us is water,1
+agreed-silent-1788814049113,3,agreed,silent,role1,water,the ground between us is water,1
+agreed-silent-1788814049113,3,agreed,silent,role2,water,the ground between us is water,1
+agreed-together-1788814007901,0,agreed,together,role1,water,the ground between us is water,0
+agreed-together-1788814007901,0,agreed,together,role2,water,the ground between us is water,0
+agreed-together-1788814024824,1,agreed,together,role1,water,the ground between us is water,0
+agreed-together-1788814024824,1,agreed,together,role2,water,the ground between us is water,0
+agreed-together-1788814063559,2,agreed,together,role1,water,the ground between us is water,0
+agreed-together-1788814063559,2,agreed,together,role2,water,the ground between us is water,0
+agreed-together-1788814082568,3,agreed,together,role1,water,the ground between us is water,1
+agreed-together-1788814082568,3,agreed,together,role2,water,the ground between us is water,1
+agreed-words-1788813629539,0,agreed,words,role1,water,the ground between us is water,1
+agreed-words-1788813629539,0,agreed,words,role2,water,the ground between us is water,1
+agreed-words-1788813643154,1,agreed,words,role1,water,the ground between us is water,1
+agreed-words-1788813643154,1,agreed,words,role2,water,the ground between us is water,1
+agreed-words-1788813676266,2,agreed,words,role1,water,the ground between us is water,1
+agreed-words-1788813676266,2,agreed,words,role2,water,the ground between us is water,1
+agreed-words-1788813712052,3,agreed,words,role1,water,the ground between us is water,1
+agreed-words-1788813712052,3,agreed,words,role2,water,the ground between us is water,1
+loads-alone-1788813321330,1,loads,alone,role1,light,it needs to hold one person only,0
+loads-alone-1788813321330,1,loads,alone,role2,heavy,it needs to take loads and carts,0
+loads-alone-1788813326915,0,loads,alone,role1,light,it needs to hold one person only,0
+loads-alone-1788813326915,0,loads,alone,role2,heavy,it needs to take loads and carts,1
+loads-alone-1788813340841,3,loads,alone,role1,light,it needs to hold one person only,0
+loads-alone-1788813340841,3,loads,alone,role2,heavy,it needs to take loads and carts,0
+loads-alone-1788813360325,2,loads,alone,role1,light,it needs to hold one person only,0
+loads-alone-1788813360325,2,loads,alone,role2,heavy,it needs to take loads and carts,1
+loads-bridge-1-1788813030802,0,loads,bridge-1,role1,light,it needs to hold one person only,0
+loads-bridge-1-1788813030802,0,loads,bridge-1,role2,heavy,it needs to take loads and carts,0
+loads-bridge-1-1788813041029,1,loads,bridge-1,role1,light,it needs to hold one person only,0
+loads-bridge-1-1788813041029,1,loads,bridge-1,role2,heavy,it needs to take loads and carts,1
+loads-bridge-1-1788813053712,2,loads,bridge-1,role1,light,it needs to hold one person only,1
+loads-bridge-1-1788813053712,2,loads,bridge-1,role2,heavy,it needs to take loads and carts,1
+loads-bridge-1-1788813068194,3,loads,bridge-1,role1,light,it needs to hold one person only,0
+loads-bridge-1-1788813068194,3,loads,bridge-1,role2,heavy,it needs to take loads and carts,0
+loads-bridge-1788812946399,2,loads,bridge,role1,light,it needs to hold one person only,0
+loads-bridge-1788812946399,2,loads,bridge,role2,heavy,it needs to take loads and carts,0
+loads-bridge-1788812961538,0,loads,bridge,role1,light,it needs to hold one person only,0
+loads-bridge-1788812961538,0,loads,bridge,role2,heavy,it needs to take loads and carts,0
+loads-bridge-1788812966179,3,loads,bridge,role1,light,it needs to hold one person only,0
+loads-bridge-1788812966179,3,loads,bridge,role2,heavy,it needs to take loads and carts,0
+loads-bridge-1788812988216,1,loads,bridge,role1,light,it needs to hold one person only,0
+loads-bridge-1788812988216,1,loads,bridge,role2,heavy,it needs to take loads and carts,1
+loads-bridge-2-1788813103338,0,loads,bridge-2,role1,light,it needs to hold one person only,0
+loads-bridge-2-1788813103338,0,loads,bridge-2,role2,heavy,it needs to take loads and carts,0
+loads-bridge-2-1788813125847,1,loads,bridge-2,role1,light,it needs to hold one person only,0
+loads-bridge-2-1788813125847,1,loads,bridge-2,role2,heavy,it needs to take loads and carts,1
+loads-bridge-2-1788813129359,2,loads,bridge-2,role1,light,it needs to hold one person only,0
+loads-bridge-2-1788813129359,2,loads,bridge-2,role2,heavy,it needs to take loads and carts,1
+loads-bridge-2-1788813146551,3,loads,bridge-2,role1,light,it needs to hold one person only,0
+loads-bridge-2-1788813146551,3,loads,bridge-2,role2,heavy,it needs to take loads and carts,0
+loads-open-1788812613327,0,loads,open,role1,light,it needs to hold one person only,0
+loads-open-1788812613327,0,loads,open,role2,heavy,it needs to take loads and carts,1
+loads-open-1788812661071,1,loads,open,role1,light,it needs to hold one person only,0
+loads-open-1788812661071,1,loads,open,role2,heavy,it needs to take loads and carts,1
+loads-open-1788812685915,3,loads,open,role1,light,it needs to hold one person only,0
+loads-open-1788812685915,3,loads,open,role2,heavy,it needs to take loads and carts,1
+loads-open-1788812701487,2,loads,open,role1,light,it needs to hold one person only,0
+loads-open-1788812701487,2,loads,open,role2,heavy,it needs to take loads and carts,1
+loads-r1-blind-1788812751661,2,loads,r1-blind,role1,light,it needs to hold one person only,0
+loads-r1-blind-1788812751661,2,loads,r1-blind,role2,heavy,it needs to take loads and carts,0
+loads-r1-blind-1788812792914,1,loads,r1-blind,role1,light,it needs to hold one person only,0
+loads-r1-blind-1788812792914,1,loads,r1-blind,role2,heavy,it needs to take loads and carts,0
+loads-r1-blind-1788812819905,0,loads,r1-blind,role1,light,it needs to hold one person only,0
+loads-r1-blind-1788812819905,0,loads,r1-blind,role2,heavy,it needs to take loads and carts,1
+loads-r1-blind-1788812872720,3,loads,r1-blind,role1,light,it needs to hold one person only,0
+loads-r1-blind-1788812872720,3,loads,r1-blind,role2,heavy,it needs to take loads and carts,1
+loads-r2-blind-1788812695993,1,loads,r2-blind,role1,light,it needs to hold one person only,0
+loads-r2-blind-1788812695993,1,loads,r2-blind,role2,heavy,it needs to take loads and carts,1
+loads-r2-blind-1788812712397,0,loads,r2-blind,role1,light,it needs to hold one person only,0
+loads-r2-blind-1788812712397,0,loads,r2-blind,role2,heavy,it needs to take loads and carts,0
+loads-r2-blind-1788812759913,3,loads,r2-blind,role1,light,it needs to hold one person only,0
+loads-r2-blind-1788812759913,3,loads,r2-blind,role2,heavy,it needs to take loads and carts,1
+loads-r2-blind-1788812783307,2,loads,r2-blind,role1,light,it needs to hold one person only,0
+loads-r2-blind-1788812783307,2,loads,r2-blind,role2,heavy,it needs to take loads and carts,0
+loads-silent-1788813171177,0,loads,silent,role1,light,it needs to hold one person only,1
+loads-silent-1788813171177,0,loads,silent,role2,heavy,it needs to take loads and carts,0
+loads-silent-1788813213812,1,loads,silent,role1,light,it needs to hold one person only,0
+loads-silent-1788813213812,1,loads,silent,role2,heavy,it needs to take loads and carts,0
+loads-silent-1788813220726,2,loads,silent,role1,light,it needs to hold one person only,0
+loads-silent-1788813220726,2,loads,silent,role2,heavy,it needs to take loads and carts,0
+loads-silent-1788813228953,3,loads,silent,role1,light,it needs to hold one person only,0
+loads-silent-1788813228953,3,loads,silent,role2,heavy,it needs to take loads and carts,0
+loads-together-1788813198767,0,loads,together,role1,light,it needs to hold one person only,0
+loads-together-1788813198767,0,loads,together,role2,heavy,it needs to take loads and carts,1
+loads-together-1788813259990,2,loads,together,role1,light,it needs to hold one person only,0
+loads-together-1788813259990,2,loads,together,role2,heavy,it needs to take loads and carts,0
+loads-together-1788813270357,1,loads,together,role1,light,it needs to hold one person only,0
+loads-together-1788813270357,1,loads,together,role2,heavy,it needs to take loads and carts,0
+loads-together-1788813285439,3,loads,together,role1,light,it needs to hold one person only,0
+loads-together-1788813285439,3,loads,together,role2,heavy,it needs to take loads and carts,1
+loads-words-1788812863558,0,loads,words,role1,light,it needs to hold one person only,0
+loads-words-1788812863558,0,loads,words,role2,heavy,it needs to take loads and carts,0
+loads-words-1788812876815,1,loads,words,role1,light,it needs to hold one person only,0
+loads-words-1788812876815,1,loads,words,role2,heavy,it needs to take loads and carts,1
+loads-words-1788812884504,2,loads,words,role1,light,it needs to hold one person only,0
+loads-words-1788812884504,2,loads,words,role2,heavy,it needs to take loads and carts,1
+loads-words-1788812917479,3,loads,words,role1,light,it needs to hold one person only,0
+loads-words-1788812917479,3,loads,words,role2,heavy,it needs to take loads and carts,1
+pairs-alone-1788814913263,0,pairs,alone,role1,heavy,it needs to take loads and carts,1
+pairs-alone-1788814913263,0,pairs,alone,role1,many,a great deal of material goes into it,1
+pairs-alone-1788814913263,0,pairs,alone,role2,light,it needs to hold one person only,0
+pairs-alone-1788814913263,0,pairs,alone,role2,guarded,something at the hand; an edge to hold,1
+pairs-alone-1788814923572,1,pairs,alone,role1,heavy,it needs to take loads and carts,1
+pairs-alone-1788814923572,1,pairs,alone,role1,many,a great deal of material goes into it,1
+pairs-alone-1788814923572,1,pairs,alone,role2,light,it needs to hold one person only,0
+pairs-alone-1788814923572,1,pairs,alone,role2,guarded,something at the hand; an edge to hold,1
+pairs-alone-1788814947993,2,pairs,alone,role1,heavy,it needs to take loads and carts,1
+pairs-alone-1788814947993,2,pairs,alone,role1,many,a great deal of material goes into it,1
+pairs-alone-1788814947993,2,pairs,alone,role2,light,it needs to hold one person only,0
+pairs-alone-1788814947993,2,pairs,alone,role2,guarded,something at the hand; an edge to hold,1
+pairs-alone-1788814970044,3,pairs,alone,role1,heavy,it needs to take loads and carts,1
+pairs-alone-1788814970044,3,pairs,alone,role1,many,a great deal of material goes into it,1
+pairs-alone-1788814970044,3,pairs,alone,role2,light,it needs to hold one person only,0
+pairs-alone-1788814970044,3,pairs,alone,role2,guarded,something at the hand; an edge to hold,1
+pairs-bridge-1-1788814619254,0,pairs,bridge-1,role1,heavy,it needs to take loads and carts,1
+pairs-bridge-1-1788814619254,0,pairs,bridge-1,role1,many,a great deal of material goes into it,1
+pairs-bridge-1-1788814619254,0,pairs,bridge-1,role2,light,it needs to hold one person only,0
+pairs-bridge-1-1788814619254,0,pairs,bridge-1,role2,guarded,something at the hand; an edge to hold,1
+pairs-bridge-1-1788814626216,1,pairs,bridge-1,role1,heavy,it needs to take loads and carts,0
+pairs-bridge-1-1788814626216,1,pairs,bridge-1,role1,many,a great deal of material goes into it,1
+pairs-bridge-1-1788814626216,1,pairs,bridge-1,role2,light,it needs to hold one person only,0
+pairs-bridge-1-1788814626216,1,pairs,bridge-1,role2,guarded,something at the hand; an edge to hold,0
+pairs-bridge-1-1788814659014,2,pairs,bridge-1,role1,heavy,it needs to take loads and carts,0
+pairs-bridge-1-1788814659014,2,pairs,bridge-1,role1,many,a great deal of material goes into it,0
+pairs-bridge-1-1788814659014,2,pairs,bridge-1,role2,light,it needs to hold one person only,0
+pairs-bridge-1-1788814659014,2,pairs,bridge-1,role2,guarded,something at the hand; an edge to hold,1
+pairs-bridge-1-1788814677191,3,pairs,bridge-1,role1,heavy,it needs to take loads and carts,0
+pairs-bridge-1-1788814677191,3,pairs,bridge-1,role1,many,a great deal of material goes into it,0
+pairs-bridge-1-1788814677191,3,pairs,bridge-1,role2,light,it needs to hold one person only,0
+pairs-bridge-1-1788814677191,3,pairs,bridge-1,role2,guarded,something at the hand; an edge to hold,1
+pairs-bridge-1788814522020,0,pairs,bridge,role1,heavy,it needs to take loads and carts,0
+pairs-bridge-1788814522020,0,pairs,bridge,role1,many,a great deal of material goes into it,0
+pairs-bridge-1788814522020,0,pairs,bridge,role2,light,it needs to hold one person only,1
+pairs-bridge-1788814522020,0,pairs,bridge,role2,guarded,something at the hand; an edge to hold,1
+pairs-bridge-1788814564610,1,pairs,bridge,role1,heavy,it needs to take loads and carts,1
+pairs-bridge-1788814564610,1,pairs,bridge,role1,many,a great deal of material goes into it,1
+pairs-bridge-1788814564610,1,pairs,bridge,role2,light,it needs to hold one person only,0
+pairs-bridge-1788814564610,1,pairs,bridge,role2,guarded,something at the hand; an edge to hold,1
+pairs-bridge-1788814577309,2,pairs,bridge,role1,heavy,it needs to take loads and carts,1
+pairs-bridge-1788814577309,2,pairs,bridge,role1,many,a great deal of material goes into it,1
+pairs-bridge-1788814577309,2,pairs,bridge,role2,light,it needs to hold one person only,0
+pairs-bridge-1788814577309,2,pairs,bridge,role2,guarded,something at the hand; an edge to hold,1
+pairs-bridge-1788814602075,3,pairs,bridge,role1,heavy,it needs to take loads and carts,0
+pairs-bridge-1788814602075,3,pairs,bridge,role1,many,a great deal of material goes into it,0
+pairs-bridge-1788814602075,3,pairs,bridge,role2,light,it needs to hold one person only,0
+pairs-bridge-1788814602075,3,pairs,bridge,role2,guarded,something at the hand; an edge to hold,1
+pairs-bridge-2-1788814713174,1,pairs,bridge-2,role1,heavy,it needs to take loads and carts,0
+pairs-bridge-2-1788814713174,1,pairs,bridge-2,role1,many,a great deal of material goes into it,0
+pairs-bridge-2-1788814713174,1,pairs,bridge-2,role2,light,it needs to hold one person only,0
+pairs-bridge-2-1788814713174,1,pairs,bridge-2,role2,guarded,something at the hand; an edge to hold,1
+pairs-bridge-2-1788814724117,0,pairs,bridge-2,role1,heavy,it needs to take loads and carts,0
+pairs-bridge-2-1788814724117,0,pairs,bridge-2,role1,many,a great deal of material goes into it,0
+pairs-bridge-2-1788814724117,0,pairs,bridge-2,role2,light,it needs to hold one person only,0
+pairs-bridge-2-1788814724117,0,pairs,bridge-2,role2,guarded,something at the hand; an edge to hold,1
+pairs-bridge-2-1788814735125,2,pairs,bridge-2,role1,heavy,it needs to take loads and carts,1
+pairs-bridge-2-1788814735125,2,pairs,bridge-2,role1,many,a great deal of material goes into it,1
+pairs-bridge-2-1788814735125,2,pairs,bridge-2,role2,light,it needs to hold one person only,0
+pairs-bridge-2-1788814735125,2,pairs,bridge-2,role2,guarded,something at the hand; an edge to hold,1
+pairs-bridge-2-1788814745890,3,pairs,bridge-2,role1,heavy,it needs to take loads and carts,1
+pairs-bridge-2-1788814745890,3,pairs,bridge-2,role1,many,a great deal of material goes into it,1
+pairs-bridge-2-1788814745890,3,pairs,bridge-2,role2,light,it needs to hold one person only,0
+pairs-bridge-2-1788814745890,3,pairs,bridge-2,role2,guarded,something at the hand; an edge to hold,1
+pairs-open-1788814208062,0,pairs,open,role1,heavy,it needs to take loads and carts,1
+pairs-open-1788814208062,0,pairs,open,role1,many,a great deal of material goes into it,1
+pairs-open-1788814208062,0,pairs,open,role2,light,it needs to hold one person only,0
+pairs-open-1788814208062,0,pairs,open,role2,guarded,something at the hand; an edge to hold,1
+pairs-open-1788814234175,1,pairs,open,role1,heavy,it needs to take loads and carts,0
+pairs-open-1788814234175,1,pairs,open,role1,many,a great deal of material goes into it,0
+pairs-open-1788814234175,1,pairs,open,role2,light,it needs to hold one person only,0
+pairs-open-1788814234175,1,pairs,open,role2,guarded,something at the hand; an edge to hold,1
+pairs-open-1788814249804,2,pairs,open,role1,heavy,it needs to take loads and carts,0
+pairs-open-1788814249804,2,pairs,open,role1,many,a great deal of material goes into it,1
+pairs-open-1788814249804,2,pairs,open,role2,light,it needs to hold one person only,0
+pairs-open-1788814249804,2,pairs,open,role2,guarded,something at the hand; an edge to hold,1
+pairs-open-1788814293170,3,pairs,open,role1,heavy,it needs to take loads and carts,1
+pairs-open-1788814293170,3,pairs,open,role1,many,a great deal of material goes into it,1
+pairs-open-1788814293170,3,pairs,open,role2,light,it needs to hold one person only,0
+pairs-open-1788814293170,3,pairs,open,role2,guarded,something at the hand; an edge to hold,1
+pairs-r1-blind-1788814397416,0,pairs,r1-blind,role1,heavy,it needs to take loads and carts,1
+pairs-r1-blind-1788814397416,0,pairs,r1-blind,role1,many,a great deal of material goes into it,1
+pairs-r1-blind-1788814397416,0,pairs,r1-blind,role2,light,it needs to hold one person only,0
+pairs-r1-blind-1788814397416,0,pairs,r1-blind,role2,guarded,something at the hand; an edge to hold,0
+pairs-r1-blind-1788814411479,1,pairs,r1-blind,role1,heavy,it needs to take loads and carts,1
+pairs-r1-blind-1788814411479,1,pairs,r1-blind,role1,many,a great deal of material goes into it,1
+pairs-r1-blind-1788814411479,1,pairs,r1-blind,role2,light,it needs to hold one person only,0
+pairs-r1-blind-1788814411479,1,pairs,r1-blind,role2,guarded,something at the hand; an edge to hold,1
+pairs-r1-blind-1788814423377,3,pairs,r1-blind,role1,heavy,it needs to take loads and carts,0
+pairs-r1-blind-1788814423377,3,pairs,r1-blind,role1,many,a great deal of material goes into it,0
+pairs-r1-blind-1788814423377,3,pairs,r1-blind,role2,light,it needs to hold one person only,0
+pairs-r1-blind-1788814423377,3,pairs,r1-blind,role2,guarded,something at the hand; an edge to hold,1
+pairs-r1-blind-1788814449131,2,pairs,r1-blind,role1,heavy,it needs to take loads and carts,1
+pairs-r1-blind-1788814449131,2,pairs,r1-blind,role1,many,a great deal of material goes into it,1
+pairs-r1-blind-1788814449131,2,pairs,r1-blind,role2,light,it needs to hold one person only,0
+pairs-r1-blind-1788814449131,2,pairs,r1-blind,role2,guarded,something at the hand; an edge to hold,1
+pairs-r2-blind-1788814280321,0,pairs,r2-blind,role1,heavy,it needs to take loads and carts,1
+pairs-r2-blind-1788814280321,0,pairs,r2-blind,role1,many,a great deal of material goes into it,1
+pairs-r2-blind-1788814280321,0,pairs,r2-blind,role2,light,it needs to hold one person only,0
+pairs-r2-blind-1788814280321,0,pairs,r2-blind,role2,guarded,something at the hand; an edge to hold,1
+pairs-r2-blind-1788814317632,1,pairs,r2-blind,role1,heavy,it needs to take loads and carts,0
+pairs-r2-blind-1788814317632,1,pairs,r2-blind,role1,many,a great deal of material goes into it,0
+pairs-r2-blind-1788814317632,1,pairs,r2-blind,role2,light,it needs to hold one person only,0
+pairs-r2-blind-1788814317632,1,pairs,r2-blind,role2,guarded,something at the hand; an edge to hold,1
+pairs-r2-blind-1788814323167,3,pairs,r2-blind,role1,heavy,it needs to take loads and carts,0
+pairs-r2-blind-1788814323167,3,pairs,r2-blind,role1,many,a great deal of material goes into it,0
+pairs-r2-blind-1788814323167,3,pairs,r2-blind,role2,light,it needs to hold one person only,0
+pairs-r2-blind-1788814323167,3,pairs,r2-blind,role2,guarded,something at the hand; an edge to hold,1
+pairs-r2-blind-1788814328139,2,pairs,r2-blind,role1,heavy,it needs to take loads and carts,0
+pairs-r2-blind-1788814328139,2,pairs,r2-blind,role1,many,a great deal of material goes into it,0
+pairs-r2-blind-1788814328139,2,pairs,r2-blind,role2,light,it needs to hold one person only,0
+pairs-r2-blind-1788814328139,2,pairs,r2-blind,role2,guarded,something at the hand; an edge to hold,1
+pairs-silent-1788814766841,0,pairs,silent,role1,heavy,it needs to take loads and carts,1
+pairs-silent-1788814766841,0,pairs,silent,role1,many,a great deal of material goes into it,1
+pairs-silent-1788814766841,0,pairs,silent,role2,light,it needs to hold one person only,0
+pairs-silent-1788814766841,0,pairs,silent,role2,guarded,something at the hand; an edge to hold,1
+pairs-silent-1788814825198,1,pairs,silent,role1,heavy,it needs to take loads and carts,0
+pairs-silent-1788814825198,1,pairs,silent,role1,many,a great deal of material goes into it,0
+pairs-silent-1788814825198,1,pairs,silent,role2,light,it needs to hold one person only,1
+pairs-silent-1788814825198,1,pairs,silent,role2,guarded,something at the hand; an edge to hold,1
+pairs-silent-1788814825447,2,pairs,silent,role1,heavy,it needs to take loads and carts,0
+pairs-silent-1788814825447,2,pairs,silent,role1,many,a great deal of material goes into it,0
+pairs-silent-1788814825447,2,pairs,silent,role2,light,it needs to hold one person only,0
+pairs-silent-1788814825447,2,pairs,silent,role2,guarded,something at the hand; an edge to hold,1
+pairs-silent-1788814831783,3,pairs,silent,role1,heavy,it needs to take loads and carts,1
+pairs-silent-1788814831783,3,pairs,silent,role1,many,a great deal of material goes into it,1
+pairs-silent-1788814831783,3,pairs,silent,role2,light,it needs to hold one person only,0
+pairs-silent-1788814831783,3,pairs,silent,role2,guarded,something at the hand; an edge to hold,1
+pairs-together-1788814800364,0,pairs,together,role1,heavy,it needs to take loads and carts,0
+pairs-together-1788814800364,0,pairs,together,role1,many,a great deal of material goes into it,0
+pairs-together-1788814800364,0,pairs,together,role2,light,it needs to hold one person only,0
+pairs-together-1788814800364,0,pairs,together,role2,guarded,something at the hand; an edge to hold,0
+pairs-together-1788814840935,1,pairs,together,role1,heavy,it needs to take loads and carts,0
+pairs-together-1788814840935,1,pairs,together,role1,many,a great deal of material goes into it,1
+pairs-together-1788814840935,1,pairs,together,role2,light,it needs to hold one person only,0
+pairs-together-1788814840935,1,pairs,together,role2,guarded,something at the hand; an edge to hold,1
+pairs-together-1788814861877,2,pairs,together,role1,heavy,it needs to take loads and carts,0
+pairs-together-1788814861877,2,pairs,together,role1,many,a great deal of material goes into it,0
+pairs-together-1788814861877,2,pairs,together,role2,light,it needs to hold one person only,1
+pairs-together-1788814861877,2,pairs,together,role2,guarded,something at the hand; an edge to hold,0
+pairs-together-1788814887541,3,pairs,together,role1,heavy,it needs to take loads and carts,0
+pairs-together-1788814887541,3,pairs,together,role1,many,a great deal of material goes into it,0
+pairs-together-1788814887541,3,pairs,together,role2,light,it needs to hold one person only,1
+pairs-together-1788814887541,3,pairs,together,role2,guarded,something at the hand; an edge to hold,0
+pairs-words-1788814413535,0,pairs,words,role1,heavy,it needs to take loads and carts,0
+pairs-words-1788814413535,0,pairs,words,role1,many,a great deal of material goes into it,0
+pairs-words-1788814413535,0,pairs,words,role2,light,it needs to hold one person only,1
+pairs-words-1788814413535,0,pairs,words,role2,guarded,something at the hand; an edge to hold,1
+pairs-words-1788814477019,3,pairs,words,role1,heavy,it needs to take loads and carts,1
+pairs-words-1788814477019,3,pairs,words,role1,many,a great deal of material goes into it,1
+pairs-words-1788814477019,3,pairs,words,role2,light,it needs to hold one person only,0
+pairs-words-1788814477019,3,pairs,words,role2,guarded,something at the hand; an edge to hold,1
+pairs-words-1788814497040,1,pairs,words,role1,heavy,it needs to take loads and carts,0
+pairs-words-1788814497040,1,pairs,words,role1,many,a great deal of material goes into it,1
+pairs-words-1788814497040,1,pairs,words,role2,light,it needs to hold one person only,0
+pairs-words-1788814497040,1,pairs,words,role2,guarded,something at the hand; an edge to hold,1
+pairs-words-1788814517692,2,pairs,words,role1,heavy,it needs to take loads and carts,1
+pairs-words-1788814517692,2,pairs,words,role1,many,a great deal of material goes into it,1
+pairs-words-1788814517692,2,pairs,words,role2,light,it needs to hold one person only,0
+pairs-words-1788814517692,2,pairs,words,role2,guarded,something at the hand; an edge to hold,1
+places-alone-1788812556705,1,places,alone,role1,low,"level with where we stand, no climbing",0
+places-alone-1788812556705,1,places,alone,role1,minimal,as little built as possible,0
+places-alone-1788812556705,1,places,alone,role2,high,it is raised above where we stand,1
+places-alone-1788812556705,1,places,alone,role2,light,it needs to hold one person only,0
+places-alone-1788812586852,0,places,alone,role1,low,"level with where we stand, no climbing",1
+places-alone-1788812586852,0,places,alone,role1,minimal,as little built as possible,0
+places-alone-1788812586852,0,places,alone,role2,high,it is raised above where we stand,1
+places-alone-1788812586852,0,places,alone,role2,light,it needs to hold one person only,1
+places-alone-1788812596124,2,places,alone,role1,low,"level with where we stand, no climbing",1
+places-alone-1788812596124,2,places,alone,role1,minimal,as little built as possible,0
+places-alone-1788812596124,2,places,alone,role2,high,it is raised above where we stand,0
+places-alone-1788812596124,2,places,alone,role2,light,it needs to hold one person only,1
+places-alone-1788812602536,3,places,alone,role1,low,"level with where we stand, no climbing",0
+places-alone-1788812602536,3,places,alone,role1,minimal,as little built as possible,0
+places-alone-1788812602536,3,places,alone,role2,high,it is raised above where we stand,1
+places-alone-1788812602536,3,places,alone,role2,light,it needs to hold one person only,0
+places-bridge-1-1788812258488,2,places,bridge-1,role1,low,"level with where we stand, no climbing",0
+places-bridge-1-1788812258488,2,places,bridge-1,role1,minimal,as little built as possible,0
+places-bridge-1-1788812258488,2,places,bridge-1,role2,high,it is raised above where we stand,1
+places-bridge-1-1788812258488,2,places,bridge-1,role2,light,it needs to hold one person only,1
+places-bridge-1-1788812271077,0,places,bridge-1,role1,low,"level with where we stand, no climbing",0
+places-bridge-1-1788812271077,0,places,bridge-1,role1,minimal,as little built as possible,0
+places-bridge-1-1788812271077,0,places,bridge-1,role2,high,it is raised above where we stand,1
+places-bridge-1-1788812271077,0,places,bridge-1,role2,light,it needs to hold one person only,1
+places-bridge-1-1788812291219,1,places,bridge-1,role1,low,"level with where we stand, no climbing",0
+places-bridge-1-1788812291219,1,places,bridge-1,role1,minimal,as little built as possible,0
+places-bridge-1-1788812291219,1,places,bridge-1,role2,high,it is raised above where we stand,1
+places-bridge-1-1788812291219,1,places,bridge-1,role2,light,it needs to hold one person only,0
+places-bridge-1-1788812320249,3,places,bridge-1,role1,low,"level with where we stand, no climbing",1
+places-bridge-1-1788812320249,3,places,bridge-1,role1,minimal,as little built as possible,0
+places-bridge-1-1788812320249,3,places,bridge-1,role2,high,it is raised above where we stand,0
+places-bridge-1-1788812320249,3,places,bridge-1,role2,light,it needs to hold one person only,1
+places-bridge-1788812188021,0,places,bridge,role1,low,"level with where we stand, no climbing",0
+places-bridge-1788812188021,0,places,bridge,role1,minimal,as little built as possible,0
+places-bridge-1788812188021,0,places,bridge,role2,high,it is raised above where we stand,1
+places-bridge-1788812188021,0,places,bridge,role2,light,it needs to hold one person only,1
+places-bridge-1788812189092,1,places,bridge,role1,low,"level with where we stand, no climbing",0
+places-bridge-1788812189092,1,places,bridge,role1,minimal,as little built as possible,0
+places-bridge-1788812189092,1,places,bridge,role2,high,it is raised above where we stand,1
+places-bridge-1788812189092,1,places,bridge,role2,light,it needs to hold one person only,1
+places-bridge-1788812219597,3,places,bridge,role1,low,"level with where we stand, no climbing",0
+places-bridge-1788812219597,3,places,bridge,role1,minimal,as little built as possible,0
+places-bridge-1788812219597,3,places,bridge,role2,high,it is raised above where we stand,1
+places-bridge-1788812219597,3,places,bridge,role2,light,it needs to hold one person only,1
+places-bridge-1788812228530,2,places,bridge,role1,low,"level with where we stand, no climbing",0
+places-bridge-1788812228530,2,places,bridge,role1,minimal,as little built as possible,0
+places-bridge-1788812228530,2,places,bridge,role2,high,it is raised above where we stand,1
+places-bridge-1788812228530,2,places,bridge,role2,light,it needs to hold one person only,1
+places-bridge-2-1788812309967,0,places,bridge-2,role1,low,"level with where we stand, no climbing",0
+places-bridge-2-1788812309967,0,places,bridge-2,role1,minimal,as little built as possible,0
+places-bridge-2-1788812309967,0,places,bridge-2,role2,high,it is raised above where we stand,1
+places-bridge-2-1788812309967,0,places,bridge-2,role2,light,it needs to hold one person only,1
+places-bridge-2-1788812359579,1,places,bridge-2,role1,low,"level with where we stand, no climbing",0
+places-bridge-2-1788812359579,1,places,bridge-2,role1,minimal,as little built as possible,0
+places-bridge-2-1788812359579,1,places,bridge-2,role2,high,it is raised above where we stand,1
+places-bridge-2-1788812359579,1,places,bridge-2,role2,light,it needs to hold one person only,1
+places-bridge-2-1788812385232,2,places,bridge-2,role1,low,"level with where we stand, no climbing",0
+places-bridge-2-1788812385232,2,places,bridge-2,role1,minimal,as little built as possible,0
+places-bridge-2-1788812385232,2,places,bridge-2,role2,high,it is raised above where we stand,1
+places-bridge-2-1788812385232,2,places,bridge-2,role2,light,it needs to hold one person only,0
+places-bridge-2-1788812393105,3,places,bridge-2,role1,low,"level with where we stand, no climbing",1
+places-bridge-2-1788812393105,3,places,bridge-2,role1,minimal,as little built as possible,0
+places-bridge-2-1788812393105,3,places,bridge-2,role2,high,it is raised above where we stand,0
+places-bridge-2-1788812393105,3,places,bridge-2,role2,light,it needs to hold one person only,0
+places-open-1788811816447,0,places,open,role1,low,"level with where we stand, no climbing",1
+places-open-1788811816447,0,places,open,role1,minimal,as little built as possible,0
+places-open-1788811816447,0,places,open,role2,high,it is raised above where we stand,0
+places-open-1788811816447,0,places,open,role2,light,it needs to hold one person only,0
+places-open-1788811878921,1,places,open,role1,low,"level with where we stand, no climbing",0
+places-open-1788811878921,1,places,open,role1,minimal,as little built as possible,0
+places-open-1788811878921,1,places,open,role2,high,it is raised above where we stand,1
+places-open-1788811878921,1,places,open,role2,light,it needs to hold one person only,1
+places-open-1788811893540,3,places,open,role1,low,"level with where we stand, no climbing",1
+places-open-1788811893540,3,places,open,role1,minimal,as little built as possible,0
+places-open-1788811893540,3,places,open,role2,high,it is raised above where we stand,0
+places-open-1788811893540,3,places,open,role2,light,it needs to hold one person only,0
+places-open-1788811897508,2,places,open,role1,low,"level with where we stand, no climbing",0
+places-open-1788811897508,2,places,open,role1,minimal,as little built as possible,0
+places-open-1788811897508,2,places,open,role2,high,it is raised above where we stand,1
+places-open-1788811897508,2,places,open,role2,light,it needs to hold one person only,1
+places-r1-blind-1788811983755,0,places,r1-blind,role1,low,"level with where we stand, no climbing",0
+places-r1-blind-1788811983755,0,places,r1-blind,role1,minimal,as little built as possible,0
+places-r1-blind-1788811983755,0,places,r1-blind,role2,high,it is raised above where we stand,1
+places-r1-blind-1788811983755,0,places,r1-blind,role2,light,it needs to hold one person only,1
+places-r1-blind-1788812002641,1,places,r1-blind,role1,low,"level with where we stand, no climbing",0
+places-r1-blind-1788812002641,1,places,r1-blind,role1,minimal,as little built as possible,0
+places-r1-blind-1788812002641,1,places,r1-blind,role2,high,it is raised above where we stand,1
+places-r1-blind-1788812002641,1,places,r1-blind,role2,light,it needs to hold one person only,0
+places-r1-blind-1788812034000,2,places,r1-blind,role1,low,"level with where we stand, no climbing",1
+places-r1-blind-1788812034000,2,places,r1-blind,role1,minimal,as little built as possible,0
+places-r1-blind-1788812034000,2,places,r1-blind,role2,high,it is raised above where we stand,0
+places-r1-blind-1788812034000,2,places,r1-blind,role2,light,it needs to hold one person only,0
+places-r1-blind-1788812085786,3,places,r1-blind,role1,low,"level with where we stand, no climbing",0
+places-r1-blind-1788812085786,3,places,r1-blind,role1,minimal,as little built as possible,0
+places-r1-blind-1788812085786,3,places,r1-blind,role2,high,it is raised above where we stand,1
+places-r1-blind-1788812085786,3,places,r1-blind,role2,light,it needs to hold one person only,1
+places-r2-blind-1788811877588,0,places,r2-blind,role1,low,"level with where we stand, no climbing",0
+places-r2-blind-1788811877588,0,places,r2-blind,role1,minimal,as little built as possible,0
+places-r2-blind-1788811877588,0,places,r2-blind,role2,high,it is raised above where we stand,1
+places-r2-blind-1788811877588,0,places,r2-blind,role2,light,it needs to hold one person only,0
+places-r2-blind-1788811916424,1,places,r2-blind,role1,low,"level with where we stand, no climbing",0
+places-r2-blind-1788811916424,1,places,r2-blind,role1,minimal,as little built as possible,0
+places-r2-blind-1788811916424,1,places,r2-blind,role2,high,it is raised above where we stand,1
+places-r2-blind-1788811916424,1,places,r2-blind,role2,light,it needs to hold one person only,0
+places-r2-blind-1788811977485,2,places,r2-blind,role1,low,"level with where we stand, no climbing",1
+places-r2-blind-1788811977485,2,places,r2-blind,role1,minimal,as little built as possible,0
+places-r2-blind-1788811977485,2,places,r2-blind,role2,high,it is raised above where we stand,0
+places-r2-blind-1788811977485,2,places,r2-blind,role2,light,it needs to hold one person only,0
+places-r2-blind-1788811996057,3,places,r2-blind,role1,low,"level with where we stand, no climbing",0
+places-r2-blind-1788811996057,3,places,r2-blind,role1,minimal,as little built as possible,0
+places-r2-blind-1788811996057,3,places,r2-blind,role2,high,it is raised above where we stand,1
+places-r2-blind-1788811996057,3,places,r2-blind,role2,light,it needs to hold one person only,0
+places-silent-1788812413843,0,places,silent,role1,low,"level with where we stand, no climbing",0
+places-silent-1788812413843,0,places,silent,role1,minimal,as little built as possible,0
+places-silent-1788812413843,0,places,silent,role2,high,it is raised above where we stand,1
+places-silent-1788812413843,0,places,silent,role2,light,it needs to hold one person only,1
+places-silent-1788812424960,1,places,silent,role1,low,"level with where we stand, no climbing",1
+places-silent-1788812424960,1,places,silent,role1,minimal,as little built as possible,0
+places-silent-1788812424960,1,places,silent,role2,high,it is raised above where we stand,0
+places-silent-1788812424960,1,places,silent,role2,light,it needs to hold one person only,1
+places-silent-1788812475865,2,places,silent,role1,low,"level with where we stand, no climbing",0
+places-silent-1788812475865,2,places,silent,role1,minimal,as little built as possible,0
+places-silent-1788812475865,2,places,silent,role2,high,it is raised above where we stand,1
+places-silent-1788812475865,2,places,silent,role2,light,it needs to hold one person only,1
+places-silent-1788812488034,3,places,silent,role1,low,"level with where we stand, no climbing",0
+places-silent-1788812488034,3,places,silent,role1,minimal,as little built as possible,0
+places-silent-1788812488034,3,places,silent,role2,high,it is raised above where we stand,1
+places-silent-1788812488034,3,places,silent,role2,light,it needs to hold one person only,0
+places-together-1788812443851,0,places,together,role1,low,"level with where we stand, no climbing",1
+places-together-1788812443851,0,places,together,role1,minimal,as little built as possible,0
+places-together-1788812443851,0,places,together,role2,high,it is raised above where we stand,0
+places-together-1788812443851,0,places,together,role2,light,it needs to hold one person only,0
+places-together-1788812481119,2,places,together,role1,low,"level with where we stand, no climbing",0
+places-together-1788812481119,2,places,together,role1,minimal,as little built as possible,0
+places-together-1788812481119,2,places,together,role2,high,it is raised above where we stand,1
+places-together-1788812481119,2,places,together,role2,light,it needs to hold one person only,0
+places-together-1788812494327,1,places,together,role1,low,"level with where we stand, no climbing",0
+places-together-1788812494327,1,places,together,role1,minimal,as little built as possible,0
+places-together-1788812494327,1,places,together,role2,high,it is raised above where we stand,1
+places-together-1788812494327,1,places,together,role2,light,it needs to hold one person only,0
+places-together-1788812509663,3,places,together,role1,low,"level with where we stand, no climbing",0
+places-together-1788812509663,3,places,together,role1,minimal,as little built as possible,0
+places-together-1788812509663,3,places,together,role2,high,it is raised above where we stand,1
+places-together-1788812509663,3,places,together,role2,light,it needs to hold one person only,0
+places-words-1788812086046,0,places,words,role1,low,"level with where we stand, no climbing",0
+places-words-1788812086046,0,places,words,role1,minimal,as little built as possible,0
+places-words-1788812086046,0,places,words,role2,high,it is raised above where we stand,1
+places-words-1788812086046,0,places,words,role2,light,it needs to hold one person only,0
+places-words-1788812096307,1,places,words,role1,low,"level with where we stand, no climbing",1
+places-words-1788812096307,1,places,words,role1,minimal,as little built as possible,0
+places-words-1788812096307,1,places,words,role2,high,it is raised above where we stand,0
+places-words-1788812096307,1,places,words,role2,light,it needs to hold one person only,1
+places-words-1788812105322,2,places,words,role1,low,"level with where we stand, no climbing",0
+places-words-1788812105322,2,places,words,role1,minimal,as little built as possible,0
+places-words-1788812105322,2,places,words,role2,high,it is raised above where we stand,1
+places-words-1788812105322,2,places,words,role2,light,it needs to hold one person only,0
+places-words-1788812146175,3,places,words,role1,low,"level with where we stand, no climbing",0
+places-words-1788812146175,3,places,words,role1,minimal,as little built as possible,0
+places-words-1788812146175,3,places,words,role2,high,it is raised above where we stand,1
+places-words-1788812146175,3,places,words,role2,light,it needs to hold one person only,1
