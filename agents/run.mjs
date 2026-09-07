@@ -1347,6 +1347,11 @@ if (cfg.confer) {
   console.log(`  --- and now, one thing each, to the builder ---`);
 }
 
+// Lines actually delivered to the builder in the pact half. Counted rather than
+// read off the loop index, because a refusal or a pass burns an index without
+// putting anything in front of Role 3.
+let pactSpoken = 0;
+
 for (let i = 0; i < maxTurns; i++) {
   const role = ROLE_AT(cfg, i);
   const act = cfg[role];
@@ -1443,6 +1448,31 @@ for (let i = 0; i < maxTurns; i++) {
   if (LOOSE) { hear(cx, role, "want", heardRaw.asks); hear(cx, role, "avoid", heardRaw.refuses); }
   else hear(cx, role, act, taken);
   const before = cx.design?.id ?? null;
+
+  // In `together` the two of them settled it in the other room and go to the
+  // builder with one agreed position. It was building after each of their two
+  // lines, which put a finished crossing in front of the second speaker and
+  // turned its line into a correction of the build — the negotiation they had
+  // just finished, reopened in front of Role 3. It now hears both of them and
+  // builds once, which is what the case says on the page.
+  const holdBuild = cfg.confer && pactSpoken === 0;
+  if (holdBuild) {
+    console.log(`  ${state.turn.toString().padStart(2)} role ${role === "A" ? 1 : 2} (${player}): ${sentence}`);
+    console.log(`     meant [${turn.asserts.join(", ")}]`);
+    console.log(`     (held — the builder hears them both before it lays anything)`);
+    transcript.push({ turn: state.turn, who: role, player, act, text: sentence, persona: PERSONA,
+                      meant: turn.asserts, taken, byWord, byModel,
+                      caught: turn.asserts.length > 0 && turn.asserts.every(f => taken.includes(f)) && taken.length > 0,
+                      anyOf: turn.asserts.some(f => taken.includes(f)), done: !!turn.done,
+                      tookThemToMean: (turn.tookThemToMean || []).filter(f => f in FEATURES),
+                      meantPlainly: turn.meantPlainly || "",
+                      theyActuallyMeant: state.lastMeant[role === "A" ? "B" : "A"] || [],
+                      invented: taken.filter(f => !turn.asserts.includes(f)),
+                      asserts: turn.asserts, attempts, built: before, changed: false, held: true });
+    pactSpoken++;
+    continue;                        // said/lastMeant/turn were already advanced above
+  }
+
   build(cx);                         // always scored, so the two can be compared
   const byRule = cx.design.id;
   if (BUILDER === "model") {
@@ -1542,8 +1572,9 @@ for (let i = 0; i < maxTurns; i++) {
   // In `together` they get one line each to the builder and then they are done:
   // the position was settled in the other room, and anything further would be
   // them reopening it on their own account.
-  if (cfg.confer && i >= 1) {
-    state.endedBy = "both had their one line after conferring";
+  pactSpoken++;
+  if (cfg.confer && pactSpoken >= 2) {
+    state.endedBy = "both had their one line after conferring, and it built once from the two";
     break;
   }
   if (state.done.A && state.done.B) { state.endedBy = "both let it rest"; break; }
