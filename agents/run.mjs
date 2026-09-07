@@ -778,11 +778,12 @@ function userPrompt({ standing, dialogue = [], hears, turn, echo = false }) {
     lines.push(`\nThe one who builds is NOT here and cannot hear any of this. Nothing is being built yet.`
       + ` You are talking to the other person — find out what they are up against, and work out between you`
       + ` what you can both live with. Argue if you need to. You will get one thing to say to the builder`
-      + ` afterwards, and only one, so it had better be the thing you both meant.`);
+      + ` afterwards — one of you carries it, one statement, and it has to hold both of your positions.`);
   if (PHASE === "pact")
-    lines.push(`\nYou have talked it over and you are agreed. The one who builds is here now and this is the`
-      + ` one thing they will hear from you. Say the position the two of you arrived at — not your own wish`
-      + ` back again, the agreed one, including the part you took on from them.`);
+    lines.push(`\nYou have talked it over and you are agreed, and you are the one carrying it. The one who`
+      + ` builds is here now, and this is the only thing it will hear from either of you — the other one`
+      + ` does not speak. Say the position the two of you arrived at, both halves of it: not your own wish`
+      + ` back again, but the agreed one, including the part you took on from them.`);
   lines.push(`\nSay one more thing.`);
   return lines.join("\n");
 }
@@ -1344,7 +1345,7 @@ if (cfg.confer) {
     console.log(`  ${String(state.turn).padStart(2)} role ${role === "A" ? 1 : 2} (${player}) · to each other: ${sentence}`);
   }
   PHASE = "pact";
-  console.log(`  --- and now, one thing each, to the builder ---`);
+  console.log(`  --- and now, one of them takes it to the builder ---`);
 }
 
 // Lines actually delivered to the builder in the pact half. Counted rather than
@@ -1352,8 +1353,19 @@ if (cfg.confer) {
 // putting anything in front of Role 3.
 let pactSpoken = 0;
 
+// After conferring, ONE statement reaches the builder. Two lines — one each — was
+// still two people talking at Role 3 after they had already settled it between
+// themselves, which is the thing this case exists to avoid.
+//
+// Who carries it alternates with the cast. Always Role 1 would hand Role 1's
+// framing a standing advantage on the one case whose whole question is how much
+// of a joint position survives one person saying it.
+const PACT_LINES = cfg.confer ? 1 : Infinity;
+const CARRIES = cfg.confer ? (PAIR % 2 === 0 ? "A" : "B") : null;
+if (CARRIES) console.log(`  (role ${CARRIES === "A" ? 1 : 2} carries it to the builder)`);
+
 for (let i = 0; i < maxTurns; i++) {
-  const role = ROLE_AT(cfg, i);
+  const role = CARRIES && i === 0 ? CARRIES : ROLE_AT(cfg, i);
   const act = cfg[role];
   const swap = LOOSE && cfg.swapPlayers;
   const player = (role === "A") === !swap ? playerA : playerB;
@@ -1455,7 +1467,7 @@ for (let i = 0; i < maxTurns; i++) {
   // turned its line into a correction of the build — the negotiation they had
   // just finished, reopened in front of Role 3. It now hears both of them and
   // builds once, which is what the case says on the page.
-  const holdBuild = cfg.confer && pactSpoken === 0;
+  const holdBuild = cfg.confer && pactSpoken < PACT_LINES - 1;
   if (holdBuild) {
     console.log(`  ${state.turn.toString().padStart(2)} role ${role === "A" ? 1 : 2} (${player}): ${sentence}`);
     console.log(`     meant [${turn.asserts.join(", ")}]`);
@@ -1573,8 +1585,8 @@ for (let i = 0; i < maxTurns; i++) {
   // the position was settled in the other room, and anything further would be
   // them reopening it on their own account.
   pactSpoken++;
-  if (cfg.confer && pactSpoken >= 2) {
-    state.endedBy = "both had their one line after conferring, and it built once from the two";
+  if (cfg.confer && pactSpoken >= PACT_LINES) {
+    state.endedBy = "they settled it between themselves and one of them carried it to the builder";
     break;
   }
   if (state.done.A && state.done.B) { state.endedBy = "both let it rest"; break; }
