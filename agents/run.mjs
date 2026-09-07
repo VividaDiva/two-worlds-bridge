@@ -65,184 +65,162 @@ const SCENARIOS = {
 // and no idea what the thing should be. What they need is theirs to work out by
 // talking, which is the only condition under which "what did they arrive at" is
 // a question with an answer.
+// Each role gets a life and no goal. The need is read off the life afterwards
+// and never shown to anybody — it exists so the run can be scored at all.
+//
+// The needs were rebuilt after an audit of the first set found three things
+// wrong with them, all of which made rows uncomparable:
+//
+//   · They were not equally hard. Every need is satisfied by some share of the
+//     384 crossings the kit can build, and that share ran from 0.3% (minimal,
+//     which one single structure has) to 67% (steady). A role given minimal was
+//     set up to fail; a role given steady got it two thirds of the time without
+//     anybody saying a word. minimal is gone from the goals entirely.
+//
+//   · The two roles inside a cast were not matched. Four of twenty handed one
+//     of them a fifteen-point head start before a word was said, so "role 1 was
+//     served less than role 2" was measuring the goal and not the talk. Every
+//     pair below is within five points of its partner.
+//
+//   · Fifteen of twenty casts had no disagreement in them at all: there was a
+//     crossing in the kit that fully satisfied both. Those are coordination
+//     problems with a right answer, not arguments, and their ceiling is 100%
+//     where a real argument's is 75%. Every cast below except `agreed` now
+//     carries exactly one impossible pair, so the ceiling is 3 of 4 everywhere.
+//
+// `agreed` is the deliberate exception: both roles hold the same need, there is
+// nothing to disagree about, and its ceiling is 100% on purpose. It is the
+// control — what happens when the only problem left is being understood.
+//
+// Only two conflicts in the kit are evenly matched, low against high and
+// guarded against open, so they carry most of the arguments. light against many
+// is used where the argument is about what has to fit across, and the lighter
+// need is paired with a commoner one to bring the two roles level.
 const LOOSE_SCENARIOS = {
-  // Loosening the goals was only half of it. The briefs still described the same
-  // two people every single run — `loads` was always a pedestrian against a cart,
-  // so `heavy` was guaranteed before anybody opened their mouth, and every run of
-  // a scenario was a re-enactment rather than an instance of it.
-  //
-  // A scenario is a TENSION now, not a cast. Each role draws one life from a
-  // pool, so `loads` is "two people who do not arrive carrying the same thing"
-  // and which two depends on the seed. Four each way is sixteen pairings per
-  // scenario, and a seed is recorded with every run so any of them can be had
-  // back exactly.
   places: {
-    blurb: "Two people who cross in different places, with nothing agreed about what a crossing is.",
+    blurb: "Two people who cross in different places, and the ground is not the same under them.",
     A: [
-      // These four used to vary by who the person was — a child to carry, the
-      // dark, bad knees — which is the loads argument wearing this one's name.
-      // The argument is that they cross in different PLACES, so the place is
-      // what varies here and the person is only a voice.
-      { situation: "You cross a fast, knee-deep stream about four paces wide, and the bed under it is loose stone that rolls when you step.",
-        manner: "Brisk, a little impatient. You do not explain yourself twice.",
-        needs: ["steady", "grip"] },
-      { situation: "You cross a wide, slow ford — nowhere deep, but a long way from one bank to the other, and the middle is the worst of it.",
-        manner: "Quiet, and you circle back to the same worry, saying it three ways until it lands.",
-        needs: ["inGap", "steady"] },
-      { situation: "Your crossing is a low place where both banks sit level with the water, and for half the summer it is barely a trickle.",
-        manner: "Flat and practical. You state what happens and then stop.",
-        needs: ["low", "minimal"] },
-      { situation: "You cross where a spring keeps the near bank wet the whole year, and the last few feet before the water are always slick.",
-        manner: "Slow, wry, unhurried. You know exactly what you can manage, and you say so without complaint.",
-        needs: ["grip", "footed"] },
+      { situation: "You cross a shallow ford where the water is never over your boot, and the stones roll when you put your weight on them.",
+        manner: "Plain and physical. You talk about your feet.", needs: ["low", "grip"] },
+      { situation: "You wade a wide flat crossing where the banks are silt and go to soup after rain.",
+        manner: "Patient, a little weary. You have been let down by ground before.", needs: ["low", "footed"] },
+      { situation: "You cross on the flat every day in weather that comes sideways off the moor.",
+        manner: "Blunt. You mention the weather the way other people mention the time.", needs: ["low", "sheltered"] },
+      { situation: "You bring everything you own across a level gap, two of you carrying it between you.",
+        manner: "Practical, and you think in terms of what will fit.", needs: ["low", "many"] },
     ],
     B: [
-      { situation: "You live beside a narrow drop in the rock and you have watched things fall into it.",
-        manner: "Careful, and you say why. You mention the wind, the season, what happened to somebody else.",
-        needs: ["guarded", "steady"] },
-      { situation: "You cross where the water comes up without warning after rain, several times a spring.",
-        manner: "You talk in seasons and in past tense. You have been caught out and you tell it as a story.",
-        needs: ["high", "footed"] },
-      { situation: "The far side of your crossing sits well above the near side, and you climb every time.",
-        manner: "You are blunt about effort. You measure things in how out of breath they leave you.",
-        needs: ["low", "steady"] },
-      { situation: "Your crossing is over soft marsh ground that swallows whatever is set in it.",
-        manner: "Sceptical of anything that claims to last. You have seen good work sink and you say so.",
-        needs: ["footed", "steady"] },
+      { situation: "You live above a cleft that drops further than you like to look, and the lip crumbles every thaw.",
+        manner: "You circle the drop without naming your fear of it.", needs: ["high", "footed"] },
+      { situation: "You cross above a gorge where the wind comes up it and there is nothing between you and the bottom.",
+        manner: "Direct about danger and unembarrassed by it.", needs: ["high", "guarded"] },
+      { situation: "Your side of the gap is a rock shelf well above the water, and it greases over the moment it is damp.",
+        manner: "Exact and a bit pedantic. You correct people.", needs: ["high", "grip"] },
+      { situation: "You come down to the gap from the high ground with a loaded beast behind you.",
+        manner: "Unhurried. You describe the animal more than yourself.", needs: ["high", "heavy"] },
     ],
   },
+
   loads: {
-    blurb: "The same water, and two people who do not arrive at it carrying the same thing.",
+    blurb: "The same gap, and two people who do not arrive at it carrying the same thing.",
     A: [
-      { situation: "You cross on foot, alone, carrying nothing but yourself.",
-        manner: "Short sentences. You resent fuss, think most of this is overthought, and say so by talking about how simple your own crossing is.",
-        needs: ["minimal", "light"] },
-      { situation: "You carry your tools over on your back every working morning.",
-        manner: "You talk about weight on your shoulders and about balance. You are matter-of-fact and slightly tired.",
-        needs: ["steady", "grip"] },
-      { situation: "You bring two full pails over, both hands taken, several times a day.",
-        manner: "You describe things in terms of what your hands are doing. You are precise and a little exasperated.",
-        needs: ["many", "steady"] },
-      { situation: "Twice a year you drive a flock across, and they will not go one at a time.",
-        manner: "You talk in numbers and in animals. Dry, and faintly amused at how little anyone accounts for this.",
-        needs: ["many", "open"] },
+      { situation: "You cross alone with your hands empty and you are always in a hurry.",
+        manner: "Quick and impatient. You do not see what the fuss is about.", needs: ["light", "inGap"] },
+      { situation: "You go over on your own before it is light, and what you mind is being knocked off balance.",
+        manner: "Quiet, and you understate everything.", needs: ["light", "steady"] },
+      { situation: "You are one person on foot and the crossing is the shortest part of a long walk.",
+        manner: "Cheerful, digressive. You tell the story around the point.", needs: ["light", "inGap"] },
+      { situation: "You cross by yourself in the dark and what you want is to feel nothing move.",
+        manner: "Careful. You choose your words and repeat the important one.", needs: ["light", "steady"] },
     ],
     B: [
-      { situation: "You bring a loaded cart through daily. In winter the ground goes soft.",
-        // "You cite the year, the mud, the axle" produced a dated anecdote in half
-        // of all turns — in character, but a tic once it is every time.
-        manner: "Dry, specific, and fobbed off before, so you know what \"it'll do\" costs. You have particular winters you could name, but you do not reach for one every time you open your mouth.",
-        needs: ["heavy", "footed"] },
-      { situation: "You move long ladders over — awkward, unwieldy, and they will not turn a corner.",
-        manner: "You talk about length and swing and clearance. Patient, and used to not being understood.",
-        needs: ["open", "heavy"] },
-      { situation: "You lead a horse across, and it will not set foot on anything that moves.",
-        manner: "You speak for the animal more than for yourself. Firm, and unbothered about sounding sentimental.",
-        needs: ["steady", "grip"] },
-      { situation: "You cart building stone, the heaviest thing anyone moves in this parish.",
-        manner: "Understated to the point of dryness. You state loads plainly and let them do the arguing.",
-        needs: ["heavy", "steady"] },
+      { situation: "You bring a loaded cart through daily and the ground goes soft in winter.",
+        manner: "Dry and specific. You know what fobbing off costs.", needs: ["many", "footed"] },
+      { situation: "You drive stock through and they will not go one at a time however you ask them.",
+        manner: "Faintly amused, and you talk in animals rather than numbers.", needs: ["many", "guarded"] },
+      { situation: "Two of you carry a long load between you and it has to come across without being set down.",
+        manner: "You explain more than you need to, because nobody ever believes the size of it.", needs: ["many", "grip"] },
+      { situation: "You bring the year's timber over on a wagon and it is the heaviest thing that ever crosses.",
+        manner: "Slow, factual, and you give weights.", needs: ["many", "heavy"] },
     ],
   },
+
   agreed: {
-    // The one argument where the two of them want the SAME crossing. That has to
-    // be true in the needs, not just in the prose: they used to get [steady,heavy]
-    // against [steady,open], which is one key of two — the same overlap as
-    // `places`, so nothing distinguished this argument from two people who merely
-    // happen to agree about one thing. Worse, NARROW/WIDE and LOW/HIGH were
-    // encoded as opposite needs, and no crossing in the 384 could satisfy both:
-    // half the argument asserted an agreement that was impossible.
-    //
-    // Each pair now opens with one sentence, word for word the same on both
-    // sides, and carries the same need. What differs is only what would convince
-    // them, and the word each has always used for it.
-    aligned: true,
-    blurb: "Two people who want the same crossing and cannot tell. Nothing either of them says is untrue, and every word of it sounds like an objection to the other.",
+    blurb: "Two people who want the same thing and have to get it said anyway.",
     A: [
-      { situation: "You want a crossing that does not shift under you, and whose ends are still holding when the banks go soft with rain. The only thing that convinces you of that is weight — heft you can feel through your boots, mass that does not answer back when you put your foot down. You call it HEAVY.",
-        manner: "You say heavy constantly and never explain it. To you it obviously means safe.",
-        needs: ["steady", "footed"] },
-      { situation: "You want a crossing that catches nobody out, underfoot or in the wet. The only thing that convinces you of that is fewness — nothing to trip on, nothing to snag, barely anything there that could fail. You call it SIMPLE.",
-        manner: "You use simple and plain and clean for what you want, and you never say the word safe, though that is what you mean.",
-        needs: ["steady", "grip"] },
-      { situation: "You want a crossing your nervous animal will walk without balking. The only thing that convinces you of that is closeness — something near at either side that keeps it going straight and stops it drifting. You call it NARROW.",
-        manner: "You talk about the animal, not about yourself, and you assume everybody understands why.",
-        needs: ["steady", "guarded"] },
-      { situation: "You want a crossing you can go over easily. It is the climb you mind — the height of it, the edge, the long way down — and you would far rather be close to the water than above it. You call it LOW.",
-        manner: "You talk around it. You mention your knees, the climb, the weather, and never the drop.",
-        needs: ["steady", "guarded"] },
+      { situation: "The stones under it roll when you step and the banks give way after rain. Both of those have had you over.",
+        manner: "Direct, and you repeat yourself when you are not sure you were heard.", needs: ["grip", "footed"] },
+      { situation: "You cross low and you want something to hold. You have watched somebody go over the side here.",
+        manner: "Sober and a little haunted.", needs: ["guarded", "low"] },
+      { situation: "Everything you bring across is heavy and there is a great deal of it, every week of the year.",
+        manner: "Matter of fact. You deal in quantities.", needs: ["heavy", "many"] },
+      { situation: "You cross well above the water and the weather up there is the worst part of the day.",
+        manner: "Wry. You complain in a friendly way.", needs: ["high", "sheltered"] },
     ],
     B: [
-      { situation: "You want a crossing that does not shift under you, and whose ends are still holding when the banks go soft with rain. The only thing that convinces you of that is seeing it — every piece in plain view, nothing packed out of sight where rot could start. You call it LIGHT.",
-        manner: "You say light and clean and honest, and to you they obviously mean safe. You trust what you can put your eye on and mistrust what you cannot.",
-        needs: ["steady", "footed"] },
-      { situation: "You want a crossing that catches nobody out, underfoot or in the wet. The only thing that convinces you of that is plenty — braced, tied, more of everything than it strictly needs, so that whatever gives there is something else still holding. You call it SUBSTANTIAL.",
-        manner: "You use words like proper and built and enough, and you never say the word safe, though that is what you mean.",
-        needs: ["steady", "grip"] },
-      { situation: "You want a crossing your nervous animal will walk without balking. The only thing that convinces you of that is room — space enough that it never feels shut in and never refuses. You call it WIDE.",
-        manner: "You talk about the animal, not about yourself, and you assume everybody understands why.",
-        needs: ["steady", "guarded"] },
-      { situation: "You want a crossing you can go over easily. It is the water you mind — the noise of it, how it comes up after rain — and you would far rather be well clear of it than near. You call it HIGH.",
-        manner: "You talk around it. You mention the season, the flood, the smell of it, and never say you cannot swim.",
-        needs: ["steady", "guarded"] },
+      { situation: "The stones under it roll when you step and the banks give way after rain. Both of those have had you over.",
+        manner: "Slower than the other one, and you come at it from the side.", needs: ["grip", "footed"] },
+      { situation: "You cross low and you want something to hold. You have watched somebody go over the side here.",
+        manner: "Reserved. You say the frightening part last.", needs: ["guarded", "low"] },
+      { situation: "Everything you bring across is heavy and there is a great deal of it, every week of the year.",
+        manner: "Brisk, and you assume this is obvious.", needs: ["heavy", "many"] },
+      { situation: "You cross well above the water and the weather up there is the worst part of the day.",
+        manner: "Dour, and you mean every word of it.", needs: ["high", "sheltered"] },
     ],
   },
 
   pairs: {
-    // Two personas per role, not one person speaking on somebody's behalf. The
-    // first version had a narrator — "you speak for yourself and for your
-    // mother" — which is one voice carrying two needs, and a model handed that
-    // simply averages them into a single reasonable request. Here the two are
-    // separate people who take turns through the same mouth: the builder hears
-    // one channel called Role 1 and is in fact being addressed by two people
-    // who want different things and never speak to each other.
+    // Two personas per role, not one person speaking for two. A narrator handed
+    // two needs simply averages them into one reasonable request; two people
+    // taking turns through the same mouth do not.
     twoPersonas: true,
-    blurb: "Four people and one crossing, speaking through two mouths. Each mouth is two people by turns, and they do not want the same thing.",
+    blurb: "Two people behind each voice, and they do not want the same thing either.",
     A: [
       { pair: [
-          { who: "the daughter", situation: "You cross this every day at your own pace and you are in a hurry.",
-            manner: "Quick, impatient, a little short. You have somewhere to be.", needs: ["low", "grip"] },
-          { who: "her mother, eighty, on two sticks", situation: "You cross once a week and it takes you a long time. What you are frightened of is going over the side.",
-            manner: "Slow, apologetic, and you circle back to the same fear without naming it.", needs: ["guarded", "steady"] } ] },
+        { who: "the daughter", situation: "You cross this every day at your own pace and you are in a hurry.",
+          manner: "Quick, impatient, a little short.", needs: ["low", "grip"] },
+        { who: "her mother, eighty, on two sticks", situation: "You cross once a week and it takes you a long time. What frightens you is going over the side.",
+          manner: "Slow, apologetic, circling the same fear without naming it.", needs: ["guarded", "footed"] } ] },
       { pair: [
-          { who: "the father", situation: "You carry a nine-year-old who runs at everything, and you are the one who has to catch him.",
-            manner: "Watchful. You describe what the child does, not what you want.", needs: ["guarded", "many"] },
-          { who: "his son, nine", situation: "You run at it. You want to get across fast and you do not want to be held.",
-            manner: "Blunt and a bit rude about being fussed over. Short sentences.", needs: ["low", "open"] } ] },
+        { who: "the schoolmaster", situation: "You bring children over twice a day and count them on the far side.",
+          manner: "Precise, and you speak as though to a room.", needs: ["low", "guarded"] },
+        { who: "the woman with the milk churns", situation: "You bring two churns over side by side because you will not make the trip twice.",
+          manner: "Brisk, and you have no patience for being told it cannot be done.", needs: ["grip", "many"] } ] },
       { pair: [
-          { who: "the postman", situation: "You cross daily whatever the weather, always carrying, always in a hurry.",
-            manner: "Matter-of-fact, weather-first, no ceremony.", needs: ["grip", "steady"] },
-          { who: "the doctor he fetches", situation: "You come once a month and you will not come at all if it looks unsafe to you.",
-            manner: "Careful and a little fastidious. You say what would make you turn back.", needs: ["guarded", "footed"] } ] },
+        { who: "the midwife", situation: "You are called out at night and the crossing is the part you dread.",
+          manner: "Steady, economical, used to being obeyed.", needs: ["low", "footed"] },
+        { who: "her neighbour", situation: "You carry water back from the far side twice a day, both hands taken, in whatever is falling.",
+          manner: "Grumbling but good-natured.", needs: ["guarded", "sheltered"] } ] },
       { pair: [
-          { who: "the woman with the baby", situation: "Half the year you carry an infant across and both your arms are full.",
-            manner: "Quiet, and you talk about your hands and what you cannot do with them.", needs: ["steady", "many"] },
-          { who: "the same woman at harvest", situation: "The other half of the year you carry the year's grain over on your back.",
-            manner: "Tired and practical. You talk in loads and in trips.", needs: ["heavy", "footed"] } ] },
+        { who: "the carrier", situation: "You come through on foot with a pack and you are paid by the trip.",
+          manner: "Terse. Time is money and you say so.", needs: ["low", "grip"] },
+        { who: "his wife", situation: "You come the other way with the baby and you will not be hurried, least of all in the wet.",
+          manner: "Warm, firm, and you will say it twice.", needs: ["guarded", "sheltered"] } ] },
     ],
     B: [
       { pair: [
-          { who: "the carter", situation: "You bring a loaded cart through here daily and the ground goes soft in winter.",
-            manner: "Dry and specific. You know what fobbing off costs.", needs: ["heavy", "footed"] },
-          { who: "his sister with the flock", situation: "You drive sheep through the same gap an hour later and they will not go one at a time.",
-            manner: "Dry, faintly amused, and you talk in animals rather than in numbers.", needs: ["many", "open"] } ] },
+        { who: "the carter", situation: "You bring a loaded cart through here daily and the ground goes soft in winter.",
+          manner: "Dry and specific.", needs: ["high", "heavy"] },
+        { who: "his sister with the flock", situation: "You drive sheep through the same gap an hour later and they will not go one at a time.",
+          manner: "Faintly amused, talking in animals rather than numbers.", needs: ["many", "sheltered"] } ] },
       { pair: [
-          { who: "the fisherman", situation: "You fish from a boat under it and you need to get the boat through.",
-            manner: "Unhurried. You talk about the water and what is above it.", needs: ["high", "inGap"] },
-          { who: "the same man on foot", situation: "You also walk over it twice a day and the climb is the part you resent.",
-            manner: "Grumbling, amused at your own contradiction, and you admit it.", needs: ["low", "grip"] } ] },
+        { who: "the quarryman", situation: "You bring stone down off the high ground and none of it is light.",
+          manner: "Short sentences. You have been doing this a long time.", needs: ["high", "heavy"] },
+        { who: "the drover behind him", situation: "You come through with more animals than the gap was ever meant for, and the edges of it go to mud.",
+          manner: "Loud, and you repeat yourself over the noise.", needs: ["many", "footed"] } ] },
       { pair: [
-          { who: "the blind uncle", situation: "You cross twice a week and you cannot see any of it. What you know of a crossing is what your hands and feet find.",
-            manner: "Calm and exact about touch. You describe what your hands expect.", needs: ["guarded", "grip"] },
-          { who: "his nephew who brings him", situation: "You bring him over and you are the one who would have to get him out of the water.",
-            manner: "Protective, and you talk about what would happen rather than what you want.", needs: ["steady", "footed"] } ] },
+        { who: "the miller", situation: "You send sacks over by the cartload and the cart is wider than most.",
+          manner: "Businesslike, faintly impatient with detail.", needs: ["high", "many"] },
+        { who: "his carter", situation: "The load is heavy and the footing out there turns to glass the moment it is damp.",
+          manner: "Complaining, but you know exactly what you want.", needs: ["heavy", "grip"] } ] },
       { pair: [
-          { who: "the timber-carrier", situation: "You bring long ladders over on your shoulder and they will not turn a corner.",
-            manner: "Patient, used to not being understood. You talk about length and swing.", needs: ["many", "open"] },
-          { who: "a village child", situation: "You and the others are on it unsupervised all summer and nobody is watching.",
-            manner: "Cheerful, oblivious to danger, and you say what you actually do on it.", needs: ["low", "steady"] } ] },
+        { who: "the timber merchant", situation: "The heaviest thing that ever crosses is yours and it comes down from above.",
+          manner: "Slow and factual, giving weights.", needs: ["high", "heavy"] },
+        { who: "the woman with the herd", situation: "You bring them through together or not at all, and not one of them goes near an open edge.",
+          manner: "Practical and unhurried.", needs: ["many", "guarded"] } ] },
     ],
   },
+
   refs: {
     // Two of these briefs name a structure — a cable crossing, a modern span —
     // and that is deliberate, not an oversight like the timber a loads persona
@@ -279,6 +257,7 @@ const LOOSE_SCENARIOS = {
     ],
   },
 };
+
 
 // One life per role per run. An offset was not enough: it moved both of them
 // together and only ever reached four of the sixteen pairings. B advances once
