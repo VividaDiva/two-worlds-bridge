@@ -18,8 +18,7 @@ const PAGE = "file://" + path.resolve("../export/conversations.html");
 const PORT = 9333, WIDTH = 900;
 
 const ARGS = ["places", "loads", "agreed", "pairs", "refs"];
-const CASES = ["r2-builder", "r2-role1", "open-1st", "r1-builder", "r1-role2",
-               "open-2nd", "r1-role2-2nd", "r1-builder-2nd", "together", "alone"];
+const CASES = ["open","r2-blind","r1-blind","words","bridge","bridge-1","bridge-2","silent","together","alone"];
 
 fs.mkdirSync(outDir, { recursive: true });
 

@@ -361,10 +361,77 @@ function shownTo(role) {
 // Both sides take the same index: pair 0 of `places` is the person at the water
 // and the person at the rock, and that is what `places` means. Walking a grid of
 // sixteen pairings was what let a case change the cast underneath it.
+// A third way of setting the goal, between the two that were here.
+//
+// `strict` named the answer and they did as they were told. `loose` gives them
+// a life and no goal at all, and the need is read off the life afterwards.
+// `told` gives each of them an aim in plain words — theirs, not a description
+// of a structure — and leaves the talking entirely free. Nothing is scripted;
+// they are two models with a stated aim each, saying whatever they like.
+//
+// One goal per role, so the four casts here are four conversations from the
+// same standing start rather than four different pairs of people.
+const TOLD_SCENARIOS = {
+  // Each of them knows exactly what they want and neither may say its name.
+  // Where it goes was the first version of this and it did not work: the ground
+  // is not something the builder decides — it becomes true the moment either of
+  // them is heard asking for it, so both goals were met whatever happened. What
+  // gets built IS decided, and these two differ on one axis, low against high.
+  //
+  //   a single log   low, minimal, light
+  //   a slung span   high, light
+  //
+  // Not `sways`. A slung span does sway and the kit says so, but nobody WANTS
+  // it to: the first run of this had Role 2 spending the whole conversation
+  // arguing it must not move an inch while being scored on whether it did.
+  // A need is what the person is after, not what the thing happens to do.
+  places: {
+    blurb: "One of them wants the plainest thing there is; the other wants it slung high.",
+    A: [{ situation: "You want the bridge to be a single log laid across.",
+          manner: null, needs: ["low", "minimal"] }],
+    B: [{ situation: "You want the bridge to be a suspension bridge.",
+          manner: null, needs: ["high", "light"] }],
+  },
+  loads: {
+    blurb: "One of them is on foot; the other is bringing vehicles across.",
+    A: [{ situation: "You want a bridge that only needs to support pedestrians.",
+          manner: null, needs: ["light"] }],
+    B: [{ situation: "You want a bridge strong enough to support cars and trucks.",
+          manner: null, needs: ["heavy"] }],
+  },
+  // Both are given the same aim and neither is told that. Nothing here says
+  // they agreed, or that there is anything to hold to: two people who happen to
+  // want the same thing, each with no idea the other one does. Whether that
+  // converges is the question, and telling them they were already agreed would
+  // have answered it in the brief.
+  agreed: {
+    blurb: "Both are given the same aim, and neither of them knows the other has it.",
+    A: [{ situation: "You are given that the bridge should be placed over the water.",
+          manner: null, needs: ["water"] }],
+    B: [{ situation: "You are given that the bridge should be placed over the water.",
+          manner: null, needs: ["water"] }],
+  },
+  pairs: {
+    blurb: "A family that drives it daily, and somebody who walks it with a dog.",
+    A: [{ situation: "You are a parent in a family with two children. Your family drives across this bridge"
+                   + " regularly to commute to work, school, and other activities. Your goal is to make sure"
+                   + " the bridge works well for your family's daily driving needs.",
+          manner: null, needs: ["heavy", "many"] }],
+    B: [{ situation: "You are a young single working adult from Gen Z. You regularly walk across this bridge"
+                   + " with your dog. Your goal is to make sure the bridge is convenient and safe for your"
+                   + " daily walking needs.",
+          manner: null, needs: ["light", "guarded"] }],
+  },
+};
+
 function castFor(scenario, role, pair) {
-  const pool = LOOSE_SCENARIOS[scenario][role];
+  const pool = GOALS_TABLE()[scenario][role];
   return pool[pair % pool.length];
 }
+// Which table the run is drawing from. TOLD reuses every bit of the loose
+// machinery — free speech, asks and refuses per turn, the need kept latent —
+// and changes only what each of them is told they are after.
+const GOALS_TABLE = () => (TOLD ? TOLD_SCENARIOS : LOOSE_SCENARIOS);
 
 // `pairs` gives a role two people rather than one, and they take the role's
 // turns in turn. The builder is told nothing about this: it hears one channel
@@ -373,7 +440,7 @@ function castFor(scenario, role, pair) {
 // is the only thing that knows: reading it back off the log at record time
 // reads a log the turn has not been written into yet.
 let PERSONA = null;
-const TWO = scenario => !!LOOSE_SCENARIOS[scenario] && !!LOOSE_SCENARIOS[scenario].twoPersonas;
+const TWO = scenario => !!GOALS_TABLE()[scenario] && !!GOALS_TABLE()[scenario].twoPersonas;
 function personaFor(scenario, role, pair, nth) {
   const cast = castFor(scenario, role, pair);
   if (!TWO(scenario) || !cast.pair) return cast;
@@ -397,30 +464,53 @@ const turnsTaken = (state, role) =>
 const ALL  = { hears: true,  echo: true  };
 const ONLY_BUILDER = { hears: false, echo: true  };   // the other role is silent to you
 const ONLY_OTHER   = { hears: true,  echo: false };   // the builder is silent to you
+const NOTHING      = { hears: false, echo: false };   // nothing comes back at all
 
+// Who can hear whom. `hears` is the OTHER ROLE, `echo` is the builder.
+//
+// Hearing between the two people is a LINK and not a per-role property: if one
+// of them can hear the other, the other can hear them back. It used to be set
+// per role, which produced cases where Role 2 heard Role 1 and Role 1 was deaf
+// to Role 2 — one person talking into an exchange that, from the other side,
+// was not one. Nobody converses that way, and it made "who could hear whom"
+// mean two different things depending on which side you read it from.
+//
+// What still varies per role is the echo: whether that person can see the
+// crossing as it goes up. That one is genuinely one-sided in life — two people
+// can be talking while only one of them is watching the work.
+//
+// So the eight cases below are (link on|off) x (Role 1 sees the build) x (Role 2
+// sees the build), and the last two are about something other than the channel.
 const CASES = {
-  "r2-builder":     { A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ONLY_BUILDER },
-                      label: "Role 2 hears only the builder" },
-  "r2-role1":       { A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ONLY_OTHER },
-                      label: "Role 2 hears only Role 1" },
-  "open-1st":       { A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ALL },
-                      label: "Everyone hears everything" },
-  "r1-builder":     { A: "want", B: "avoid", starts: "A", see: { A: ONLY_BUILDER, B: ALL },
-                      label: "Role 1 hears only the builder" },
-  "r1-role2":       { A: "want", B: "avoid", starts: "A", see: { A: ONLY_OTHER, B: ALL },
-                      label: "Role 1 hears only Role 2" },
-  "open-2nd":       { A: "want", B: "avoid", starts: "B", see: { A: ALL, B: ALL },
-                      label: "Everyone hears everything, Role 2 opens" },
-  "r1-role2-2nd":   { A: "want", B: "avoid", starts: "B", see: { A: ONLY_OTHER, B: ALL },
-                      label: "Role 1 hears only Role 2, Role 2 opens" },
-  "r1-builder-2nd": { A: "want", B: "avoid", starts: "B", see: { A: ONLY_BUILDER, B: ALL },
-                      label: "Role 1 hears only the builder, Role 2 opens" },
+  open:      { A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ALL },
+               label: "Everyone hears everything" },
+  "r2-blind":{ A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ONLY_OTHER },
+               label: "Role 2 cannot see the crossing" },
+  "r1-blind":{ A: "want", B: "avoid", starts: "A", see: { A: ONLY_OTHER, B: ALL },
+               label: "Role 1 cannot see the crossing" },
+  words:     { A: "want", B: "avoid", starts: "A", see: { A: ONLY_OTHER, B: ONLY_OTHER },
+               label: "They have only each other's words" },
+  bridge:    { A: "want", B: "avoid", starts: "A", see: { A: ONLY_BUILDER, B: ONLY_BUILDER },
+               label: "They have only the crossing" },
+  "bridge-1":{ A: "want", B: "avoid", starts: "A", see: { A: ONLY_BUILDER, B: NOTHING },
+               label: "Only Role 1 can see the crossing, and neither hears the other" },
+  "bridge-2":{ A: "want", B: "avoid", starts: "A", see: { A: NOTHING, B: ONLY_BUILDER },
+               label: "Only Role 2 can see the crossing, and neither hears the other" },
+  silent:    { A: "want", B: "avoid", starts: "A", see: { A: NOTHING, B: NOTHING },
+               label: "Nothing comes back to either of them" },
   // The two that are about something other than who can hear whom.
-  together: { A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ALL }, confer: true,
-              label: "Conferring first" },
-  alone:    { A: "want", B: "avoid", starts: "A", see: { A: ONLY_BUILDER, B: ONLY_BUILDER },
-              solo: true, label: "Each alone" },
+  together:  { A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ALL }, confer: true,
+               label: "Conferring first" },
+  alone:     { A: "want", B: "avoid", starts: "A", see: { A: ONLY_BUILDER, B: ONLY_BUILDER },
+               solo: true, label: "Each alone" },
 };
+
+// The link is mutual by construction. Asserted rather than trusted, because the
+// old shape was a plain object literal and drifted without anything complaining.
+for (const [k, c] of Object.entries(CASES))
+  if (!!c.see.A.hears !== !!c.see.B.hears)
+    throw new Error(`case ${k}: hearing between the two roles must be mutual`);
+
 
 // What one role can hear. Older recordings carry the flat pair; read either.
 const SEE = (cfg, role) => cfg.see ? cfg.see[role] : { hears: !!cfg.hears, echo: !!cfg.echo };
@@ -1196,7 +1286,11 @@ const scenarioKey = argv.scenario || "places";
 const caseKey = argv.case || "given";
 const maxTurns = Number(argv.turns || 16);
 // Loose goals: nobody is handed a structure to want, and both may ask and refuse.
-const LOOSE = (argv.goals || "strict") === "loose";
+const TOLD  = (argv.goals || "strict") === "told";
+// `told` runs on the loose machinery; the only difference is where the brief
+// comes from, so everything downstream that asks "is this a loose run" is still
+// asking the right question.
+const LOOSE = (argv.goals || "strict") === "loose" || TOLD;
 // Who decides what gets built: the scoring rule, or Role 3 itself.
 const BUILDER = argv.builder || "rule";
 const PICTURES = "pictures" in argv && argv.pictures !== "off";
@@ -1227,8 +1321,10 @@ if (argv.seed !== undefined)
 const PAIR = Number.isFinite(Number(argv.pair)) && argv.pair !== undefined
   ? Math.abs(Math.trunc(Number(argv.pair)))
   : Math.floor(Date.now() / 1000) % 100000;
-if (argv.goals && !["strict", "loose"].includes(argv.goals))
-  throw new Error(`unknown --goals: ${argv.goals} (strict | loose)`);
+if (argv.goals && !["strict", "loose", "told"].includes(argv.goals))
+  throw new Error(`unknown --goals: ${argv.goals} (strict | loose | told)`);
+if (TOLD && !TOLD_SCENARIOS[scenarioKey])
+  throw new Error(`--goals told has no ${scenarioKey}: ${Object.keys(TOLD_SCENARIOS).join(" | ")}`);
 const playerA = argv.a || "openai";
 const playerB = argv.b || "claude";
 // `llm` stays as an alias for the Anthropic reader, which is what it used to mean.
@@ -1749,10 +1845,14 @@ const session = {
   transcript,
   outcome: SOLO
     ? { built: side.A.design.id, name: NAME(side.A.design.id), ground: groundOf(side.A),
+        // Which ground was actually claimed, as keys rather than as prose. Two
+        // of the told goals are about where the crossing goes, and `ground` was
+        // a sentence — nothing downstream could score against it.
+        world: { ...side.A.world }, worldB: { ...side.B.world },
         solo: true,
         builtB: side.B.design.id, nameB: NAME(side.B.design.id), groundB: groundOf(side.B),
         agreed: side.A.design.id === side.B.design.id }
-    : { built: ctx.design.id, name: NAME(ctx.design.id), ground: groundOf(ctx) },
+    : { built: ctx.design.id, name: NAME(ctx.design.id), ground: groundOf(ctx), world: { ...ctx.world } },
   ending: { turns: state.turn, endedBy: state.endedBy || "turn cap",
             lastMoved: state.lastMoved || null,
             keptTalking: state.lastMoved ? state.turn - state.lastMoved : state.turn },

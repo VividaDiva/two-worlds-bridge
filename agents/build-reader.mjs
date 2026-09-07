@@ -9,11 +9,11 @@ const inDir = process.argv[2] || "/tmp/allruns";
 const out = process.argv[3] || "../export/conversations.html";
 
 const LABEL = {
-  "r2-builder":"Role 2 hears only the builder", "r2-role1":"Role 2 hears only Role 1",
-  "open-1st":"Everyone hears everything", "r1-builder":"Role 1 hears only the builder",
-  "r1-role2":"Role 1 hears only Role 2", "open-2nd":"Everyone hears everything · Role 2 opens",
-  "r1-role2-2nd":"Role 1 hears only Role 2 · Role 2 opens",
-  "r1-builder-2nd":"Role 1 hears only the builder · Role 2 opens",
+  "open":"Everyone hears everything", "r2-blind":"Role 2 cannot see the crossing",
+  "r1-blind":"Role 1 cannot see the crossing", "words":"They have only each other's words",
+  "bridge":"They have only the crossing",
+  "bridge-1":"Only Role 1 can see the crossing", "bridge-2":"Only Role 2 can see the crossing",
+  "silent":"Nothing comes back to either of them",
   together:"They confer first", alone:"Each alone, a crossing each",
 };
 const ARG = { places:"Two places", loads:"Two loads", agreed:"Already agreed",
@@ -153,10 +153,9 @@ const esc = s => String(s).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"
 const F = k => D.FEATURES[k] || k;
 
 const ARGS = ["places","loads","agreed","pairs","refs"];
-const CASES = ["r2-builder","r2-role1","open-1st","r1-builder","r1-role2",
-               "open-2nd","r1-role2-2nd","r1-builder-2nd","together","alone"];
+const CASES = ["open","r2-blind","r1-blind","words","bridge","bridge-1","bridge-2","silent","together","alone"];
 const Q = new URLSearchParams(location.search);
-let S = { arg: Q.get("arg") || "places", cs: Q.get("case") || "open-1st",
+let S = { arg: Q.get("arg") || "places", cs: Q.get("case") || "open",
           cast: +(Q.get("cast") || 0) };
 if (Q.get("bare") === "1") document.body.classList.add("bare");
 

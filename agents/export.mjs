@@ -43,7 +43,12 @@ for (const f of files) {
   const nA = m.cast?.A?.needs || [], nB = m.cast?.B?.needs || [];
   const shA = shapeOf(s.outcome?.built);
   const shB = shapeOf(s.outcome?.solo ? s.outcome.builtB : s.outcome?.built);
-  const gotA = shA ? propsOf(shA) : [], gotB = shB ? propsOf(shB) : [];
+  // The ground counts as something the run delivered. Under `told` two of the
+  // four goals are about where the crossing goes, and scoring only the shape
+  // would have marked every one of them unmet whatever happened.
+  const wA = Object.keys(s.outcome?.world || {}).filter(k => s.outcome.world[k]);
+  const wB = Object.keys(s.outcome?.worldB || s.outcome?.world || {}).filter(k => (s.outcome.worldB || s.outcome.world)[k]);
+  const gotA = (shA ? propsOf(shA) : []).concat(wA), gotB = (shB ? propsOf(shB) : []).concat(wB);
   const metA = nA.filter(k => gotA.includes(k)), metB = nB.filter(k => gotB.includes(k));
 
   const role = t => t.who === "A" ? "role1" : t.who === "B" ? "role2" : "builder";

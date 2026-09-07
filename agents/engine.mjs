@@ -150,7 +150,11 @@ export const FEATURES = {
 // your design, and a person who cannot mention the water they cross every day is
 // not speaking freely by any reading of the word.
 export const STRUCTURES = ("log plank bridge rail handrail tower towers cable cables rope prop props post posts " +
-  "trestle beam deck timber frame span walkway footbridge").split(" ");
+  "trestle beam deck timber frame span walkway footbridge " +
+  // A type name specifies the design as surely as a part name does. One of the
+  // told goals is a suspension crossing, and without these the role could have
+  // said the word and skipped the entire exercise.
+  "suspension suspended arch arches viaduct").split(" ");
 
 export const GROUND = ("water stream river brook creek boat wade waded mountain cleft rock ridge hill hillside " +
   "gorge canyon cliff chasm").split(" ");

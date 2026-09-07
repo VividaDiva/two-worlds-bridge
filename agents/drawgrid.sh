@@ -12,6 +12,6 @@ if [ "$1" = "--one" ]; then
     > "sessions/batch/draw-refs-$2-p$3.txt" 2>&1
   echo "$2 cast$(( $3 + 1 )) exit=$?"; exit
 fi
-CASES="r2-builder r2-role1 open-1st r1-builder r1-role2 open-2nd r1-role2-2nd r1-builder-2nd together alone"
+CASES="open r2-blind r1-blind words bridge bridge-1 bridge-2 silent together alone"
 for C in $CASES; do for P in 0 1 2 3; do echo "$C $P"; done; done \
   | xargs -P 5 -n 2 "$0" --one
