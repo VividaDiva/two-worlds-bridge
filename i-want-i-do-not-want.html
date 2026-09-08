@@ -300,9 +300,9 @@
      that explains it — and the chosen one repeated that sentence underneath.
      One strip now: a number, who can hear whom, two words. The sentence is
      said once, below, for the case actually chosen. */
-  .cases{display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr);
-    gap:5px; overflow-x:auto; scrollbar-width:thin; padding-bottom:2px}
-  @media (max-width:1100px){ .cases{grid-auto-columns:92px} }
+  .cases{display:grid; grid-template-columns:repeat(auto-fill,minmax(168px,1fr));
+    gap:5px; padding-bottom:2px}
+  @media (max-width:640px){ .cases{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))} }
   .case{
     text-align:left; border:1px solid var(--line); border-radius:9px; padding:6px 7px 7px;
     background:var(--panel); cursor:pointer; display:flex; flex-direction:column; gap:2px;
@@ -1357,64 +1357,64 @@ const NOTHING      = {hears:false, echo:false};
 // a different thing in each.
 const CASE_SETS = {
   routes: {
-  chain:    {short:"1 \u2192 2 \u2192 builder", label:"Role 1 tells Role 2, Role 2 tells the builder",
+  chain:    {short:"Role 1 \u2192 Role 2 \u2192 Role 3 \u2192 Build", label:"Role 1 tells Role 2, Role 2 tells the builder",
              A:"want", B:"avoid", script:["A","B"], reads:"B",
              see:{A:NOTHING, B:{hears:true, echo:false}},
              note:"Role 1 never addresses the builder and never hears it. Everything of Role 1's that gets built has to survive Role 2's retelling"},
-  both:     {short:"both \u2192 builder", label:"Each tells the builder, and it puts the two together",
+  both:     {short:"Role 1 \u2192 Role 3 \u2190 Role 2 \u2192 Build", label:"Each tells the builder, and it puts the two together",
              A:"want", B:"avoid", script:["A","B"], defer:true,
              see:{A:NOTHING, B:NOTHING},
              note:"two people who never meet, each briefing the builder in turn, and it makes one crossing out of the pair of them"},
-  "via-1":  {short:"builder relays 1", label:"The builder relays Role 1 to Role 2",
+  "via-1":  {short:"Role 1 \u2192 Role 3 \u2192 Role 2 \u2192 Role 3 \u2192 Build", label:"The builder relays Role 1 to Role 2",
              A:"want", B:"avoid", script:["A","B"],
              see:{A:NOTHING, B:{hears:false, echo:true}},
              note:"Role 2 never hears Role 1 — only the builder's account of Role 1, and answers that. The reconstruction is in the middle of the chain where it can be seen"},
-  "via-2":  {short:"builder relays 2", label:"The builder relays Role 2 to Role 1",
+  "via-2":  {short:"Role 2 \u2192 Role 3 \u2192 Role 1 \u2192 Role 3 \u2192 Build", label:"The builder relays Role 2 to Role 1",
              A:"want", B:"avoid", script:["B","A"],
              see:{A:{hears:false, echo:true}, B:NOTHING},
              note:"the same the other way round: Role 1 hears only what the builder made of Role 2"},
-  confer:   {short:"settle it first", label:"They settle it first, then tell the builder",
+  confer:   {short:"Role 1 \u2194 Role 2 \u2192 Role 3 \u2192 Build", label:"They settle it first, then tell the builder",
              A:"want", B:"avoid", starts:"A", see:{A:ALL, B:ALL}, confer:true,
              note:"they talk it over between themselves, out of the builder's hearing, and one of them carries the agreed position to it"},
-  "only-1": {short:"only 1 speaks", label:"Only Role 1 speaks to it",
+  "only-1": {short:"Role 1 \u2192 Role 3 \u2192 Build", label:"Only Role 1 speaks to it",
              A:"want", B:"avoid", script:["A"], reads:"A",
              see:{A:NOTHING, B:NOTHING},
              note:"Role 2 is not in the room. What one person alone can get built, as a floor for everything else"},
-  "only-2": {short:"only 2 speaks", label:"Only Role 2 speaks to it",
+  "only-2": {short:"Role 2 \u2192 Role 3 \u2192 Build", label:"Only Role 2 speaks to it",
              A:"want", B:"avoid", script:["B"], reads:"B",
              see:{A:NOTHING, B:NOTHING},
              note:"the same for Role 2"},
-  all:      {short:"all three talk", label:"All three talk, and it answers back",
+  all:      {short:"Role 1 \u2194 Role 2 \u2194 Role 3 \u2192 Build", label:"All three talk, and it answers back",
              A:"want", B:"avoid", script:["A","B","A","B"],
              see:{A:ALL, B:ALL},
              note:"one conversation with the builder in it, answering while the two of them negotiate"},
 },
   rounds: {
-  open:       {short:"everything through", label:"Everything reaches the builder", A:"want", B:"avoid", starts:"A",
+  open:       {short:"Role 1 and Role 2 talk freely \u00b7 Role 3 hears the full conversation", label:"Everything reaches the builder", A:"want", B:"avoid", starts:"A",
                see:{A:ALL, B:ALL},
                note:"they talk freely, every sentence reaches Role 3, and after each one it lays something and says what it laid"},
-  "conduit-1":{short:"1 speaks for both", label:"Only Role 1 is heard by the builder", A:"want", B:"avoid", starts:"A", reads:"A",
+  "conduit-1":{short:"They talk to each other \u00b7 only Role 1 is heard by Role 3", label:"Only Role 1 is heard by the builder", A:"want", B:"avoid", starts:"A", reads:"A",
                see:{A:ALL, B:ALL},
                note:"they still talk to each other, but nothing Role 2 says ever reaches Role 3 — for any of it to be built, Role 1 has to say it again in its own words"},
-  "conduit-2":{short:"2 speaks for both", label:"Only Role 2 is heard by the builder", A:"want", B:"avoid", starts:"A", reads:"B",
+  "conduit-2":{short:"They talk to each other \u00b7 only Role 2 is heard by Role 3", label:"Only Role 2 is heard by the builder", A:"want", B:"avoid", starts:"A", reads:"B",
                see:{A:ALL, B:ALL},
                note:"the same the other way round: Role 1's words reach nobody but Role 2, and only what Role 2 passes on gets built"},
-  later:      {short:"built at the end", label:"It builds once, at the end", A:"want", B:"avoid", starts:"A", defer:true,
+  later:      {short:"Role 3 hears everything \u00b7 builds only after they finish", label:"It builds once, at the end", A:"want", B:"avoid", starts:"A", defer:true,
                see:{A:ALL, B:ALL},
                note:"Role 3 hears every word as it comes but lays nothing until they have finished, then builds one crossing from the whole conversation at once"},
-  selective:  {short:"half of it lost", label:"Every second sentence never arrives", A:"want", B:"avoid", starts:"A", drop:2,
+  selective:  {short:"Role 3 receives only part of what they say", label:"Every second sentence never arrives", A:"want", B:"avoid", starts:"A", drop:2,
                see:{A:ALL, B:ALL},
                note:"one turn in two is dropped before Role 3 receives it, and it builds from the half that got through without being told anything is missing"},
-  summarised: {short:"a summary instead", label:"It reads a summary, not the conversation", A:"want", B:"avoid", starts:"A", summarise:true, defer:true,
+  summarised: {short:"Role 3 receives a summary, not their words", label:"It reads a summary, not the conversation", A:"want", B:"avoid", starts:"A", summarise:true, defer:true,
                see:{A:ALL, B:ALL},
                note:"Role 3 is given none of their sentences. Another model reads the whole conversation and writes one short account, and Role 3 builds from that — a second reconstruction stacked on the first"},
-  aside:      {short:"meaning attached", label:"Each says privately what they meant", A:"want", B:"avoid", starts:"A", aside:true,
+  aside:      {short:"Each also tells Role 3 privately what they meant", label:"Each says privately what they meant", A:"want", B:"avoid", starts:"A", aside:true,
                see:{A:ALL, B:ALL},
                note:"after every line, that speaker tells Role 3 alone what they meant by it — so Role 3 works from the sentence and the intention behind it, instead of the sentence on its own"},
-  mediator:   {short:"it may ask", label:"The builder may ask", A:"want", B:"avoid", starts:"A", mayAsk:3,
+  mediator:   {short:"Role 3 may ask questions \u00b7 they answer", label:"The builder may ask", A:"want", B:"avoid", starts:"A", mayAsk:3,
                see:{A:ALL, B:ALL},
                note:"the one case where the no-questions rule lifts: when Role 3 has not understood it may ask out loud, up to three times, and whoever speaks next answers"},
-  silent:     {short:"it never answers", label:"The builder never speaks", A:"want", B:"avoid", starts:"A", mute:true,
+  silent:     {short:"Role 3 never speaks \u00b7 it answers only by building", label:"The builder never speaks", A:"want", B:"avoid", starts:"A", mute:true,
                see:{A:ALL, B:ALL},
                note:"Role 3 says nothing at any point. The only thing it ever tells them is the crossing itself, and they read that as best they can"},
 },
@@ -1650,7 +1650,10 @@ const S = {
   // need off the life afterwards; the other gives each of them an aim in plain
   // words. Same ten cases, same arguments bar one: the two-references argument
   // has no told version, because its goal is a drawing rather than a sentence.
-  scenario:"places", case:"open", results:{}, runs:{}, tick:0,
+  // Not a literal: "open" is a case in the four-round study and the routes are
+  // what loads first, so hard-coding it left CASES[S.case] undefined and threw
+  // three times before the first paint.
+  scenario:"places", case:CASE_ORDER[0], results:{}, runs:{}, tick:0,
   temper:{A:"firm", B:"firm"},   // a setting, like the case — reset does not clear it
   mem:{A:null, B:null}, asked:{A:0, B:0}, dodged:0,
   recent:{A:[], B:[]}, spent:{A:false, B:false}, lastSaid:{A:[], B:[]},
@@ -3185,7 +3188,7 @@ function replaySession(ss){
   const built = (ss.transcript || []).filter(x => isBuilder(x));
 
   S.scenario = SCENARIOS[ss.meta.scenario] ? ss.meta.scenario : S.scenario;
-  S.case = CASES[ss.meta.case] ? ss.meta.case : "open";
+  S.case = CASES[ss.meta.case] ? ss.meta.case : CASE_ORDER[0];
   S.replay = ss;
   reset();
   S.replay = ss;                          // reset clears it
@@ -3868,7 +3871,7 @@ new MutationObserver(() => { readPalette(); paint(); })
 if (SESSIONS.length){
   const first = Math.floor(Math.random() * SESSIONS.length);
   S.scenario = SESSIONS[first].meta.scenario;
-  S.case = CASES[SESSIONS[first].meta.case] ? SESSIONS[first].meta.case : "open";
+  S.case = CASES[SESSIONS[first].meta.case] ? SESSIONS[first].meta.case : CASE_ORDER[0];
   S.view = "scene";
   paintScenarios(); paintCaseLabels();
   showRun(first);
