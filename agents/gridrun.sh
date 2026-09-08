@@ -11,7 +11,7 @@
 # exactly how the drawings row went missing once already.
 cd "$(dirname "$0")"
 mkdir -p sessions/batch
-CASES="open conduit-1 conduit-2 later selective summarised aside mediator silent"
+CASES="chain both via-1 via-2 confer only-1 only-2 all"
 if [ "$1" = "--one" ]; then
   S="$2"; C="$3"; P="$4"
   LOG="sessions/batch/link-$S-$C-p$P.txt"
@@ -21,7 +21,7 @@ if [ "$1" = "--one" ]; then
   if [ "$S" = "refs" ]; then GOALS="--goals loose --drawings"; else GOALS="--goals told"; fi
   node --env-file=.env run.mjs --a openai --b claude --machine gemini \
     --scenario "$S" --case "$C" --pair "$P" $GOALS \
-    --speech free --builder model --rounds 4 \
+    --speech free --builder model \
     > "$LOG" 2>&1
   echo "$S/$C cast$(( $P + 1 )) exit=$?"; exit
 fi

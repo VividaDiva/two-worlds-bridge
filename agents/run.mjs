@@ -445,46 +445,57 @@ const ONLY_BUILDER = { hears: false, echo: true  };   // the other role is silen
 const ONLY_OTHER   = { hears: true,  echo: false };   // the builder is silent to you
 const NOTHING      = { hears: false, echo: false };   // nothing comes back at all
 
-// Nine ways of running the same three people.
+// Eight routes a message can take between three people.
 //
-// The two of them always talk to each other; the link is mutual everywhere in
-// this set. What varies is what reaches Role 3, and what Role 3 may do about it.
+// The last set fixed who could hear whom and let them talk for four rounds.
+// This one fixes the ROUTE instead: who speaks, in what order, and who is at
+// the other end. Each case is a short script and ends in one crossing.
 //
-//   reads      which of them Role 3 is given at all: both, or one as a conduit
-//   defer      it hears everything and lays nothing until they have finished
-//   drop       it receives only some of what is said, every nth turn missing
-//   summarise  it never sees a sentence, only an account of the whole thing
-//   aside      each of them also tells Role 3, privately, what they meant
-//   mayAsk     it may ask, and be answered — the one case where that rule lifts
-//   mute       it never speaks; the only thing it says back is what it builds
+//   script   who speaks, in order. Its length is the whole conversation.
+//   see      what each of them receives: `hears` the other, `echo` Role 3
+//   reads    which of them Role 3 is given at all
+//   defer    it lays nothing until the script has run out
 //
-// `open` is the control the other eight vary from: everybody hears everything,
-// Role 3 builds again after every turn, and the two of them can see what it laid
-// and answer it.
+// Hearing is deliberately NOT mutual here. In the last set the two of them were
+// always in conversation and a one-way link was incoherent; here the arrows are
+// the subject — "Role 1 tells Role 2" means Role 2 hears and Role 1 does not
+// hear back, and that is the case, not a bug in it.
 const CASES = {
-  open:       { A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ALL },
-                label: "Open collaboration" },
-  "conduit-1":{ A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ALL }, reads: "A",
-                label: "Role 1 carries it" },
-  "conduit-2":{ A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ALL }, reads: "B",
-                label: "Role 2 carries it" },
-  later:      { A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ALL }, defer: true,
-                label: "They talk first, it builds after" },
-  selective:  { A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ALL }, drop: 2,
-                label: "It hears only some of it" },
-  summarised: { A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ALL }, summarise: true, defer: true,
-                label: "It gets a summary, not the words" },
-  aside:      { A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ALL }, aside: true,
-                label: "Each also tells it privately" },
-  mediator:   { A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ALL }, mayAsk: 3,
-                label: "It may ask, and be answered" },
-  silent:     { A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ALL }, mute: true,
-                label: "It never speaks, it only builds" },
+  // 0. R1 -> R2 -> R3. Role 1 never addresses the builder and never hears it;
+  //    everything of Role 1's that gets built goes through Role 2's retelling.
+  chain:    { A: "want", B: "avoid", script: ["A", "B"], reads: "B",
+              see: { A: NOTHING, B: { hears: true, echo: false } },
+              label: "Role 1 tells Role 2, Role 2 tells the builder" },
+  // 1. R1 -> R3 <- R2. Two people who never meet, each briefing the builder,
+  //    and it puts the two together itself.
+  both:     { A: "want", B: "avoid", script: ["A", "B"], defer: true,
+              see: { A: NOTHING, B: NOTHING },
+              label: "Each tells the builder, and it puts the two together" },
+  // 2. R1 -> R3 -> R2 -> R3. Role 2 never hears Role 1 — only the builder's
+  //    account of Role 1, which is the reconstruction under test.
+  "via-1":  { A: "want", B: "avoid", script: ["A", "B"],
+              see: { A: NOTHING, B: { hears: false, echo: true } },
+              label: "The builder relays Role 1 to Role 2" },
+  // 3. The same, the other way round.
+  "via-2":  { A: "want", B: "avoid", script: ["B", "A"],
+              see: { A: { hears: false, echo: true }, B: NOTHING },
+              label: "The builder relays Role 2 to Role 1" },
+  // 4. R1 <-> R2 -> R3. They settle it between themselves, out of its hearing,
+  //    and one of them carries the agreed position to it.
+  confer:   { A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ALL }, confer: true,
+              label: "They settle it first, then tell the builder" },
+  // 5 and 6. One of them briefs it and the other is not in the room at all.
+  "only-1": { A: "want", B: "avoid", script: ["A"], reads: "A",
+              see: { A: NOTHING, B: NOTHING },
+              label: "Only Role 1 speaks to it" },
+  "only-2": { A: "want", B: "avoid", script: ["B"], reads: "B",
+              see: { A: NOTHING, B: NOTHING },
+              label: "Only Role 2 speaks to it" },
+  // 7. All three in one conversation, the builder answering as they negotiate.
+  all:      { A: "want", B: "avoid", script: ["A", "B", "A", "B"],
+              see: { A: ALL, B: ALL },
+              label: "All three talk, and it answers back" },
 };
-
-for (const [k, c] of Object.entries(CASES))
-  if (!c.see.A.hears || !c.see.B.hears)
-    throw new Error(`case ${k}: the two roles always talk to each other`);
 
 
 
@@ -493,6 +504,9 @@ for (const [k, c] of Object.entries(CASES))
 const SEE = (cfg, role) => cfg.see ? cfg.see[role] : { hears: !!cfg.hears, echo: !!cfg.echo };
 // Whose turn it is. `starts` decides who opens, and they alternate from there.
 const ROLE_AT = (cfg, i) => {
+  // A case may name the speaking order outright. The route IS the case here, so
+  // who talks when is not something to derive from who opened.
+  if (cfg.script) return cfg.script[i % cfg.script.length];
   const first = cfg.starts || "A";
   return i % 2 === 0 ? first : (first === "A" ? "B" : "A");
 };
@@ -1281,7 +1295,9 @@ const caseKey = argv.case || "given";
 const ROUNDS = argv.rounds === undefined ? null : Math.max(1, Math.trunc(Number(argv.rounds)));
 if (argv.rounds !== undefined && !Number.isFinite(Number(argv.rounds)))
   throw new Error(`--rounds wants a number, got ${argv.rounds}`);
-const maxTurns = ROUNDS ? ROUNDS * 2 : Number(argv.turns || 16);
+// A scripted case runs exactly as long as its script.
+const maxTurns = CASES[caseKey]?.script ? CASES[caseKey].script.length
+               : ROUNDS ? ROUNDS * 2 : Number(argv.turns || 16);
 // Loose goals: nobody is handed a structure to want, and both may ask and refuse.
 const TOLD  = (argv.goals || "strict") === "told";
 // `told` runs on the loose machinery; the only difference is where the brief
