@@ -1,25 +1,29 @@
 #!/bin/bash
-# The eight channel cases x five arguments x four casts.
+# Nine cases x five arguments x four casts, at four rounds each.
 #
-# `refs` runs from the two drawings, never from a text memory. It is passed here
-# rather than left to the caller because that is exactly how the drawings row
-# went missing: the grid was re-run without --drawings and every image run in
-# the set was quietly replaced by the written version.
+# Every role is given a stated aim in plain words — the `told` goals. The loose
+# briefs, where each of them got a life and no goal and the need was read off
+# the life afterwards, are not used here.
 #
-# `together` and `alone` are not in this grid. Neither is about who can hear
-# whom, and neither changed when the channel model did.
+# `refs` is the exception and not a loose run either: its goal is one of the two
+# drawings, and the need is read off the picture rather than off a sentence.
+# --drawings is passed here rather than left to the caller, because that is
+# exactly how the drawings row went missing once already.
 cd "$(dirname "$0")"
 mkdir -p sessions/batch
-CASES="open r2-blind r1-blind words bridge bridge-1 bridge-2 silent"
+CASES="open conduit-1 conduit-2 later selective summarised aside mediator silent"
 if [ "$1" = "--one" ]; then
   S="$2"; C="$3"; P="$4"
-  EXTRA=""
-  [ "$S" = "refs" ] && EXTRA="--drawings"
+  LOG="sessions/batch/link-$S-$C-p$P.txt"
+  # Already ran and wrote a session: leave it alone. Lets the grid be restarted
+  # at a different width without paying for every cell again.
+  if [ -f "$LOG" ] && grep -q "session written" "$LOG"; then echo "$S/$C cast$(( $P + 1 )) skip"; exit; fi
+  if [ "$S" = "refs" ]; then GOALS="--goals loose --drawings"; else GOALS="--goals told"; fi
   node --env-file=.env run.mjs --a openai --b claude --machine gemini \
-    --scenario "$S" --case "$C" --pair "$P" $EXTRA \
-    --goals loose --speech free --builder model --turns 10 --confer 6 \
-    > "sessions/batch/link-$S-$C-p$P.txt" 2>&1
+    --scenario "$S" --case "$C" --pair "$P" $GOALS \
+    --speech free --builder model --rounds 4 \
+    > "$LOG" 2>&1
   echo "$S/$C cast$(( $P + 1 )) exit=$?"; exit
 fi
 for S in places loads agreed pairs refs; do for C in $CASES; do for P in 0 1 2 3; do echo "$S $C $P"; done; done; done \
-  | xargs -P 5 -n 3 "$0" --one
+  | xargs -P 20 -n 3 "$0" --one

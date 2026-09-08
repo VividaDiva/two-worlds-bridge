@@ -27,7 +27,7 @@ import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import OpenAI from "openai";
 import { GoogleGenAI } from "@google/genai";
 import { KIT, NAME, MADE, FEATURES, FORBIDDEN, STRUCTURES, CHOICES, AXES, mkCtx, hear, newTurn, build, provenance, groundOf, ledger } from "./engine.mjs";
-import { readKeyword, readLLM, readLooseKeyword, readLooseLLM, speakLLM, chooseLLM, READERS } from "./machine.mjs";
+import { readKeyword, readLLM, readLooseKeyword, readLooseLLM, speakLLM, summariseLLM, askLLM, chooseLLM, READERS } from "./machine.mjs";
 
 /* ── what each of them came for, and what it is allowed to do ─────────── */
 const SCENARIOS = {
@@ -445,50 +445,48 @@ const ONLY_BUILDER = { hears: false, echo: true  };   // the other role is silen
 const ONLY_OTHER   = { hears: true,  echo: false };   // the builder is silent to you
 const NOTHING      = { hears: false, echo: false };   // nothing comes back at all
 
-// Who can hear whom. `hears` is the OTHER ROLE, `echo` is the builder.
+// Nine ways of running the same three people.
 //
-// Hearing between the two people is a LINK and not a per-role property: if one
-// of them can hear the other, the other can hear them back. It used to be set
-// per role, which produced cases where Role 2 heard Role 1 and Role 1 was deaf
-// to Role 2 — one person talking into an exchange that, from the other side,
-// was not one. Nobody converses that way, and it made "who could hear whom"
-// mean two different things depending on which side you read it from.
+// The two of them always talk to each other; the link is mutual everywhere in
+// this set. What varies is what reaches Role 3, and what Role 3 may do about it.
 //
-// What still varies per role is the echo: whether that person can see the
-// crossing as it goes up. That one is genuinely one-sided in life — two people
-// can be talking while only one of them is watching the work.
+//   reads      which of them Role 3 is given at all: both, or one as a conduit
+//   defer      it hears everything and lays nothing until they have finished
+//   drop       it receives only some of what is said, every nth turn missing
+//   summarise  it never sees a sentence, only an account of the whole thing
+//   aside      each of them also tells Role 3, privately, what they meant
+//   mayAsk     it may ask, and be answered — the one case where that rule lifts
+//   mute       it never speaks; the only thing it says back is what it builds
 //
-// So the eight cases below are (link on|off) x (Role 1 sees the build) x (Role 2
-// sees the build), and the last two are about something other than the channel.
+// `open` is the control the other eight vary from: everybody hears everything,
+// Role 3 builds again after every turn, and the two of them can see what it laid
+// and answer it.
 const CASES = {
-  open:      { A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ALL },
-               label: "Everyone hears everything" },
-  "r2-blind":{ A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ONLY_OTHER },
-               label: "Role 2 cannot see the crossing" },
-  "r1-blind":{ A: "want", B: "avoid", starts: "A", see: { A: ONLY_OTHER, B: ALL },
-               label: "Role 1 cannot see the crossing" },
-  words:     { A: "want", B: "avoid", starts: "A", see: { A: ONLY_OTHER, B: ONLY_OTHER },
-               label: "They have only each other's words" },
-  bridge:    { A: "want", B: "avoid", starts: "A", see: { A: ONLY_BUILDER, B: ONLY_BUILDER },
-               label: "They have only the crossing" },
-  "bridge-1":{ A: "want", B: "avoid", starts: "A", see: { A: ONLY_BUILDER, B: NOTHING },
-               label: "Only Role 1 can see the crossing, and neither hears the other" },
-  "bridge-2":{ A: "want", B: "avoid", starts: "A", see: { A: NOTHING, B: ONLY_BUILDER },
-               label: "Only Role 2 can see the crossing, and neither hears the other" },
-  silent:    { A: "want", B: "avoid", starts: "A", see: { A: NOTHING, B: NOTHING },
-               label: "Nothing comes back to either of them" },
-  // The two that are about something other than who can hear whom.
-  together:  { A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ALL }, confer: true,
-               label: "Conferring first" },
-  alone:     { A: "want", B: "avoid", starts: "A", see: { A: ONLY_BUILDER, B: ONLY_BUILDER },
-               solo: true, label: "Each alone" },
+  open:       { A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ALL },
+                label: "Open collaboration" },
+  "conduit-1":{ A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ALL }, reads: "A",
+                label: "Role 1 carries it" },
+  "conduit-2":{ A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ALL }, reads: "B",
+                label: "Role 2 carries it" },
+  later:      { A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ALL }, defer: true,
+                label: "They talk first, it builds after" },
+  selective:  { A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ALL }, drop: 2,
+                label: "It hears only some of it" },
+  summarised: { A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ALL }, summarise: true, defer: true,
+                label: "It gets a summary, not the words" },
+  aside:      { A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ALL }, aside: true,
+                label: "Each also tells it privately" },
+  mediator:   { A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ALL }, mayAsk: 3,
+                label: "It may ask, and be answered" },
+  silent:     { A: "want", B: "avoid", starts: "A", see: { A: ALL, B: ALL }, mute: true,
+                label: "It never speaks, it only builds" },
 };
 
-// The link is mutual by construction. Asserted rather than trusted, because the
-// old shape was a plain object literal and drifted without anything complaining.
 for (const [k, c] of Object.entries(CASES))
-  if (!!c.see.A.hears !== !!c.see.B.hears)
-    throw new Error(`case ${k}: hearing between the two roles must be mutual`);
+  if (!c.see.A.hears || !c.see.B.hears)
+    throw new Error(`case ${k}: the two roles always talk to each other`);
+
+
 
 
 // What one role can hear. Older recordings carry the flat pair; read either.
@@ -628,6 +626,9 @@ SHAPES.set(LooseReadSchema, '{"asks": ["key", ...], "refuses": ["key", ...]}');
 SHAPES.set(ChooseSchema,    '{"build": "the id exactly as written", "why": "..."}');
 SHAPES.set(ReadSchema,      '{"needs": ["key", ...]}');
 SHAPES.set(SaySchema,       '{"say": "..."}');
+// The summary comes back in the same one-field shape as anything else it says.
+const SumSchema = SaySchema;
+SHAPES.set(SumSchema,       '{"say": "..."}');
 
 function systemPrompt(role, act, scenario, situation, goal, hat) {
   return [
@@ -646,7 +647,9 @@ function systemPrompt(role, act, scenario, situation, goal, hat) {
       : `2. You may only REFUSE. Everything you say is something you will not have, cannot live with, or object to.`
         + ` You may never ask for anything, and you may never negate an absence to smuggle a request in`
         + ` (no "I won't have it without a rail"). Complaining is refusing; asking dressed as complaint is not.`,
-    `3. You may NEVER name a thing that could be built. These words are banned: ${STRUCTURES.join(", ")}.`,
+    `3. You have no word for any made thing, and neither has anybody here. Nothing in your language`,
+    `   names a built object — not ${STRUCTURES.slice(0, 6).join(", ")}, none of them. What you do have`,
+    `   words for is what you need of it and what happens to you when it is wrong, so that is what you say.`,
     `   Where you are is yours to describe — the water, the drop, the season, all of it. What should be BUILT is not.`,
     `   Describe your situation and what you need from it. Say what would happen to you, not what should be built.`,
     `4. One thought, said out loud. Under about thirty words. Do not begin the way you began last time.`,
@@ -692,7 +695,9 @@ function looseSystemPrompt(scenario, situation, hat) {
     `1. Write the whole sentence yourself, in your own voice. There is no fixed opening and no form to fill in.`,
     `2. You may ask for things, refuse things, or do both in the same sentence. Say it the way the person above`,
     `   would actually say it. Do not perform a speech act; just talk.`,
-    `3. You may NEVER name a thing that could be built. These words are banned: ${STRUCTURES.join(", ")}.`,
+    `3. You have no word for any made thing, and neither has anybody here. Nothing in your language`,
+    `   names a built object — not ${STRUCTURES.slice(0, 6).join(", ")}, none of them. What you do have`,
+    `   words for is what you need of it and what happens to you when it is wrong, so that is what you say.`,
     `   Where you are is yours to describe — the water, the drop, the season, all of it. What should be BUILT is not.`,
     `   Describe your situation and what you need from it. Say what would happen to you, not what should be built.`,
     `4. One thought, said out loud. Under about thirty words. Do not begin the way you began last time.`,
@@ -746,7 +751,9 @@ function freeSaySystem(situation, manner, together, mayName = false) {
     mayName
       ? `1. You may name the parts if that is the only way to say it. You are still not the one designing it:`
         + ` say what you need and what would go wrong without it, and leave what to make of that to them.`
-      : `1. You may never name a thing that could be built. These words are banned: ${STRUCTURES.join(", ")}.`,
+      : `1. You have no word for any made thing, and neither has anybody here. Nothing in your language`,
+      `   names a built object — not ${STRUCTURES.slice(0, 6).join(", ")}, none of them. What you do have`,
+      `   words for is what you need of it and what happens to you when it is wrong, so that is what you say.`,
     mayName
       ? `   Where you are is yours to describe too — the water, the drop, the season, all of it.`
       : `   Where you are is yours to describe — the water, the drop, the season, all of it. What should be BUILT is not.`,
@@ -1131,7 +1138,7 @@ const MACHINES = { claude: machineClaude, openai: machineOpenAI, gemini: machine
 function violations(turn, act) {
   const out = [];
   const words = turn.say.toLowerCase().split(/\s+/).map(w => w.replace(/[^a-z0-9'-]/g, ""));
-  for (const f of STRUCTURES) if (words.includes(f)) out.push(`you named "${f}", which is banned`);
+  for (const f of STRUCTURES) if (words.includes(f)) out.push(`"${f}" is a made thing and you have no word for it`);
   for (const f of turn.asserts) if (!(f in FEATURES)) out.push(`"${f}" is not one of the feature keys`);
   if (!turn.asserts.length) out.push("you asserted nothing; every sentence must mean at least one feature");
   if (turn.asserts.length > 2) out.push(`you named ${turn.asserts.length} needs; one or two only — pick what the sentence most directly says`);
@@ -1145,7 +1152,7 @@ function violations(turn, act) {
 function violationsLoose(turn) {
   const out = [];
   const words = turn.say.toLowerCase().split(/\s+/).map(w => w.replace(/[^a-z0-9'-]/g, ""));
-  for (const f of FORBIDDEN) if (words.includes(f)) out.push(`you named "${f}", which is banned`);
+  for (const f of FORBIDDEN) if (words.includes(f)) out.push(`"${f}" is a made thing and you have no word for it`);
   const all = [...turn.asks, ...turn.refuses];
   for (const f of all) if (!(f in FEATURES)) out.push(`"${f}" is not one of the feature keys`);
   if (!all.length) out.push("you asked for nothing and refused nothing; every sentence must mean at least one feature");
@@ -1174,6 +1181,7 @@ async function speakFree(player, role, ctx, state, cfg) {
       standing: CX(role).design ? NAME(CX(role).design.id) : null,
       dialogue: dialogueFor(role, cfg, state.log || []),
       hears: SEE(cfg, role).hears, turn: state.turn + 1, echo: SEE(cfg, role).echo,
+      carries: cfg.reads ? (cfg.reads === role ? "me" : "them") : null,
     }) + note;
     const out = await PLAYERS[player](sys, pics ? { text: user, images: pics.images, media: pics.media } : user, FreeSaySchema);
     say = String(out?.say || "").trim();
@@ -1244,6 +1252,7 @@ async function speak(player, role, act, ctx, state, scenario, cfg) {
       standing: CX(role).design ? NAME(CX(role).design.id) : null,
       dialogue: dialogueFor(role, cfg, state.log || []),
       hears: SEE(cfg, role).hears,
+      carries: cfg.reads ? (cfg.reads === role ? "me" : "them") : null,
       turn: state.turn + 1,
       echo: SEE(cfg, role).echo,
     }) + note;
@@ -1263,7 +1272,16 @@ const argv = Object.fromEntries(process.argv.slice(2).reduce((a, v, i, arr) =>
 
 const scenarioKey = argv.scenario || "places";
 const caseKey = argv.case || "given";
-const maxTurns = Number(argv.turns || 16);
+// A round is one turn from each of them. Fixed rounds make the cases
+// comparable: every run is the same length, so a case cannot look better than
+// another for having gone on longer. It also switches off the three ways a
+// conversation could end early — somebody passing, both letting it rest, or
+// nobody saying anything new — because under a fixed structure those put
+// different amounts of talk in front of Role 3 and call it the same condition.
+const ROUNDS = argv.rounds === undefined ? null : Math.max(1, Math.trunc(Number(argv.rounds)));
+if (argv.rounds !== undefined && !Number.isFinite(Number(argv.rounds)))
+  throw new Error(`--rounds wants a number, got ${argv.rounds}`);
+const maxTurns = ROUNDS ? ROUNDS * 2 : Number(argv.turns || 16);
 // Loose goals: nobody is handed a structure to want, and both may ask and refuse.
 const TOLD  = (argv.goals || "strict") === "told";
 // `told` runs on the loose machinery; the only difference is where the brief
@@ -1271,7 +1289,9 @@ const TOLD  = (argv.goals || "strict") === "told";
 // asking the right question.
 const LOOSE = (argv.goals || "strict") === "loose" || TOLD;
 // Who decides what gets built: the scoring rule, or Role 3 itself.
-const BUILDER = argv.builder || "rule";
+// Four of the cases are about whether Role 3 follows what it was told or reads
+// it its own way, so the case decides and the flag is only the default.
+const BUILDER = CASES[caseKey]?.builder || argv.builder || "rule";
 const PICTURES = "pictures" in argv && argv.pictures !== "off";
 // --drawings uses your own two images from agents/drawings/ instead of the pair
 // generated from the kit. refs only: it is the argument about referents.
@@ -1447,7 +1467,7 @@ for (let i = 0; i < maxTurns; i++) {
 
   // Said they had nothing to add last time, and nothing has been said since that
   // was aimed at them: let it stand rather than making them fill the slot.
-  if (state.done[role] && !state.freshFor?.[role] && state.turn > 2) {
+  if (!ROUNDS && state.done[role] && !state.freshFor?.[role] && state.turn > 2) {
     state.passed = (state.passed || 0) + 1;
     console.log(`  ${String(state.turn + 1).padStart(2)} role ${role === "A" ? 1 : 2} — nothing to add`);
     state.turn++;
@@ -1480,10 +1500,21 @@ for (let i = 0; i < maxTurns; i++) {
     try { said = await speakFree(player, role, ctx, state, cfg); PERSONA = said.persona || null; }
     catch (e) { if (lostTurn(e)) break; continue; }
     sentence = deEscape(said.say || "");
-    if (byModelUsed) reading = settle(readLooseLLM(sentence,
+    // Normally the reading goes out while the speaker is still annotating its
+    // own line, because neither needs the other. Not in `aside`: there Role 3
+    // is given the private gloss as well, and that gloss IS the annotation, so
+    // the two have to happen in order.
+    if (byModelUsed && !cfg.aside) reading = settle(readLooseLLM(sentence,
       (sys, usr) => MACHINES[reader](sys, usr, LooseReadSchema)));
     try { turn = await codeFree(player, role, sentence, state, cfg); attempts = 1; }
     catch (e) { if (reading) await reading; if (lostTurn(e)) break; continue; }
+    if (byModelUsed && cfg.aside) {
+      const priv = (turn.meantPlainly || "").trim();
+      reading = settle(readLooseLLM(
+        priv ? `${sentence}\n\n(said to you alone, not to the other one: ${priv})` : sentence,
+        (sys, usr) => MACHINES[reader](sys, usr, LooseReadSchema)));
+      if (priv) console.log(`     (aside to Role 3: ${priv})`);
+    }
   } else {
     try { ({ turn, attempts } = await speak(player, role, act, ctx, state, scenarioKey, cfg)); }
     catch (e) { if (lostTurn(e)) break; continue; }
@@ -1497,6 +1528,28 @@ for (let i = 0; i < maxTurns; i++) {
   state.said[role].push(sentence);
   state.lastMeant[role] = turn.asserts.slice();
   state.turn++;
+
+  // Whether this sentence reaches Role 3 at all. A conduit case gives it only
+  // one of them; a selective one drops every nth turn; a summarised one gives it
+  // no sentences whatever and an account of the whole thing at the end. Decided
+  // before the reading call so a sentence it never receives does not cost one,
+  // and recorded as unread — which already means "Role 3 did not get this" and
+  // keeps it out of the caught/missed count rather than scoring it as deaf.
+  let withheld = null;
+  if (cfg.reads && cfg.reads !== role) withheld = "it is not the one carrying this";
+  else if (cfg.drop && pactSpoken === 0 && (state.turn % cfg.drop) === 0) withheld = "this turn was not passed on";
+  else if (cfg.summarise) withheld = "it is given the summary, not the sentences";
+  if (withheld) {
+    state.withheld = (state.withheld || 0) + 1;
+    console.log(`  ${state.turn.toString().padStart(2)} role ${role === "A" ? 1 : 2} (${player}): ${sentence}`);
+    console.log(`     meant [${turn.asserts.join(", ")}]`);
+    console.log(`     (Role 3 never received this — ${withheld})`);
+    transcript.push({ turn: state.turn, who: role, player, act, text: sentence,
+                      persona: PERSONA, unread: true, withheld, meant: turn.asserts,
+                      asserts: turn.asserts, taken: [], byWord: null, byModel: null, caught: null,
+                      meantPlainly: turn.meantPlainly || "" });
+    continue;
+  }
 
   // Both readers see the sentence. Only the chosen one gets to build with it.
   // Under strict goals the role's speech act supplies the stance and the reader
@@ -1542,7 +1595,9 @@ for (let i = 0; i < maxTurns; i++) {
   // turned its line into a correction of the build — the negotiation they had
   // just finished, reopened in front of Role 3. It now hears both of them and
   // builds once, which is what the case says on the page.
-  const holdBuild = cfg.confer && pactSpoken < PACT_LINES - 1;
+  // `later` and `summarised` let them talk the whole way through and lay
+  // nothing until they have finished. Same hold the confer case uses.
+  const holdBuild = (cfg.confer && pactSpoken < PACT_LINES - 1) || !!cfg.defer;
   if (holdBuild) {
     console.log(`  ${state.turn.toString().padStart(2)} role ${role === "A" ? 1 : 2} (${player}): ${sentence}`);
     console.log(`     meant [${turn.asserts.join(", ")}]`);
@@ -1611,7 +1666,24 @@ for (let i = 0; i < maxTurns; i++) {
   if (before !== after) console.log(`     → they rebuild: ${NAME(after)}`);
   // Only now, with the reading committed and the thing rebuilt, does it speak.
   let saidByMachine = "";
-  if (voiced) try {
+  // The one place Role 3 may ask. It spends a question when it did not catch
+  // what was meant — and because everybody can hear it, the next speaker
+  // answers without anything else having to be arranged.
+  const wantsToAsk = cfg.mayAsk && (state.asked || 0) < cfg.mayAsk
+                     && turn.asserts.length > 0 && !caught;
+  if (voiced && !cfg.mute && wantsToAsk) try {
+    saidByMachine = deEscape(await askLLM({
+      said: sentence, took: taken, after: NAME(after), wants: [...cx.wants.keys()],
+    }, (sys, usr) => MACHINES[reader](sys, usr, SaySchema)));
+    if (saidByMachine) {
+      state.asked = (state.asked || 0) + 1;
+      console.log(`     Role 3 asks: "${saidByMachine}"`);
+    }
+  } catch (e) {
+    console.log(`     (it had a question and could not put it — ${e.message})`);
+  }
+  // In `silent` the only thing it says back is the crossing itself.
+  if (voiced && !cfg.mute && !saidByMachine) try {
     const groundKnown = cx.world.water || cx.world.rock;
     const tellGround = !groundKnown && !saidGroundUnknown;
     saidByMachine = deEscape(await speakLLM({
@@ -1664,11 +1736,70 @@ for (let i = 0; i < maxTurns; i++) {
     state.endedBy = "they settled it between themselves and one of them carried it to the builder";
     break;
   }
-  if (state.done.A && state.done.B) { state.endedBy = "both let it rest"; break; }
-  if (state.stale >= 4 && state.still >= 4 && state.turn >= 8) {
+  if (!ROUNDS && state.done.A && state.done.B) { state.endedBy = "both let it rest"; break; }
+  if (!ROUNDS && state.stale >= 4 && state.still >= 4 && state.turn >= 8) {
     state.endedBy = "they ran out of new things to say and it had stopped mattering";
     break;
   }
+}
+
+// The two cases that lay nothing while they are talking have to lay something
+// at the end, or the run finishes with an empty gap and every need unmet for a
+// reason that has nothing to do with either of them.
+//
+//   later       Role 3 heard every sentence as it came and held off building.
+//               Everything it took is already in the context; it just builds.
+//   summarised  Role 3 received no sentence at all. Somebody else reads the
+//               conversation and gives it an account, and it builds from that —
+//               which is the conduit metaphor with an extra pair of hands in it.
+const settleTop = p => p.then(ok => ({ ok }), err => ({ err }));
+if (cfg.defer && !cfg.solo) {
+  const cx = CX("A");
+  if (cfg.summarise) {
+    const talk = transcript.filter(t => (t.who === "A" || t.who === "B") && t.text)
+      .map(t => `${t.who === "A" ? "Role 1" : "Role 2"}: ${t.text}`).join("\n");
+    let account = "";
+    try {
+      account = deEscape(await summariseLLM(talk, (sys, usr) => MACHINES[reader](sys, usr, SumSchema)));
+      console.log(`\n  the account Role 3 was given:\n    "${account}"`);
+    } catch (e) {
+      console.log(`  (no summary could be made — ${e.message})`);
+    }
+    state.summary = account;
+    if (account) {
+      const r = await settleTop(LOOSE
+        ? readLooseLLM(account, (sys, usr) => MACHINES[reader](sys, usr, LooseReadSchema))
+        : readLLM(account, MACHINES[reader]));
+      if (r.ok) {
+        newTurn(cx);
+        if (LOOSE) { hear(cx, "A", "want", r.ok.asks); hear(cx, "A", "avoid", r.ok.refuses); }
+        else hear(cx, "A", "want", r.ok);
+        console.log(`     from the account it took [${(LOOSE ? [...r.ok.asks, ...r.ok.refuses] : r.ok).join(", ") || "nothing"}]`);
+      } else console.log(`     (the account went unread — ${r.err.message})`);
+    }
+  }
+  const before = cx.design ? cx.design.id : null;
+  build(cx);
+  const byRule = cx.design.id;
+  if (BUILDER === "model") {
+    const chose = await chooseLLM({
+      kit: KIT.map(k => ({ id: NAME(k.id), props: k.has.map(f => FEATURES[f]).join("; ") })),
+      wants: [...cx.wants.keys()], avoids: [...cx.avoids.keys()], standing: before ? NAME(before) : null,
+      said: cfg.summarise
+        ? [{ who: "the account it was given", text: state.summary || "" }]
+        : transcript.filter(t => t.who === "A" || t.who === "B")
+            .map(t => ({ who: t.who === "A" ? "Role 1" : "Role 2", text: t.text })),
+    }, (sys, usr) => MACHINES[reader](sys, usr, ChooseSchema));
+    const picked = typeof chose === "string" && KIT.find(k => NAME(k.id) === chose);
+    if (picked) cx.design = picked;
+    if (cx.design.id !== byRule) state.diverged = (state.diverged || 0) + 1;
+  }
+  transcript.push({ who: "machine", turn: state.turn, text: NAME(cx.design.id), say: "",
+                    changed: before !== cx.design.id, taken: [...cx.wants.keys()] });
+  state.endedBy = cfg.summarise
+    ? "they finished, somebody told Role 3 what they had said, and it built from that"
+    : "they finished talking and Role 3 built once, from all of it";
+  console.log(`\n  it built once, at the end: ${NAME(cx.design.id)}`);
 }
 
 // What `together` is actually for.

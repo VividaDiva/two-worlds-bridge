@@ -88,6 +88,52 @@ const SAY_SYSTEM = [
   `- Never use the word "user".`,
 ].join("\n");
 
+// Somebody who was in the room writes down what was said, and Role 3 gets that
+// instead of the conversation. A fourth pair of hands in the chain: it is not
+// hearing them wrongly, it is hearing an account written by someone who heard
+// them, which is the conduit metaphor with one more reconstruction in it.
+//
+// Deliberately NOT told to pick out needs or to be complete. It is told to
+// write what was said, the way a person asked to summarise would — because a
+// summariser instructed to preserve every requirement is a different
+// experiment, and a much kinder one.
+const SUM_SYSTEM = [
+  "Two people have been arguing about a crossing somebody else has to build.",
+  "You listened. Write a short account of what they said, for the person who has to build it.",
+  "Four sentences at most. Your own words, the way you would tell a colleague what went on.",
+  "Do not name any structure or part. Do not add anything they did not say.",
+].join("\n");
+
+export async function summariseLLM(talk, ask) {
+  const out = await ask(SUM_SYSTEM, `The conversation:\n\n${talk}\n\nWhat did they say?`);
+  return typeof out?.say === "string" ? out.say.trim() : "";
+}
+
+// The one case where the rule lifts. Everywhere else Role 3 builds from their
+// words and may ask nothing, which is Reddy's point: a reconstruction with no
+// way to check itself. Here it may ask, and be answered — so that what asking
+// is actually worth can be measured against the cases without it.
+const ASK_SYSTEM = [
+  "You are building a crossing for two people from what they say.",
+  "You have just been told something and you are not sure what they meant by it.",
+  "Ask them one short question about it. One sentence.",
+  "Ask about what they need, never about what to build: you may not name a structure or a part,",
+  "and it is not their job to design it. Ask the thing that would let you build the right one.",
+].join("\n");
+
+export async function askLLM(state, ask) {
+  const list = ks => ks.length ? ks.map(f => FEATURES[f]).join("; ") : "nothing yet";
+  const out = await ask(ASK_SYSTEM, [
+    `They said: "${state.said}"`,
+    `You took it to be about: ${state.took.length ? list(state.took) : "nothing you could build from"}.`,
+    `What stands: ${state.after}.`,
+    `Asked of you so far: ${list(state.wants)}.`,
+    "",
+    "What do you ask them?",
+  ].join("\n"));
+  return typeof out?.say === "string" ? out.say.trim() : "";
+}
+
 export async function speakLLM(state, ask) {
   const list = ks => ks.length ? ks.map(f => FEATURES[f]).join("; ") : "nothing yet";
   const bits = [
