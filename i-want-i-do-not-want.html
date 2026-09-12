@@ -139,6 +139,9 @@
     text-transform:uppercase; display:block; margin-bottom:4px}
   .crit .v.yes::before{content:"holds"; color:var(--signal)}
   .crit .v.part::before{content:"holds in part"; color:var(--muted)}
+  /* the third criterion stopped holding when the goals were restated, and there
+     was no class for a verdict that fails — it rendered with no label at all */
+  .crit .v.no::before{content:"does not hold"; color:var(--roleB)}
   @media(max-width:760px){ .crit{grid-template-columns:1fr; gap:24px} }
   .figs{max-width:74ch; margin:30px auto 0; padding:0 26px;
     display:grid; grid-template-columns:repeat(3,1fr); gap:22px}
@@ -901,43 +904,48 @@
 
 <section class="findings" id="findings">
   <div class="sec-h"><span class="num">01</span><h2>What came of it</h2>
-    <p class="sec-sub">200 conversations, judged against what they were for.
-      Each need is scored on the crossing that ended up standing.</p></div>
+    <p class="sec-sub">340 conversations, judged against what they were for.
+      Each person is given an aim in plain words; the need behind it is scored on the
+      crossing that ended up standing, and shown to nobody.</p></div>
 
   <ol class="crit">
     <li>
       <p class="q">Do they end up where they started?</p>
-      <div class="n">38<i>%</i></div>
+      <div class="n">34<i>%</i></div>
       <p class="ev">of what a speaker meant on its first turn is still in what it means
-        on its last. Half of what they first asked for &mdash; <b>51%</b> &mdash; is in
-        the crossing that finally stood.</p>
-      <p class="v part">Partly. Positions move a great deal in ten turns, and what
-        survives is about half of the opening claim.</p>
+        on its last. More of it than that survives into the thing itself &mdash;
+        <b>57%</b> of what they first asked for is in the crossing that finally stood.</p>
+      <p class="v part">Partly. What they say moves further than what they get.</p>
     </li>
     <li>
       <p class="q">Does the task survive being misunderstood?</p>
-      <div class="n">r&nbsp;=&nbsp;0.05</div>
-      <p class="ev">Runs where the builder caught <b>28%</b> of what was meant served
-        <b>50%</b> of needs. Runs where it caught <b>70%</b> served <b>52%</b>.</p>
-      <p class="v yes">Yes, and that is the surprise. Being understood sentence by
-        sentence does not predict getting what you needed.</p>
+      <div class="n">r&nbsp;=&nbsp;&minus;0.01</div>
+      <p class="ev">Runs where the builder caught a third or less of what was meant served
+        <b>44%</b> of needs. The twenty runs where it caught most of it served <b>31%</b>.
+        Being understood sentence by sentence does not predict getting what you needed
+        &mdash; though twenty runs is a thin end to lean on.</p>
+      <p class="v yes">Yes, and that is still the surprise.</p>
     </li>
     <li>
       <p class="q">Does it serve both of them?</p>
-      <div class="n">56<i>%</i></div>
-      <p class="ev">of conversations leave both people at least half served. In
-        <b>34%</b> one of the two is sacrificed for the other; in <b>10%</b> neither
-        is served.</p>
-      <p class="v part">Usually, not reliably. A third of the time somebody pays for
-        the other&rsquo;s crossing.</p>
+      <div class="n">31<i>%</i></div>
+      <p class="ev">of conversations leave both people at least half served. In <b>47%</b>
+        one of the two is sacrificed for the other, and in <b>22%</b> neither is.</p>
+      <p class="v no">Usually not. Half the time somebody pays for the other&rsquo;s crossing.</p>
     </li>
   </ol>
 
-  <p class="pooled">Across all of it, a need reaches the built crossing more often than
-    chance would put it there &mdash; <b>53.2%</b> against a <b>48.5%</b> floor,
-    <b>+4.7 points, p&nbsp;=&nbsp;0.0001</b>. It holds for <i>already agreed</i>
-    (+9.8) and <i>two places</i> (+7.6). It does not hold for <i>two references</i>,
-    where each is gesturing at a crossing the other has never seen.</p>
+  <p class="pooled">Talking is worth something. A need reaches the built crossing more
+    often than chance would put it there &mdash; <b>41.7%</b> against a <b>35.3%</b>
+    floor, <b>+6.4 points, p&nbsp;&lt;&nbsp;0.0001</b> &mdash; and the instrument
+    contains its own control: one person alone with the builder gets <b>32.8%</b> of
+    what they need, where two people in any arrangement get <b>42.9%</b>. It holds
+    best for <i>the same aim, unknown to both</i> (67.6%) and worst for
+    <i>two references</i> (23.5%), where each is gesturing at a crossing the other has
+    never seen. <b>The floor is measured differently from before:</b> every argument
+    now carries one stated aim per role, so shuffling within an argument has nothing
+    to permute and reports no effect whatever the truth. It is shuffled across the
+    whole set instead.</p>
 </section>
 
 <section class="findings" id="drift">
