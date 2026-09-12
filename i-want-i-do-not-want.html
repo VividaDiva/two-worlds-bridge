@@ -1037,7 +1037,6 @@
     <div class="views">
       <div class="tabrow" role="tablist" aria-label="What to show" aria-orientation="horizontal">
       <button class="vtab" data-v="scene" role="tab" id="tab-scene" aria-controls="sceneWrap" aria-selected="true" tabindex="0">What was built</button>
-      <button class="vtab" data-v="compare" role="tab" id="tab-compare" aria-controls="compare" aria-selected="false" tabindex="-1">Every case</button>
       <button class="vtab" data-v="said" role="tab" id="tab-said" aria-controls="sceneWrap" aria-selected="false" tabindex="-1">What was said</button>
       <button class="vtab" data-v="dropped" role="tab" id="tab-dropped" aria-controls="analysis" aria-selected="false" tabindex="-1">What was dropped</button>
       <button class="vtab" data-v="flow" role="tab" id="tab-flow" aria-controls="flow" aria-selected="false" tabindex="-1">Where it went</button>
@@ -1063,10 +1062,6 @@
       <div class="analysis" id="analysis" role="tabpanel" aria-labelledby="tab-dropped" hidden></div>
       <div class="analysis flowview" id="flow" role="tabpanel" aria-labelledby="tab-flow" hidden></div>
       <div class="analysis" id="rec" hidden></div>
-      <div class="analysis" id="compare" role="tabpanel" aria-labelledby="tab-compare" hidden>
-        <table class="cmp" id="cmp"></table>
-        <div class="finds" id="finds"></div>
-      </div>
       <div class="badge">
         <span class="built" id="bBuilt">nothing built yet</span>
         <span class="n" id="bMatches">0 matches</span>
@@ -2595,7 +2590,7 @@ function record(){
     missN:  S.readings.filter(r => r.heard.length && !r.agreed).length,
   };
   if (S.silent){ (S.runs[KEY(S.case)] ||= []).push(S.results[KEY(S.case)]); return; }
-  renderCmp(); renderBadges();
+  renderBadges();
 }
 
 // One run is an anecdote. Every case is played RUNS times before the page is
@@ -3362,55 +3357,12 @@ function renderBadges(){
       : `${(d.built[0] ? d.built[0][0] : "nothing")} · ${d.n} recorded`;
   });
 }
-function renderCmp(){
-  // The same comparison as before, over conversations that happened instead of
-  // runs that were simulated. Fewer of each — three cases, a handful of runs —
-  // so every figure says how many it rests on.
-  const rows = CASE_ORDER.filter(k => CASES[k]).map(k => {
-    const d = recordedDist(S.scenario, k);
-    if (!d) return `<tr><td class="k">${CASES[k].label}</td><td colspan="4" class="pending">no conversation recorded</td></tr>`;
-    const often = pairs => pairs.length && pairs[0][1] < d.n ? ` <i class="freq">${pairs[0][1]} of ${d.n}</i>` : "";
-    return `<tr><td class="k">${CASES[k].label}</td>
-      <td class="win">${d.built[0] ? d.built[0][0] : "nothing"}${often(d.built)}</td>
-      <td class="k">over ${d.ground[0] ? d.ground[0][0] : "—"}${often(d.ground)}</td>
-      <td class="k">${d.caught} of ${d.said} taken as meant</td>
-      <td class="k">${d.invented} credited that nobody said</td></tr>`;
-  }).join("");
-
-  // `open` is the plain arrangement — everybody hears everything — and
-  // `bridge` is that same arrangement with one thing taken away: neither can
-  // no longer hear Role 1. Same room, same builder, same opener. It is a
-  // cleaner contrast than the old one, where BOTH went deaf at once and the
-  // room changed with them.
-  const g = recordedDist(S.scenario, "open"), a2 = recordedDist(S.scenario, "bridge");
-  const finds = [];
-  if (g) finds.push(["Nothing here was written in advance",
-    `Every line is a model's own. Role 1 is played by one company's, Role 2 by another's, and the builder
-     reads them with a third — none of them shown the others' instructions. Across the conversations recorded
-     for <b>${CASES["open"].label.toLowerCase()}</b>, the builder took a median of <b>${g.caught} of ${g.said}</b>
-     sentences as they were meant${g.agreedWithList != null ? `, and a keyword reader would have agreed with it
-     on <b>${g.agreedWithList}</b>` : ""}.`]);
-  if (g && a2) finds.push(["When one of them cannot hear the other", (
-    (g.built[0] && a2.built[0] && g.built[0][0] !== a2.built[0][0])
-      ? `With everyone hearing everything they end at <b>${g.built[0][0].toLowerCase()}</b>; with Role 2
-         deaf to Role 1, at <b>${a2.built[0][0].toLowerCase()}</b>.`
-      : `Both reached <b>${g.built[0] ? g.built[0][0].toLowerCase() : "the same thing"}</b> here.`)
-    + ` Only one thing differs between them: Role 2 still hears the builder, still speaks into the same
-       room, and simply never hears what Role 1 said.`]);
-  const fh = document.getElementById("finds");
-  if (fh) fh.innerHTML = finds.map(([h, t]) => `<div class="find"><h5>${h}</h5><p>${t}</p></div>`).join("");
-
-  document.getElementById("cmp").innerHTML =
-    `<caption>${SC().blurb} Every figure below is drawn from conversations that happened, not from a model of one.</caption>
-     <tr><th>case</th><th>what stands</th><th>ground</th><th>taken as meant</th><th>credited unasked</th></tr>${rows}`;
-}
 
 /* ═══════════════════════════════════════════════════════════
    11 · VIEWS + TRANSPORT
    ═══════════════════════════════════════════════════════════ */
 const VNOTE = {
   scene:   "One conversation, and what the builder made of each sentence in it. Every property here is what it took them to need, rebuilt out of its own materials.",
-  compare: "Every case at once, tallied over the conversations recorded for each.",
   said:    "Every word the first two have said, ejected into the space between them and left there. Colour is the little of it the builder could use.",
   dropped: "The same run, counted: what carried, what was heard and dropped, and what the builder took each sentence to be about.",
   flow:    "Where each word of this case went, from the one who said it to the need it fed — or to nothing.",
@@ -3424,7 +3376,7 @@ function syncSplitChrome(){
   const note = document.getElementById("apartNote");
   if (note) note.hidden = !apart;
   const chrome = document.getElementById("sceneSplit");
-  const overlay = (S.view === "dropped" || S.view === "flow" || S.view === "compare");
+  const overlay = (S.view === "dropped" || S.view === "flow");
   if (chrome) chrome.hidden = !(apart && !overlay && (S.view === "scene" || S.view === "said"));
 }
 
@@ -3437,15 +3389,13 @@ function setView(v){
   });
   document.getElementById("analysis").hidden = v !== "dropped";
   document.getElementById("flow").hidden = v !== "flow";
-  document.getElementById("compare").hidden = v !== "compare";
-  const hide = (v === "dropped" || v === "flow" || v === "compare");
+  const hide = (v === "dropped" || v === "flow");
   document.getElementById("scene").hidden = hide;
   const apart = split();
   document.querySelector(".badge").hidden = hide || apart;
   syncSplitChrome();
   if (v === "dropped") renderAnalysis();
   if (v === "flow") renderFlow();
-  if (v === "compare") renderCmp();
   const soloNote = apart && v === "scene"
     ? " Two conversations, two crossings. Neither heard the other, so each got what talking to the builder alone would produce."
     : "";
@@ -3671,7 +3621,7 @@ function showRun(i){
     // between them read as five identical conversations. Say what is true
     // instead: there is nothing here yet.
     S.rec = null;
-    stop(); reset(); paint(); hud(); renderTrace(); paintRuns(); paintCaseLabels(); renderCmp(); renderBadges();
+    stop(); reset(); paint(); hud(); renderTrace(); paintRuns(); paintCaseLabels(); renderBadges();
     // A split case hides #log and renders into the two rooms instead, so putting
     // the notice only in #log left cases 4 and 5 showing two empty rooms and no
     // word about why. Put it wherever this case is actually rendering.
@@ -3689,7 +3639,7 @@ function showRun(i){
   }
   S.rec = pick;
   replaySession(SESSIONS[pick]);
-  paintRuns(); paintCaseLabels(); renderCmp(); renderBadges(); setView(S.view);
+  paintRuns(); paintCaseLabels(); renderBadges(); setView(S.view);
 }
 
 // A recorded run made under loose goals had nobody told what to want, so there
