@@ -940,8 +940,63 @@
     where each is gesturing at a crossing the other has never seen.</p>
 </section>
 
+<section class="findings" id="drift">
+  <div class="sec-h"><span class="num">02</span><h2>What happens to a word</h2>
+    <p class="sec-sub">340 conversations. What each person said they meant is asked
+      afterwards, turn by turn, and never shown to anybody &mdash; so an idea can be
+      followed from the mouth it left to the crossing that ended up standing.</p></div>
+
+  <ol class="crit">
+    <li>
+      <p class="q">After they have spoken to somebody, which words do they stop using?</p>
+      <div class="n">42<i>%</i></div>
+      <p class="ev">of the ideas a person opens with are never said again. <b>78%</b> of
+        everyone who spoke more than once abandoned at least one of them. The ones most
+        often dropped are where they are &mdash; <i>the ground is water</i> (75 times)
+        &mdash; and what they are afraid of: <i>it goes slick</i> (65),
+        <i>it moves underfoot</i> (50).</p>
+      <p class="v part">People stop describing their situation almost at once, and never
+        return to it.</p>
+    </li>
+    <li>
+      <p class="q">What replaces them?</p>
+      <div class="n">164</div>
+      <p class="ev">times a person took up <i>something at the hand</i> having not asked
+        for it at the start &mdash; more than any other idea. Then <i>takes loads</i> (139),
+        <i>does not go slick</i> (139), <i>ends hold in soft ground</i> (131). The commonest
+        exchanges: <i>it goes slick</i>&nbsp;&rarr;&nbsp;<i>takes loads</i> (32),
+        <i>the ground is water</i>&nbsp;&rarr;&nbsp;<i>something at the hand</i> (30),
+        <i>the ground is water</i>&nbsp;&rarr;&nbsp;<i>it goes slick</i> (27).</p>
+      <p class="v part">A condition becomes a fitting. They arrive describing a place and
+        leave asking for parts &mdash; which is the one thing they were told they could
+        not name.</p>
+    </li>
+    <li>
+      <p class="q">Does going through somebody else change the size of the crossing?</p>
+      <div class="n">2.5<i>&times;</i></div>
+      <p class="ev">One person alone with the builder gets <b>5.2</b> matchsticks. Put
+        anybody else in the room and it is <b>13.1</b> &mdash; and the builder rebuilds
+        <b>2.4</b> times instead of once. The order is almost monotone: straight to the
+        builder <b>4.5</b> and <b>5.8</b>, relayed through the builder <b>7.3</b> and
+        <b>8.7</b>, through the other person <b>9.3</b>, all three talking <b>11.7</b>,
+        everything heard <b>14.2</b>, and <b>17.1</b> when it waits and builds once at
+        the end.</p>
+      <p class="v yes">Yes, and in one direction. Every additional party makes a larger
+        crossing, whatever anybody asked for.</p>
+    </li>
+  </ol>
+
+  <p class="pooled">The three answers are the same answer. What a person can say
+    &mdash; a place, a fear &mdash; drops out of the conversation; what a builder can
+    act on takes its place; and the thing that gets built grows with every mouth the
+    meaning passes through. <b>Rebuild counts are not comparable across cases</b>: five
+    of the seventeen receive only one or two lines, or hold off and build once at the
+    end, so their &ldquo;1.0&rdquo; is a property of the route and not a finding.
+    Matchsticks are comparable, and that is the figure above.</p>
+</section>
+
 <section class="sec-h lead-in">
-  <span class="num">02</span><h2>The instrument</h2>
+  <span class="num">03</span><h2>The instrument</h2>
   <p class="sec-sub">Nothing below is scripted. What each of them meant is asked afterwards
     and never shown to the builder.
     <button class="ghost" id="resetBtn">Start this one again</button></p>
@@ -978,7 +1033,6 @@
       <button class="vtab" data-v="said" role="tab" id="tab-said" aria-controls="sceneWrap" aria-selected="false" tabindex="-1">What was said</button>
       <button class="vtab" data-v="dropped" role="tab" id="tab-dropped" aria-controls="analysis" aria-selected="false" tabindex="-1">What was dropped</button>
       <button class="vtab" data-v="flow" role="tab" id="tab-flow" aria-controls="flow" aria-selected="false" tabindex="-1">Where it went</button>
-      <button class="vtab" data-v="picture" role="tab" id="tab-picture" aria-controls="picture" aria-selected="false" tabindex="-1">What they think of each other</button>
       </div>
       <p class="vnote" id="vnote"></p>
     </div>
@@ -1000,8 +1054,6 @@
       </div>
       <div class="analysis" id="analysis" role="tabpanel" aria-labelledby="tab-dropped" hidden></div>
       <div class="analysis flowview" id="flow" role="tabpanel" aria-labelledby="tab-flow" hidden></div>
-      <div class="analysis" id="picture" role="tabpanel" aria-labelledby="tab-picture" hidden></div>
-      <div class="analysis" id="temper" hidden></div>
       <div class="analysis" id="rec" hidden></div>
       <div class="analysis" id="compare" role="tabpanel" aria-labelledby="tab-compare" hidden>
         <table class="cmp" id="cmp"></table>
@@ -2178,7 +2230,6 @@ function takeTurn(){
   paint(); hud();
   if (S.view === "dropped") renderAnalysis();
   if (S.view === "flow") renderFlow();
-  if (S.view === "picture") renderPicture();
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -3290,139 +3341,7 @@ function replaySession(ss){
   return true;
 }
 
-function renderTemper(){
-  const host = document.getElementById("temper");
-  const cell = (ta, tb) => {
-    const d = dist(KEY(S.case, ta, tb));
-    if (!d) return `<div class="cell"><span class="m">not run</span></div>`;
-    const mine = S.temper.A === ta && S.temper.B === tb;
-    const what = CASES[S.case].solo ? `${NAME(d.built[0][0])} · ${NAME(d.builtB[0][0]).toLowerCase()}`
-                                    : NAME(d.built[0][0]);
-    const most = n => n === d.n ? "" : ` <i class="freq">${n} of ${d.n}</i>`;
-    const who = !d.hitA && !d.hitB ? "neither got what they came for"
-      : [d.hitA ? `role 1${most(d.hitA)}` : null, d.hitB ? `role 2${most(d.hitB)}` : null]
-          .filter(Boolean).join(" and ") + " got what they came for";
-    const conf = CASES[S.case].confer;
-    return `<div class="cell${mine ? " won" : ""}"><b>${what}</b>
-      <span class="m">${who}<br>
-      ${conf ? (d.yielded ? `one of them gave way on ${d.yielded}, so the builder heard it`
-                          : `${d.dropped} dropped in order to agree`)
-        : d.gave ? `${d.gave} demand${d.gave === 1 ? "" : "s"} given up${
-            d.misgiven ? ` · <span class="bad">${d.misgiven} of them to a misreading</span>` : " · all warranted"}`
-        : "nothing given up"}</span></div>`;
-  };
-  const D = (a, b) => dist(KEY(S.case, a, b));
-  const ff = D("firm","firm"), fg = D("firm","giving"), gf = D("giving","firm"), gg = D("giving","giving");
-  const all = [ff, fg, gf, gg].filter(Boolean);
-  const same = all.length === 4 && new Set(all.map(d => d.built[0][0])).size === 1;
-  // The diagonal is the interesting one: deadlock and mutual deference are the
-  // same shape from the builder's side.
-  const mirrored = !same && ff && gg && ff.built[0][0] === gg.built[0][0]
-                   && (!fg || fg.built[0][0] !== ff.built[0][0] || !gf || gf.built[0][0] !== ff.built[0][0]);
-  const misgiven = all.reduce((n, d) => n + d.misgiven, 0);
-  const given    = all.reduce((n, d) => n + d.gave, 0);
-  const took     = all.reduce((n, d) => n + d.took, 0);
-  const idle     = all.reduce((n, d) => n + d.tookIdle, 0);
 
-  host.innerHTML = `
-    <p class="sub" style="margin:0 0 10px;font-size:12.5px;color:var(--muted);max-width:84ch">
-      ${split() ? `<b>They cannot hear each other in this case</b>, so there is nothing to give ground to.
-        All four cells below are the same run. That is why it is worth showing: a temperament needs
-        somebody in the room to be a temperament <i>toward</i>.`
-      : `Four ways of running <b>${CASES[S.case].label.toLowerCase()}</b>, ${RUNS} times each. Down the side is how
-         Role 1 argues; across the top is how Role 2 argues. The outlined cell is the pair set above.`}</p>
-    <div class="grid2">
-      <span></span><span class="hd">Role 2 holds firm</span><span class="hd">Role 2 gives ground</span>
-      <span class="rw">Role 1 holds firm</span>${cell("firm","firm")}${cell("firm","giving")}
-      <span class="rw">Role 1 gives ground</span>${cell("giving","firm")}${cell("giving","giving")}
-    </div>
-    ${split() ? "" : `<section class="an-sec" style="margin-top:12px">
-      <h4>What it buys</h4>
-      <p>${same
-        ? `<b>Nothing, here.</b> All four temperaments end at the same structure. Giving ground changes what
-           gets said and what gets taken back, and the builder arrives at the same place regardless — the
-           weighting that lets one refusal outlast several requests is doing the deciding, not the manners.`
-        : `The four end differently, so <b>how they argue decides what gets built</b>, not only what they came
-           for.`}${mirrored ? ` <b>Look at the diagonal.</b> Both holding firm and both giving way come out at
-           the same place — a point only survives if <i>one</i> of them stops arguing about it. Two people
-           deferring to each other lose exactly what two people refusing to budge lose, and the builder
-           cannot tell the difference between deadlock and mutual courtesy.` : ""}
-        ${given ? ` Across the four, <b>${given} demands were given up</b>${
-          misgiven ? `, and <b class="bad">${misgiven} of them went to something the other never objected to</b>.
-            That is what being accommodating costs down a channel that loses things: the giver pays, and the
-            other is not helped, because the concession was made to somebody who was never there.`
-          : `, every one to something the other had actually objected to.`}` : ``}
-        ${took ? ` And it runs the other way too: <b>${took} need${took === 1 ? " was" : "s were"} taken up</b> —
-          asked of the builder by somebody who did not arrive wanting ${took === 1 ? "it" : "them"}, having worked
-          back from what they believed the other would not have.${idle
-            ? ` <b class="bad">${idle} of ${took} do${idle === 1 ? "es" : ""} nothing for the other one's goal.</b>
-              Refusing a thing is not the same as wanting its opposite — <i>not cheap and done twice</i> is a wish
-              for something that lasts, and the only opposite available to a listener is <i>a great deal of it</i>.
-              The generosity is real and it arrives as bulk.` : ""}` : ``}</p>
-    </section>`}`;
-}
-
-function renderPicture(){
-  const host = document.getElementById("picture");
-  if (split()){
-    host.innerHTML = `
-      <div class="empty-apart">
-        <article class="empty-card a">
-          <h4>Role 1&rsquo;s picture of Role 2</h4>
-          <p>They never heard a word from the other room.</p>
-          <p class="void">No picture formed — not even a wrong one.</p>
-        </article>
-        <article class="empty-card b">
-          <h4>Role 2&rsquo;s picture of Role 1</h4>
-          <p>They never heard a word from the other room.</p>
-          <p class="void">No picture formed — not even a wrong one.</p>
-        </article>
-      </div>
-      <p class="empty-note">This case keeps them apart on purpose. A picture of the other can only form in a case where someone can hear.</p>`;
-    return;
-  }
-  const truth = role => {
-    const act = CASES[S.case][role], src = CX(role);
-    return new Set([...(act === "want" ? src.wants : src.avoids).keys()]);
-  };
-  const panel = (believer, about) => {
-    const pic = S.picture[believer], real = truth(about);
-    const act = CASES[S.case][about];
-    const held = act === "want" ? pic.wants : pic.avoids;
-    const beliefs = [...held.keys()];
-    const right = beliefs.filter(f => real.has(f));
-    const wrong = beliefs.filter(f => !real.has(f));
-    const missed = [...real].filter(f => !held.has(f));
-    return `<section class="an-sec pic">
-      <h4>Role ${believer === "A" ? "1" : "2"} thinks Role ${about === "A" ? "1" : "2"} ${act === "want" ? "wants" : "refuses"}</h4>
-      <p class="prov-head ${wrong.length ? "some" : "none"}">${right.length} right, ${wrong.length} wrong,
-         ${missed.length} never noticed at all.</p>
-      <div class="wchips">
-        ${right.map(f => `<span class="wchip prov both">${FEATLABEL[f] || f}<span class="did">right</span></span>`).join("")}
-        ${wrong.map(f => `<span class="wchip prov none">${FEATLABEL[f] || f}<span class="did">wrong — never said</span></span>`).join("")}
-        ${missed.map(f => `<span class="wchip prov" style="opacity:.5">${FEATLABEL[f] || f}<span class="did">said, never heard</span></span>`).join("")}
-      </div></section>`;
-  };
-  const misread = S.readings.filter(r => r.heard.length && !r.agreed);
-  host.innerHTML = `
-    <p class="sub" style="margin:0;font-size:12.5px;color:var(--muted);max-width:82ch">
-      Neither of them has the other's lexicon. Each rebuilds what it hears out of its own associations,
-      and on the words that matter those associations disagree — <b>out</b> is openness to one and exposure
-      to the other. What follows is not what they said. It is what each of them now believes about the other.</p>
-    ${panel("A","B")}
-    ${panel("B","A")}
-    ${misread.length ? `<section class="an-sec meaning">
-      <h4>Taken to mean something else · ${misread.length} of ${S.readings.filter(r=>r.heard.length).length} heard</h4>
-      <p>The sentence on the left was said. The reading on the right is what the other one made of it.</p>
-      <div style="display:flex;flex-direction:column;gap:6px">
-        ${misread.slice(0,8).map(r => `<div style="font-size:12.5px">
-          <b style="color:var(--${r.role === "A" ? "roleA" : "roleB"})">${r.spoken}</b><br>
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--muted)">meant ${
-            r.meant.map(f => FEATLABEL[f] || f).join(", ")}</span>
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--fault)"> &nbsp;→ heard as ${
-            r.heard.map(f => FEATLABEL[f] || f).join(", ")}</span></div>`).join("")}
-      </div></section>` : ""}`;
-}
 
 function renderBadges(){
   document.querySelectorAll(".case .res").forEach(el => {
@@ -3487,8 +3406,6 @@ const VNOTE = {
   said:    "Every word the first two have said, ejected into the space between them and left there. Colour is the little of it the builder could use.",
   dropped: "The same run, counted: what carried, what was heard and dropped, and what the builder took each sentence to be about.",
   flow:    "Where each word of this case went, from the one who said it to the need it fed — or to nothing.",
-  picture: "Reddy's actual claim, which the other views do not show: the listener does not receive a meaning, it rebuilds one out of its own materials.",
-  temper:  "The same case run four ways, according to whether each of them presses its point or gives ground.",
   rec:     "Separate arguments that actually happened, between models that had never seen each other's lines.",
 };
 
@@ -3499,7 +3416,7 @@ function syncSplitChrome(){
   const note = document.getElementById("apartNote");
   if (note) note.hidden = !apart;
   const chrome = document.getElementById("sceneSplit");
-  const overlay = (S.view === "dropped" || S.view === "flow" || S.view === "picture" || S.view === "compare");
+  const overlay = (S.view === "dropped" || S.view === "flow" || S.view === "compare");
   if (chrome) chrome.hidden = !(apart && !overlay && (S.view === "scene" || S.view === "said"));
 }
 
@@ -3512,16 +3429,14 @@ function setView(v){
   });
   document.getElementById("analysis").hidden = v !== "dropped";
   document.getElementById("flow").hidden = v !== "flow";
-  document.getElementById("picture").hidden = v !== "picture";
   document.getElementById("compare").hidden = v !== "compare";
-  const hide = (v === "dropped" || v === "flow" || v === "picture" || v === "compare");
+  const hide = (v === "dropped" || v === "flow" || v === "compare");
   document.getElementById("scene").hidden = hide;
   const apart = split();
   document.querySelector(".badge").hidden = hide || apart;
   syncSplitChrome();
   if (v === "dropped") renderAnalysis();
   if (v === "flow") renderFlow();
-  if (v === "picture") renderPicture();
   if (v === "compare") renderCmp();
   const soloNote = apart && v === "scene"
     ? " Two conversations, two crossings. Neither heard the other, so each got what talking to the builder alone would produce."
