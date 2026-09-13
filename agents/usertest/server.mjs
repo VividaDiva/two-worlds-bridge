@@ -221,11 +221,25 @@ const srv = http.createServer(async (req, res) => {
   if (p === "/events") {
     if (!room) return json(res, 404, { error: "no such room" });
     const role = url.searchParams.get("role") || "host";
-    res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive" });
+    // A proxy in the way — a Cloudflare tunnel, in practice — will compress an
+    // event stream and hold it back until it has enough to send, which for a
+    // stream that speaks once a minute means never. `no-transform` stops the
+    // compressing, X-Accel-Buffering stops the holding, the padding pushes the
+    // first message past whatever it is still waiting to fill, and the heartbeat
+    // keeps an idle connection from being closed in the quiet between turns.
+    res.writeHead(200, {
+      "content-type": "text/event-stream",
+      "cache-control": "no-cache, no-transform",
+      "x-accel-buffering": "no",
+      "content-encoding": "identity",
+      connection: "keep-alive",
+    });
+    res.write(`:${" ".repeat(2048)}\n\n`);
     res.write(`data: ${JSON.stringify(view(room, role))}\n\n`);
     const entry = { res, role };
     streams.get(room.id).add(entry);
-    req.on("close", () => streams.get(room.id)?.delete(entry));
+    const beat = setInterval(() => res.write(`: keepalive\n\n`), 15000);
+    req.on("close", () => { clearInterval(beat); streams.get(room.id)?.delete(entry); });
     return;
   }
 

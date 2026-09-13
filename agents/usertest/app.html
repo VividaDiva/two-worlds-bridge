@@ -286,7 +286,8 @@ const roleName = r => r === "A" ? "Role 1" : r === "B" ? "Role 2" : "The builder
 const post = (u, b) => fetch(u, {method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(b)})
   .then(r => r.json().then(j => ({ok:r.ok, j})));
 
-let opts = null, seen = {};
+// What each person was halfway through typing, kept across repaints.
+let opts = null, seen = {}, drafts = {};
 
 /* ── the facilitator, before a room exists ─────────────────────────────── */
 async function setup(){
@@ -388,7 +389,7 @@ function panel(s, people){
       ${conversation(s, "chat-" + r, people)}
       ${s.finished ? "" : `
         <div class="composer">
-          <textarea id="say-${r}" ${mine ? "" : "disabled"} placeholder="${esc(ph)}"></textarea>
+          <textarea id="say-${r}" ${mine ? "" : "disabled"} placeholder="${esc(ph)}">${esc(drafts[r] || "")}</textarea>
           <button class="send" id="send-${r}" ${mine ? "" : "disabled"} aria-label="Send">&uarr;</button>
         </div>
         <div id="err-${r}"></div>
@@ -418,7 +419,7 @@ function wire(s){
     const text = ta.value.trim(); if (!text) return;
     send.disabled = true;
     const { ok, j } = await post("/api/say", { room: s.room, role: r, text });
-    if (ok) { ta.value = ""; err.innerHTML = ""; return; }
+    if (ok) { ta.value = ""; drafts[r] = ""; err.innerHTML = ""; return; }
     send.disabled = false;
     err.innerHTML = j.error === "named"
       ? `<div class="warn">You named <b>${j.words.map(esc).join(", ")}</b>. Nobody here has a word for a made
@@ -432,9 +433,18 @@ function wire(s){
   // Enter sends, shift-enter breaks the line. A chat where the only way to send
   // is to hit a small round button is not one.
   const ta = document.getElementById("say-" + r);
-  if (ta) ta.onkeydown = e => {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); document.getElementById("send-" + r)?.click(); }
-  };
+  if (ta) {
+    ta.onkeydown = e => {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); document.getElementById("send-" + r)?.click(); }
+    };
+    // Every repaint rebuilds this box. When the other person's line arrives
+    // mid-sentence, what you were typing has to come back with it — otherwise
+    // talking to somebody remotely means losing your words each time they speak.
+    ta.oninput = () => { drafts[r] = ta.value; };
+    if (document.activeElement === document.body && drafts[r]) {
+      ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
+    }
+  }
   // pin to the newest line when the count grows, but not on every repaint
   const chat = document.getElementById("chat-" + r);
   if (chat && s.lines.length !== seen[r]) { chat.scrollTop = chat.scrollHeight; seen[r] = s.lines.length; }
@@ -621,9 +631,30 @@ function bothView(){
 }
 
 /* ── live ──────────────────────────────────────────────────────────────── */
+// Three ways in, because a proxy can hold a live stream back. Through a
+// Cloudflare tunnel the event stream opened and then delivered nothing at all
+// for as long as anybody waited, so a page that only painted on the stream's
+// first message stayed blank. It paints from a plain request first, which
+// proxies pass straight through; takes the stream when the stream flows; and
+// polls when it does not.
 function listen(room, role, onState){
-  const es = new EventSource(`/events?room=${room}&role=${role}`);
-  es.onmessage = e => onState(JSON.parse(e.data));
+  let last = "", streamed = false;
+  // Only repaint on a real change. Repainting on every poll rebuilt the
+  // composer every two seconds and would have thrown away half a sentence.
+  const apply = s => {
+    if (!s || s.error) return;
+    const k = JSON.stringify(s);
+    if (k === last) return;
+    last = k; onState(s);
+  };
+  const pull = () => fetch(`/api/state?room=${room}&role=${role}`)
+    .then(r => r.json()).then(apply).catch(() => {});
+  pull();
+  try {
+    const es = new EventSource(`/events?room=${room}&role=${role}`);
+    es.onmessage = e => { streamed = true; apply(JSON.parse(e.data)); };
+  } catch {}
+  setInterval(() => { if (!streamed) pull(); }, 2000);
 }
 
 // One link, sent to both people, and each takes a side when they open it. The
