@@ -114,6 +114,8 @@ function record(room) {
     transcript: room.transcript.map(e => ({ ...e })),
     standing: room.standing ? NAME(room.standing) : null,
     shape: room.ctx.design ? room.ctx.design.shape : null,
+    // The ground under it, so the crossing can be drawn again from the record.
+    world: { ...room.ctx.world },
     provenance: provenance(room.ctx).feats,
     // Needs met so far, even before End is pressed; `finished` says which.
     score: room.score || scoreRoom(room),
@@ -259,7 +261,7 @@ const srv = http.createServer(async (req, res) => {
   // /j/<room>/A and /B are one person each, on their own device. /j/<room>/both
   // is the pair of them on one screen — two people at one laptop, or one person
   // testing alone. Each column still sees only what its own role is allowed to.
-  if (req.method === "GET" && (p === "/" || p === "/sessions" || /^\/j\/[a-z0-9]+(\/(A|B|both))?$/.test(p))) {
+  if (req.method === "GET" && (p === "/" || p === "/sessions" || p === "/history" || /^\/history\/[a-z0-9]+$/.test(p) || /^\/j\/[a-z0-9]+(\/(A|B|both))?$/.test(p))) {
     res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
     return res.end(fs.readFileSync(path.join(here, "app.html"), "utf8"));
   }

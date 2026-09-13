@@ -88,6 +88,20 @@ button.go[disabled]{opacity:.35; cursor:not-allowed; transform:none}
 .saved .muted{font-size:13.5px; margin-right:4px}
 .sessions td{vertical-align:top}
 .sessions td small{font-size:12.5px}
+.day h2{margin:0 0 4px}
+.srow{display:grid; grid-template-columns:72px 1fr; gap:4px 12px; padding:14px 0;
+  border-top:1px solid var(--rule-2)}
+.srow .t{color:var(--soft); font-variant-numeric:tabular-nums; font-size:14px; padding-top:2px}
+.sbody{min-width:0}
+.stitle{color:inherit; font-weight:600; font-size:16px}
+.smeta,.sroute,.sstands{margin:3px 0 0; font-size:13.5px; line-height:1.45}
+.smeta{color:var(--faint)}
+.sroute{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12.5px; color:var(--soft)}
+.sbody .acts{display:flex; flex-wrap:wrap; gap:7px; margin-top:9px}
+.eyebrow a{color:inherit}
+.goals p{margin:0 0 8px; line-height:1.5}
+.goals p:last-child{margin:0}
+.goals b{margin-right:6px}
 .link b{font-family:var(--display); font-size:15px}
 .link code{display:block; font-family:var(--mono); font-size:12.5px; color:var(--blue);
   word-break:break-all; margin-top:5px; line-height:1.4}
@@ -606,7 +620,7 @@ function resultBar(h){
       <span class="muted">Saved after every line.</span>
       <a class="mini" href="/api/export?room=${esc(h.room)}&format=md" download>Download chat</a>
       <a class="mini" href="/api/export?room=${esc(h.room)}&format=json" download>Download data</a>
-      <a class="mini" href="/sessions" target="_blank" rel="noopener">All sessions</a>
+      <a class="mini" href="/history" target="_blank" rel="noopener">History</a>
     </div>` : ""}
   </div>`;
 }
@@ -767,38 +781,89 @@ function joinView(room){
   });
 }
 
-// Every session on record. The files themselves are in usertest/sessions/ on
-// the machine running the server; this page is only a way to find and fetch them.
+// Every session on record, under the day it was held. The files themselves are
+// in usertest/sessions/ on the machine running the server; this page is only a
+// way to find them again.
 async function sessionsView(){
   const list = await fetch("/api/sessions").then(r => r.json()).catch(() => []);
-  const when = t => t ? new Date(t).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : "";
+  const started = s => new Date(s.createdAt || s.updatedAt);
+  const day = d => d.toLocaleDateString([], { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+  const time = d => d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const days = [];
+  for (const s of [...list].sort((a, b) => started(b) - started(a))) {
+    const k = day(started(s));
+    if (!days.length || days[days.length - 1].k !== k) days.push({ k, items: [] });
+    days[days.length - 1].items.push(s);
+  }
   app.classList.add("wide");
   app.innerHTML = `
     <div>
       <p class="eyebrow">Kept as they happened</p>
-      <h1>Sessions</h1>
-      <p class="lede">Every room somebody spoke in, saved after every line. Download the chat to read it,
-        or the data to analyse it.</p>
+      <h1>History</h1>
+      <p class="lede">Every room somebody spoke in, under the day it was held. Open one to go back through
+        what they said, what the builder made of each line, and what it built.</p>
     </div>
-    <div class="card">${list.length ? `<div style="overflow-x:auto"><table class="sessions"><tbody>
-      <tr><td class="muted">Last change</td><td class="muted">Use case</td><td class="muted">Route</td>
-        <td class="muted">Lines</td><td class="muted">Stands</td><td></td></tr>
-      ${list.map(s => `<tr>
-        <td>${esc(when(s.updatedAt))}</td>
-        <td>${esc(s.title)}<br><small class="muted">room ${esc(s.room)}${s.finished ? " · ended" : s.live ? " · live" : ""}</small></td>
-        <td><code>${esc(s.arrow)}</code></td>
-        <td>${s.lines}</td>
-        <td>${esc(s.standing || "nothing")}</td>
-        <td style="white-space:nowrap">
-          ${s.live ? `<a class="mini" href="/j/${esc(s.room)}/both">Watch</a>` : ""}
-          <a class="mini" href="/api/export?room=${esc(s.room)}&format=md" download>Chat</a>
-          <a class="mini" href="/api/export?room=${esc(s.room)}&format=json" download>Data</a></td>
-      </tr>`).join("")}</tbody></table></div>`
-      : `<p class="muted">Nothing saved yet. A session is kept from the first line anybody sends.</p>`}</div>`;
+    ${days.length ? days.map(d => `
+      <div class="card day">
+        <h2>${esc(d.k)}</h2>
+        ${d.items.map(s => `<div class="srow">
+          <span class="t">${esc(time(started(s)))}</span>
+          <div class="sbody">
+            <a class="stitle" href="/history/${esc(s.room)}">${esc(s.title)}</a>
+            <p class="smeta">room ${esc(s.room)} · ${s.lines} line${s.lines === 1 ? "" : "s"}${
+              s.finished ? " · ended" : s.live ? " · live now" : ""}</p>
+            <p class="sroute">${esc(s.arrow)}</p>
+            <p class="sstands">Stands as <b>${esc(s.standing || "nothing built")}</b></p>
+            <div class="acts">
+              <a class="mini" href="/history/${esc(s.room)}">Open</a>
+              ${s.live ? `<a class="mini" href="/j/${esc(s.room)}/both">Watch live</a>` : ""}
+              <a class="mini" href="/api/export?room=${esc(s.room)}&format=md" download>Chat</a>
+              <a class="mini" href="/api/export?room=${esc(s.room)}&format=json" download>Data</a>
+            </div>
+          </div>
+        </div>`).join("")}
+      </div>`).join("")
+      : `<div class="card"><p class="muted">Nothing saved yet. A session is kept from the first line anybody sends.</p></div>`}`;
+}
+
+// One past session, read back from its record: the same trace, drawing and
+// attribution as the live page, with nothing left to type into.
+async function historyView(id){
+  const rec = await fetch(`/api/export?room=${id}&format=json`)
+    .then(r => r.ok ? r.json() : null).catch(() => null);
+  if (!rec) {
+    app.innerHTML = `<div class="card"><h2>Nothing saved for room ${esc(id)}</h2>
+      <p class="muted">A session is kept from the first line anybody sends. <a href="/history">Back to history</a></p></div>`;
+    return;
+  }
+  const h = { room: rec.room, role: "host", title: rec.title, arrow: rec.arrow, finished: rec.finished,
+    lines: rec.transcript, standing: rec.standing, shape: rec.shape, world: rec.world || {},
+    provenance: rec.provenance, score: rec.score, thinking: false };
+  const when = t => t ? new Date(t).toLocaleString([], { dateStyle: "full", timeStyle: "short" }) : "";
+  app.classList.add("wide");
+  app.innerHTML = `
+    <div>
+      <p class="eyebrow"><a href="/history">← History</a> · room ${esc(rec.room)}</p>
+      <h1>${esc(rec.title)}</h1>
+      <p class="lede">${esc(when(rec.createdAt))} · ${esc(rec.arrow)}<br>
+        ${rec.finished ? "Ended." : `Never ended — this is how it stood at ${esc(when(rec.updatedAt))}.`}</p>
+    </div>
+    <div class="card goals">
+      ${["A","B"].map(r => `<p><b>${roleName(r)}</b> ${esc(rec.goals[r])}</p>`).join("")}
+    </div>
+    <div class="desk">
+      <div class="card tab"><h2>What they said</h2>${conversation(h, "hist-chat", true, "chat")}</div>
+      ${builderColumn(h)}
+    </div>
+    ${resultBar(h)}`;
+  const cv = document.getElementById("crossing");
+  if (cv && window.drawCrossing) drawCrossing(cv, h.shape, h.world);
 }
 
 (async () => {
-  if (location.pathname === "/sessions") return sessionsView();
+  if (location.pathname === "/sessions" || location.pathname === "/history") return sessionsView();
+  const past = /^\/history\/([a-z0-9]+)$/.exec(location.pathname);
+  if (past) return historyView(past[1]);
   const q = new URLSearchParams(location.search).get("room");
   // Opened the bare link, but this browser has already taken a side here.
   if (ROOM && !ROLE) {
