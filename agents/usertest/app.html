@@ -105,9 +105,7 @@ button.go[disabled]{opacity:.35; cursor:not-allowed; transform:none}
 .navlink:hover{border-color:var(--soft)}
 .navlink[aria-current="page"]{background:var(--ink, #1c2b3a); color:#fff; border-color:transparent}
 .showempty{font-size:13.5px; color:var(--soft)}
-.switching{margin:0 0 10px; font-size:13.5px; color:var(--soft)}
-.filters.busy .chip{cursor:progress}
-.goals p{margin:0 0 8px; line-height:1.5}
+.switching{margin:0 0 10px; font-size:13.5px; color:var(--soft)}.goals p{margin:0 0 8px; line-height:1.5}
 .goals p:last-child{margin:0}
 .goals b{margin-right:6px}
 .link b{font-family:var(--display); font-size:15px}
@@ -563,6 +561,23 @@ function playerView(s){ app.innerHTML = panel(s); wire(s); }
 // does not quietly let one read the other's goal.
 const both = { A:null, B:null, host:null };
 
+// Watch one room on the dashboard. Switching tabs used to reload the whole page,
+// which through the tunnel meant a second or two of the browser's loading cursor
+// over tabs that looked dead. Now the old room's streams are closed and the new
+// room's opened in place; the old room stays on screen until the new one has
+// arrived, so there is never a blank page in between.
+let stopBoth = [];
+function watchBoth(room){
+  stopBoth.forEach(stop => stop());
+  both.A = both.B = both.host = null;
+  seen = {}; drafts = {};
+  stopBoth = [
+    listen(room, "A", s => { both.A = s; bothView(); }),
+    listen(room, "B", s => { both.B = s; bothView(); }),
+    listen(room, "host", s => { both.host = s; bothView(); }),
+  ];
+}
+
 // Every use case, always switchable. Picking one opens a fresh room on that
 // combination — a route cannot be changed underneath a conversation that is
 // already running, so switching starts a new one.
@@ -705,12 +720,14 @@ function bothView(){
 // proxies pass straight through; takes the stream when the stream flows; and
 // polls when it does not.
 function listen(room, role, onState){
-  let last = "", streamed = false;
+  let last = "", streamed = false, stopped = false, es = null;
   // Only repaint on a real change. Repainting on every poll rebuilt the
   // composer every two seconds and would have thrown away half a sentence.
   // A room that is gone used to be skipped in silence, which left the page
   // blank for good. Say so instead.
   const apply = s => {
+    // A room left behind by a tab switch must not paint over the new one.
+    if (stopped) return;
     if (s && s.error) { gone(room); return; }
     if (!s) return;
     const k = JSON.stringify(s);
@@ -721,10 +738,11 @@ function listen(room, role, onState){
     .then(r => r.json()).then(apply).catch(() => {});
   pull();
   try {
-    const es = new EventSource(`/events?room=${room}&role=${role}`);
+    es = new EventSource(`/events?room=${room}&role=${role}`);
     es.onmessage = e => { streamed = true; apply(JSON.parse(e.data)); };
   } catch {}
-  setInterval(() => { if (!streamed) pull(); }, 2000);
+  const timer = setInterval(() => { if (!streamed) pull(); }, 2000);
+  return () => { stopped = true; clearInterval(timer); if (es) es.close(); };
 }
 
 // Painted once. Polling keeps hearing that the room is gone, and repainting on
@@ -793,7 +811,10 @@ async function openRoom(argument, route){
     }
     const latest = picking || want;
     if (latest.argument === want.argument && latest.route === want.route) {
-      location.href = `/j/${j.room}/both`;
+      picking = null; openRoom.busy = false;
+      history.pushState(null, "", `/j/${j.room}/both`);
+      delete app.dataset.gone;
+      watchBoth(j.room);
       return;
     }
     want = { argument: latest.argument, route: latest.route };
@@ -974,9 +995,10 @@ async function historyView(id){
     // from. The options are needed before the first paint or the filters across
     // the top have nothing to draw.
     opts = await fetch("/api/options").then(r => r.json());
-    listen(ROOM, "A", s => { both.A = s; bothView(); });
-    listen(ROOM, "B", s => { both.B = s; bothView(); });
-    listen(ROOM, "host", s => { both.host = s; bothView(); });
+    watchBoth(ROOM);
+    // Rooms are switched in place, so Back has to be handled here: go to the
+    // room the address now names.
+    window.onpopstate = () => location.reload();
   } else if (ROOM) {
     listen(ROOM, ROLE, s => playerView(s));
   } else if (q) {
