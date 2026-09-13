@@ -367,7 +367,7 @@ const srv = http.createServer(async (req, res) => {
     const dir = path.join(SESSIONS);
     const list = fs.readdirSync(dir).filter(f => f.endsWith(".json")).map(f => {
       try { return JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")); } catch { return null; }
-    }).filter(s => s && s.transcript && s.transcript.length)
+    }).filter(s => s && s.transcript)
       .map(s => ({ room: s.room, title: s.title, arrow: s.arrow, createdAt: s.createdAt,
                    updatedAt: s.updatedAt, finished: s.finished, standing: s.standing,
                    lines: s.transcript.filter(e => e.who !== "builder").length,

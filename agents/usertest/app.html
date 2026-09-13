@@ -99,6 +99,12 @@ button.go[disabled]{opacity:.35; cursor:not-allowed; transform:none}
 .sroute{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12.5px; color:var(--soft)}
 .sbody .acts{display:flex; flex-wrap:wrap; gap:7px; margin-top:9px}
 .eyebrow a{color:inherit}
+.topnav{display:flex; justify-content:flex-end; gap:8px; padding:14px 24px 0; max-width:1500px; margin:0 auto}
+.navlink{font-size:14px; padding:7px 15px; border:1px solid var(--rule); border-radius:99px;
+  background:var(--card); color:inherit; text-decoration:none}
+.navlink:hover{border-color:var(--soft)}
+.navlink[aria-current="page"]{background:var(--ink, #1c2b3a); color:#fff; border-color:transparent}
+.showempty{font-size:13.5px; color:var(--soft)}
 .goals p{margin:0 0 8px; line-height:1.5}
 .goals p:last-child{margin:0}
 .goals b{margin-right:6px}
@@ -300,6 +306,10 @@ td.y{color:var(--moss); font-weight:600} td.n{color:var(--rust)}
 </style>
 </head>
 <body>
+<nav class="topnav" id="topnav" hidden>
+  <a class="navlink" href="/">New room</a>
+  <a class="navlink" href="/history">History</a>
+</nav>
 <div class="wrap stack" id="app"><p class="muted" id="opening">Opening the room…</p></div>
 
 <script>
@@ -808,7 +818,12 @@ function joinView(room){
 // in usertest/sessions/ on the machine running the server; this page is only a
 // way to find them again.
 async function sessionsView(){
-  const list = await fetch("/api/sessions").then(r => r.json()).catch(() => []);
+  const all = await fetch("/api/sessions").then(r => r.json()).catch(() => []);
+  // Every tab clicked on the dashboard opens a room, so most rooms are empty.
+  // They are kept and can be shown, but the ones somebody spoke in come first.
+  const showEmpty = location.hash === "#all";
+  const list = showEmpty ? all : all.filter(s => s.lines > 0);
+  const hidden = all.length - list.length;
   const started = s => new Date(s.createdAt || s.updatedAt);
   const day = d => d.toLocaleDateString([], { weekday: "long", year: "numeric", month: "long", day: "numeric" });
   const time = d => d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
@@ -825,6 +840,8 @@ async function sessionsView(){
       <h1>History</h1>
       <p class="lede">Every room somebody spoke in, under the day it was held. Open one to go back through
         what they said, what the builder made of each line, and what it built.</p>
+      ${hidden ? `<a class="showempty" href="#all">Show ${hidden} room${hidden === 1 ? "" : "s"} where nothing was said</a>`
+        : showEmpty ? `<a class="showempty" href="#">Hide rooms where nothing was said</a>` : ""}
     </div>
     ${days.length ? days.map(d => `
       <div class="card day">
@@ -846,7 +863,9 @@ async function sessionsView(){
           </div>
         </div>`).join("")}
       </div>`).join("")
-      : `<div class="card"><p class="muted">Nothing saved yet. A session is kept from the first line anybody sends.</p></div>`}`;
+      : `<div class="card"><p class="muted">${hidden
+          ? "Rooms have been opened, but nothing has been said in any of them yet."
+          : "Nothing saved yet. A room is kept from the moment it is opened."}</p></div>`}`;
 }
 
 // One past session, read back from its record: the same trace, drawing and
@@ -884,7 +903,19 @@ async function historyView(id){
 }
 
 (async () => {
-  if (location.pathname === "/sessions" || location.pathname === "/history") return sessionsView();
+  // The way back to the history, on every page the facilitator uses. Never on a
+  // participant's own seat or the join screen: the history shows what the
+  // builder read off each of them.
+  if (!(ROOM && ROLE !== "both")) {
+    const nav = document.getElementById("topnav");
+    nav.hidden = false;
+    const here = location.pathname.startsWith("/history") || location.pathname === "/sessions" ? "/history" : "";
+    for (const a of nav.querySelectorAll("a")) if (a.getAttribute("href") === here) a.setAttribute("aria-current", "page");
+  }
+  if (location.pathname === "/sessions" || location.pathname === "/history") {
+    window.onhashchange = () => sessionsView();
+    return sessionsView();
+  }
   const past = /^\/history\/([a-z0-9]+)$/.exec(location.pathname);
   if (past) return historyView(past[1]);
   const q = new URLSearchParams(location.search).get("room");
