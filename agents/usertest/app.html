@@ -75,6 +75,15 @@ button.go[disabled]{opacity:.35; cursor:not-allowed; transform:none}
 .links{display:grid; gap:10px; grid-template-columns:1fr 1fr}
 @media (max-width:620px){.links{grid-template-columns:1fr}}
 .link{background:var(--paper-2); border:1px dashed var(--rule); border-radius:3px; padding:13px 15px}
+.invite .muted{font-size:13.5px; margin:0 0 8px}
+.seats{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:10px}
+.inv{background:var(--paper-2); border:1px dashed var(--rule); border-radius:3px; padding:11px 13px;
+  display:flex; flex-direction:column; gap:7px; min-width:0}
+.inv code{font-size:12.5px; overflow-wrap:anywhere}
+.inv .acts{display:flex; gap:8px}
+.mini{font:inherit; font-size:13px; padding:5px 13px; border:1px solid var(--rule); border-radius:99px;
+  background:var(--card); color:inherit; cursor:pointer; text-decoration:none}
+.mini:hover{border-color:var(--soft)}
 .link b{font-family:var(--display); font-size:15px}
 .link code{display:block; font-family:var(--mono); font-size:12.5px; color:var(--blue);
   word-break:break-all; margin-top:5px; line-height:1.4}
@@ -603,6 +612,7 @@ function bothView(){
       <p class="lede">${esc(a.note)}</p>
     </div>
     ${filterBar({ argument: a.argument, route: a.route })}
+    ${invite(a.room)}
     <div class="desk">
       <div class="pair">
         <div class="col" id="col-A">${panel(a, true)}</div>
@@ -618,12 +628,12 @@ function bothView(){
   if (cv && window.drawCrossing) drawCrossing(cv, h.shape, h.world);
   const f = document.getElementById("fin");
   if (f) f.onclick = () => post("/api/finish", { room: a.room });
-  const swap = async (argument, route) => {
-    const { ok, j } = await post("/api/create", { argument, route });
-    if (ok) location.href = `/j/${j.room}/both`;
-  };
-  app.querySelectorAll("[data-fa]").forEach(x => x.onclick = () => swap(x.dataset.fa, a.route));
-  app.querySelectorAll("[data-fr]").forEach(x => x.onclick = () => swap(a.argument, x.dataset.fr));
+  app.querySelectorAll("[data-fa]").forEach(x => x.onclick = () => openRoom(x.dataset.fa, a.route));
+  app.querySelectorAll("[data-fr]").forEach(x => x.onclick = () => openRoom(a.argument, x.dataset.fr));
+  app.querySelectorAll("[data-copy]").forEach(b => b.onclick = async () => {
+    try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = "Copied"; }
+    catch { b.textContent = "Select the link above"; }
+  });
 }
 
 /* ── live ──────────────────────────────────────────────────────────────── */
@@ -656,11 +666,54 @@ function listen(room, role, onState){
   setInterval(() => { if (!streamed) pull(); }, 2000);
 }
 
+// Painted once. Polling keeps hearing that the room is gone, and repainting on
+// every poll would throw away whatever the facilitator had just picked.
 function gone(room){
+  if (app.dataset.gone === room) return;
+  app.dataset.gone = room;
   app.classList.remove("wide");
-  app.innerHTML = `<div class="card"><h2>That room is gone</h2>
-    <p class="muted">Room ${esc(room)} no longer exists — rooms do not survive the server
-    restarting. Ask for a fresh link.</p></div>`;
+  if (ROLE !== "both" || !opts) {
+    app.innerHTML = `<div class="card"><h2>That room is gone</h2>
+      <p class="muted">Room ${esc(room)} no longer exists — rooms do not survive the server
+      restarting. Ask for a fresh link.</p></div>`;
+    return;
+  }
+  // The facilitator's link should never be a dead end: pick again, get a room.
+  const pick = { argument: opts.arguments[0].id, route: "all" };
+  const paint = () => {
+    app.innerHTML = `
+      <div>
+        <p class="eyebrow">Room ${esc(room)} is gone</p>
+        <h1>Open a new room</h1>
+        <p class="lede">Rooms do not survive the server restarting. Pick a use case and how their words
+          travel, and you get a fresh room with a link for each role.</p>
+      </div>
+      ${filterBar(pick)}
+      <div class="row"><button class="go" id="open">Open this room</button></div>`;
+    app.querySelectorAll("[data-fa]").forEach(x => x.onclick = () => { pick.argument = x.dataset.fa; paint(); });
+    app.querySelectorAll("[data-fr]").forEach(x => x.onclick = () => { pick.route = x.dataset.fr; paint(); });
+    document.getElementById("open").onclick = () => openRoom(pick.argument, pick.route);
+  };
+  paint();
+}
+
+async function openRoom(argument, route){
+  const { ok, j } = await post("/api/create", { argument, route });
+  if (ok) location.href = `/j/${j.room}/both`;
+}
+
+// The two seats, on the facilitator's own page, so a room can be handed out
+// from where it is watched.
+function invite(room){
+  const base = location.origin;
+  return `<div class="invite">
+    <p class="muted">Send each person their own link. Keep this page for yourself.</p>
+    <div class="seats">${["A","B"].map(r => { const url = `${base}/j/${room}/${r}`;
+      return `<div class="inv"><b>${roleName(r)}</b><code>${esc(url)}</code>
+        <span class="acts"><button class="mini" data-copy="${esc(url)}">Copy link</button>
+          <a class="mini" href="${esc(url)}" target="_blank" rel="noopener">Open</a></span></div>`;
+    }).join("")}</div>
+  </div>`;
 }
 
 // If nothing has painted after a while, the link itself is the likely problem.
