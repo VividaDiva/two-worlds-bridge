@@ -19,8 +19,12 @@ import { readLine, chooseBuild, speak, readPicture } from "./builder.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 8780);
-fs.mkdirSync(path.join(here, "uploads"), { recursive: true });
-fs.mkdirSync(path.join(here, "sessions"), { recursive: true });
+// Overridable so a test run can keep its sessions and pictures out of the real
+// ones — the history page reads whatever is in SESSIONS.
+const SESSIONS = process.env.SESSIONS_DIR || path.join(here, "sessions");
+const UPLOADS = process.env.UPLOADS_DIR || path.join(here, "uploads");
+fs.mkdirSync(path.join(UPLOADS), { recursive: true });
+fs.mkdirSync(path.join(SESSIONS), { recursive: true });
 
 if (!process.env.ANTHROPIC_API_KEY) {
   console.error("No ANTHROPIC_API_KEY. Run with:  node --env-file=../.env usertest/server.mjs");
@@ -138,7 +142,7 @@ function record(room) {
   };
   // Written aside and moved into place, so a restart mid-write leaves the last
   // good record rather than half of a new one.
-  const file = path.join(here, "sessions", `${room.id}.json`);
+  const file = path.join(SESSIONS, `${room.id}.json`);
   fs.writeFileSync(file + ".tmp", JSON.stringify(rec, null, 2));
   fs.renameSync(file + ".tmp", file);
 }
@@ -278,7 +282,7 @@ function scoreRoom(room) {
 // were. What stands is put back as it stood rather than rebuilt, because it was
 // the builder's choice and not the scoring rule's.
 function restore() {
-  const dir = path.join(here, "sessions"), pics = path.join(here, "uploads");
+  const dir = path.join(SESSIONS), pics = path.join(UPLOADS);
   let n = 0;
   for (const f of fs.readdirSync(dir).filter(f => f.endsWith(".json"))) {
     try {
@@ -342,7 +346,7 @@ const srv = http.createServer(async (req, res) => {
     if (!ARGUMENTS[argument] || !ROUTES[route]) return json(res, 400, { error: "unknown argument or route" });
     // Never reuse the name of a session already on disk, or its record goes.
     let id = code();
-    while (rooms.has(id) || fs.existsSync(path.join(here, "sessions", `${id}.json`))) id = code();
+    while (rooms.has(id) || fs.existsSync(path.join(SESSIONS, `${id}.json`))) id = code();
     rooms.set(id, { id, argument, route, ctx: mkCtx(), turn: 0, transcript: [],
                     uploads: {}, standing: null, thinking: false, finished: false,
                     createdAt: new Date().toISOString() });
@@ -357,7 +361,7 @@ const srv = http.createServer(async (req, res) => {
   // before a restart are still listed. Empty rooms — opened and never spoken in,
   // which is what switching the filters leaves behind — are left out.
   if (p === "/api/sessions") {
-    const dir = path.join(here, "sessions");
+    const dir = path.join(SESSIONS);
     const list = fs.readdirSync(dir).filter(f => f.endsWith(".json")).map(f => {
       try { return JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")); } catch { return null; }
     }).filter(s => s && s.transcript && s.transcript.length)
@@ -372,7 +376,7 @@ const srv = http.createServer(async (req, res) => {
   // One session, to keep: the chat as a readable page, or the whole record.
   if (p === "/api/export") {
     const id = url.searchParams.get("room") || "";
-    const file = path.join(here, "sessions", `${id}.json`);
+    const file = path.join(SESSIONS, `${id}.json`);
     if (!/^[a-z0-9]+$/.test(id) || !fs.existsSync(file))
       return json(res, 404, { error: "nothing saved for that room yet" });
     const rec = JSON.parse(fs.readFileSync(file, "utf8"));
@@ -437,7 +441,7 @@ const srv = http.createServer(async (req, res) => {
     if (!m) return json(res, 400, { error: "that did not look like an image" });
     try {
       const read = await readPicture(m[2], m[1]);
-      fs.writeFileSync(path.join(here, "uploads", `${id}-${role}.${m[1].split("/")[1].replace("+xml", "")}`),
+      fs.writeFileSync(path.join(UPLOADS, `${id}-${role}.${m[1].split("/")[1].replace("+xml", "")}`),
                        Buffer.from(m[2], "base64"));
       r.uploads[role] = { dataUrl, media: m[1], ...read };
       push(id);
