@@ -172,6 +172,51 @@ textarea[disabled]{opacity:.5}
 .act .made{font-family:var(--mono); font-size:11px; color:var(--moss); display:block; margin-top:6px}
 .act.none{border-left-color:var(--rule)}
 
+/* One surface per person, not four stacked boxes. Identity and goal in a slim
+   header, the thread filling the middle, the composer pinned at the foot —
+   which is what a chat is, and what four bordered cards in a column are not. */
+.rolebox{background:var(--card); border:1px solid var(--rule); border-radius:13px;
+  display:flex; flex-direction:column; overflow:hidden; box-shadow:var(--shadow);
+  height:min(70vh, 620px)}
+.rolehead{padding:12px 15px; border-bottom:1px solid var(--rule-2); background:var(--paper-2);
+  display:flex; gap:11px; align-items:flex-start}
+.avatar{width:27px; height:27px; border-radius:50%; flex:none; display:grid; place-items:center;
+  font:600 11px/1 var(--mono); color:var(--paper)}
+.avatar.a{background:var(--rust)} .avatar.b{background:var(--blue)}
+.rolehead .idline{min-width:0}
+.rolehead .id{font-family:var(--mono); font-size:10px; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--faint); display:block}
+.rolehead .goaltext{font-family:var(--display); font-size:14px; line-height:1.4; margin:3px 0 0;
+  color:var(--ink); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+.rolehead .goaltext.open{-webkit-line-clamp:unset}
+.pill{margin-left:auto; flex:none; font:600 10px/1 var(--mono); letter-spacing:.1em;
+  text-transform:uppercase; padding:6px 10px; border-radius:99px; white-space:nowrap}
+.pill.now{background:var(--ink); color:var(--paper)}
+.pill.wait{background:transparent; color:var(--faint); border:1px solid var(--rule)}
+.pill.think{background:var(--moss); color:var(--paper)}
+.pill.now::before{content:"● "; animation:pulse 1.6s ease-in-out infinite}
+
+.thread{flex:1; min-height:0; overflow-y:auto; padding:16px 15px;
+  display:flex; flex-direction:column; gap:13px; scroll-behavior:smooth}
+.thread .said{font-size:15.5px; padding:10px 14px}
+.thread .line.m{margin:2px 0}
+.thread .line.m .said{font-size:13.5px; padding:9px 4px}
+
+.composer{border-top:1px solid var(--rule-2); background:var(--paper-2);
+  padding:10px 11px; display:flex; gap:9px; align-items:flex-end}
+.composer textarea{flex:1; min-height:46px; max-height:150px; margin:0; border-radius:11px;
+  padding:12px 14px; font-size:15px; background:var(--card)}
+.send{width:42px; height:42px; flex:none; border:0; border-radius:50%; cursor:pointer;
+  background:var(--ink); color:var(--paper); font-size:16px; line-height:1;
+  transition:transform .14s, opacity .14s}
+.send:hover:not([disabled]){transform:translateY(-1px)}
+.send[disabled]{opacity:.28; cursor:not-allowed}
+.composer .hint{position:absolute}
+.foot{padding:0 15px 11px; font-size:12.5px; color:var(--faint)}
+.upstrip{padding:11px 15px; border-bottom:1px solid var(--rule-2); background:var(--card)}
+.upstrip .drop{padding:14px}
+.upstrip .drop img{max-height:150px}
+
 /* the agent's reading, before what it did about it */
 .act.fa{border-left-color:var(--rust)} .act.fb{border-left-color:var(--blue)}
 .read{margin:0 0 7px; display:flex; flex-wrap:wrap; gap:5px; align-items:center}
@@ -281,10 +326,14 @@ async function setup(){
 // by who is looking: your own words sit on your side, as in any chat.
 // `people` drops the builder's lines: on the dashboard they move to their own
 // column, so the middle is only the two of them talking.
-function conversation(s, id, people){
+// The thread is the middle of the role's surface and fills it. `chat` remains
+// for the facilitator console, which is still a card on a page rather than a
+// chat window.
+function conversation(s, id, people, cls){
+  const box = cls || "thread";
   const lines = people ? s.lines.filter(l => l.who !== "builder") : s.lines;
-  if (!lines.length) return `<div class="chat" id="${id}"><p class="muted">Nothing said yet.</p></div>`;
-  return `<div class="chat" id="${id}">` + lines.map(l => {
+  if (!lines.length) return `<div class="${box}" id="${id}"><p class="muted">Nothing said yet.</p></div>`;
+  return `<div class="${box}" id="${id}">` + lines.map(l => {
     const cls = l.who === "A" ? "a" : l.who === "B" ? "b" : "m";
     const mine = l.who === s.role ? " mine" : "";
     return `<div class="line ${cls}${mine}">
@@ -300,39 +349,41 @@ function conversation(s, id, people){
 // view puts two of these on the page at once and they must not collide.
 function panel(s, people){
   const r = s.role, mine = s.yourTurn && !s.finished && !s.thinking;
-  const bar = s.finished ? `<div class="turnbar wait"><span class="dot"></span>The session is over</div>`
-    : s.thinking ? `<div class="turnbar think"><span class="dot"></span>The builder is deciding…</div>`
-    : s.needsUpload ? `<div class="turnbar wait"><span class="dot"></span>Add your picture to begin</div>`
-    : mine ? `<div class="turnbar"><span class="dot"></span>Your turn<span class="step">${s.step + 1} of ${s.of}</span></div>`
-    : `<div class="turnbar wait"><span class="dot"></span>Waiting for ${esc(roleName(s.turn))}<span class="step">${s.step + 1} of ${s.of}</span></div>`;
+  const pill = s.finished ? `<span class="pill wait">over</span>`
+    : s.thinking ? `<span class="pill think">it is deciding</span>`
+    : s.needsUpload ? `<span class="pill wait">add your picture</span>`
+    : mine ? `<span class="pill now">your turn</span>`
+    : `<span class="pill wait">${esc(roleName(s.turn))}&rsquo;s turn</span>`;
+  const ph = s.finished ? "The session is over."
+    : s.needsUpload ? "Add your picture first."
+    : mine ? "What do you need of it, and what happens to you when it is wrong?"
+    : `Waiting for ${roleName(s.turn)}…`;
   return `
-    ${bar}
-    <div class="card tab ${r === "B" ? "you" : ""}">
-      <p class="eyebrow">You are ${roleName(r)}</p>
-      <p class="goal">${esc(s.goal)}</p>
-      <p class="rule">${esc(s.rule)}</p>
-    </div>
-    ${s.upload ? `<div class="card">
-      <label>${s.uploaded ? "The crossing you have in mind" : "Add a picture of the crossing you have in mind"}</label>
-      <div class="drop" id="drop-${r}">
-        ${s.picture ? `<img src="${s.picture.dataUrl}" alt="the crossing you brought">`
-                    : `<p>Tap to choose a photo or drawing.<br><span class="muted">Only you see it. The builder never does.</span></p>`}
+    <div class="rolebox">
+      <div class="rolehead">
+        <span class="avatar ${r === "A" ? "a" : "b"}">${r === "A" ? "1" : "2"}</span>
+        <span class="idline">
+          <span class="id">You are ${roleName(r)}</span>
+          <p class="goaltext" id="goal-${r}" title="tap to read it all">${esc(s.goal)}</p>
+        </span>
+        ${pill}
       </div>
-      <input type="file" id="file-${r}" accept="image/*" hidden>
-    </div>` : ""}
-    <div class="card tab mach">
-      <h2>The conversation</h2>
+      ${s.upload ? `<div class="upstrip">
+        <div class="drop" id="drop-${r}">
+          ${s.picture ? `<img src="${s.picture.dataUrl}" alt="the crossing you brought">`
+                      : `<p>Tap to add the crossing you have in mind.<br><span class="muted">Only you see it. The builder never does.</span></p>`}
+        </div>
+        <input type="file" id="file-${r}" accept="image/*" hidden>
+      </div>` : ""}
       ${conversation(s, "chat-" + r, people)}
-    </div>
-    ${s.finished ? "" : `<div class="card">
-      <label>${mine ? "Say what you need" : "You can write when it is your turn"}</label>
-      <textarea id="say-${r}" ${mine ? "" : "disabled"} placeholder="What do you need of it, and what happens to you when it is wrong?"></textarea>
-      <div class="row">
-        <button class="go" id="send-${r}" ${mine ? "" : "disabled"}>Send</button>
-        <span class="muted" style="font-size:13.5px">No naming a made thing.</span>
-      </div>
-      <div id="err-${r}"></div>
-    </div>`}`;
+      ${s.finished ? "" : `
+        <div class="composer">
+          <textarea id="say-${r}" ${mine ? "" : "disabled"} placeholder="${esc(ph)}"></textarea>
+          <button class="send" id="send-${r}" ${mine ? "" : "disabled"} aria-label="Send">&uarr;</button>
+        </div>
+        <div id="err-${r}"></div>
+        <p class="foot">You have no word for a made thing. Say what you need of it.</p>`}
+    </div>`;
 }
 
 function wire(s){
@@ -363,6 +414,16 @@ function wire(s){
       ? `<div class="warn">You named <b>${j.words.map(esc).join(", ")}</b>. Nobody here has a word for a made
            thing — say what you need of it instead, or what happens to you when it is wrong.</div>`
       : `<div class="warn">${esc(j.error || "that did not send")}</div>`;
+  };
+  // The brief is clamped to two lines so the thread gets the room. Tapping it
+  // opens the rest — some of them are three sentences long.
+  const goal = document.getElementById("goal-" + r);
+  if (goal) goal.onclick = () => goal.classList.toggle("open");
+  // Enter sends, shift-enter breaks the line. A chat where the only way to send
+  // is to hit a small round button is not one.
+  const ta = document.getElementById("say-" + r);
+  if (ta) ta.onkeydown = e => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); document.getElementById("send-" + r)?.click(); }
   };
   // pin to the newest line when the count grows, but not on every repaint
   const chat = document.getElementById("chat-" + r);
@@ -396,7 +457,7 @@ function hostView(s){
     <div class="card tab">
       <h2>What is being said</h2>
       <p class="muted" style="margin:0 0 13px; font-size:14.5px">You see everything. They each see only what the route allows.</p>
-      ${conversation(s, "chat-host")}
+      ${conversation(s, "chat-host", false, "chat")}
       ${s.thinking ? `<p class="muted">The builder is deciding…</p>` : ""}
     </div>
     ${s.finished ? `
