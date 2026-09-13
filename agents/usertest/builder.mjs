@@ -37,18 +37,27 @@ const SHAPE_JSON = { type:"object", properties:Object.fromEntries(
 // A per-minute limit is worth waiting out; a per-day one is not.
 async function generateWithBackoff(req, tries = 6) {
   for (let n = 1; ; n++) {
-    try { return await client().models.generateContent(req); }
+    // A call that never answers would leave the room "deciding" for good, with
+    // every composer locked. Sixty seconds, then it counts as a failure.
+    try { return await client().models.generateContent({ ...req,
+      config: { ...req.config, abortSignal: AbortSignal.timeout(60000) } }); }
     catch (e) {
       const msg = e?.message || String(e);
       if (e?.status === 429 && /PerDay/.test(msg))
         throw new Error(`Gemini's daily free-tier quota for ${MODEL} is used up. `
           + `Try GEMINI_MODEL=gemini-2.5-flash-lite, or come back tomorrow, or enable billing.`);
+      // Also a 429, and no amount of waiting fixes it. Retrying held each line
+      // "deciding" for a minute before failing anyway.
+      if (/prepayment credits are depleted|billing/i.test(msg))
+        throw new Error("The Gemini account is out of credits. Top it up in Google AI Studio under Billing, then try again.");
       // Busy (429) and briefly down (500/502/503/504, or no answer at all) are
       // both worth waiting out. A 503 in the middle of a session was dropping a
       // person's line on the floor: never read, nothing built from it.
       const transient = e?.status === 429 || [500, 502, 503, 504].includes(e?.status)
         || /UNAVAILABLE|fetch failed|ECONNRESET|ETIMEDOUT|socket hang up/i.test(msg);
-      if (!transient || n >= tries) throw e;
+      const timedOut = /abort|timed? ?out/i.test(msg) || e?.name === "TimeoutError";
+      if (timedOut && n >= 2) throw new Error("The builder took too long to answer.");
+      if (!(transient || timedOut) || n >= tries) throw e;
       const asked = Number((msg.match(/"retryDelay":\s*"(\d+(?:\.\d+)?)s"/) || [])[1]);
       await wait(Math.ceil(((Number.isFinite(asked) ? asked : 0) || 2 ** n) * 1000) + 500);
     }

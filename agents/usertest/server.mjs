@@ -80,6 +80,9 @@ function view(room, role) {
     picture: role === "host" ? null : (room.uploads[role] || null),
     needsUpload: !!arg.upload && role !== "host" && !room.uploads[role],
     turn, yourTurn: turn === role,
+    // How many lines this person has in the route at all; 0 on the routes they
+    // are not part of, so the page can say so instead of waiting on them.
+    speaks: role === "host" ? null : script.filter(x => x === role).length,
     phase: room.turn < script.length ? phaseOf(room, room.turn) : "done",
     conferTurns: route.confer || 0,
     step: room.turn, of: script.length,

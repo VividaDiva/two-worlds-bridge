@@ -313,6 +313,16 @@ const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;
 // local address, location.origin would give Role 2 a link that only works on
 // this Wi-Fi.
 const shareBase = () => (opts && opts.publicUrl) || location.origin;
+// Why the builder has no words for a line. The facilitator is told the real
+// reason — an empty account looks exactly like a broken page otherwise — and a
+// participant only that it could not answer.
+const failNote = (l, host) => {
+  const why = l.failed || "";
+  if (host && /credits|quota|billing|RESOURCE_EXHAUSTED/i.test(why))
+    return "The builder could not run: the Gemini account is out of credits. Top it up in Google AI Studio.";
+  if (host && /too long/i.test(why)) return "The builder took too long to answer.";
+  return "The builder could not answer this line.";
+};
 const roleName = r => r === "A" ? "Role 1" : r === "B" ? "Role 2" : "The builder";
 const post = (u, b) => fetch(u, {method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(b)})
   .then(r => r.json().then(j => ({ok:r.ok, j})));
@@ -375,7 +385,7 @@ function conversation(s, id, people, cls){
     return `<div class="line ${cls}${mine}">
       <span class="who">${esc(l.who === s.role ? "You" : roleName(l.who))}${
         l.phase === "confer" ? `<span class="private">between you two</span>` : ""}</span>
-      <p class="said${l.failed ? " muted" : ""}">${l.failed ? "It laid something and would not say why." : esc(l.text)}</p>
+      <p class="said${l.failed ? " muted" : ""}">${l.failed ? esc(failNote(l, s.role === "host")) : esc(l.text)}</p>
       ${l.built ? `<span class="built">it now stands as ${esc(l.built)}</span>` : ""}
     </div>`;
   }).join("") + `</div>`;
@@ -384,21 +394,30 @@ function conversation(s, id, people, cls){
 // One person's column. Every id is suffixed with the role, because the combined
 // view puts two of these on the page at once and they must not collide.
 function panel(s, people){
-  const r = s.role, mine = s.yourTurn && !s.finished && !s.thinking;
+  // A person who still owes a picture cannot speak yet, so their box stays shut
+  // rather than taking a line the server will refuse.
+  const r = s.role, mine = s.yourTurn && !s.finished && !s.thinking && !s.needsUpload;
   // When the script has run out there is no next speaker, and roleName(null)
   // was falling through to "The builder" — so both panels sat waiting on a turn
   // that was never coming. Say what is actually true: everyone has spoken.
   const spent = !s.turn && !s.finished;
+  // On the one-person routes the other seat never speaks. "Role 2's turn" there
+  // reads as a box that is broken rather than a person who is not in this one.
+  const absent = s.speaks === 0;
+  const other = roleName(r === "A" ? "B" : "A");
   const pill = s.finished ? `<span class="pill wait">over</span>`
+    : absent ? `<span class="pill wait">not in this one</span>`
     : s.thinking ? `<span class="pill think">it is deciding</span>`
     : spent ? `<span class="pill wait">all said</span>`
     : s.needsUpload ? `<span class="pill wait">add your picture</span>`
     : mine ? `<span class="pill now">your turn</span>`
     : `<span class="pill wait">${esc(roleName(s.turn))}&rsquo;s turn</span>`;
   const ph = s.finished ? "The session is over."
+    : absent ? `${roleName(r)} has no part in this route. Only ${other} speaks.`
     : spent ? "Everyone has had their say. Nothing more to add."
     : s.needsUpload ? "Add your picture first."
     : mine ? "What do you need of it, and what happens to you when it is wrong?"
+    : s.step === 0 ? `${roleName(s.turn)} goes first on this route. Waiting for them…`
     : `Waiting for ${roleName(s.turn)}…`;
   return `
     <div class="rolebox">
@@ -410,7 +429,7 @@ function panel(s, people){
         </span>
         ${pill}
       </div>
-      ${s.upload ? `<div class="upstrip">
+      ${s.upload && !absent ? `<div class="upstrip">
         <div class="drop" id="drop-${r}">
           ${s.picture ? `<img src="${s.picture.dataUrl}" alt="the crossing you brought">`
                       : `<p>Tap to add the crossing you have in mind.<br><span class="muted">Only you see it. The builder never does.</span></p>`}
@@ -569,7 +588,7 @@ function builderColumn(h){
           : a.did ? `<p class="read"><span class="lbl">read as</span><span class="key none">nothing it could build from</span></p>` : ""}
         ${a.did
           ? (a.did.failed
-              ? `<p class="move muted">It laid something and would not say why.</p>
+              ? `<p class="move muted">${esc(failNote(a.did, true))}</p>
                  ${a.did.built ? `<span class="made">→ ${esc(a.did.built)}</span>` : ""}`
               : `<p class="move">${esc(a.did.text)}</p>
                  ${a.did.built ? `<span class="made">→ ${esc(a.did.built)}</span>` : ""}`)
@@ -643,8 +662,8 @@ function bothView(){
     ${invite(a.room)}
     <div class="desk">
       <div class="pair">
-        <div class="col" id="col-A">${panel(a, true)}</div>
-        <div class="col" id="col-B">${panel(b, true)}</div>
+        <div class="col" id="col-A">${panel(a, false)}</div>
+        <div class="col" id="col-B">${panel(b, false)}</div>
       </div>
       ${builderColumn(h)}
     </div>
