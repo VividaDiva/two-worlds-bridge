@@ -98,15 +98,41 @@ button.quiet{background:none; border:1px solid var(--rule); color:var(--soft);
 @keyframes pulse{50%{opacity:.25}}
 .step{margin-left:auto; font-family:var(--mono); font-size:11.5px; letter-spacing:.1em; opacity:.75}
 
-.line{margin:0 0 12px}
-.who{font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+/* the exchange, as an exchange: Role 1 down the left, Role 2 down the right,
+   and the builder across the middle, because it is answering both of them */
+.chat{display:flex; flex-direction:column; gap:14px; max-height:52vh; overflow-y:auto;
+  padding:2px 2px 4px; scroll-behavior:smooth}
+.line{display:flex; flex-direction:column; max-width:78%; animation:pop .32s cubic-bezier(.2,.7,.3,1) backwards}
+@keyframes pop{from{opacity:0; transform:translateY(6px)}}
+@media (prefers-reduced-motion:reduce){.line{animation:none}}
+.line.a{align-self:flex-start}
+.line.b{align-self:flex-end}
+.line.m{align-self:stretch; max-width:100%; align-items:center; text-align:center}
+.who{font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase;
   color:var(--faint); display:block; margin:0 0 5px}
+.line.b .who{text-align:right}
 .line.a .who{color:var(--rust)} .line.b .who{color:var(--blue)} .line.m .who{color:var(--moss)}
-.said{font-family:var(--display); font-size:17px; line-height:1.5; margin:0}
-.line.m .said{font-family:var(--body); font-size:15.5px; color:var(--ink)}
-.built{font-family:var(--mono); font-size:11.5px; color:var(--moss); margin-top:6px; display:block}
-.private{font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+.said{font-family:var(--display); font-size:16.5px; line-height:1.5; margin:0;
+  padding:11px 15px; border-radius:14px; background:var(--paper-2);
+  border:1px solid var(--rule); box-shadow:var(--shadow)}
+.line.a .said{border-bottom-left-radius:3px; border-left:2px solid var(--rust)}
+.line.b .said{border-bottom-right-radius:3px; border-right:2px solid var(--blue)}
+.line.m .said{font-family:var(--body); font-size:15px; background:transparent; border:0; box-shadow:none;
+  border-top:1px solid var(--rule-2); border-bottom:1px solid var(--rule-2); border-radius:0;
+  padding:11px 6px; color:var(--soft); max-width:62ch}
+.built{font-family:var(--mono); font-size:11px; color:var(--moss); margin-top:6px; display:block;
+  letter-spacing:.06em}
+.private{font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
   color:var(--faint); border:1px solid var(--rule); border-radius:2px; padding:1px 5px; margin-left:7px}
+/* your own words sit on your side, whichever role you are. The builder is
+   nobody's side and stays across the middle. */
+.line.mine{align-self:flex-end; max-width:78%}
+.line.mine .who{text-align:right}
+.line.mine .said{background:var(--card);
+  border-radius:14px; border-bottom-right-radius:3px; border-bottom-left-radius:14px}
+.line.a.mine .said{border-left:0; border-right:2px solid var(--rust)}
+.line.b.mine .said{border-right:2px solid var(--blue)}
+.line.m.mine{align-self:stretch}
 
 textarea{width:100%; min-height:96px; resize:vertical; font:16px/1.55 var(--body); color:var(--ink);
   background:var(--card); border:1px solid var(--rule); border-radius:3px; padding:13px 15px}
@@ -188,16 +214,21 @@ function listen(room, role){
   es.onmessage = e => { state = JSON.parse(e.data); render(); };
 }
 
+// Colour goes by role, so Role 1 is the same colour on every screen. Side goes
+// by who is looking: your own words sit on your side, as they do in any chat.
+// The host is nobody, so there it stays Role 1 left, Role 2 right.
 function conversation(s){
-  if (!s.lines.length) return `<p class="muted">Nothing said yet.</p>`;
-  return s.lines.map(l => {
+  if (!s.lines.length) return `<div class="chat" id="chat"><p class="muted">Nothing said yet.</p></div>`;
+  const body = s.lines.map(l => {
     const cls = l.who === "A" ? "a" : l.who === "B" ? "b" : "m";
-    return `<div class="line ${cls}">
-      <span class="who">${esc(roleName(l.who))}${l.phase === "confer" ? `<span class="private">between you two</span>` : ""}</span>
+    const mine = l.who === s.role ? " mine" : "";
+    return `<div class="line ${cls}${mine}">
+      <span class="who">${esc(l.who === s.role ? "You" : roleName(l.who))}${l.phase === "confer" ? `<span class="private">between you two</span>` : ""}</span>
       <p class="said">${esc(l.text)}</p>
       ${l.built ? `<span class="built">it now stands as ${esc(l.built)}</span>` : ""}
     </div>`;
   }).join("");
+  return `<div class="chat" id="chat">${body}</div>`;
 }
 
 /* ── the facilitator, with a room open ─────────────────────────────────── */
@@ -307,7 +338,20 @@ function playerView(s){
   };
 }
 
-function render(){ if (!state) return; (state.role === "host" ? hostView : playerView)(state); }
+// The chat scrolls inside itself, so a line arriving live would land below the
+// fold. Pin to the newest when the count grows — but not on every repaint, or
+// somebody reading back through the conversation gets yanked to the bottom
+// every time the other one is still typing.
+let lastCount = -1;
+function render(){
+  if (!state) return;
+  (state.role === "host" ? hostView : playerView)(state);
+  const chat = document.getElementById("chat");
+  if (chat && state.lines.length !== lastCount) {
+    chat.scrollTop = chat.scrollHeight;
+    lastCount = state.lines.length;
+  }
+}
 
 /* ── boot ──────────────────────────────────────────────────────────────── */
 (async () => {
