@@ -298,7 +298,7 @@ async function setup(){
       <p class="eyebrow">A study of what survives being said</p>
       <h1>Two worlds,<br>one builder</h1>
       <p class="lede">Two people describe what they need from a crossing. A third party builds it from
-        their words alone — it may not ask, and nobody may name a part.</p>
+        their words alone, and it may not ask.</p>
     </div>
     <div class="card">
       <label>What they are arguing about</label>
@@ -392,8 +392,7 @@ function panel(s, people){
           <textarea id="say-${r}" ${mine ? "" : "disabled"} placeholder="${esc(ph)}">${esc(drafts[r] || "")}</textarea>
           <button class="send" id="send-${r}" ${mine ? "" : "disabled"} aria-label="Send">&uarr;</button>
         </div>
-        <div id="err-${r}"></div>
-        <p class="foot">You have no word for a made thing. Say what you need of it.</p>`}
+        <div id="err-${r}"></div>`}
     </div>`;
 }
 
@@ -421,10 +420,7 @@ function wire(s){
     const { ok, j } = await post("/api/say", { room: s.room, role: r, text });
     if (ok) { ta.value = ""; drafts[r] = ""; err.innerHTML = ""; return; }
     send.disabled = false;
-    err.innerHTML = j.error === "named"
-      ? `<div class="warn">You named <b>${j.words.map(esc).join(", ")}</b>. Nobody here has a word for a made
-           thing — say what you need of it instead, or what happens to you when it is wrong.</div>`
-      : `<div class="warn">${esc(j.error || "that did not send")}</div>`;
+    err.innerHTML = `<div class="warn">${esc(j.error || "that did not send")}</div>`;
   };
   // The brief is clamped to two lines so the thread gets the room. Tapping it
   // opens the rest — some of them are three sentences long.

@@ -14,7 +14,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { mkCtx, hear, newTurn, build, provenance } from "../engine.mjs";
-import { ARGUMENTS, ROUTES, RULE, NAME, FEATURES, KIT, propsOf, named } from "./kit.mjs";
+import { ARGUMENTS, ROUTES, NAME, FEATURES, KIT, propsOf } from "./kit.mjs";
 import { readLine, chooseBuild, speak, readPicture } from "./builder.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -53,7 +53,6 @@ function view(room, role) {
   return {
     room: room.id, argument: room.argument, route: room.route,
     title: arg.title, blurb: arg.blurb, arrow: route.arrow, note: route.note,
-    rule: RULE,
     role,
     goal: role === "host" ? null : arg[role].goal,
     upload: !!arg.upload,
@@ -283,8 +282,6 @@ const srv = http.createServer(async (req, res) => {
     if (script[r.turn] !== role) return json(res, 409, { error: "it is not your turn" });
     const clean = String(text || "").trim();
     if (!clean) return json(res, 400, { error: "say something first" });
-    const bad = named(clean);
-    if (bad.length) return json(res, 422, { error: "named", words: bad });
     if (ARGUMENTS[r.argument].upload && !r.uploads[role])
       return json(res, 409, { error: "upload your picture first" });
 

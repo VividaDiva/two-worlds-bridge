@@ -112,21 +112,6 @@ export const ROUTES = {
   },
 };
 
-// The rule, in the wording that stopped tripping the safety classifier. Said as
-// a fact about these people rather than a list of words to dodge: the same
-// constraint, and nothing to work around. Shown to participants as written.
-export const RULE =
-  "You have no word for any made thing, and neither has anybody here. Nothing in your language names a "
-  + "built object — not " + STRUCTURES.slice(0, 6).join(", ") + ", none of them. What you do have words "
-  + "for is what you need of it, and what happens to you when it is wrong. So that is what you say.";
-
-// Checked on every line before it is sent, and refused back to the person with
-// the word named, so they can say it another way.
-export const named = text => {
-  const words = String(text).toLowerCase().match(/[a-z']+/g) || [];
-  return [...new Set(STRUCTURES.filter(f => words.includes(f)))];
-};
-
 // What the builder is offered, in the shape CHOOSE_SYSTEM wants.
 export const kitForChoosing = () =>
   KIT.map(k => ({ id: NAME(k.id), props: k.has.map(f => FEATURES[f]).join("; ") }));
