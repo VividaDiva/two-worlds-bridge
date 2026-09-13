@@ -27,6 +27,20 @@ if (!process.env.ANTHROPIC_API_KEY) {
   process.exit(1);
 }
 
+// The address people outside this network can use, which is what every link
+// handed out should carry — not whatever address the facilitator happened to
+// open the page on. PUBLIC_URL pins one; otherwise it is read from the quick
+// tunnel's log on every request, because a quick tunnel gets a new address each
+// time it starts.
+const TUNNEL_LOG = process.env.TUNNEL_LOG || "/tmp/tunnel2.log";
+function publicUrl() {
+  if (process.env.PUBLIC_URL) return process.env.PUBLIC_URL.replace(/\/$/, "");
+  try {
+    const found = fs.readFileSync(TUNNEL_LOG, "utf8").match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/g);
+    return found ? found[found.length - 1] : null;
+  } catch { return null; }
+}
+
 const rooms = new Map();
 const streams = new Map();            // room id -> Set of { res, role }
 const code = () => Math.random().toString(36).slice(2, 7);
@@ -318,6 +332,7 @@ const srv = http.createServer(async (req, res) => {
   }
 
   if (p === "/api/options") return json(res, 200, {
+    publicUrl: publicUrl(),
     arguments: Object.entries(ARGUMENTS).map(([k, v]) => ({ id: k, title: v.title, blurb: v.blurb, upload: !!v.upload })),
     routes: Object.entries(ROUTES).map(([k, v]) => ({ id: k, arrow: v.arrow, note: v.note })),
   });
@@ -332,6 +347,9 @@ const srv = http.createServer(async (req, res) => {
                     uploads: {}, standing: null, thinking: false, finished: false,
                     createdAt: new Date().toISOString() });
     streams.set(id, new Set());
+    // Saved at once, so a room whose links are already out survives a restart
+    // even before anybody has spoken in it.
+    try { record(rooms.get(id)); } catch (e) { console.error(`could not save ${id}: ${e.message}`); }
     return json(res, 200, { room: id });
   }
 

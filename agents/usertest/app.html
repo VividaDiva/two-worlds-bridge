@@ -309,6 +309,10 @@ const app = document.getElementById("app");
 const M = /^\/j\/([a-z0-9]+)(?:\/(A|B|both))?$/.exec(location.pathname);
 const ROOM = M ? M[1] : null, ROLE = M ? (M[2] || null) : "host";
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+// Links handed out carry the public address when there is one. Opened on a
+// local address, location.origin would give Role 2 a link that only works on
+// this Wi-Fi.
+const shareBase = () => (opts && opts.publicUrl) || location.origin;
 const roleName = r => r === "A" ? "Role 1" : r === "B" ? "Role 2" : "The builder";
 const post = (u, b) => fetch(u, {method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(b)})
   .then(r => r.json().then(j => ({ok:r.ok, j})));
@@ -475,7 +479,7 @@ function wire(s){
 
 /* ── the three views ───────────────────────────────────────────────────── */
 function hostView(s){
-  const base = location.origin, sc = s.score;
+  const base = shareBase(), sc = s.score;
   app.innerHTML = `
     <div>
       <p class="eyebrow">Room ${esc(s.room)} · ${esc(s.title)}</p>
@@ -729,7 +733,7 @@ async function openRoom(argument, route){
 // The two seats, on the facilitator's own page, so a room can be handed out
 // from where it is watched.
 function invite(room){
-  const base = location.origin;
+  const base = shareBase();
   return `<div class="invite">
     <p class="muted">Send each person their own link. Keep this page for yourself.</p>
     <div class="seats">${["A","B"].map(r => { const url = `${base}/j/${room}/${r}`;
@@ -885,6 +889,7 @@ async function historyView(id){
   } else if (ROOM) {
     listen(ROOM, ROLE, s => playerView(s));
   } else if (q) {
+    opts = opts || await fetch("/api/options").then(r => r.json()).catch(() => null);
     listen(q, "host", s => hostView(s));
   } else setup();
 })();
