@@ -84,6 +84,10 @@ button.go[disabled]{opacity:.35; cursor:not-allowed; transform:none}
 .mini{font:inherit; font-size:13px; padding:5px 13px; border:1px solid var(--rule); border-radius:99px;
   background:var(--card); color:inherit; cursor:pointer; text-decoration:none}
 .mini:hover{border-color:var(--soft)}
+.saved{display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:14px}
+.saved .muted{font-size:13.5px; margin-right:4px}
+.sessions td{vertical-align:top}
+.sessions td small{font-size:12.5px}
 .link b{font-family:var(--display); font-size:15px}
 .link code{display:block; font-family:var(--mono); font-size:12.5px; color:var(--blue);
   word-break:break-all; margin-top:5px; line-height:1.4}
@@ -598,6 +602,12 @@ function resultBar(h){
              <span>${esc(n.text)}</span></li>`).join("") || `<li>no need was set</li>`}
         </ul></div>`).join("")}</div>`
       : `<div class="row"><button class="go" id="fin">End the session and show what they needed</button></div>`}
+    ${h.lines.length ? `<div class="saved">
+      <span class="muted">Saved after every line.</span>
+      <a class="mini" href="/api/export?room=${esc(h.room)}&format=md" download>Download chat</a>
+      <a class="mini" href="/api/export?room=${esc(h.room)}&format=json" download>Download data</a>
+      <a class="mini" href="/sessions" target="_blank" rel="noopener">All sessions</a>
+    </div>` : ""}
   </div>`;
 }
 
@@ -757,7 +767,38 @@ function joinView(room){
   });
 }
 
+// Every session on record. The files themselves are in usertest/sessions/ on
+// the machine running the server; this page is only a way to find and fetch them.
+async function sessionsView(){
+  const list = await fetch("/api/sessions").then(r => r.json()).catch(() => []);
+  const when = t => t ? new Date(t).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : "";
+  app.classList.add("wide");
+  app.innerHTML = `
+    <div>
+      <p class="eyebrow">Kept as they happened</p>
+      <h1>Sessions</h1>
+      <p class="lede">Every room somebody spoke in, saved after every line. Download the chat to read it,
+        or the data to analyse it.</p>
+    </div>
+    <div class="card">${list.length ? `<div style="overflow-x:auto"><table class="sessions"><tbody>
+      <tr><td class="muted">Last change</td><td class="muted">Use case</td><td class="muted">Route</td>
+        <td class="muted">Lines</td><td class="muted">Stands</td><td></td></tr>
+      ${list.map(s => `<tr>
+        <td>${esc(when(s.updatedAt))}</td>
+        <td>${esc(s.title)}<br><small class="muted">room ${esc(s.room)}${s.finished ? " · ended" : s.live ? " · live" : ""}</small></td>
+        <td><code>${esc(s.arrow)}</code></td>
+        <td>${s.lines}</td>
+        <td>${esc(s.standing || "nothing")}</td>
+        <td style="white-space:nowrap">
+          ${s.live ? `<a class="mini" href="/j/${esc(s.room)}/both">Watch</a>` : ""}
+          <a class="mini" href="/api/export?room=${esc(s.room)}&format=md" download>Chat</a>
+          <a class="mini" href="/api/export?room=${esc(s.room)}&format=json" download>Data</a></td>
+      </tr>`).join("")}</tbody></table></div>`
+      : `<p class="muted">Nothing saved yet. A session is kept from the first line anybody sends.</p>`}</div>`;
+}
+
 (async () => {
+  if (location.pathname === "/sessions") return sessionsView();
   const q = new URLSearchParams(location.search).get("room");
   // Opened the bare link, but this browser has already taken a side here.
   if (ROOM && !ROLE) {

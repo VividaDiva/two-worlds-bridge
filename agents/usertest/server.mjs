@@ -95,8 +95,77 @@ function view(room, role) {
   };
 }
 
+// Every session is kept on disk as it happens, not only when somebody presses
+// End: a room lives in memory, and a restart or a closed laptop would otherwise
+// take the whole conversation with it. Rewritten on every change, which is every
+// push, so the file is never more than one change behind the screen.
+function record(room) {
+  const arg = ARGUMENTS[room.argument], route = ROUTES[room.route];
+  const rec = {
+    room: room.id, argument: room.argument, title: arg.title,
+    route: room.route, arrow: route.arrow,
+    createdAt: room.createdAt, updatedAt: new Date().toISOString(),
+    finished: room.finished,
+    goals: { A: arg.A.goal, B: arg.B.goal },
+    // The pictures are theirs; the record keeps what was read off them, not the
+    // image. The files already on disk are gitignored.
+    uploads: Object.fromEntries(Object.entries(room.uploads)
+      .map(([k, v]) => [k, { shape: v.shape, needs: v.needs }])),
+    transcript: room.transcript.map(e => ({ ...e })),
+    standing: room.standing ? NAME(room.standing) : null,
+    shape: room.ctx.design ? room.ctx.design.shape : null,
+    provenance: provenance(room.ctx).feats,
+    // Needs met so far, even before End is pressed; `finished` says which.
+    score: room.score || scoreRoom(room),
+  };
+  fs.writeFileSync(path.join(here, "sessions", `${room.id}.json`), JSON.stringify(rec, null, 2));
+}
+
+const WHO = { A: "Role 1", B: "Role 2", builder: "Role 3 (builder)" };
+const clock = t => (t ? new Date(t).toLocaleTimeString() : "");
+
+// The same record, as something a person can read.
+function toMarkdown(s) {
+  const out = [
+    `# ${s.title} — room ${s.room}`, "",
+    `- Route: ${s.arrow}`,
+    `- Started: ${s.createdAt ? new Date(s.createdAt).toLocaleString() : "?"}`,
+    `- Last change: ${new Date(s.updatedAt).toLocaleString()}`,
+    `- Ended: ${s.finished ? "yes" : "no — saved as it stood"}`, "",
+    `## Goals`, "",
+    `**Role 1:** ${s.goals.A}`, "",
+    `**Role 2:** ${s.goals.B}`, "",
+    `## Conversation`, "",
+  ];
+  for (const e of s.transcript) {
+    out.push(`**${WHO[e.who] || e.who}**${e.phase === "confer" ? " (to each other)" : ""} · ${clock(e.at)}  `,
+             e.failed ? "_It laid something and would not say why._" : (e.text || "_(nothing)_"));
+    if (e.taken && e.taken.length) out.push("", `> read as: ${e.taken.join(", ")}`);
+    if (e.who === "builder" && e.built) out.push("", `> built: ${e.built}`);
+    out.push("");
+  }
+  out.push(`## What stands`, "", s.standing || "nothing built", "");
+  if (s.provenance && s.provenance.length) {
+    out.push(`### Where it came from`, "");
+    for (const x of s.provenance)
+      out.push(`- ${x.byA && x.byB ? "both" : x.byA ? "Role 1" : x.byB ? "Role 2" : "neither of them"} — ${x.description}`);
+    out.push("");
+  }
+  if (s.score) {
+    out.push(`## Needs met${s.finished ? "" : " so far"}`, "");
+    for (const r of ["A", "B"]) {
+      const p = s.score.per[r];
+      out.push(`**${WHO[r]} — ${p.met} of ${p.of}**`, "");
+      for (const n of p.needs) out.push(`- ${n.met ? "✓" : "✗"} ${n.text}`);
+      out.push("");
+    }
+  }
+  return out.join("\n");
+}
+
 function push(roomId) {
   const room = rooms.get(roomId);
+  try { record(room); } catch (e) { console.error(`could not save ${roomId}: ${e.message}`); }
   for (const s of streams.get(roomId) || [])
     s.res.write(`data: ${JSON.stringify(view(room, s.role))}\n\n`);
 }
@@ -190,7 +259,7 @@ const srv = http.createServer(async (req, res) => {
   // /j/<room>/A and /B are one person each, on their own device. /j/<room>/both
   // is the pair of them on one screen — two people at one laptop, or one person
   // testing alone. Each column still sees only what its own role is allowed to.
-  if (req.method === "GET" && (p === "/" || /^\/j\/[a-z0-9]+(\/(A|B|both))?$/.test(p))) {
+  if (req.method === "GET" && (p === "/" || p === "/sessions" || /^\/j\/[a-z0-9]+(\/(A|B|both))?$/.test(p))) {
     res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
     return res.end(fs.readFileSync(path.join(here, "app.html"), "utf8"));
   }
@@ -203,12 +272,45 @@ const srv = http.createServer(async (req, res) => {
   if (p === "/api/create" && req.method === "POST") {
     const { argument, route } = await body(req);
     if (!ARGUMENTS[argument] || !ROUTES[route]) return json(res, 400, { error: "unknown argument or route" });
-    const id = code();
+    // Never reuse the name of a session already on disk, or its record goes.
+    let id = code();
+    while (rooms.has(id) || fs.existsSync(path.join(here, "sessions", `${id}.json`))) id = code();
     rooms.set(id, { id, argument, route, ctx: mkCtx(), turn: 0, transcript: [],
                     uploads: {}, standing: null, thinking: false, finished: false,
                     createdAt: new Date().toISOString() });
     streams.set(id, new Set());
     return json(res, 200, { room: id });
+  }
+
+  // Every session on record, newest first, read from disk so that rooms from
+  // before a restart are still listed. Empty rooms — opened and never spoken in,
+  // which is what switching the filters leaves behind — are left out.
+  if (p === "/api/sessions") {
+    const dir = path.join(here, "sessions");
+    const list = fs.readdirSync(dir).filter(f => f.endsWith(".json")).map(f => {
+      try { return JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")); } catch { return null; }
+    }).filter(s => s && s.transcript && s.transcript.length)
+      .map(s => ({ room: s.room, title: s.title, arrow: s.arrow, createdAt: s.createdAt,
+                   updatedAt: s.updatedAt, finished: s.finished, standing: s.standing,
+                   lines: s.transcript.filter(e => e.who !== "builder").length,
+                   live: rooms.has(s.room) }))
+      .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
+    return json(res, 200, list);
+  }
+
+  // One session, to keep: the chat as a readable page, or the whole record.
+  if (p === "/api/export") {
+    const id = url.searchParams.get("room") || "";
+    const file = path.join(here, "sessions", `${id}.json`);
+    if (!/^[a-z0-9]+$/.test(id) || !fs.existsSync(file))
+      return json(res, 404, { error: "nothing saved for that room yet" });
+    const rec = JSON.parse(fs.readFileSync(file, "utf8"));
+    const md = url.searchParams.get("format") !== "json";
+    res.writeHead(200, {
+      "content-type": md ? "text/markdown; charset=utf-8" : "application/json; charset=utf-8",
+      "content-disposition": `attachment; filename="session-${id}.${md ? "md" : "json"}"`,
+    });
+    return res.end(md ? toMarkdown(rec) : JSON.stringify(rec, null, 2));
   }
 
   const room = rooms.get(url.searchParams.get("room") || "");
@@ -310,13 +412,7 @@ const srv = http.createServer(async (req, res) => {
     if (!r) return json(res, 404, { error: "no such room" });
     r.finished = true;
     r.score = scoreRoom(r);
-    // The pictures are theirs; the record keeps what was read off them, not the
-    // image. The files already on disk are gitignored.
-    const out = { ...r, ctx: undefined, streams: undefined,
-                  uploads: Object.fromEntries(Object.entries(r.uploads)
-                    .map(([k, v]) => [k, { shape: v.shape, needs: v.needs }])) };
-    fs.writeFileSync(path.join(here, "sessions", `${id}.json`), JSON.stringify(out, null, 2));
-    push(id);
+    push(id);                                          // which also saves it
     return json(res, 200, r.score);
   }
 
