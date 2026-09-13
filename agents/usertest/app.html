@@ -21,36 +21,33 @@
 html,body{margin:0}
 body{
   background:var(--paper); color:var(--ink); font-family:var(--body);
-  font-size:16px; line-height:1.55; -webkit-font-smoothing:antialiased;
-  min-height:100dvh;
-  /* ruled paper, faint enough to read over */
+  font-size:16px; line-height:1.55; -webkit-font-smoothing:antialiased; min-height:100dvh;
   background-image:repeating-linear-gradient(to bottom,transparent 0 31px,var(--rule-2) 31px 32px);
   background-attachment:fixed;
 }
-/* grain, so the paper is not flat */
 body::before{
   content:""; position:fixed; inset:0; pointer-events:none; z-index:99; opacity:.4;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.32'/%3E%3C/svg%3E");
   mix-blend-mode:multiply;
 }
 .wrap{max-width:860px; margin:0 auto; padding:26px 20px 90px}
+.wrap.wide{max-width:1240px}
 .stack>*{animation:rise .5s cubic-bezier(.2,.7,.3,1) backwards}
 .stack>*:nth-child(1){animation-delay:.02s}
 .stack>*:nth-child(2){animation-delay:.08s}
 .stack>*:nth-child(3){animation-delay:.14s}
-.stack>*:nth-child(4){animation-delay:.2s}
 @keyframes rise{from{opacity:0; transform:translateY(9px)}}
-@media (prefers-reduced-motion:reduce){.stack>*{animation:none}}
+@media (prefers-reduced-motion:reduce){.stack>*,.line{animation:none}}
 
-h1{font-family:var(--display); font-weight:600; font-size:clamp(28px,5vw,40px);
+h1{font-family:var(--display); font-weight:600; font-size:clamp(26px,4.6vw,38px);
    line-height:1.08; letter-spacing:-.015em; margin:0 0 6px}
-h2{font-family:var(--display); font-weight:600; font-size:20px; margin:0 0 8px; letter-spacing:-.01em}
-.lede{color:var(--soft); margin:0 0 26px; max-width:56ch; font-size:16.5px}
+h2{font-family:var(--display); font-weight:600; font-size:19px; margin:0 0 8px; letter-spacing:-.01em}
+.lede{color:var(--soft); margin:0 0 24px; max-width:58ch; font-size:16.5px}
 .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase;
   color:var(--faint); margin:0 0 10px}
 
 .card{background:var(--card); border:1px solid var(--rule); border-radius:3px;
-  padding:20px 22px; margin:0 0 16px; box-shadow:var(--shadow); position:relative}
+  padding:19px 21px; margin:0 0 16px; box-shadow:var(--shadow); position:relative}
 .card.tab::before{content:""; position:absolute; left:-1px; top:18px; bottom:18px; width:3px;
   background:var(--rust); border-radius:0 2px 2px 0}
 .card.tab.you::before{background:var(--blue)}
@@ -66,16 +63,13 @@ label{display:block; font-family:var(--mono); font-size:11px; letter-spacing:.14
 .opt:hover{border-color:var(--faint); transform:translateY(-1px); box-shadow:var(--shadow)}
 .opt[aria-pressed="true"]{border-color:var(--rust); box-shadow:inset 0 0 0 1px var(--rust)}
 .opt b{display:block; font-family:var(--display); font-weight:600; font-size:16.5px}
-.opt .arrow{font-family:var(--mono); font-size:13px; color:var(--rust); letter-spacing:.01em}
+.opt .arrow{font-family:var(--mono); font-size:13px; color:var(--rust)}
 .opt small{display:block; color:var(--soft); margin-top:3px; font-size:14px; line-height:1.45}
 
 button.go{font:600 15px/1 var(--body); background:var(--ink); color:var(--paper); border:0;
-  border-radius:3px; padding:14px 22px; cursor:pointer; letter-spacing:.01em;
-  transition:opacity .15s, transform .15s}
+  border-radius:3px; padding:13px 21px; cursor:pointer; transition:opacity .15s, transform .15s}
 button.go:hover{transform:translateY(-1px)}
 button.go[disabled]{opacity:.35; cursor:not-allowed; transform:none}
-button.quiet{background:none; border:1px solid var(--rule); color:var(--soft);
-  font:500 13px/1 var(--body); padding:9px 14px; border-radius:3px; cursor:pointer}
 
 .links{display:grid; gap:10px; grid-template-columns:1fr 1fr}
 @media (max-width:620px){.links{grid-template-columns:1fr}}
@@ -83,14 +77,15 @@ button.quiet{background:none; border:1px solid var(--rule); color:var(--soft);
 .link b{font-family:var(--display); font-size:15px}
 .link code{display:block; font-family:var(--mono); font-size:12.5px; color:var(--blue);
   word-break:break-all; margin-top:5px; line-height:1.4}
+.link.wide{grid-column:1/-1; border-style:solid; border-color:var(--rust)}
 
-.goal{font-family:var(--display); font-size:19px; line-height:1.42; margin:0}
-.rule{font-size:14.5px; color:var(--soft); line-height:1.5; margin:12px 0 0;
-  padding-top:12px; border-top:1px solid var(--rule-2)}
+.goal{font-family:var(--display); font-size:18px; line-height:1.42; margin:0}
+.rule{font-size:14px; color:var(--soft); line-height:1.5; margin:11px 0 0;
+  padding-top:11px; border-top:1px solid var(--rule-2)}
 
-.turnbar{position:sticky; top:0; z-index:20; margin:0 0 16px; padding:13px 18px;
+.turnbar{position:sticky; top:0; z-index:20; margin:0 0 14px; padding:12px 16px;
   background:var(--ink); color:var(--paper); border-radius:3px;
-  display:flex; align-items:center; gap:12px; font-weight:600; box-shadow:var(--shadow)}
+  display:flex; align-items:center; gap:11px; font-weight:600; box-shadow:var(--shadow)}
 .turnbar.wait{background:var(--paper-2); color:var(--soft); font-weight:500; border:1px solid var(--rule)}
 .turnbar.think{background:var(--moss); color:var(--paper)}
 .dot{width:8px; height:8px; border-radius:50%; background:currentColor; flex:none}
@@ -98,13 +93,11 @@ button.quiet{background:none; border:1px solid var(--rule); color:var(--soft);
 @keyframes pulse{50%{opacity:.25}}
 .step{margin-left:auto; font-family:var(--mono); font-size:11.5px; letter-spacing:.1em; opacity:.75}
 
-/* the exchange, as an exchange: Role 1 down the left, Role 2 down the right,
-   and the builder across the middle, because it is answering both of them */
-.chat{display:flex; flex-direction:column; gap:14px; max-height:52vh; overflow-y:auto;
+.chat{display:flex; flex-direction:column; gap:13px; max-height:46vh; overflow-y:auto;
   padding:2px 2px 4px; scroll-behavior:smooth}
-.line{display:flex; flex-direction:column; max-width:78%; animation:pop .32s cubic-bezier(.2,.7,.3,1) backwards}
+.line{display:flex; flex-direction:column; max-width:80%;
+  animation:pop .32s cubic-bezier(.2,.7,.3,1) backwards}
 @keyframes pop{from{opacity:0; transform:translateY(6px)}}
-@media (prefers-reduced-motion:reduce){.line{animation:none}}
 .line.a{align-self:flex-start}
 .line.b{align-self:flex-end}
 .line.m{align-self:stretch; max-width:100%; align-items:center; text-align:center}
@@ -112,46 +105,46 @@ button.quiet{background:none; border:1px solid var(--rule); color:var(--soft);
   color:var(--faint); display:block; margin:0 0 5px}
 .line.b .who{text-align:right}
 .line.a .who{color:var(--rust)} .line.b .who{color:var(--blue)} .line.m .who{color:var(--moss)}
-.said{font-family:var(--display); font-size:16.5px; line-height:1.5; margin:0;
-  padding:11px 15px; border-radius:14px; background:var(--paper-2);
+.said{font-family:var(--display); font-size:16px; line-height:1.5; margin:0;
+  padding:10px 14px; border-radius:14px; background:var(--paper-2);
   border:1px solid var(--rule); box-shadow:var(--shadow)}
 .line.a .said{border-bottom-left-radius:3px; border-left:2px solid var(--rust)}
 .line.b .said{border-bottom-right-radius:3px; border-right:2px solid var(--blue)}
-.line.m .said{font-family:var(--body); font-size:15px; background:transparent; border:0; box-shadow:none;
-  border-top:1px solid var(--rule-2); border-bottom:1px solid var(--rule-2); border-radius:0;
-  padding:11px 6px; color:var(--soft); max-width:62ch}
-.built{font-family:var(--mono); font-size:11px; color:var(--moss); margin-top:6px; display:block;
-  letter-spacing:.06em}
+.line.m .said{font-family:var(--body); font-size:14.5px; background:transparent; border:0;
+  box-shadow:none; border-top:1px solid var(--rule-2); border-bottom:1px solid var(--rule-2);
+  border-radius:0; padding:10px 6px; color:var(--soft); max-width:62ch}
+.built{font-family:var(--mono); font-size:11px; color:var(--moss); margin-top:6px; display:block}
 .private{font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
   color:var(--faint); border:1px solid var(--rule); border-radius:2px; padding:1px 5px; margin-left:7px}
-/* your own words sit on your side, whichever role you are. The builder is
-   nobody's side and stays across the middle. */
-.line.mine{align-self:flex-end; max-width:78%}
+/* your own words on your side, whichever role you are */
+.line.mine{align-self:flex-end; max-width:80%}
 .line.mine .who{text-align:right}
-.line.mine .said{background:var(--card);
-  border-radius:14px; border-bottom-right-radius:3px; border-bottom-left-radius:14px}
+.line.mine .said{background:var(--card); border-bottom-right-radius:3px; border-bottom-left-radius:14px}
 .line.a.mine .said{border-left:0; border-right:2px solid var(--rust)}
-.line.b.mine .said{border-right:2px solid var(--blue)}
 .line.m.mine{align-self:stretch}
 
-textarea{width:100%; min-height:96px; resize:vertical; font:16px/1.55 var(--body); color:var(--ink);
-  background:var(--card); border:1px solid var(--rule); border-radius:3px; padding:13px 15px}
+textarea{width:100%; min-height:84px; resize:vertical; font:16px/1.55 var(--body); color:var(--ink);
+  background:var(--card); border:1px solid var(--rule); border-radius:3px; padding:12px 14px}
 textarea:focus{outline:2px solid var(--rust); outline-offset:-1px}
 textarea[disabled]{opacity:.5}
 .row{display:flex; gap:10px; align-items:center; margin-top:10px; flex-wrap:wrap}
 .warn{background:#fbeee9; border:1px solid rgba(180,68,31,.35); color:var(--rust);
-  border-radius:3px; padding:11px 14px; font-size:14.5px; margin:12px 0 0}
+  border-radius:3px; padding:10px 13px; font-size:14.5px; margin:11px 0 0}
 .warn b{font-family:var(--mono); font-size:13.5px}
 
-.drop{border:1.5px dashed var(--rule); border-radius:3px; padding:26px; text-align:center;
+.drop{border:1.5px dashed var(--rule); border-radius:3px; padding:22px; text-align:center;
   cursor:pointer; background:var(--paper-2); transition:border-color .15s, background .15s}
 .drop:hover{border-color:var(--rust); background:var(--card)}
-.drop img{max-width:100%; max-height:260px; border-radius:2px; display:block; margin:0 auto}
-.drop p{margin:0; color:var(--soft); font-size:15px}
+.drop img{max-width:100%; max-height:210px; border-radius:2px; display:block; margin:0 auto}
+.drop p{margin:0; color:var(--soft); font-size:14.5px}
+
+/* the pair of them on one screen */
+.pair{display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:start}
+@media (max-width:900px){.pair{grid-template-columns:1fr}}
+.pair .turnbar{position:static}
+.col{min-width:0}
 
 table{width:100%; border-collapse:collapse; font-size:14.5px; margin-top:8px}
-th{font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase;
-   color:var(--faint); text-align:left; font-weight:500; padding:6px 10px 6px 0}
 td{padding:7px 10px 7px 0; border-top:1px solid var(--rule-2)}
 td.y{color:var(--moss); font-weight:600} td.n{color:var(--rust)}
 .tick{font-family:var(--mono)}
@@ -163,33 +156,34 @@ td.y{color:var(--moss); font-weight:600} td.n{color:var(--rust)}
 
 <script>
 const app = document.getElementById("app");
-const M = /^\/j\/([a-z0-9]+)\/([AB])$/.exec(location.pathname);
+const M = /^\/j\/([a-z0-9]+)\/(A|B|both)$/.exec(location.pathname);
 const ROOM = M ? M[1] : null, ROLE = M ? M[2] : "host";
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const roleName = r => r === "A" ? "Role 1" : r === "B" ? "Role 2" : "The builder";
-const post = (u, b) => fetch(u, {method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(b)}).then(r => r.json().then(j => ({ok:r.ok, j})));
+const post = (u, b) => fetch(u, {method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(b)})
+  .then(r => r.json().then(j => ({ok:r.ok, j})));
 
-let state = null, picked = { argument:null, route:null }, opts = null;
+let opts = null, seen = {};
 
 /* ── the facilitator, before a room exists ─────────────────────────────── */
 async function setup(){
   opts = opts || await fetch("/api/options").then(r => r.json());
+  let picked = { argument:null, route:null };
   app.innerHTML = `
     <div>
       <p class="eyebrow">A study of what survives being said</p>
       <h1>Two worlds,<br>one builder</h1>
       <p class="lede">Two people describe what they need from a crossing. A third party builds it from
-        their words alone — it may not ask, and nobody may name a part. Pick what they are arguing about
-        and how their words are allowed to travel.</p>
+        their words alone — it may not ask, and nobody may name a part.</p>
     </div>
     <div class="card">
       <label>What they are arguing about</label>
-      <div class="opts" id="args">${opts.arguments.map(a => `
+      <div class="opts">${opts.arguments.map(a => `
         <button class="opt" data-a="${a.id}" aria-pressed="false">
           <b>${esc(a.title)}${a.upload ? " · they each bring a picture" : ""}</b>
           <small>${esc(a.blurb)}</small></button>`).join("")}</div>
       <label>How their words travel</label>
-      <div class="opts" id="routes">${opts.routes.map(r => `
+      <div class="opts">${opts.routes.map(r => `
         <button class="opt" data-r="${r.id}" aria-pressed="false">
           <b class="arrow">${esc(r.arrow)}</b>
           <small>${esc(r.note)}</small></button>`).join("")}</div>
@@ -208,108 +202,65 @@ async function setup(){
   };
 }
 
-/* ── live ──────────────────────────────────────────────────────────────── */
-function listen(room, role){
-  const es = new EventSource(`/events?room=${room}&role=${role}`);
-  es.onmessage = e => { state = JSON.parse(e.data); render(); };
-}
-
+/* ── pieces ────────────────────────────────────────────────────────────── */
 // Colour goes by role, so Role 1 is the same colour on every screen. Side goes
-// by who is looking: your own words sit on your side, as they do in any chat.
-// The host is nobody, so there it stays Role 1 left, Role 2 right.
-function conversation(s){
-  if (!s.lines.length) return `<div class="chat" id="chat"><p class="muted">Nothing said yet.</p></div>`;
-  const body = s.lines.map(l => {
+// by who is looking: your own words sit on your side, as in any chat.
+function conversation(s, id){
+  if (!s.lines.length) return `<div class="chat" id="${id}"><p class="muted">Nothing said yet.</p></div>`;
+  return `<div class="chat" id="${id}">` + s.lines.map(l => {
     const cls = l.who === "A" ? "a" : l.who === "B" ? "b" : "m";
     const mine = l.who === s.role ? " mine" : "";
     return `<div class="line ${cls}${mine}">
-      <span class="who">${esc(l.who === s.role ? "You" : roleName(l.who))}${l.phase === "confer" ? `<span class="private">between you two</span>` : ""}</span>
+      <span class="who">${esc(l.who === s.role ? "You" : roleName(l.who))}${
+        l.phase === "confer" ? `<span class="private">between you two</span>` : ""}</span>
       <p class="said">${esc(l.text)}</p>
       ${l.built ? `<span class="built">it now stands as ${esc(l.built)}</span>` : ""}
     </div>`;
-  }).join("");
-  return `<div class="chat" id="chat">${body}</div>`;
+  }).join("") + `</div>`;
 }
 
-/* ── the facilitator, with a room open ─────────────────────────────────── */
-function hostView(s){
-  const base = location.origin;
-  const sc = s.score;
-  app.innerHTML = `
-    <div>
-      <p class="eyebrow">Room ${esc(s.room)} · ${esc(s.title)}</p>
-      <h1>${esc(s.arrow)}</h1>
-      <p class="lede">${esc(s.note)}</p>
-    </div>
-    <div class="card">
-      <label>Send one link to each person</label>
-      <div class="links">
-        <div class="link"><b>Role 1</b><code>${base}/j/${s.room}/A</code></div>
-        <div class="link"><b>Role 2</b><code>${base}/j/${s.room}/B</code></div>
-      </div>
-    </div>
-    <div class="card tab">
-      <h2>What is being said</h2>
-      <p class="muted" style="margin:0 0 14px; font-size:14.5px">You see everything. They each see only what the route allows.</p>
-      ${conversation(s)}
-      ${s.thinking ? `<p class="muted">The builder is deciding…</p>` : ""}
-    </div>
-    ${s.finished ? `
-      <div class="card tab mach">
-        <h2>What each of them needed</h2>
-        <p class="muted" style="margin:0 0 10px; font-size:14.5px">Never shown to them, and never to the builder. It stands as
-          <b>${esc(sc.built || "nothing")}</b>.</p>
-        ${["A","B"].map(r => `
-          <p class="eyebrow" style="margin-top:14px">${roleName(r)} — ${sc.per[r].met} of ${sc.per[r].of}</p>
-          <table><tbody>${sc.per[r].needs.map(n => `
-            <tr><td class="tick ${n.met ? "y" : "n"}">${n.met ? "✓" : "✗"}</td><td>${esc(n.text)}</td></tr>`).join("")
-            || `<tr><td class="muted">no need was set</td></tr>`}</tbody></table>`).join("")}
-      </div>`
-      : `<div class="card"><button class="go" id="fin">End the session and show what they needed</button>
-           <p class="muted" style="margin:10px 0 0; font-size:14px">Do this once they have finished talking.</p></div>`}`;
-  const f = app.querySelector("#fin");
-  if (f) f.onclick = () => post("/api/finish", { room: s.room });
-}
-
-/* ── a participant ─────────────────────────────────────────────────────── */
-function playerView(s){
-  const mine = s.yourTurn && !s.finished && !s.thinking;
-  const bar = s.finished ? `<div class="turnbar wait"><span class="dot"></span>The session is over. Thank you.</div>`
+// One person's column. Every id is suffixed with the role, because the combined
+// view puts two of these on the page at once and they must not collide.
+function panel(s){
+  const r = s.role, mine = s.yourTurn && !s.finished && !s.thinking;
+  const bar = s.finished ? `<div class="turnbar wait"><span class="dot"></span>The session is over</div>`
     : s.thinking ? `<div class="turnbar think"><span class="dot"></span>The builder is deciding…</div>`
     : s.needsUpload ? `<div class="turnbar wait"><span class="dot"></span>Add your picture to begin</div>`
-    : mine ? `<div class="turnbar"><span class="dot"></span>Your turn to speak<span class="step">${s.step + 1} of ${s.of}</span></div>`
+    : mine ? `<div class="turnbar"><span class="dot"></span>Your turn<span class="step">${s.step + 1} of ${s.of}</span></div>`
     : `<div class="turnbar wait"><span class="dot"></span>Waiting for ${esc(roleName(s.turn))}<span class="step">${s.step + 1} of ${s.of}</span></div>`;
-
-  app.innerHTML = `
+  return `
     ${bar}
-    <div class="card tab ${s.role === "B" ? "you" : ""}">
-      <p class="eyebrow">You are ${roleName(s.role)} · ${esc(s.title)}</p>
+    <div class="card tab ${r === "B" ? "you" : ""}">
+      <p class="eyebrow">You are ${roleName(r)}</p>
       <p class="goal">${esc(s.goal)}</p>
       <p class="rule">${esc(s.rule)}</p>
     </div>
     ${s.upload ? `<div class="card">
       <label>${s.uploaded ? "The crossing you have in mind" : "Add a picture of the crossing you have in mind"}</label>
-      <div class="drop" id="drop">
+      <div class="drop" id="drop-${r}">
         ${s.picture ? `<img src="${s.picture.dataUrl}" alt="the crossing you brought">`
-                    : `<p>Tap to choose a photo or drawing.<br><span class="muted">Only you will see it. The builder never does.</span></p>`}
+                    : `<p>Tap to choose a photo or drawing.<br><span class="muted">Only you see it. The builder never does.</span></p>`}
       </div>
-      <input type="file" id="file" accept="image/*" hidden>
+      <input type="file" id="file-${r}" accept="image/*" hidden>
     </div>` : ""}
     <div class="card tab mach">
       <h2>The conversation</h2>
-      ${conversation(s)}
+      ${conversation(s, "chat-" + r)}
     </div>
     ${s.finished ? "" : `<div class="card">
-      <label>${mine ? "Say what you need" : "You will be able to write when it is your turn"}</label>
-      <textarea id="say" ${mine ? "" : "disabled"} placeholder="What do you need of it, and what happens to you when it is wrong?"></textarea>
+      <label>${mine ? "Say what you need" : "You can write when it is your turn"}</label>
+      <textarea id="say-${r}" ${mine ? "" : "disabled"} placeholder="What do you need of it, and what happens to you when it is wrong?"></textarea>
       <div class="row">
-        <button class="go" id="send" ${mine ? "" : "disabled"}>Send</button>
-        <span class="muted" style="font-size:14px">You cannot name a made thing. Say what you need of it.</span>
+        <button class="go" id="send-${r}" ${mine ? "" : "disabled"}>Send</button>
+        <span class="muted" style="font-size:13.5px">No naming a made thing.</span>
       </div>
-      <div id="err"></div>
+      <div id="err-${r}"></div>
     </div>`}`;
+}
 
-  const drop = app.querySelector("#drop"), file = app.querySelector("#file");
+function wire(s){
+  const r = s.role;
+  const drop = document.getElementById("drop-" + r), file = document.getElementById("file-" + r);
   if (drop) {
     drop.onclick = () => file.click();
     file.onchange = () => {
@@ -317,18 +268,18 @@ function playerView(s){
       const fr = new FileReader();
       fr.onload = async () => {
         drop.innerHTML = `<p class="muted">Reading your picture…</p>`;
-        const { ok, j } = await post("/api/upload", { room: s.room, role: s.role, dataUrl: fr.result });
+        const { ok, j } = await post("/api/upload", { room: s.room, role: r, dataUrl: fr.result });
         if (!ok) drop.innerHTML = `<p class="muted">${esc(j.error || "that did not work")} — tap to try again</p>`;
       };
       fr.readAsDataURL(f);
     };
   }
-  const send = app.querySelector("#send");
+  const send = document.getElementById("send-" + r);
   if (send) send.onclick = async () => {
-    const ta = app.querySelector("#say"), err = app.querySelector("#err");
+    const ta = document.getElementById("say-" + r), err = document.getElementById("err-" + r);
     const text = ta.value.trim(); if (!text) return;
     send.disabled = true;
-    const { ok, j } = await post("/api/say", { room: s.room, role: s.role, text });
+    const { ok, j } = await post("/api/say", { room: s.room, role: r, text });
     if (ok) { ta.value = ""; err.innerHTML = ""; return; }
     send.disabled = false;
     err.innerHTML = j.error === "named"
@@ -336,29 +287,94 @@ function playerView(s){
            thing — say what you need of it instead, or what happens to you when it is wrong.</div>`
       : `<div class="warn">${esc(j.error || "that did not send")}</div>`;
   };
+  // pin to the newest line when the count grows, but not on every repaint
+  const chat = document.getElementById("chat-" + r);
+  if (chat && s.lines.length !== seen[r]) { chat.scrollTop = chat.scrollHeight; seen[r] = s.lines.length; }
 }
 
-// The chat scrolls inside itself, so a line arriving live would land below the
-// fold. Pin to the newest when the count grows — but not on every repaint, or
-// somebody reading back through the conversation gets yanked to the bottom
-// every time the other one is still typing.
-let lastCount = -1;
-function render(){
-  if (!state) return;
-  (state.role === "host" ? hostView : playerView)(state);
-  const chat = document.getElementById("chat");
-  if (chat && state.lines.length !== lastCount) {
-    chat.scrollTop = chat.scrollHeight;
-    lastCount = state.lines.length;
-  }
+/* ── the three views ───────────────────────────────────────────────────── */
+function hostView(s){
+  const base = location.origin, sc = s.score;
+  app.innerHTML = `
+    <div>
+      <p class="eyebrow">Room ${esc(s.room)} · ${esc(s.title)}</p>
+      <h1>${esc(s.arrow)}</h1>
+      <p class="lede">${esc(s.note)}</p>
+    </div>
+    <div class="card">
+      <label>Open this if the two of you are at one screen</label>
+      <div class="links">
+        <div class="link wide"><b>Both roles, side by side</b><code>${base}/j/${s.room}/both</code></div>
+      </div>
+      <label style="margin-top:16px">Or send one each, for separate devices</label>
+      <div class="links">
+        <div class="link"><b>Role 1</b><code>${base}/j/${s.room}/A</code></div>
+        <div class="link"><b>Role 2</b><code>${base}/j/${s.room}/B</code></div>
+      </div>
+    </div>
+    <div class="card tab">
+      <h2>What is being said</h2>
+      <p class="muted" style="margin:0 0 13px; font-size:14.5px">You see everything. They each see only what the route allows.</p>
+      ${conversation(s, "chat-host")}
+      ${s.thinking ? `<p class="muted">The builder is deciding…</p>` : ""}
+    </div>
+    ${s.finished ? `
+      <div class="card tab mach">
+        <h2>What each of them needed</h2>
+        <p class="muted" style="margin:0 0 10px; font-size:14.5px">Never shown to them, and never to the builder.
+          It stands as <b>${esc(sc.built || "nothing")}</b>.</p>
+        ${["A","B"].map(r => `
+          <p class="eyebrow" style="margin-top:14px">${roleName(r)} — ${sc.per[r].met} of ${sc.per[r].of}</p>
+          <table><tbody>${sc.per[r].needs.map(n => `
+            <tr><td class="tick ${n.met ? "y" : "n"}">${n.met ? "✓" : "✗"}</td><td>${esc(n.text)}</td></tr>`).join("")
+            || `<tr><td class="muted">no need was set</td></tr>`}</tbody></table>`).join("")}
+      </div>`
+      : `<div class="card"><button class="go" id="fin">End the session and show what they needed</button></div>`}`;
+  const f = document.getElementById("fin");
+  if (f) f.onclick = () => post("/api/finish", { room: s.room });
+  const chat = document.getElementById("chat-host");
+  if (chat && s.lines.length !== seen.host) { chat.scrollTop = chat.scrollHeight; seen.host = s.lines.length; }
 }
 
-/* ── boot ──────────────────────────────────────────────────────────────── */
+function playerView(s){ app.innerHTML = panel(s); wire(s); }
+
+// Both of them on one screen. Two streams, two columns, and each column still
+// shows only what its own role is allowed to see — so putting them side by side
+// does not quietly let one read the other's goal.
+const both = { A:null, B:null };
+function bothView(){
+  const a = both.A, b = both.B;
+  if (!a || !b) return;
+  app.classList.add("wide");
+  app.innerHTML = `
+    <div>
+      <p class="eyebrow">Room ${esc(a.room)} · ${esc(a.title)}</p>
+      <h1>${esc(a.arrow)}</h1>
+      <p class="lede">${esc(a.note)} Each side below sees only what that person is allowed to see.</p>
+    </div>
+    <div class="pair">
+      <div class="col" id="col-A">${panel(a)}</div>
+      <div class="col" id="col-B">${panel(b)}</div>
+    </div>`;
+  wire(a); wire(b);
+}
+
+/* ── live ──────────────────────────────────────────────────────────────── */
+function listen(room, role, onState){
+  const es = new EventSource(`/events?room=${room}&role=${role}`);
+  es.onmessage = e => onState(JSON.parse(e.data));
+}
+
 (async () => {
   const q = new URLSearchParams(location.search).get("room");
-  if (ROOM) { listen(ROOM, ROLE); }
-  else if (q) { listen(q, "host"); }
-  else setup();
+  if (ROOM && ROLE === "both") {
+    listen(ROOM, "A", s => { both.A = s; bothView(); });
+    listen(ROOM, "B", s => { both.B = s; bothView(); });
+  } else if (ROOM) {
+    listen(ROOM, ROLE, s => playerView(s));
+  } else if (q) {
+    listen(q, "host", s => hostView(s));
+  } else setup();
 })();
 </script>
 </body>
