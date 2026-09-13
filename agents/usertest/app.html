@@ -353,12 +353,18 @@ function conversation(s, id, people, cls){
 // view puts two of these on the page at once and they must not collide.
 function panel(s, people){
   const r = s.role, mine = s.yourTurn && !s.finished && !s.thinking;
+  // When the script has run out there is no next speaker, and roleName(null)
+  // was falling through to "The builder" — so both panels sat waiting on a turn
+  // that was never coming. Say what is actually true: everyone has spoken.
+  const spent = !s.turn && !s.finished;
   const pill = s.finished ? `<span class="pill wait">over</span>`
     : s.thinking ? `<span class="pill think">it is deciding</span>`
+    : spent ? `<span class="pill wait">all said</span>`
     : s.needsUpload ? `<span class="pill wait">add your picture</span>`
     : mine ? `<span class="pill now">your turn</span>`
     : `<span class="pill wait">${esc(roleName(s.turn))}&rsquo;s turn</span>`;
   const ph = s.finished ? "The session is over."
+    : spent ? "Everyone has had their say. Nothing more to add."
     : s.needsUpload ? "Add your picture first."
     : mine ? "What do you need of it, and what happens to you when it is wrong?"
     : `Waiting for ${roleName(s.turn)}…`;
