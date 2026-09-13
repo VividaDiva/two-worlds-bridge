@@ -385,6 +385,47 @@
   .fcard svg text.big{font-size:10px; fill:var(--ink); font-weight:600}
   .fcard .pending{font-size:12px; color:var(--muted); font-style:italic; padding:16px 0}
 
+  /* said → meant → heard, one card per line */
+  .wordsview{gap:12px}
+  .wordsview .pending{font-size:13px; color:var(--muted); font-style:italic}
+  .wlegend{display:flex; gap:14px; flex-wrap:wrap; font-family:var(--mono); font-size:10px; color:var(--muted); margin-top:6px}
+  .wlegend i{display:inline-block; width:22px; height:0; border-top:2px solid; vertical-align:middle; margin-right:5px}
+  .wlegend i.k{border-color:var(--signal)}
+  .wlegend i.l{border-color:var(--fault); border-top-style:dotted}
+  .wlegend i.d{border-color:var(--roleA); border-top-style:dashed}
+  .wcard{border:1px solid var(--line); border-radius:10px; padding:10px 12px 8px; background:var(--panel)}
+  .wcard.a{border-left:3px solid var(--roleA)}
+  .wcard.b{border-left:3px solid var(--roleB)}
+  .wcard h5{
+    font-family:var(--mono); font-size:9.5px; letter-spacing:.11em; text-transform:uppercase;
+    margin:0 0 6px; color:var(--muted); display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap;
+  }
+  .wcard.a h5 .who{color:var(--roleA)}
+  .wcard.b h5 .who{color:var(--roleB)}
+  .wline{display:grid; grid-template-columns:52px 1fr; gap:2px 10px; margin:0 0 3px; font-size:14px; line-height:1.45}
+  .wline .lbl{font-family:var(--mono); font-size:8.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); padding-top:4px}
+  .wline .said{font-family:var(--read); color:var(--ink)}
+  .wline .meant{font-family:var(--read); color:var(--muted); font-style:italic}
+  .wflow h6{font-family:var(--mono); font-size:8.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin:10px 0 2px}
+  .wflow .wscroll{overflow-x:auto; padding-bottom:2px}
+  .wflow svg{display:block; max-width:none; overflow:visible}
+  .wflow svg text{font-family:var(--mono); font-size:12px; fill:var(--ink)}
+  .wflow svg text.col{font-size:9.5px; letter-spacing:.1em; fill:var(--muted)}
+  .wflow svg .saidbar{fill:var(--ink); opacity:.5}
+  .wflow svg .pill{fill:var(--panel); stroke-width:1.2}
+  .wflow svg .pill.meant{stroke:var(--ink)}
+  .wflow svg .pill.kept{stroke:var(--signal)}
+  .wflow svg text.kept{fill:var(--signal)}
+  .wflow svg .pill.added{stroke:var(--roleA); stroke-dasharray:4 3}
+  .wflow svg text.added{fill:var(--roleA-ink)}
+  .wflow svg text.lost{fill:var(--fault)}
+  .wflow svg .ln{fill:none; stroke-width:1.5}
+  .wflow svg .ln.base{stroke:var(--line)}
+  .wflow svg .ln.kept{stroke:var(--signal)}
+  .wflow svg .ln.lost{stroke:var(--fault); stroke-dasharray:2 3}
+  .wflow svg .ln.added{stroke:var(--roleA); stroke-dasharray:6 4}
+  .wnote{font-size:12.5px; color:var(--muted); font-style:italic; margin:2px 0 0}
+
   .an-top{display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px}
   .an-stat{border:1px solid var(--line); border-radius:9px; padding:8px 11px}
   .an-stat dt{
@@ -1040,6 +1081,7 @@
       <button class="vtab" data-v="said" role="tab" id="tab-said" aria-controls="sceneWrap" aria-selected="false" tabindex="-1">What was said</button>
       <button class="vtab" data-v="dropped" role="tab" id="tab-dropped" aria-controls="analysis" aria-selected="false" tabindex="-1">What was dropped</button>
       <button class="vtab" data-v="flow" role="tab" id="tab-flow" aria-controls="flow" aria-selected="false" tabindex="-1">Where it went</button>
+      <button class="vtab" data-v="words" role="tab" id="tab-words" aria-controls="words" aria-selected="false" tabindex="-1">Said, meant, heard</button>
       </div>
       <p class="vnote" id="vnote"></p>
     </div>
@@ -1061,6 +1103,7 @@
       </div>
       <div class="analysis" id="analysis" role="tabpanel" aria-labelledby="tab-dropped" hidden></div>
       <div class="analysis flowview" id="flow" role="tabpanel" aria-labelledby="tab-flow" hidden></div>
+      <div class="analysis wordsview" id="words" role="tabpanel" aria-labelledby="tab-words" hidden></div>
       <div class="analysis" id="rec" hidden></div>
       <div class="badge">
         <span class="built" id="bBuilt">nothing built yet</span>
@@ -3161,6 +3204,114 @@ function renderFlow(){
     <p class="fcompare">carried, in the other cases: ${others}</p>`;
 }
 
+/* ── said → meant → heard, one line at a time ─────────────────────────── */
+// One card per line of the recorded conversation. The recording keeps, for each
+// line, the needs its speaker says they meant (asked straight afterwards, and
+// shown to nobody), the needs the builder took from it, and — on the other
+// person's next turn — the needs they took from it. It does not keep which
+// words produced which need, so the diagrams join needs, never guessed words.
+function renderWords(){
+  const host = document.getElementById("words");
+  const hx = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const ss = S.rec != null ? SESSIONS[S.rec] : null;
+  const t = ss ? (ss.transcript || []).filter(x => x.who === "A" || x.who === "B") : [];
+  if (!t.length){ host.innerHTML = `<p class="pending">There is no recorded conversation for this case yet.</p>`; return; }
+  const known = xs => (xs || []).filter(f => f in FEATLABEL);
+  const name = r => r === "A" ? "Role 1" : "Role 2";
+  const lab = f => FEATLABEL[f] || f;
+  // Drawn at its real size, 12px type, rather than scaled to the panel: scaled,
+  // the labels came out at 9px on a 1440px screen and 6px on a 1024px one.
+  const width = s => 22 + s.length * 7.3;
+
+  // SAID (the sentence) → MEANT (its speaker's needs) → HEARD (one listener's).
+  function diagram(meant, refused, heard, heardRefused, listener){
+    const added = heard.filter(f => !meant.includes(f));
+    const rows = [...meant.map(f => ({ f, kind: heard.includes(f) ? "kept" : "lost" })),
+                  ...added.map(f => ({ f, kind: "added" }))];
+    if (!rows.length) return `<p class="wnote">Nothing on the list was meant by this line, and ${hx(listener)} took nothing from it.</p>`;
+    // Columns sized to what is in them: the meant column to its longest label,
+    // then room for "✗ not heard", then the heard column to its longest label.
+    const txtMeant = r => (refused.has(r.f) ? "not: " : "") + lab(r.f);
+    const txtHeard = r => (heardRefused.has(r.f) ? "not: " : "") + lab(r.f);
+    const meantW = Math.max(120, ...rows.filter(r => r.kind !== "added").map(r => width(txtMeant(r))));
+    const heardW = Math.max(150, ...rows.filter(r => r.kind !== "lost").map(r => width(txtHeard(r))));
+    const RH = 32, TOP = 24, SX = 8, MX = 64, HX = MX + meantW + 132;
+    const W = Math.ceil(HX + heardW + 12), H = TOP + rows.length * RH;
+    const curve = (x1, y1, x2, y2, cls) => `<path class="ln ${cls}" d="M${x1},${y1} C${(x1 + x2) / 2},${y1} ${(x1 + x2) / 2},${y2} ${x2},${y2}"/>`;
+    const pill = (x, y, txt, cls) => `<rect class="pill ${cls}" x="${x}" y="${y - 11}" width="${width(txt)}" height="22" rx="11"/>`
+      + `<text class="${cls}" x="${x + 11}" y="${y + 4}">${hx(txt)}</text>`;
+    let s = `<div class="wscroll"><svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="What was meant by this line, and what ${hx(listener)} heard">`
+      + `<text class="col" x="${SX}" y="11">SAID</text><text class="col" x="${MX}" y="11">MEANT</text>`
+      + `<text class="col" x="${HX}" y="11">${hx(listener.toUpperCase())} HEARD</text>`
+      + `<rect class="saidbar" x="${SX}" y="${TOP}" width="6" height="${rows.length * RH - 8}" rx="3"/>`;
+    rows.forEach((r, i) => {
+      const y = TOP + i * RH + RH / 2 - 4;
+      const heardTxt = (heardRefused.has(r.f) ? "not: " : "") + lab(r.f);
+      if (r.kind === "added"){
+        s += curve(SX + 6, y, HX, y, "added") + pill(HX, y, heardTxt, "added");
+        return;
+      }
+      const meantTxt = (refused.has(r.f) ? "not: " : "") + lab(r.f), w = width(meantTxt);
+      s += curve(SX + 6, y, MX, y, "base") + pill(MX, y, meantTxt, "meant");
+      s += r.kind === "kept"
+        ? curve(MX + w, y, HX, y, "kept") + pill(HX, y, heardTxt, "kept")
+        : curve(MX + w, y, MX + w + 40, y, "lost") + `<text class="lost" x="${MX + w + 48}" y="${y + 4}">✗ not heard</text>`;
+    });
+    return s + `</svg></div>`;
+  }
+
+  let meantN = 0, toBuilder = 0, toOther = 0, extraBuilder = 0, extraOther = 0;
+  const cards = t.map((turn, i) => {
+    const role = turn.who, other = role === "A" ? "B" : "A";
+    const meant = known(turn.meant), refused = new Set(known(turn.meantRefuses));
+    const confer = turn.phase === "confer";
+    const unread = confer || turn.unread || turn.refused || (turn.byWord === null && turn.byModel === null);
+    const taken = known(turn.taken);
+    const reply = t[i + 1];
+    const byOther = reply && reply.who === other ? known(reply.tookThemToMean) : null;
+    meantN += meant.length;
+
+    let body = `<h6>the builder</h6>`;
+    if (unread) {
+      body += `<p class="wnote">${confer ? "Said to the other person, out of the builder's hearing."
+        : turn.refused ? "The builder was refused this line and heard nothing of it."
+        : "This line never reached the builder on this route."}</p>`;
+    } else {
+      toBuilder += meant.filter(f => taken.includes(f)).length;
+      extraBuilder += taken.filter(f => !meant.includes(f)).length;
+      body += diagram(meant, refused, taken, new Set(known(turn.takenRefuses)), "the builder");
+    }
+    body += `<h6>${name(other)}</h6>`;
+    if (byOther && byOther.length) {
+      toOther += meant.filter(f => byOther.includes(f)).length;
+      extraOther += byOther.filter(f => !meant.includes(f)).length;
+      body += diagram(meant, refused, byOther, new Set(), name(other));
+    } else {
+      body += `<p class="wnote">${reply && reply.who === other
+        ? `${name(other)} took nothing from it — or could not hear it on this route.`
+        : `${name(other)} did not speak after this line, so there is no record of what they took from it.`}</p>`;
+    }
+    return `<article class="wcard ${role === "A" ? "a" : "b"}">
+      <h5><span class="who">Line ${i + 1} · ${name(role)}${typeof turn.persona === "string" && turn.persona ? " · " + hx(turn.persona) : ""}</span>
+        <span>${confer ? "to the other, not the builder" : ""}</span></h5>
+      <p class="wline"><span class="lbl">said</span><span class="said">${hx(turn.text || "")}</span></p>
+      ${turn.meantPlainly ? `<p class="wline"><span class="lbl">meant</span><span class="meant">${hx(turn.meantPlainly)}</span></p>` : ""}
+      <div class="wflow">${body}</div>
+    </article>`;
+  });
+
+  host.innerHTML = `
+    <div class="fhead">
+      <h4>${hx(CASES[S.case].label)} · ${hx(SC().label.toLowerCase())}</h4>
+      <p>${t.length} lines. Their speakers meant <b>${meantN}</b> needs between them. <b>${toBuilder}</b> reached the builder
+         as meant${extraBuilder ? `, and it heard ${extraBuilder} nobody meant` : ""}; the other person caught <b>${toOther}</b>${
+         extraOther ? `, and heard ${extraOther} that were never meant` : ""}.</p>
+      <p class="wlegend"><span><i class="k"></i>carried</span><span><i class="l"></i>meant, not heard</span>
+        <span><i class="d"></i>heard, never meant</span><span>“not:” something ruled out, not asked for</span></p>
+    </div>
+    ${cards.join("")}`;
+}
+
 /* ── what each of them believes the other wants, against what it does ── */
 /* ═══════════════════════════════════════════════════════════
    RECORDED RUNS · real models, played back
@@ -3366,6 +3517,7 @@ const VNOTE = {
   said:    "Every word the first two have said, ejected into the space between them and left there. Colour is the little of it the builder could use.",
   dropped: "The same run, counted: what carried, what was heard and dropped, and what the builder took each sentence to be about.",
   flow:    "Where each word of this case went, from the one who said it to the need it fed — or to nothing.",
+  words:   "Every line of this conversation, one at a time: what was said, what its speaker says they meant by it, and which of those needs the builder and the other person actually took from it.",
   rec:     "Separate arguments that actually happened, between models that had never seen each other's lines.",
 };
 
@@ -3376,7 +3528,7 @@ function syncSplitChrome(){
   const note = document.getElementById("apartNote");
   if (note) note.hidden = !apart;
   const chrome = document.getElementById("sceneSplit");
-  const overlay = (S.view === "dropped" || S.view === "flow");
+  const overlay = (S.view === "dropped" || S.view === "flow" || S.view === "words");
   if (chrome) chrome.hidden = !(apart && !overlay && (S.view === "scene" || S.view === "said"));
 }
 
@@ -3389,13 +3541,15 @@ function setView(v){
   });
   document.getElementById("analysis").hidden = v !== "dropped";
   document.getElementById("flow").hidden = v !== "flow";
-  const hide = (v === "dropped" || v === "flow");
+  document.getElementById("words").hidden = v !== "words";
+  const hide = (v === "dropped" || v === "flow" || v === "words");
   document.getElementById("scene").hidden = hide;
   const apart = split();
   document.querySelector(".badge").hidden = hide || apart;
   syncSplitChrome();
   if (v === "dropped") renderAnalysis();
   if (v === "flow") renderFlow();
+  if (v === "words") renderWords();
   const soloNote = apart && v === "scene"
     ? " Two conversations, two crossings. Neither heard the other, so each got what talking to the builder alone would produce."
     : "";
