@@ -161,7 +161,7 @@ export async function readLine(text) {
   return { asks: clean(out.asks), refuses: clean(out.refuses) };
 }
 
-export async function chooseBuild({ wants, avoids, standing, said }) {
+export async function chooseBuild({ wants, avoids, standing, said, pictures = [] }) {
   const kit = kitForChoosing();
   const list = ks => ks.length ? ks.map(f => FEATURES[f]).join("; ") : "nothing yet";
   const user = [
@@ -171,6 +171,9 @@ export async function chooseBuild({ wants, avoids, standing, said }) {
     ``,
     `The conversation, in order:`,
     ...said.map(s => `  ${s.who}: ${s.text}`),
+    // Two references: the crossing each of them showed you, as it was read.
+    ...(pictures.length ? [``, `The crossings they showed you, each in a picture of their own:`,
+      ...pictures.map(p => `  ${p.who}'s picture: ${list(p.needs)}.`)] : []),
     ``,
     `What do you build?`,
   ].join("\n");

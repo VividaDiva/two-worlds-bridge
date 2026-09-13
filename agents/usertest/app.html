@@ -644,7 +644,9 @@ function builderColumn(h){
       if (n.who === "builder") { did = n; break; }
       if (n.phase !== "confer") break;
     }
-    acts.push({ said: l, did });
+    // On a route that builds once at the end, a line it read but did not answer
+    // was held, not withheld. It used to say "never given to it" here.
+    acts.push({ said: l, did, held: !did && h.defer && !!l.taken });
   });
   const body = !acts.length
     ? `<p class="muted">${h.open ? "Nothing yet. It answers when one of them confirms a decision."
@@ -656,13 +658,17 @@ function builderColumn(h){
         ${a.said.taken && a.said.taken.length
           ? `<p class="read"><span class="lbl">read as</span>${a.said.taken.map(k =>
                `<span class="key">${esc(k)}</span>`).join("")}</p>`
-          : a.did ? `<p class="read"><span class="lbl">read as</span><span class="key none">nothing it could build from</span></p>` : ""}
+          : a.said.taken || a.did ? `<p class="read"><span class="lbl">read as</span><span class="key none">nothing it could build from</span></p>` : ""}
+        ${a.said.picture && a.said.picture.length
+          ? `<p class="read"><span class="lbl">saw in their picture</span>${a.said.picture.map(k =>
+               `<span class="key">${esc(k)}</span>`).join("")}</p>` : ""}
         ${a.did
           ? (a.did.failed
               ? `<p class="move muted">${esc(failNote(a.did, true))}</p>
                  ${a.did.built ? `<span class="made">→ ${esc(a.did.built)}</span>` : ""}`
               : `<p class="move">${esc(a.did.text)}</p>
                  ${a.did.built ? `<span class="made">→ ${esc(a.did.built)}</span>` : ""}`)
+          : a.held ? `<p class="move muted">Held — it builds once, after both of them have spoken.</p>`
           : `<p class="move muted">${a.said.phase === "confer"
                ? "Not heard — they were talking to each other."
                : "This line was never given to it."}</p>`}

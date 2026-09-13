@@ -42,8 +42,10 @@ export const ARGUMENTS = {
          needs: ["light", "guarded"] },
   },
   // The one that needs something from the people themselves. Each uploads a
-  // crossing they have in mind; neither sees the other's; the builder sees
-  // neither. The needs are read off the picture when it arrives.
+  // crossing they have in mind; neither sees the other's. The needs are read off
+  // the picture when it arrives, and the builder takes a person's picture into
+  // account from the first time it hears from them — never the picture of
+  // someone the route keeps it from hearing.
   refs: {
     title: "Two references",
     blurb: "You each have a crossing in mind and a picture of it. The other person cannot see yours.",

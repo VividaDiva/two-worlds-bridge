@@ -82,6 +82,7 @@ function view(room, role) {
       : !!room.uploads[role],
     picture: role === "host" ? null : (room.uploads[role] || null),
     needsUpload: !!arg.upload && role !== "host" && !room.uploads[role],
+    defer: !!route.defer,
     turn, open, yourTurn: open ? !room.finished && role !== "host" : turn === role,
     // How many lines this person has in the route at all; 0 on the routes they
     // are not part of, so the page can say so instead of waiting on them.
@@ -116,7 +117,9 @@ function view(room, role) {
         // scored against would teach them the words the study is about them not
         // having. The dashboard draws its agent panels from the host stream, so
         // it loses nothing by this.
-        ...(role === "host" && e.taken ? { taken: e.taken } : {}) })),
+        ...(role === "host" && e.taken ? { taken: e.taken } : {}),
+        // What it saw in that person's picture, for the facilitator's trace.
+        ...(role === "host" && e.picture ? { picture: e.picture } : {}) })),
   };
 }
 
@@ -174,6 +177,7 @@ function toMarkdown(s) {
     out.push(`**${WHO[e.who] || e.who}**${e.decision ? " (confirmed to the builder)" : e.phase === "confer" ? " (to each other)" : ""} · ${clock(e.at)}  `,
              e.failed ? "_It laid something and would not say why._" : (e.text || "_(nothing)_"));
     if (e.taken && e.taken.length) out.push("", `> read as: ${e.taken.join(", ")}`);
+    if (e.picture && e.picture.length) out.push("", `> saw in their picture: ${e.picture.join(", ")}`);
     if (e.who === "builder" && e.built) out.push("", `> built: ${e.built}`);
     out.push("");
   }
@@ -230,8 +234,26 @@ async function builderTurn(room, line) {
     newTurn(room.ctx);
     hear(room.ctx, line.who, "want", asks);
     hear(room.ctx, line.who, "avoid", refuses);
+    // Two references. The first time the builder hears from somebody it also
+    // looks at the crossing they brought, and takes what the picture shows as
+    // asked for. It only ever sees the picture of someone it can hear, so the
+    // route still decides whose meaning reaches it. (It used to see neither
+    // picture, so "build it like mine" gave it nothing at all.)
+    const pic = room.uploads[line.who];
+    if (pic && Array.isArray(pic.needs) && !room.seenPicture?.[line.who]) {
+      room.seenPicture = { ...(room.seenPicture || {}), [line.who]: true };
+      line.picture = pic.needs.filter(f => f in FEATURES);
+      hear(room.ctx, line.who, "want", line.picture);
+    }
     if (route.defer && room.turn < route.script.length) { room.thinking = false; return; }
-    await lay(room, line, [...asks, ...refuses]);
+    // A deferred route builds once, from everyone it heard, so that is what it
+    // reports on — not only the last line.
+    if (route.defer) {
+      const heard = room.transcript.filter(e => e.who !== "builder" && e.taken);
+      await lay(room, null, [...new Set(heard.flatMap(e => [...e.taken, ...(e.picture || [])]))]);
+    } else {
+      await lay(room, line, [...asks, ...refuses, ...(line.picture || [])]);
+    }
   } catch (e) {
     // A failure here is not something the agent said. It was going into the
     // transcript as a builder line, so the trace showed an exception where its
@@ -249,9 +271,12 @@ async function lay(room, line, took) {
   build(room.ctx);                                   // the scoring rule, to compare against
   const said = room.transcript.filter(e => e.who !== "builder" && e.phase === "main")
                               .map(e => ({ who: e.who === "A" ? "Role 1" : "Role 2", text: e.text }));
+  const pictures = Object.keys(room.seenPicture || {})
+    .filter(r => room.uploads[r]?.needs)
+    .map(r => ({ who: r === "A" ? "Role 1" : "Role 2", needs: room.uploads[r].needs }));
   const chose = await chooseBuild({
     wants: [...room.ctx.wants.keys()], avoids: [...room.ctx.avoids.keys()],
-    standing: before ? NAME(before) : null, said,
+    standing: before ? NAME(before) : null, said, pictures,
   });
   if (chose.id) room.ctx.design = KIT.find(k => k.id === chose.id);
   const after = room.ctx.design ? room.ctx.design.id : null;
@@ -296,11 +321,13 @@ function restore() {
       const rec = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"));
       if (!ARGUMENTS[rec.argument] || !ROUTES[rec.route]) continue;
       const ctx = mkCtx();
+      const seenPicture = {};
       for (const e of rec.transcript) {
         if (e.who === "builder" || !(e.asks || e.refuses)) continue;
         newTurn(ctx);
         hear(ctx, e.who, "want", e.asks || []);
         hear(ctx, e.who, "avoid", e.refuses || []);
+        if (e.picture) { hear(ctx, e.who, "want", e.picture); seenPicture[e.who] = true; }
       }
       Object.assign(ctx.world, rec.world || {});
       ctx.design = KIT.find(k => k.id === rec.standingId) || null;
@@ -317,7 +344,7 @@ function restore() {
         turn: rec.turn ?? rec.transcript.filter(e => e.who !== "builder").length,
         transcript: rec.transcript, uploads, standing: rec.standingId ?? null, thinking: false,
         finished: !!rec.finished, score: rec.finished ? rec.score : undefined,
-        claimed: rec.claimed || {}, createdAt: rec.createdAt });
+        claimed: rec.claimed || {}, createdAt: rec.createdAt, seenPicture });
       streams.set(rec.room, new Set());
       n++;
     } catch (e) { console.error(`could not restore ${f}: ${e.message}`); }
