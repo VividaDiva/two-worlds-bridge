@@ -273,7 +273,7 @@ td.y{color:var(--moss); font-weight:600} td.n{color:var(--rust)}
 </style>
 </head>
 <body>
-<div class="wrap stack" id="app"></div>
+<div class="wrap stack" id="app"><p class="muted" id="opening">Opening the room…</p></div>
 
 <script>
 const app = document.getElementById("app");
@@ -641,8 +641,11 @@ function listen(room, role, onState){
   let last = "", streamed = false;
   // Only repaint on a real change. Repainting on every poll rebuilt the
   // composer every two seconds and would have thrown away half a sentence.
+  // A room that is gone used to be skipped in silence, which left the page
+  // blank for good. Say so instead.
   const apply = s => {
-    if (!s || s.error) return;
+    if (s && s.error) { gone(room); return; }
+    if (!s) return;
     const k = JSON.stringify(s);
     if (k === last) return;
     last = k; onState(s);
@@ -656,6 +659,19 @@ function listen(room, role, onState){
   } catch {}
   setInterval(() => { if (!streamed) pull(); }, 2000);
 }
+
+function gone(room){
+  app.classList.remove("wide");
+  app.innerHTML = `<div class="card"><h2>That room is gone</h2>
+    <p class="muted">Room ${esc(room)} no longer exists — rooms do not survive the server
+    restarting. Ask for a fresh link.</p></div>`;
+}
+
+// If nothing has painted after a while, the link itself is the likely problem.
+setTimeout(() => {
+  const o = document.getElementById("opening");
+  if (o) o.textContent = "Still waiting for the room. If this stays, the link has probably expired — ask for a fresh one.";
+}, 8000);
 
 // One link, sent to both people, and each takes a side when they open it. The
 // choice is remembered per room, so a reload does not ask again — and a side
