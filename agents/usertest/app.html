@@ -105,6 +105,8 @@ button.go[disabled]{opacity:.35; cursor:not-allowed; transform:none}
 .navlink:hover{border-color:var(--soft)}
 .navlink[aria-current="page"]{background:var(--ink, #1c2b3a); color:#fff; border-color:transparent}
 .showempty{font-size:13.5px; color:var(--soft)}
+.switching{margin:0 0 10px; font-size:13.5px; color:var(--soft)}
+.filters.busy .chip{cursor:progress}
 .goals p{margin:0 0 8px; line-height:1.5}
 .goals p:last-child{margin:0}
 .goals b{margin-right:6px}
@@ -564,9 +566,10 @@ const both = { A:null, B:null, host:null };
 // Every use case, always switchable. Picking one opens a fresh room on that
 // combination — a route cannot be changed underneath a conversation that is
 // already running, so switching starts a new one.
-function filterBar(cur){
+function filterBar(cur, pending){
   if (!opts) return "";
-  return `<div class="filters">
+  return `<div class="filters${pending ? " busy" : ""}">
+    <p class="switching" id="switching" ${pending ? "" : "hidden"}>Opening a new room…</p>
     <div class="chips">${opts.arguments.map(a => `
       <button class="chip" data-fa="${a.id}" aria-pressed="${a.id === cur.argument}"
         title="${esc(a.blurb)}">${esc(a.title)}${a.upload ? " ·  pictures" : ""}</button>`).join("")}</div>
@@ -668,7 +671,7 @@ function bothView(){
       <h1>${esc(a.arrow)}</h1>
       <p class="lede">${esc(a.note)}</p>
     </div>
-    ${filterBar({ argument: a.argument, route: a.route })}
+    ${filterBar(picking || { argument: a.argument, route: a.route }, !!picking)}
     ${invite(a.room)}
     <div class="desk">
       <div class="pair">
@@ -685,8 +688,9 @@ function bothView(){
   if (cv && window.drawCrossing) drawCrossing(cv, h.shape, h.world);
   const f = document.getElementById("fin");
   if (f) f.onclick = () => post("/api/finish", { room: a.room });
-  app.querySelectorAll("[data-fa]").forEach(x => x.onclick = () => openRoom(x.dataset.fa, a.route));
-  app.querySelectorAll("[data-fr]").forEach(x => x.onclick = () => openRoom(a.argument, x.dataset.fr));
+  const base = { argument: a.argument, route: a.route };
+  app.querySelectorAll("[data-fa]").forEach(x => x.onclick = () => choose(base, { argument: x.dataset.fa }));
+  app.querySelectorAll("[data-fr]").forEach(x => x.onclick = () => choose(base, { route: x.dataset.fr }));
   app.querySelectorAll("[data-copy]").forEach(b => b.onclick = async () => {
     try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = "Copied"; }
     catch { b.textContent = "Select the link above"; }
@@ -754,9 +758,46 @@ function gone(room){
   paint();
 }
 
+// Switching tabs. Each click used to open a room and reload the page at once,
+// which through the tunnel takes a second or two with nothing on screen to say
+// it was happening — so people clicked again, and that click was either lost in
+// the reload or paired with the old choice (a new route on the old use case).
+// Now a click shows at once, the picking can go on, and one room is opened for
+// wherever the picking ends up.
+let picking = null;
+function choose(base, change) {
+  picking = { ...(picking || base), ...change };
+  for (const x of app.querySelectorAll("[data-fa]")) x.setAttribute("aria-pressed", String(x.dataset.fa === picking.argument));
+  for (const x of app.querySelectorAll("[data-fr]")) x.setAttribute("aria-pressed", String(x.dataset.fr === picking.route));
+  const note = document.getElementById("switching");
+  if (note) { note.hidden = false; note.textContent = "Opening a new room…"; }
+  document.querySelector(".filters")?.classList.add("busy");
+  clearTimeout(choose.timer);
+  choose.timer = setTimeout(() => openRoom(picking.argument, picking.route), 500);
+}
+
 async function openRoom(argument, route){
-  const { ok, j } = await post("/api/create", { argument, route });
-  if (ok) location.href = `/j/${j.room}/both`;
+  // One room at a time. A pick made while one is being opened is not dropped:
+  // when it comes back, if the choice has moved on, open the latest instead.
+  if (openRoom.busy) return;
+  openRoom.busy = true;
+  let want = { argument, route };
+  for (;;) {
+    const { ok, j } = await post("/api/create", want);
+    if (!ok) {
+      openRoom.busy = false; picking = null;
+      const note = document.getElementById("switching");
+      if (note) { note.hidden = false; note.textContent = "Could not open a room — try that tab again."; }
+      document.querySelector(".filters")?.classList.remove("busy");
+      return;
+    }
+    const latest = picking || want;
+    if (latest.argument === want.argument && latest.route === want.route) {
+      location.href = `/j/${j.room}/both`;
+      return;
+    }
+    want = { argument: latest.argument, route: latest.route };
+  }
 }
 
 // The two seats, on the facilitator's own page, so a room can be handed out
