@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Karla:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="/draw.js"></script>
 <style>
 :root{
   --paper:#f5f0e6; --paper-2:#efe8da; --card:#fbf8f1;
@@ -144,6 +145,77 @@ textarea[disabled]{opacity:.5}
 .pair .turnbar{position:static}
 .col{min-width:0}
 
+/* the dashboard: filters across the top, the two of them talking on the left,
+   what the builder did down the right, and what stands along the bottom */
+.desk{display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:18px; align-items:start}
+@media (max-width:1040px){.desk{grid-template-columns:1fr}}
+.filters{background:var(--card); border:1px solid var(--rule); border-radius:3px;
+  padding:14px 16px; margin:0 0 16px; box-shadow:var(--shadow)}
+.chips{display:flex; flex-wrap:wrap; gap:6px; margin:0 0 12px}
+.chips:last-child{margin-bottom:0}
+.chip{font:500 13px/1 var(--body); background:var(--paper-2); color:var(--soft);
+  border:1px solid var(--rule); border-radius:99px; padding:7px 13px; cursor:pointer;
+  transition:all .14s; white-space:nowrap}
+.chip:hover{border-color:var(--faint); color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ink); color:var(--paper); border-color:var(--ink)}
+.chip.route{font-family:var(--mono); font-size:12px; letter-spacing:-.01em}
+.chip[aria-pressed="true"].route{background:var(--rust); border-color:var(--rust)}
+
+/* what the builder did, one entry per thing said to it */
+.did{position:sticky; top:14px}
+.act{border-left:2px solid var(--moss); padding:0 0 0 13px; margin:0 0 16px}
+.act .stamp{font-family:var(--mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--faint); display:block; margin:0 0 5px}
+.act .quote{font-size:13.5px; color:var(--soft); margin:0 0 7px; line-height:1.45;
+  padding-left:9px; border-left:1px solid var(--rule)}
+.act .move{font-family:var(--body); font-size:14.5px; margin:0; line-height:1.5}
+.act .made{font-family:var(--mono); font-size:11px; color:var(--moss); display:block; margin-top:6px}
+.act.none{border-left-color:var(--rule)}
+
+/* the agent's reading, before what it did about it */
+.act.fa{border-left-color:var(--rust)} .act.fb{border-left-color:var(--blue)}
+.read{margin:0 0 7px; display:flex; flex-wrap:wrap; gap:5px; align-items:center}
+.read .lbl{font-family:var(--mono); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--faint)}
+.key{font-family:var(--mono); font-size:11px; background:var(--paper-2); color:var(--moss);
+  border:1px solid var(--rule); border-radius:2px; padding:1px 6px}
+.key.none{color:var(--faint); font-style:italic}
+
+/* what stands, along the bottom */
+.artifact{display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:22px; align-items:center}
+@media (max-width:760px){.artifact{grid-template-columns:1fr}}
+#crossing{width:100%; display:block; border-radius:3px; background:#eee8dc}
+.standing{min-width:0}
+
+/* whose meaning it acted on — the question an agent with two principals has
+   that an agent with one never does */
+.attr{margin-top:14px; padding-top:13px; border-top:1px solid rgba(245,240,230,.18)}
+.attr ul{margin:0; padding:0; list-style:none}
+.attr li{display:flex; gap:9px; align-items:baseline; font-size:13.5px; margin:0 0 5px; line-height:1.4}
+.attr .src{font-family:var(--mono); font-size:9.5px; letter-spacing:.08em; text-transform:uppercase;
+  border-radius:2px; padding:2px 6px; flex:none; min-width:82px; text-align:center}
+.attr .src.ra{background:rgba(180,68,31,.9); color:var(--paper)}
+.attr .src.rb{background:rgba(45,84,112,.95); color:var(--paper)}
+.attr .src.bo{background:rgba(158,198,163,.9); color:#1c2b3a}
+.attr .src.no{background:transparent; color:rgba(245,240,230,.5); border:1px dashed rgba(245,240,230,.3)}
+.attr .note{font-size:13px; color:rgba(245,240,230,.6); margin:10px 0 0; font-style:italic}
+
+.result{background:var(--ink); color:var(--paper); border-radius:3px; padding:17px 20px;
+  margin:18px 0 0; box-shadow:var(--shadow)}
+.result .eyebrow{color:rgba(245,240,230,.5); margin-bottom:6px}
+.result .what{font-family:var(--display); font-size:22px; line-height:1.25; margin:0}
+.result .none{opacity:.55; font-style:italic; font-size:18px}
+.result .row{margin-top:14px}
+.result button.go{background:var(--paper); color:var(--ink)}
+.scores{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:15px;
+  padding-top:15px; border-top:1px solid rgba(245,240,230,.18)}
+@media (max-width:620px){.scores{grid-template-columns:1fr}}
+.scores h3{font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase;
+  color:rgba(245,240,230,.55); margin:0 0 7px; font-weight:500}
+.scores li{list-style:none; font-size:14px; margin:0 0 5px; display:flex; gap:8px; align-items:baseline}
+.scores ul{margin:0; padding:0}
+.scores .y{color:#9ec6a3} .scores .n{color:#e39a80}
+
 table{width:100%; border-collapse:collapse; font-size:14.5px; margin-top:8px}
 td{padding:7px 10px 7px 0; border-top:1px solid var(--rule-2)}
 td.y{color:var(--moss); font-weight:600} td.n{color:var(--rust)}
@@ -205,15 +277,18 @@ async function setup(){
 /* ── pieces ────────────────────────────────────────────────────────────── */
 // Colour goes by role, so Role 1 is the same colour on every screen. Side goes
 // by who is looking: your own words sit on your side, as in any chat.
-function conversation(s, id){
-  if (!s.lines.length) return `<div class="chat" id="${id}"><p class="muted">Nothing said yet.</p></div>`;
-  return `<div class="chat" id="${id}">` + s.lines.map(l => {
+// `people` drops the builder's lines: on the dashboard they move to their own
+// column, so the middle is only the two of them talking.
+function conversation(s, id, people){
+  const lines = people ? s.lines.filter(l => l.who !== "builder") : s.lines;
+  if (!lines.length) return `<div class="chat" id="${id}"><p class="muted">Nothing said yet.</p></div>`;
+  return `<div class="chat" id="${id}">` + lines.map(l => {
     const cls = l.who === "A" ? "a" : l.who === "B" ? "b" : "m";
     const mine = l.who === s.role ? " mine" : "";
     return `<div class="line ${cls}${mine}">
       <span class="who">${esc(l.who === s.role ? "You" : roleName(l.who))}${
         l.phase === "confer" ? `<span class="private">between you two</span>` : ""}</span>
-      <p class="said">${esc(l.text)}</p>
+      <p class="said${l.failed ? " muted" : ""}">${l.failed ? "It laid something and would not say why." : esc(l.text)}</p>
       ${l.built ? `<span class="built">it now stands as ${esc(l.built)}</span>` : ""}
     </div>`;
   }).join("") + `</div>`;
@@ -221,7 +296,7 @@ function conversation(s, id){
 
 // One person's column. Every id is suffixed with the role, because the combined
 // view puts two of these on the page at once and they must not collide.
-function panel(s){
+function panel(s, people){
   const r = s.role, mine = s.yourTurn && !s.finished && !s.thinking;
   const bar = s.finished ? `<div class="turnbar wait"><span class="dot"></span>The session is over</div>`
     : s.thinking ? `<div class="turnbar think"><span class="dot"></span>The builder is deciding…</div>`
@@ -245,7 +320,7 @@ function panel(s){
     </div>` : ""}
     <div class="card tab mach">
       <h2>The conversation</h2>
-      ${conversation(s, "chat-" + r)}
+      ${conversation(s, "chat-" + r, people)}
     </div>
     ${s.finished ? "" : `<div class="card">
       <label>${mine ? "Say what you need" : "You can write when it is your turn"}</label>
@@ -341,22 +416,131 @@ function playerView(s){ app.innerHTML = panel(s); wire(s); }
 // Both of them on one screen. Two streams, two columns, and each column still
 // shows only what its own role is allowed to see — so putting them side by side
 // does not quietly let one read the other's goal.
-const both = { A:null, B:null };
+const both = { A:null, B:null, host:null };
+
+// Every use case, always switchable. Picking one opens a fresh room on that
+// combination — a route cannot be changed underneath a conversation that is
+// already running, so switching starts a new one.
+function filterBar(cur){
+  if (!opts) return "";
+  return `<div class="filters">
+    <div class="chips">${opts.arguments.map(a => `
+      <button class="chip" data-fa="${a.id}" aria-pressed="${a.id === cur.argument}"
+        title="${esc(a.blurb)}">${esc(a.title)}${a.upload ? " ·  pictures" : ""}</button>`).join("")}</div>
+    <div class="chips">${opts.routes.map(r => `
+      <button class="chip route" data-fr="${r.id}" aria-pressed="${r.id === cur.route}"
+        title="${esc(r.note)}">${esc(r.arrow)}</button>`).join("")}</div>
+  </div>`;
+}
+
+// The agent's trace. An agentic interface shows the work, not just the reply:
+// for each thing said to it, what it READ out of that line, and then what it
+// DID about it. The gap between those two is the whole subject.
+function builderColumn(h){
+  const acts = [];
+  h.lines.forEach((l, i) => {
+    if (l.who === "builder") return;
+    const next = h.lines[i + 1];
+    acts.push({ said: l, did: next && next.who === "builder" ? next : null });
+  });
+  const body = !acts.length
+    ? `<p class="muted">Nothing yet. It answers once somebody has spoken to it.</p>`
+    : acts.map(a => `
+      <div class="act${a.did ? "" : " none"} ${a.said.who === "A" ? "fa" : "fb"}">
+        <span class="stamp">${esc(roleName(a.said.who))} said</span>
+        <p class="quote">${esc(a.said.text.slice(0, 120))}${a.said.text.length > 120 ? "…" : ""}</p>
+        ${a.said.taken && a.said.taken.length
+          ? `<p class="read"><span class="lbl">read as</span>${a.said.taken.map(k =>
+               `<span class="key">${esc(k)}</span>`).join("")}</p>`
+          : a.did ? `<p class="read"><span class="lbl">read as</span><span class="key none">nothing it could build from</span></p>` : ""}
+        ${a.did
+          ? (a.did.failed
+              ? `<p class="move muted">It laid something and would not say why.</p>
+                 ${a.did.built ? `<span class="made">→ ${esc(a.did.built)}</span>` : ""}`
+              : `<p class="move">${esc(a.did.text)}</p>
+                 ${a.did.built ? `<span class="made">→ ${esc(a.did.built)}</span>` : ""}`)
+          : `<p class="move muted">${a.said.phase === "confer"
+               ? "Not heard — they were talking to each other."
+               : "This line was never given to it."}</p>`}
+      </div>`).join("");
+  return `<div class="card tab mach did">
+    <h2>What the agent did</h2>
+    <p class="muted" style="font-size:13.5px; margin:-2px 0 14px">Each thing said to it, what it took that to
+      mean, and what it did about it.</p>
+    ${body}
+    ${h.thinking ? `<p class="muted">Deciding…</p>` : ""}</div>`;
+}
+
+// Whose meaning it acted on. An agent with one principal never needs this;
+// with two it is the only thing worth knowing — every property of what stands,
+// and which of them asked for it, or whether nobody did.
+function attribution(h){
+  const f = h.provenance || [];
+  if (!f.length) return "";
+  const tag = x => x.byA && x.byB ? ["both", "bo"] : x.byA ? ["Role 1", "ra"]
+                 : x.byB ? ["Role 2", "rb"] : ["neither of them", "no"];
+  const unasked = f.filter(x => !x.byA && !x.byB).length;
+  return `<div class="attr">
+    <p class="eyebrow">Where it came from</p>
+    <ul>${f.map(x => { const [who, cls] = tag(x);
+      return `<li><span class="src ${cls}">${esc(who)}</span><span>${esc(x.description)}</span></li>`;
+    }).join("")}</ul>
+    ${unasked ? `<p class="note">${unasked} of ${f.length} ${unasked === 1 ? "was" : "were"} never asked for by either of them.</p>` : ""}
+  </div>`;
+}
+
+function resultBar(h){
+  const sc = h.score;
+  return `<div class="result">
+    <div class="artifact">
+      <canvas id="crossing" aria-label="the crossing as it stands"></canvas>
+      <div class="standing">
+        <p class="eyebrow">What stands</p>
+        <p class="what ${h.standing ? "" : "none"}">${h.standing ? esc(h.standing) : "nothing built yet"}</p>
+        ${attribution(h)}
+      </div>
+    </div>
+    ${sc ? `<div class="scores">${["A","B"].map(r => `
+        <div><h3>${roleName(r)} — ${sc.per[r].met} of ${sc.per[r].of}</h3><ul>
+          ${sc.per[r].needs.map(n => `<li><span class="${n.met ? "y" : "n"}">${n.met ? "✓" : "✗"}</span>
+             <span>${esc(n.text)}</span></li>`).join("") || `<li>no need was set</li>`}
+        </ul></div>`).join("")}</div>`
+      : `<div class="row"><button class="go" id="fin">End the session and show what they needed</button></div>`}
+  </div>`;
+}
+
 function bothView(){
-  const a = both.A, b = both.B;
-  if (!a || !b) return;
+  const a = both.A, b = both.B, h = both.host;
+  if (!a || !b || !h) return;
   app.classList.add("wide");
   app.innerHTML = `
     <div>
       <p class="eyebrow">Room ${esc(a.room)} · ${esc(a.title)}</p>
       <h1>${esc(a.arrow)}</h1>
-      <p class="lede">${esc(a.note)} Each side below sees only what that person is allowed to see.</p>
+      <p class="lede">${esc(a.note)}</p>
     </div>
-    <div class="pair">
-      <div class="col" id="col-A">${panel(a)}</div>
-      <div class="col" id="col-B">${panel(b)}</div>
-    </div>`;
+    ${filterBar({ argument: a.argument, route: a.route })}
+    <div class="desk">
+      <div class="pair">
+        <div class="col" id="col-A">${panel(a, true)}</div>
+        <div class="col" id="col-B">${panel(b, true)}</div>
+      </div>
+      ${builderColumn(h)}
+    </div>
+    ${resultBar(h)}`;
   wire(a); wire(b);
+  // The artifact is a thing, not a name. Drawn after the markup exists, and
+  // again on resize, because the canvas is sized from its own box.
+  const cv = document.getElementById("crossing");
+  if (cv && window.drawCrossing) drawCrossing(cv, h.shape, h.world);
+  const f = document.getElementById("fin");
+  if (f) f.onclick = () => post("/api/finish", { room: a.room });
+  const swap = async (argument, route) => {
+    const { ok, j } = await post("/api/create", { argument, route });
+    if (ok) location.href = `/j/${j.room}/both`;
+  };
+  app.querySelectorAll("[data-fa]").forEach(x => x.onclick = () => swap(x.dataset.fa, a.route));
+  app.querySelectorAll("[data-fr]").forEach(x => x.onclick = () => swap(a.argument, x.dataset.fr));
 }
 
 /* ── live ──────────────────────────────────────────────────────────────── */
@@ -368,8 +552,15 @@ function listen(room, role, onState){
 (async () => {
   const q = new URLSearchParams(location.search).get("room");
   if (ROOM && ROLE === "both") {
+    // Three streams. A and B carry each person's own goal, turn and composer;
+    // host is the only one that carries every line, what stands, and the score,
+    // which is what the builder column and the bar along the bottom are drawn
+    // from. The options are needed before the first paint or the filters across
+    // the top have nothing to draw.
+    opts = await fetch("/api/options").then(r => r.json());
     listen(ROOM, "A", s => { both.A = s; bothView(); });
     listen(ROOM, "B", s => { both.B = s; bothView(); });
+    listen(ROOM, "host", s => { both.host = s; bothView(); });
   } else if (ROOM) {
     listen(ROOM, ROLE, s => playerView(s));
   } else if (q) {

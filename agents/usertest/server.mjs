@@ -13,7 +13,7 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { mkCtx, hear, newTurn, build } from "../engine.mjs";
+import { mkCtx, hear, newTurn, build, provenance } from "../engine.mjs";
 import { ARGUMENTS, ROUTES, RULE, NAME, FEATURES, KIT, propsOf, named } from "./kit.mjs";
 import { readLine, chooseBuild, speak, readPicture } from "./builder.mjs";
 
@@ -67,11 +67,29 @@ function view(room, role) {
     conferTurns: route.confer || 0,
     step: room.turn, of: script.length,
     standing: room.standing ? NAME(room.standing) : null,
+    // The crossing itself, so it can be drawn rather than only named, and the
+    // ground under it, because how deep the gap is depends on what the two of
+    // them claimed was down there.
+    shape: room.ctx.design ? room.ctx.design.shape : null,
+    world: { ...room.ctx.world },
+    // Which of them asked for each property of what stands. This is the whole
+    // question when an agent has two principals instead of one, so it is worth
+    // showing: it is the only place you can see whose meaning it acted on.
+    provenance: role === "host" ? provenance(room.ctx).feats : null,
     thinking: room.thinking,
     finished: room.finished,
     score: room.finished ? room.score : null,
     lines: room.transcript.filter(e => visible(room, e, role))
-      .map(e => ({ who: e.who, text: e.text, phase: e.phase, built: e.built || null })),
+      .map(e => ({ who: e.who, text: e.text, phase: e.phase, built: e.built || null,
+        // It laid something and would not say why. Distinct from saying nothing,
+        // and the trace should not show an empty bubble as though it had.
+        ...(e.failed ? { failed: e.failed } : {}),
+        // What it read out of that line. These are the latent keys, so they go
+        // to the facilitator alone — showing a participant the vocabulary it is
+        // scored against would teach them the words the study is about them not
+        // having. The dashboard draws its agent panels from the host stream, so
+        // it loses nothing by this.
+        ...(role === "host" && e.taken ? { taken: e.taken } : {}) })),
   };
 }
 
@@ -108,7 +126,13 @@ async function builderTurn(room, line) {
     if (route.defer && room.turn < route.script.length) { room.thinking = false; return; }
     await lay(room, line, [...asks, ...refuses]);
   } catch (e) {
-    room.transcript.push({ who: "builder", text: `(the builder could not answer: ${e.message})`,
+    // A failure here is not something the agent said. It was going into the
+    // transcript as a builder line, so the trace showed an exception where its
+    // words belong — and with built:null, as though nothing had been laid, when
+    // in fact the choosing and the building had both already succeeded and only
+    // the sentence explaining them was refused.
+    room.transcript.push({ who: "builder", failed: e.message, text: "",
+                           built: room.standing ? NAME(room.standing) : null,
                            phase: "main", at: Date.now() });
   } finally { room.thinking = false; }
 }
@@ -155,6 +179,11 @@ function scoreRoom(room) {
 const srv = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   const p = url.pathname;
+
+  if (req.method === "GET" && p === "/draw.js") {
+    res.writeHead(200, { "content-type": "text/javascript; charset=utf-8" });
+    return res.end(fs.readFileSync(path.join(here, "draw.js"), "utf8"));
+  }
 
   // /j/<room>/A and /B are one person each, on their own device. /j/<room>/both
   // is the pair of them on one screen — two people at one laptop, or one person
@@ -239,7 +268,9 @@ const srv = http.createServer(async (req, res) => {
     if (ROUTES[r.route].defer && r.turn >= script.length && !r.standing) {
       r.thinking = true; push(id);
       try { await lay(r, null, []); } catch (e) {
-        r.transcript.push({ who: "builder", text: `(the builder could not answer: ${e.message})`, phase: "main", at: Date.now() });
+        r.transcript.push({ who: "builder", failed: e.message, text: "",
+                            built: r.standing ? NAME(r.standing) : null,
+                            phase: "main", at: Date.now() });
       } finally { r.thinking = false; }
     }
     return push(id);

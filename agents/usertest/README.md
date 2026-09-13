@@ -2,7 +2,8 @@
 
 The experiment next door runs Role 1 and Role 2 as language models. This runs
 them as people. Role 3 is still an AI, still building from their words alone,
-still unable to ask anything.
+still unable to ask anything — and still `gemini-flash-lite-latest`, the model
+that sat in that chair for every published session, so the comparison holds.
 
 Everything else is held the same on purpose — the five arguments, the goals,
 the eight routes, the workshop of crossings, and the rule that nobody may name
@@ -53,8 +54,10 @@ said in it is theirs, not the repository's.
 ## Notes
 
 - `PORT=8790 node --env-file=.env usertest/server.mjs` to move it.
-- `BUILDER_MODEL=claude-sonnet-5` to change who builds. The default is
-  `claude-opus-5`, which is what the machine experiment used.
+- `BUILDER_MODEL=gemini-2.5-flash-lite` to change who builds. The default is
+  `gemini-flash-lite-latest`, which is what sat in this chair for every
+  published session of the machine experiment — `run.mjs` runs with
+  `--machine gemini`, so Role 3 was never Claude.
 - Rooms live in memory. Restarting the server ends any session in progress —
   finish a session before restarting.
 - A line naming a made thing is refused back to the person with the word named,

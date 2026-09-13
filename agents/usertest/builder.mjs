@@ -1,56 +1,72 @@
 // Role 3, for the human test.
 //
-// The three calls are the ones run.mjs makes, with the same system prompts, so
-// a builder facing two people behaves as it did facing two models. It reads a
+// The same model and the same three prompts the machine experiment used, so a
+// builder facing two people behaves as it did facing two models. It reads a
 // sentence into needs, chooses from the workshop, and says what it did. It is
 // never told what anybody meant, and it may not ask.
-import Anthropic from "@anthropic-ai/sdk";
-import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
-import { z } from "zod";
+//
+// Gemini, not Claude. run.mjs runs with --machine gemini, so every published
+// session had gemini-flash-lite-latest in this chair. Building this on Claude
+// made it a different builder and quietly broke the one claim the app exists
+// to support — that the only difference between the two studies is who was in
+// the chairs. It also refused the speaking call five times running under
+// "cyber", on a conversation about a footbridge, which is how the mistake came
+// to light.
+import { GoogleGenAI } from "@google/genai";
 import { FEATURES, KIT, NAME, AXES, CHOICES, propsOf, kitForChoosing } from "./kit.mjs";
 
-const MODEL = process.env.BUILDER_MODEL || "claude-opus-5";
-const anthropic = new Anthropic();
+const MODEL = process.env.BUILDER_MODEL || process.env.GEMINI_MODEL || "gemini-flash-lite-latest";
+let _client = null;
+const client = () => (_client ||= new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY }));
 
-const Read   = z.object({ asks: z.array(z.string()), refuses: z.array(z.string()) });
-const Choose = z.object({ build: z.string(), why: z.string() });
-const Say    = z.object({ say: z.string() });
-const Shape  = z.object(Object.fromEntries(
-  AXES.map(a => [a, z.enum(Object.keys(CHOICES[a]))])));
+const wait = ms => new Promise(r => setTimeout(r, ms));
 
-// A prompt is either a string or a string with pictures after it. The order is
+// Gemini takes a hand-written JSON schema rather than a Zod object. Four shapes,
+// each declared: a lookup that throws beats a fallback that silently returns the
+// wrong one, which once made the builder read every sentence as meaning nothing.
+const SAY_JSON   = { type:"object", properties:{ say:{type:"string"} }, required:["say"] };
+const READ_JSON  = { type:"object", properties:{
+  asks:{type:"array", items:{type:"string"}}, refuses:{type:"array", items:{type:"string"}} },
+  required:["asks","refuses"] };
+const CHOOSE_JSON = { type:"object", properties:{
+  build:{type:"string"}, why:{type:"string"} }, required:["build","why"] };
+const SHAPE_JSON = { type:"object", properties:Object.fromEntries(
+  AXES.map(a => [a, { type:"string", enum:Object.keys(CHOICES[a]) }])), required:AXES };
+
+// A per-minute limit is worth waiting out; a per-day one is not.
+async function generateWithBackoff(req, tries = 6) {
+  for (let n = 1; ; n++) {
+    try { return await client().models.generateContent(req); }
+    catch (e) {
+      const msg = e?.message || String(e);
+      if (e?.status === 429 && /PerDay/.test(msg))
+        throw new Error(`Gemini's daily free-tier quota for ${MODEL} is used up. `
+          + `Try GEMINI_MODEL=gemini-2.5-flash-lite, or come back tomorrow, or enable billing.`);
+      if (e?.status !== 429 || n >= tries) throw e;
+      const asked = Number((msg.match(/"retryDelay":\s*"(\d+(?:\.\d+)?)s"/) || [])[1]);
+      await wait(Math.ceil(((Number.isFinite(asked) ? asked : 0) || 2 ** n) * 1000) + 500);
+    }
+  }
+}
+
+// A prompt is either a string, or a string with pictures after it. The order is
 // not cosmetic: pictures before the sentence were refused where the same
 // pictures after it were not.
-const content = u => typeof u === "string" ? u : [
-  { type: "text", text: u.text },
-  ...u.images.map(data => ({ type: "image",
-    source: { type: "base64", media_type: u.media || "image/png", data } })),
-];
+const contents = u => typeof u === "string" ? u : [{ parts: [
+  { text: u.text },
+  ...u.images.map(data => ({ inlineData: { mimeType: u.media || "image/png", data } })),
+]}];
 
-// Refusals here are intermittent and clear on a retry more often than not.
-// Always the same model: swapping would mean comparing two builders without
-// saying so.
-async function ask(system, user, schema) {
-  let r = await anthropic.beta.messages.parse({
-    model: MODEL, max_tokens: 8192, system,
-    messages: [{ role: "user", content: content(user) }],
-    output_config: { format: betaZodOutputFormat(schema) },
+async function ask(system, user, json) {
+  const res = await generateWithBackoff({
+    model: MODEL, contents: contents(user),
+    config: { systemInstruction: system, responseMimeType: "application/json", responseJsonSchema: json },
   });
-  for (let n = 0; n < 4 && r.stop_reason === "refusal"; n++) {
-    r = await anthropic.beta.messages.parse({
-      model: MODEL, max_tokens: 8192, system,
-      messages: [{ role: "user", content: content(user) }],
-      output_config: { format: betaZodOutputFormat(schema) },
-    });
-  }
-  if (r.stop_reason === "refusal")
-    throw new Error(`the builder declined five times running (${r.stop_details?.category ?? "unknown"})`);
-  if (r.parsed_output) return r.parsed_output;
-  if (r.stop_reason === "max_tokens") throw new Error("the builder was cut off at max_tokens");
-  const text = (r.content || []).filter(c => c.type === "text").map(c => c.text).join("").trim();
-  const json = text.match(/\{[\s\S]*\}/);
-  if (!json) throw new Error(`the builder returned no JSON: ${text.slice(0, 120)}`);
-  return schema.parse(JSON.parse(json[0]));
+  const text = (res.text || "").trim();
+  const m = text.match(/\{[\s\S]*\}/);
+  if (!m) throw new Error(`the builder returned no JSON: ${text.slice(0, 120)}`);
+  return JSON.parse(m[0]);
 }
 
 const READ = [
@@ -126,7 +142,7 @@ const SEE = [
 ].join("\n");
 
 export async function readLine(text) {
-  const out = await ask(READ, `The sentence: "${text}"\n\nWhat does it ask for, and what does it refuse?`, Read);
+  const out = await ask(READ, `The sentence: "${text}"\n\nWhat does it ask for, and what does it refuse?`, READ_JSON);
   const clean = xs => (Array.isArray(xs) ? xs : []).filter(k => k in FEATURES).slice(0, 3);
   return { asks: clean(out.asks), refuses: clean(out.refuses) };
 }
@@ -144,12 +160,13 @@ export async function chooseBuild({ wants, avoids, standing, said }) {
     ``,
     `What do you build?`,
   ].join("\n");
-  const out = await ask(CHOOSE(kit), user, Choose);
+  const out = await ask(CHOOSE(kit), user, CHOOSE_JSON);
+  const raw = typeof out.build === "string" ? out.build.trim() : "";
   const norm = x => String(x).toLowerCase().replace(/^an? /, "").replace(/[^a-z0-9]/g, "");
-  const hit = kit.find(k => norm(k.id) === norm(out.build))
-           || kit.find(k => norm(k.id).includes(norm(out.build)) || norm(out.build).includes(norm(k.id)));
+  const hit = kit.find(k => norm(k.id) === norm(raw))
+           || kit.find(k => norm(k.id).includes(norm(raw)) || norm(raw).includes(norm(k.id)));
   const entry = hit && KIT.find(k => NAME(k.id) === hit.id);
-  return { id: entry ? entry.id : null, why: out.why, unmatched: hit ? null : out.build };
+  return { id: entry ? entry.id : null, why: out.why, unmatched: hit ? null : raw };
 }
 
 export async function speak({ said, took, before, after, props, wants, avoids, changed }) {
@@ -167,13 +184,13 @@ export async function speak({ said, took, before, after, props, wants, avoids, c
     ``,
     `Say your piece.`,
   ].join("\n");
-  const out = await ask(SAY, bits, Say);
+  const out = await ask(SAY, bits, SAY_JSON);
   return typeof out.say === "string" ? out.say.trim() : "";
 }
 
 // Returns the eight axes and the needs they imply. Used on upload only.
 export async function readPicture(base64, media) {
-  const out = await ask(SEE, { text: "What is this crossing like?", images: [base64], media }, Shape);
+  const out = await ask(SEE, { text: "What is this crossing like?", images: [base64], media }, SHAPE_JSON);
   const shape = Object.fromEntries(AXES.map(a => [a, out[a]]));
   return { shape, needs: propsOf(shape) };
 }
