@@ -67,7 +67,10 @@ function visible(room, entry, role) {
 function view(room, role) {
   const arg = ARGUMENTS[room.argument], route = ROUTES[room.route];
   const script = route.script;
-  const turn = room.turn < script.length ? script[room.turn] : null;
+  // On the open routes nobody waits for a turn: both talk as they like and
+  // confirm a decision to the builder when they have one.
+  const open = !!route.open;
+  const turn = open ? null : (room.turn < script.length ? script[room.turn] : null);
   return {
     room: room.id, argument: room.argument, route: room.route,
     title: arg.title, blurb: arg.blurb, arrow: route.arrow, note: route.note,
@@ -79,10 +82,10 @@ function view(room, role) {
       : !!room.uploads[role],
     picture: role === "host" ? null : (room.uploads[role] || null),
     needsUpload: !!arg.upload && role !== "host" && !room.uploads[role],
-    turn, yourTurn: turn === role,
+    turn, open, yourTurn: open ? !room.finished && role !== "host" : turn === role,
     // How many lines this person has in the route at all; 0 on the routes they
     // are not part of, so the page can say so instead of waiting on them.
-    speaks: role === "host" ? null : script.filter(x => x === role).length,
+    speaks: role === "host" ? null : open ? 1 : script.filter(x => x === role).length,
     phase: room.turn < script.length ? phaseOf(room, room.turn) : "done",
     conferTurns: route.confer || 0,
     step: room.turn, of: script.length,
@@ -104,6 +107,7 @@ function view(room, role) {
     score: room.finished ? room.score : null,
     lines: room.transcript.filter(e => visible(room, e, role))
       .map(e => ({ who: e.who, text: e.text, phase: e.phase, built: e.built || null,
+        ...(e.decision ? { decision: true } : {}),
         // It laid something and would not say why. Distinct from saying nothing,
         // and the trace should not show an empty bubble as though it had.
         ...(e.failed ? { failed: e.failed } : {}),
@@ -150,7 +154,7 @@ function record(room) {
   fs.renameSync(file + ".tmp", file);
 }
 
-const WHO = { A: "Role 1", B: "Role 2", builder: "Role 3 (builder)" };
+const WHO = { A: "Role 1", B: "Role 2", builder: "AI" };
 const clock = t => (t ? new Date(t).toLocaleTimeString() : "");
 
 // The same record, as something a person can read.
@@ -167,7 +171,7 @@ function toMarkdown(s) {
     `## Conversation`, "",
   ];
   for (const e of s.transcript) {
-    out.push(`**${WHO[e.who] || e.who}**${e.phase === "confer" ? " (to each other)" : ""} · ${clock(e.at)}  `,
+    out.push(`**${WHO[e.who] || e.who}**${e.decision ? " (confirmed to the builder)" : e.phase === "confer" ? " (to each other)" : ""} · ${clock(e.at)}  `,
              e.failed ? "_It laid something and would not say why._" : (e.text || "_(nothing)_"));
     if (e.taken && e.taken.length) out.push("", `> read as: ${e.taken.join(", ")}`);
     if (e.who === "builder" && e.built) out.push("", `> built: ${e.built}`);
@@ -453,11 +457,35 @@ const srv = http.createServer(async (req, res) => {
   }
 
   if (p === "/api/say" && req.method === "POST") {
-    const { room: id, role, text } = await body(req);
+    const { room: id, role, text, mode } = await body(req);
     const r = rooms.get(id);
     if (!r) return json(res, 404, { error: "no such room" });
     if (r.finished) return json(res, 409, { error: "this session is over" });
     const script = ROUTES[r.route].script;
+
+    // The open routes. Talk goes to the other person only, in any order and as
+    // much as they like; the builder hears nothing but what one of them confirms
+    // to it, and answers each confirmed decision in front of them both.
+    if (ROUTES[r.route].open) {
+      if (role !== "A" && role !== "B") return json(res, 400, { error: "unknown role" });
+      const said = String(text || "").trim();
+      if (!said) return json(res, 400, { error: "say something first" });
+      if (ARGUMENTS[r.argument].upload && !r.uploads[role])
+        return json(res, 409, { error: "upload your picture first" });
+      const decide = mode === "build";
+      if (decide && r.thinking)
+        return json(res, 409, { error: "the builder is still working on the last decision" });
+      const line = decide
+        ? { who: role, text: said, phase: "main", decision: true, at: Date.now() }
+        : { who: role, text: said, phase: "confer", at: Date.now() };
+      r.transcript.push(line);
+      r.turn++;
+      push(id);
+      json(res, 200, { ok: true });
+      if (decide) { await builderTurn(r, line); push(id); }
+      return;
+    }
+
     if (r.turn >= script.length) return json(res, 409, { error: "there are no turns left" });
     if (script[r.turn] !== role) return json(res, 409, { error: "it is not your turn" });
     const clean = String(text || "").trim();

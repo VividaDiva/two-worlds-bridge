@@ -70,45 +70,49 @@ const BOTH = { hears: true, echo: true };
 
 export const ROUTES = {
   chain: {
-    arrow: "Role 1 → Role 2 → Role 3 → Build",
+    arrow: "Role 1 → Role 2 → AI → Build",
     note: "You tell Role 2. Role 2 tells the builder. Nothing you say reaches it except through them.",
     script: ["A", "B"], reads: "B",
     see: { A: NONE, B: { hears: true, echo: false } },
   },
   both: {
-    arrow: "Role 1 → Role 3 ← Role 2 → Build",
+    arrow: "Role 1 → AI ← Role 2 → Build",
     note: "You each tell the builder separately. You never hear each other. It builds once, from the pair of you.",
     script: ["A", "B"], defer: true, see: { A: NONE, B: NONE },
   },
   "via-1": {
-    arrow: "Role 1 → Role 3 → Role 2 → Role 3 → Build",
+    arrow: "Role 1 → AI → Role 2 → AI → Build",
     note: "Role 2 never hears Role 1 — only the builder's account of Role 1, and answers that.",
     script: ["A", "B"], see: { A: NONE, B: ECHO },
   },
   "via-2": {
-    arrow: "Role 2 → Role 3 → Role 1 → Role 3 → Build",
+    arrow: "Role 2 → AI → Role 1 → AI → Build",
     note: "The same the other way round: Role 1 hears only what the builder made of Role 2.",
     script: ["B", "A"], see: { A: ECHO, B: NONE },
   },
+  // `open`: the two of them talk as long as they like, in any order, out of the
+  // builder's hearing, and either one hands it a decision with Confirm to build.
+  // The script is kept only for the machine experiment's shape; the human test
+  // does not count turns on these routes.
   confer: {
-    arrow: "Role 1 ↔ Role 2 → Role 3 → Build",
-    note: "You talk it over together first, out of the builder's hearing, then one of you carries it.",
-    script: ["A", "B", "A", "B", "A"], confer: 4, see: { A: BOTH, B: BOTH },
+    arrow: "Role 1 ↔ Role 2 → AI → Build",
+    note: "Talk it over as long as you like, out of the builder's hearing. When you have decided, either of you confirms it to the builder.",
+    script: ["A", "B", "A", "B", "A"], confer: 4, see: { A: BOTH, B: BOTH }, open: true,
   },
   "only-1": {
-    arrow: "Role 1 → Role 3 → Build",
+    arrow: "Role 1 → AI → Build",
     note: "Role 1 alone. Role 2 is not in the room.",
     script: ["A"], reads: "A", see: { A: NONE, B: NONE },
   },
   "only-2": {
-    arrow: "Role 2 → Role 3 → Build",
+    arrow: "Role 2 → AI → Build",
     note: "Role 2 alone. Role 1 is not in the room.",
     script: ["B"], reads: "B", see: { A: NONE, B: NONE },
   },
   all: {
-    arrow: "Role 1 ↔ Role 2 ↔ Role 3 → Build",
-    note: "All three of you in one conversation, the builder answering as you negotiate.",
-    script: ["A", "B", "A", "B"], see: { A: BOTH, B: BOTH },
+    arrow: "Role 1 ↔ Role 2 ↔ AI → Build",
+    note: "All three of you in one conversation. Talk freely; each decision either of you confirms goes to the builder, and it answers in front of you both.",
+    script: ["A", "B", "A", "B"], see: { A: BOTH, B: BOTH }, open: true,
   },
 };
 
