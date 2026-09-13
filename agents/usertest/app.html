@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Two worlds, one builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Karla:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f5f0e6; --paper-2:#efe8da; --card:#fbf8f1;
+  --ink:#1c2b3a; --soft:#65727e; --faint:#97a1aa;
+  --rust:#b4441f; --moss:#4a6b4f; --blue:#2d5470;
+  --rule:rgba(28,43,58,.13); --rule-2:rgba(28,43,58,.07);
+  --display:"Fraunces",Georgia,serif; --body:"Karla",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --shadow:0 1px 0 rgba(28,43,58,.05), 0 12px 28px -18px rgba(28,43,58,.45);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--paper); color:var(--ink); font-family:var(--body);
+  font-size:16px; line-height:1.55; -webkit-font-smoothing:antialiased;
+  min-height:100dvh;
+  /* ruled paper, faint enough to read over */
+  background-image:repeating-linear-gradient(to bottom,transparent 0 31px,var(--rule-2) 31px 32px);
+  background-attachment:fixed;
+}
+/* grain, so the paper is not flat */
+body::before{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:99; opacity:.4;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.32'/%3E%3C/svg%3E");
+  mix-blend-mode:multiply;
+}
+.wrap{max-width:860px; margin:0 auto; padding:26px 20px 90px}
+.stack>*{animation:rise .5s cubic-bezier(.2,.7,.3,1) backwards}
+.stack>*:nth-child(1){animation-delay:.02s}
+.stack>*:nth-child(2){animation-delay:.08s}
+.stack>*:nth-child(3){animation-delay:.14s}
+.stack>*:nth-child(4){animation-delay:.2s}
+@keyframes rise{from{opacity:0; transform:translateY(9px)}}
+@media (prefers-reduced-motion:reduce){.stack>*{animation:none}}
+
+h1{font-family:var(--display); font-weight:600; font-size:clamp(28px,5vw,40px);
+   line-height:1.08; letter-spacing:-.015em; margin:0 0 6px}
+h2{font-family:var(--display); font-weight:600; font-size:20px; margin:0 0 8px; letter-spacing:-.01em}
+.lede{color:var(--soft); margin:0 0 26px; max-width:56ch; font-size:16.5px}
+.eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--faint); margin:0 0 10px}
+
+.card{background:var(--card); border:1px solid var(--rule); border-radius:3px;
+  padding:20px 22px; margin:0 0 16px; box-shadow:var(--shadow); position:relative}
+.card.tab::before{content:""; position:absolute; left:-1px; top:18px; bottom:18px; width:3px;
+  background:var(--rust); border-radius:0 2px 2px 0}
+.card.tab.you::before{background:var(--blue)}
+.card.tab.mach::before{background:var(--moss)}
+
+label{display:block; font-family:var(--mono); font-size:11px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--faint); margin:0 0 8px}
+
+.opts{display:grid; gap:8px; margin:0 0 20px}
+.opt{display:block; width:100%; text-align:left; background:var(--card); cursor:pointer;
+  border:1px solid var(--rule); border-radius:3px; padding:13px 15px; font:inherit; color:inherit;
+  transition:border-color .15s, transform .15s, box-shadow .15s}
+.opt:hover{border-color:var(--faint); transform:translateY(-1px); box-shadow:var(--shadow)}
+.opt[aria-pressed="true"]{border-color:var(--rust); box-shadow:inset 0 0 0 1px var(--rust)}
+.opt b{display:block; font-family:var(--display); font-weight:600; font-size:16.5px}
+.opt .arrow{font-family:var(--mono); font-size:13px; color:var(--rust); letter-spacing:.01em}
+.opt small{display:block; color:var(--soft); margin-top:3px; font-size:14px; line-height:1.45}
+
+button.go{font:600 15px/1 var(--body); background:var(--ink); color:var(--paper); border:0;
+  border-radius:3px; padding:14px 22px; cursor:pointer; letter-spacing:.01em;
+  transition:opacity .15s, transform .15s}
+button.go:hover{transform:translateY(-1px)}
+button.go[disabled]{opacity:.35; cursor:not-allowed; transform:none}
+button.quiet{background:none; border:1px solid var(--rule); color:var(--soft);
+  font:500 13px/1 var(--body); padding:9px 14px; border-radius:3px; cursor:pointer}
+
+.links{display:grid; gap:10px; grid-template-columns:1fr 1fr}
+@media (max-width:620px){.links{grid-template-columns:1fr}}
+.link{background:var(--paper-2); border:1px dashed var(--rule); border-radius:3px; padding:13px 15px}
+.link b{font-family:var(--display); font-size:15px}
+.link code{display:block; font-family:var(--mono); font-size:12.5px; color:var(--blue);
+  word-break:break-all; margin-top:5px; line-height:1.4}
+
+.goal{font-family:var(--display); font-size:19px; line-height:1.42; margin:0}
+.rule{font-size:14.5px; color:var(--soft); line-height:1.5; margin:12px 0 0;
+  padding-top:12px; border-top:1px solid var(--rule-2)}
+
+.turnbar{position:sticky; top:0; z-index:20; margin:0 0 16px; padding:13px 18px;
+  background:var(--ink); color:var(--paper); border-radius:3px;
+  display:flex; align-items:center; gap:12px; font-weight:600; box-shadow:var(--shadow)}
+.turnbar.wait{background:var(--paper-2); color:var(--soft); font-weight:500; border:1px solid var(--rule)}
+.turnbar.think{background:var(--moss); color:var(--paper)}
+.dot{width:8px; height:8px; border-radius:50%; background:currentColor; flex:none}
+.turnbar:not(.wait) .dot{animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.25}}
+.step{margin-left:auto; font-family:var(--mono); font-size:11.5px; letter-spacing:.1em; opacity:.75}
+
+.line{margin:0 0 12px}
+.who{font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--faint); display:block; margin:0 0 5px}
+.line.a .who{color:var(--rust)} .line.b .who{color:var(--blue)} .line.m .who{color:var(--moss)}
+.said{font-family:var(--display); font-size:17px; line-height:1.5; margin:0}
+.line.m .said{font-family:var(--body); font-size:15.5px; color:var(--ink)}
+.built{font-family:var(--mono); font-size:11.5px; color:var(--moss); margin-top:6px; display:block}
+.private{font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--faint); border:1px solid var(--rule); border-radius:2px; padding:1px 5px; margin-left:7px}
+
+textarea{width:100%; min-height:96px; resize:vertical; font:16px/1.55 var(--body); color:var(--ink);
+  background:var(--card); border:1px solid var(--rule); border-radius:3px; padding:13px 15px}
+textarea:focus{outline:2px solid var(--rust); outline-offset:-1px}
+textarea[disabled]{opacity:.5}
+.row{display:flex; gap:10px; align-items:center; margin-top:10px; flex-wrap:wrap}
+.warn{background:#fbeee9; border:1px solid rgba(180,68,31,.35); color:var(--rust);
+  border-radius:3px; padding:11px 14px; font-size:14.5px; margin:12px 0 0}
+.warn b{font-family:var(--mono); font-size:13.5px}
+
+.drop{border:1.5px dashed var(--rule); border-radius:3px; padding:26px; text-align:center;
+  cursor:pointer; background:var(--paper-2); transition:border-color .15s, background .15s}
+.drop:hover{border-color:var(--rust); background:var(--card)}
+.drop img{max-width:100%; max-height:260px; border-radius:2px; display:block; margin:0 auto}
+.drop p{margin:0; color:var(--soft); font-size:15px}
+
+table{width:100%; border-collapse:collapse; font-size:14.5px; margin-top:8px}
+th{font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase;
+   color:var(--faint); text-align:left; font-weight:500; padding:6px 10px 6px 0}
+td{padding:7px 10px 7px 0; border-top:1px solid var(--rule-2)}
+td.y{color:var(--moss); font-weight:600} td.n{color:var(--rust)}
+.tick{font-family:var(--mono)}
+.muted{color:var(--soft)}
+</style>
+</head>
+<body>
+<div class="wrap stack" id="app"></div>
+
+<script>
+const app = document.getElementById("app");
+const M = /^\/j\/([a-z0-9]+)\/([AB])$/.exec(location.pathname);
+const ROOM = M ? M[1] : null, ROLE = M ? M[2] : "host";
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const roleName = r => r === "A" ? "Role 1" : r === "B" ? "Role 2" : "The builder";
+const post = (u, b) => fetch(u, {method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(b)}).then(r => r.json().then(j => ({ok:r.ok, j})));
+
+let state = null, picked = { argument:null, route:null }, opts = null;
+
+/* ── the facilitator, before a room exists ─────────────────────────────── */
+async function setup(){
+  opts = opts || await fetch("/api/options").then(r => r.json());
+  app.innerHTML = `
+    <div>
+      <p class="eyebrow">A study of what survives being said</p>
+      <h1>Two worlds,<br>one builder</h1>
+      <p class="lede">Two people describe what they need from a crossing. A third party builds it from
+        their words alone — it may not ask, and nobody may name a part. Pick what they are arguing about
+        and how their words are allowed to travel.</p>
+    </div>
+    <div class="card">
+      <label>What they are arguing about</label>
+      <div class="opts" id="args">${opts.arguments.map(a => `
+        <button class="opt" data-a="${a.id}" aria-pressed="false">
+          <b>${esc(a.title)}${a.upload ? " · they each bring a picture" : ""}</b>
+          <small>${esc(a.blurb)}</small></button>`).join("")}</div>
+      <label>How their words travel</label>
+      <div class="opts" id="routes">${opts.routes.map(r => `
+        <button class="opt" data-r="${r.id}" aria-pressed="false">
+          <b class="arrow">${esc(r.arrow)}</b>
+          <small>${esc(r.note)}</small></button>`).join("")}</div>
+      <button class="go" id="make" disabled>Open a room</button>
+    </div>`;
+  const sync = () => {
+    for (const b of app.querySelectorAll("[data-a]")) b.setAttribute("aria-pressed", String(b.dataset.a === picked.argument));
+    for (const b of app.querySelectorAll("[data-r]")) b.setAttribute("aria-pressed", String(b.dataset.r === picked.route));
+    app.querySelector("#make").disabled = !(picked.argument && picked.route);
+  };
+  app.querySelectorAll("[data-a]").forEach(b => b.onclick = () => { picked.argument = b.dataset.a; sync(); });
+  app.querySelectorAll("[data-r]").forEach(b => b.onclick = () => { picked.route = b.dataset.r; sync(); });
+  app.querySelector("#make").onclick = async () => {
+    const { ok, j } = await post("/api/create", picked);
+    if (ok) location.href = "/?room=" + j.room;
+  };
+}
+
+/* ── live ──────────────────────────────────────────────────────────────── */
+function listen(room, role){
+  const es = new EventSource(`/events?room=${room}&role=${role}`);
+  es.onmessage = e => { state = JSON.parse(e.data); render(); };
+}
+
+function conversation(s){
+  if (!s.lines.length) return `<p class="muted">Nothing said yet.</p>`;
+  return s.lines.map(l => {
+    const cls = l.who === "A" ? "a" : l.who === "B" ? "b" : "m";
+    return `<div class="line ${cls}">
+      <span class="who">${esc(roleName(l.who))}${l.phase === "confer" ? `<span class="private">between you two</span>` : ""}</span>
+      <p class="said">${esc(l.text)}</p>
+      ${l.built ? `<span class="built">it now stands as ${esc(l.built)}</span>` : ""}
+    </div>`;
+  }).join("");
+}
+
+/* ── the facilitator, with a room open ─────────────────────────────────── */
+function hostView(s){
+  const base = location.origin;
+  const sc = s.score;
+  app.innerHTML = `
+    <div>
+      <p class="eyebrow">Room ${esc(s.room)} · ${esc(s.title)}</p>
+      <h1>${esc(s.arrow)}</h1>
+      <p class="lede">${esc(s.note)}</p>
+    </div>
+    <div class="card">
+      <label>Send one link to each person</label>
+      <div class="links">
+        <div class="link"><b>Role 1</b><code>${base}/j/${s.room}/A</code></div>
+        <div class="link"><b>Role 2</b><code>${base}/j/${s.room}/B</code></div>
+      </div>
+    </div>
+    <div class="card tab">
+      <h2>What is being said</h2>
+      <p class="muted" style="margin:0 0 14px; font-size:14.5px">You see everything. They each see only what the route allows.</p>
+      ${conversation(s)}
+      ${s.thinking ? `<p class="muted">The builder is deciding…</p>` : ""}
+    </div>
+    ${s.finished ? `
+      <div class="card tab mach">
+        <h2>What each of them needed</h2>
+        <p class="muted" style="margin:0 0 10px; font-size:14.5px">Never shown to them, and never to the builder. It stands as
+          <b>${esc(sc.built || "nothing")}</b>.</p>
+        ${["A","B"].map(r => `
+          <p class="eyebrow" style="margin-top:14px">${roleName(r)} — ${sc.per[r].met} of ${sc.per[r].of}</p>
+          <table><tbody>${sc.per[r].needs.map(n => `
+            <tr><td class="tick ${n.met ? "y" : "n"}">${n.met ? "✓" : "✗"}</td><td>${esc(n.text)}</td></tr>`).join("")
+            || `<tr><td class="muted">no need was set</td></tr>`}</tbody></table>`).join("")}
+      </div>`
+      : `<div class="card"><button class="go" id="fin">End the session and show what they needed</button>
+           <p class="muted" style="margin:10px 0 0; font-size:14px">Do this once they have finished talking.</p></div>`}`;
+  const f = app.querySelector("#fin");
+  if (f) f.onclick = () => post("/api/finish", { room: s.room });
+}
+
+/* ── a participant ─────────────────────────────────────────────────────── */
+function playerView(s){
+  const mine = s.yourTurn && !s.finished && !s.thinking;
+  const bar = s.finished ? `<div class="turnbar wait"><span class="dot"></span>The session is over. Thank you.</div>`
+    : s.thinking ? `<div class="turnbar think"><span class="dot"></span>The builder is deciding…</div>`
+    : s.needsUpload ? `<div class="turnbar wait"><span class="dot"></span>Add your picture to begin</div>`
+    : mine ? `<div class="turnbar"><span class="dot"></span>Your turn to speak<span class="step">${s.step + 1} of ${s.of}</span></div>`
+    : `<div class="turnbar wait"><span class="dot"></span>Waiting for ${esc(roleName(s.turn))}<span class="step">${s.step + 1} of ${s.of}</span></div>`;
+
+  app.innerHTML = `
+    ${bar}
+    <div class="card tab ${s.role === "B" ? "you" : ""}">
+      <p class="eyebrow">You are ${roleName(s.role)} · ${esc(s.title)}</p>
+      <p class="goal">${esc(s.goal)}</p>
+      <p class="rule">${esc(s.rule)}</p>
+    </div>
+    ${s.upload ? `<div class="card">
+      <label>${s.uploaded ? "The crossing you have in mind" : "Add a picture of the crossing you have in mind"}</label>
+      <div class="drop" id="drop">
+        ${s.picture ? `<img src="${s.picture.dataUrl}" alt="the crossing you brought">`
+                    : `<p>Tap to choose a photo or drawing.<br><span class="muted">Only you will see it. The builder never does.</span></p>`}
+      </div>
+      <input type="file" id="file" accept="image/*" hidden>
+    </div>` : ""}
+    <div class="card tab mach">
+      <h2>The conversation</h2>
+      ${conversation(s)}
+    </div>
+    ${s.finished ? "" : `<div class="card">
+      <label>${mine ? "Say what you need" : "You will be able to write when it is your turn"}</label>
+      <textarea id="say" ${mine ? "" : "disabled"} placeholder="What do you need of it, and what happens to you when it is wrong?"></textarea>
+      <div class="row">
+        <button class="go" id="send" ${mine ? "" : "disabled"}>Send</button>
+        <span class="muted" style="font-size:14px">You cannot name a made thing. Say what you need of it.</span>
+      </div>
+      <div id="err"></div>
+    </div>`}`;
+
+  const drop = app.querySelector("#drop"), file = app.querySelector("#file");
+  if (drop) {
+    drop.onclick = () => file.click();
+    file.onchange = () => {
+      const f = file.files[0]; if (!f) return;
+      const fr = new FileReader();
+      fr.onload = async () => {
+        drop.innerHTML = `<p class="muted">Reading your picture…</p>`;
+        const { ok, j } = await post("/api/upload", { room: s.room, role: s.role, dataUrl: fr.result });
+        if (!ok) drop.innerHTML = `<p class="muted">${esc(j.error || "that did not work")} — tap to try again</p>`;
+      };
+      fr.readAsDataURL(f);
+    };
+  }
+  const send = app.querySelector("#send");
+  if (send) send.onclick = async () => {
+    const ta = app.querySelector("#say"), err = app.querySelector("#err");
+    const text = ta.value.trim(); if (!text) return;
+    send.disabled = true;
+    const { ok, j } = await post("/api/say", { room: s.room, role: s.role, text });
+    if (ok) { ta.value = ""; err.innerHTML = ""; return; }
+    send.disabled = false;
+    err.innerHTML = j.error === "named"
+      ? `<div class="warn">You named <b>${j.words.map(esc).join(", ")}</b>. Nobody here has a word for a made
+           thing — say what you need of it instead, or what happens to you when it is wrong.</div>`
+      : `<div class="warn">${esc(j.error || "that did not send")}</div>`;
+  };
+}
+
+function render(){ if (!state) return; (state.role === "host" ? hostView : playerView)(state); }
+
+/* ── boot ──────────────────────────────────────────────────────────────── */
+(async () => {
+  const q = new URLSearchParams(location.search).get("room");
+  if (ROOM) { listen(ROOM, ROLE); }
+  else if (q) { listen(q, "host"); }
+  else setup();
+})();
+</script>
+</body>
+</html>

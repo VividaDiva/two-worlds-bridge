@@ -2,6 +2,11 @@
 node_modules/
 sessions/
 
+# what people brought to a session and what they said in it. Participant data:
+# theirs, not the repo the instrument lives in.
+usertest/uploads/
+usertest/sessions/
+
 # your own drawings and what was read off them: yours, not the repo the
 # instrument lives in
 drawings/*.png
