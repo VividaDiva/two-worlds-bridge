@@ -228,8 +228,10 @@ td.y{color:var(--moss); font-weight:600} td.n{color:var(--rust)}
 
 <script>
 const app = document.getElementById("app");
-const M = /^\/j\/([a-z0-9]+)\/(A|B|both)$/.exec(location.pathname);
-const ROOM = M ? M[1] : null, ROLE = M ? M[2] : "host";
+// The role segment is optional: /j/<room> is the one link both people open,
+// and each takes a side there.
+const M = /^\/j\/([a-z0-9]+)(?:\/(A|B|both))?$/.exec(location.pathname);
+const ROOM = M ? M[1] : null, ROLE = M ? (M[2] || null) : "host";
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const roleName = r => r === "A" ? "Role 1" : r === "B" ? "Role 2" : "The builder";
 const post = (u, b) => fetch(u, {method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(b)})
@@ -377,14 +379,18 @@ function hostView(s){
       <p class="lede">${esc(s.note)}</p>
     </div>
     <div class="card">
-      <label>Open this if the two of you are at one screen</label>
+      <label>Send this one link to both of them</label>
       <div class="links">
-        <div class="link wide"><b>Both roles, side by side</b><code>${base}/j/${s.room}/both</code></div>
+        <div class="link wide"><b>Each of them picks a side when they open it</b><code>${base}/j/${s.room}</code></div>
       </div>
-      <label style="margin-top:16px">Or send one each, for separate devices</label>
+      <label style="margin-top:16px">Keep this one for yourself</label>
       <div class="links">
-        <div class="link"><b>Role 1</b><code>${base}/j/${s.room}/A</code></div>
-        <div class="link"><b>Role 2</b><code>${base}/j/${s.room}/B</code></div>
+        <div class="link wide"><b>Both sides, what the agent did, and what stands</b><code>${base}/j/${s.room}/both</code></div>
+      </div>
+      <label style="margin-top:16px">Or hand out a fixed side, if you would rather choose for them</label>
+      <div class="links">
+        <div class="link"><b>Role 1${s.claimed && s.claimed.A ? " · taken" : ""}</b><code>${base}/j/${s.room}/A</code></div>
+        <div class="link"><b>Role 2${s.claimed && s.claimed.B ? " · taken" : ""}</b><code>${base}/j/${s.room}/B</code></div>
       </div>
     </div>
     <div class="card tab">
@@ -549,8 +555,50 @@ function listen(room, role, onState){
   es.onmessage = e => onState(JSON.parse(e.data));
 }
 
+// One link, sent to both people, and each takes a side when they open it. The
+// choice is remembered per room, so a reload does not ask again — and a side
+// somebody has already taken is shown as taken but still offered, because
+// locking a person out of their own session over a stray reload is worse than
+// letting two people sort out between themselves who is who.
+function joinView(room){
+  fetch(`/api/state?room=${room}&role=host`).then(r => r.json()).then(s => {
+    if (s.error) { app.innerHTML = `<div class="card"><h2>That room is gone</h2>
+      <p class="muted">Rooms do not survive the server restarting. Ask for a fresh link.</p></div>`; return; }
+    app.innerHTML = `
+      <div>
+        <p class="eyebrow">${esc(s.title)} · room ${esc(room)}</p>
+        <h1>Which of you are you?</h1>
+        <p class="lede">${esc(s.blurb)} You will each be given something to want, and neither of you
+          will see the other's.</p>
+      </div>
+      <div class="card">
+        <div class="opts">
+          ${["A","B"].map(r => `
+            <button class="opt" data-take="${r}">
+              <b>${roleName(r)}${s.claimed[r] ? " · already taken" : ""}</b>
+              <small>${s.claimed[r] ? "Somebody has this side. Take it anyway if that was you."
+                                    : "Free — tap to take this side."}</small>
+            </button>`).join("")}
+        </div>
+      </div>`;
+    app.querySelectorAll("[data-take]").forEach(b => b.onclick = async () => {
+      const role = b.dataset.take;
+      await post("/api/claim", { room, role });
+      try { localStorage.setItem("side-" + room, role); } catch {}
+      location.href = `/j/${room}/${role}`;
+    });
+  });
+}
+
 (async () => {
   const q = new URLSearchParams(location.search).get("room");
+  // Opened the bare link, but this browser has already taken a side here.
+  if (ROOM && !ROLE) {
+    let mine = null;
+    try { mine = localStorage.getItem("side-" + ROOM); } catch {}
+    if (mine === "A" || mine === "B") { location.replace(`/j/${ROOM}/${mine}`); return; }
+    return joinView(ROOM);
+  }
   if (ROOM && ROLE === "both") {
     // Three streams. A and B carry each person's own goal, turn and composer;
     // host is the only one that carries every line, what stands, and the score,

@@ -66,6 +66,9 @@ function view(room, role) {
     phase: room.turn < script.length ? phaseOf(room, room.turn) : "done",
     conferTurns: route.confer || 0,
     step: room.turn, of: script.length,
+    // Which sides somebody has already taken, so one link can be sent to both
+    // people and the join screen can show what is left.
+    claimed: { A: !!room.claimed?.A, B: !!room.claimed?.B },
     standing: room.standing ? NAME(room.standing) : null,
     // The crossing itself, so it can be drawn rather than only named, and the
     // ground under it, because how deep the gap is depends on what the two of
@@ -188,7 +191,7 @@ const srv = http.createServer(async (req, res) => {
   // /j/<room>/A and /B are one person each, on their own device. /j/<room>/both
   // is the pair of them on one screen — two people at one laptop, or one person
   // testing alone. Each column still sees only what its own role is allowed to.
-  if (req.method === "GET" && (p === "/" || /^\/j\/[a-z0-9]+\/(A|B|both)$/.test(p))) {
+  if (req.method === "GET" && (p === "/" || /^\/j\/[a-z0-9]+(\/(A|B|both))?$/.test(p))) {
     res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
     return res.end(fs.readFileSync(path.join(here, "app.html"), "utf8"));
   }
@@ -224,6 +227,20 @@ const srv = http.createServer(async (req, res) => {
     streams.get(room.id).add(entry);
     req.on("close", () => streams.get(room.id)?.delete(entry));
     return;
+  }
+
+  // One link goes to both people and each takes a side. A side already taken is
+  // reported back rather than refused outright: somebody reloading on a second
+  // device, or swapping seats, should not be locked out of their own session.
+  if (p === "/api/claim" && req.method === "POST") {
+    const { room: id, role } = await body(req);
+    const r = rooms.get(id);
+    if (!r) return json(res, 404, { error: "no such room" });
+    if (role !== "A" && role !== "B") return json(res, 400, { error: "unknown role" });
+    const taken = !!r.claimed?.[role];
+    r.claimed = { ...(r.claimed || {}), [role]: true };
+    push(id);
+    return json(res, 200, { ok: true, wasTaken: taken });
   }
 
   if (p === "/api/upload" && req.method === "POST") {
