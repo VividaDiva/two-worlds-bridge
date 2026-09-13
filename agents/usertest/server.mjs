@@ -106,6 +106,8 @@ function record(room) {
     route: room.route, arrow: route.arrow,
     createdAt: room.createdAt, updatedAt: new Date().toISOString(),
     finished: room.finished,
+    // Enough to carry on from, not only to read back.
+    turn: room.turn, claimed: room.claimed || {}, standingId: room.standing,
     goals: { A: arg.A.goal, B: arg.B.goal },
     // The pictures are theirs; the record keeps what was read off them, not the
     // image. The files already on disk are gitignored.
@@ -120,7 +122,11 @@ function record(room) {
     // Needs met so far, even before End is pressed; `finished` says which.
     score: room.score || scoreRoom(room),
   };
-  fs.writeFileSync(path.join(here, "sessions", `${room.id}.json`), JSON.stringify(rec, null, 2));
+  // Written aside and moved into place, so a restart mid-write leaves the last
+  // good record rather than half of a new one.
+  const file = path.join(here, "sessions", `${room.id}.json`);
+  fs.writeFileSync(file + ".tmp", JSON.stringify(rec, null, 2));
+  fs.renameSync(file + ".tmp", file);
 }
 
 const WHO = { A: "Role 1", B: "Role 2", builder: "Role 3 (builder)" };
@@ -193,6 +199,9 @@ async function builderTurn(room, line) {
   try {
     const { asks, refuses } = await readLine(line.text);
     line.taken = [...asks, ...refuses];
+    // Kept apart as well, so a room can be heard again after a restart exactly
+    // as it was heard the first time.
+    line.asks = asks; line.refuses = refuses;
     newTurn(room.ctx);
     hear(room.ctx, line.who, "want", asks);
     hear(room.ctx, line.who, "avoid", refuses);
@@ -249,6 +258,48 @@ function scoreRoom(room) {
   return { built: room.standing ? NAME(room.standing) : null, has: got, per };
 }
 
+// Rooms come back after a restart. Each is rebuilt from its record by hearing
+// every line again in the order it was said — the same calls the builder's turn
+// made — so what it wants, what it avoids and who named what are exactly as they
+// were. What stands is put back as it stood rather than rebuilt, because it was
+// the builder's choice and not the scoring rule's.
+function restore() {
+  const dir = path.join(here, "sessions"), pics = path.join(here, "uploads");
+  let n = 0;
+  for (const f of fs.readdirSync(dir).filter(f => f.endsWith(".json"))) {
+    try {
+      const rec = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"));
+      if (!ARGUMENTS[rec.argument] || !ROUTES[rec.route]) continue;
+      const ctx = mkCtx();
+      for (const e of rec.transcript) {
+        if (e.who === "builder" || !(e.asks || e.refuses)) continue;
+        newTurn(ctx);
+        hear(ctx, e.who, "want", e.asks || []);
+        hear(ctx, e.who, "avoid", e.refuses || []);
+      }
+      Object.assign(ctx.world, rec.world || {});
+      ctx.design = KIT.find(k => k.id === rec.standingId) || null;
+      // The picture itself was never in the record; it is still on disk.
+      const uploads = {};
+      for (const [role, u] of Object.entries(rec.uploads || {})) {
+        const pic = fs.readdirSync(pics).find(x => x.startsWith(`${rec.room}-${role}.`));
+        const ext = pic ? pic.split(".").pop() : null;
+        const media = ext ? `image/${ext === "svg" ? "svg+xml" : ext}` : null;
+        uploads[role] = { ...u, media, dataUrl: pic
+          ? `data:${media};base64,${fs.readFileSync(path.join(pics, pic)).toString("base64")}` : null };
+      }
+      rooms.set(rec.room, { id: rec.room, argument: rec.argument, route: rec.route, ctx,
+        turn: rec.turn ?? rec.transcript.filter(e => e.who !== "builder").length,
+        transcript: rec.transcript, uploads, standing: rec.standingId ?? null, thinking: false,
+        finished: !!rec.finished, score: rec.finished ? rec.score : undefined,
+        claimed: rec.claimed || {}, createdAt: rec.createdAt });
+      streams.set(rec.room, new Set());
+      n++;
+    } catch (e) { console.error(`could not restore ${f}: ${e.message}`); }
+  }
+  return n;
+}
+
 const srv = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   const p = url.pathname;
@@ -295,7 +346,7 @@ const srv = http.createServer(async (req, res) => {
       .map(s => ({ room: s.room, title: s.title, arrow: s.arrow, createdAt: s.createdAt,
                    updatedAt: s.updatedAt, finished: s.finished, standing: s.standing,
                    lines: s.transcript.filter(e => e.who !== "builder").length,
-                   live: rooms.has(s.room) }))
+                   live: rooms.has(s.room) && !s.finished }))
       .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
     return json(res, 200, list);
   }
@@ -421,7 +472,9 @@ const srv = http.createServer(async (req, res) => {
   res.writeHead(404); res.end("not found");
 });
 
+const back = restore();
 srv.listen(PORT, () => {
   console.log(`\n  Two worlds, one builder — user test`);
+  console.log(`  ${back} room${back === 1 ? "" : "s"} brought back from sessions/`);
   console.log(`  Facilitator console:  http://localhost:${PORT}/\n`);
 });
