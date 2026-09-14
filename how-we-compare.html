@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How the comparison works — I Want, I Do Not Want</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..500&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --serif:"Instrument Serif", Georgia, serif;
+    --read:"Newsreader", Georgia, serif;
+    --mono:"IBM Plex Mono", ui-monospace, monospace;
+    --ground:#E5E9E6; --surface:#F4F7F4; --panel:#FCFDFC;
+    --ink:#15201B; --muted:#5F7168; --line:#C8D2CC; --line-soft:#DEE6E1;
+    --roleA:#B26320; --roleA-tint:#F4E6D4; --roleA-ink:#7B4413;
+    --roleB:#2F6288; --roleB-tint:#D8E4EE; --roleB-ink:#1F4761;
+    --signal:#0C8478; --signal-tint:#DCEFEC; --fault:#B03F35; --fault-tint:#F6E1DE;
+    --shadow:0 1px 2px rgba(21,32,27,.06), 0 8px 24px rgba(21,32,27,.07);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#0A100D; --surface:#111A16; --panel:#16211C;
+      --ink:#E6EDE8; --muted:#8DA096; --line:#27352E; --line-soft:#1C2721;
+      --roleA:#DE9744; --roleA-tint:#2C1F10; --roleA-ink:#EDB878;
+      --roleB:#6FA6D4; --roleB-tint:#13232F; --roleB-ink:#9DC5E6;
+      --signal:#3CBCAE; --signal-tint:#12302C; --fault:#DF6C5E; --fault-tint:#361A17;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0A100D; --surface:#111A16; --panel:#16211C;
+    --ink:#E6EDE8; --muted:#8DA096; --line:#27352E; --line-soft:#1C2721;
+    --roleA:#DE9744; --roleA-tint:#2C1F10; --roleA-ink:#EDB878;
+    --roleB:#6FA6D4; --roleB-tint:#13232F; --roleB-ink:#9DC5E6;
+    --signal:#3CBCAE; --signal-tint:#12302C; --fault:#DF6C5E; --fault-tint:#361A17;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--ground); color:var(--ink); font-family:var(--read); font-size:17px; line-height:1.55}
+  a{color:var(--signal)}
+  .wrap{max-width:1080px; margin:0 auto; padding:36px 24px 80px}
+  .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:0 0 10px}
+  h1{font-family:var(--serif); font-weight:400; font-size:clamp(40px,6vw,64px); line-height:1.02; margin:0 0 14px}
+  h2{font-family:var(--serif); font-weight:400; font-size:34px; line-height:1.1; margin:0 0 8px}
+  .lede{font-size:20px; color:var(--muted); max-width:62ch; margin:0}
+  section{margin-top:56px}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow); padding:22px 24px}
+  .mono{font-family:var(--mono)}
+  .muted{color:var(--muted)}
+
+  /* the two lanes */
+  .lanes{display:grid; gap:14px; margin-top:22px}
+  .lane{display:grid; grid-template-columns:150px 1fr; gap:14px; align-items:stretch}
+  .lane .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; padding-top:14px}
+  .lane.run .tag{color:var(--ink)}
+  .lane.after .tag{color:var(--signal)}
+  .steps{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+  .step{border:1px solid var(--line); border-radius:12px; background:var(--panel); padding:10px 14px; font-size:15px; line-height:1.35; max-width:230px}
+  .step b{display:block; font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); font-weight:500; margin-bottom:3px}
+  .step.shared{border-color:var(--ink)}
+  .step.private{border-style:dashed}
+  .step.page{border-color:var(--signal); background:var(--signal-tint)}
+  .arrow{font-family:var(--mono); color:var(--muted)}
+  .lane.after .steps{padding-left:0}
+
+  /* the walkthrough */
+  .picker{display:flex; gap:10px; flex-wrap:wrap; align-items:end; margin:18px 0 16px}
+  .picker label{display:flex; flex-direction:column; gap:4px; font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted)}
+  select, button{font:inherit; font-family:var(--mono); font-size:13px; color:var(--ink); background:var(--panel);
+    border:1px solid var(--line); border-radius:9px; padding:8px 10px}
+  select{max-width:100%}
+  #linePick{min-width:min(520px, 100%)}
+  button{cursor:pointer}
+  button:hover{border-color:var(--muted)}
+  button.primary{background:var(--ink); color:var(--panel); border-color:var(--ink)}
+  button[disabled]{opacity:.4; cursor:not-allowed}
+  .stepper{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px}
+  .stepper button[aria-current="step"]{border-color:var(--signal); color:var(--signal)}
+  .stage{display:grid; gap:14px}
+  .panel{border:1px solid var(--line); border-radius:12px; padding:14px 16px; background:var(--panel);
+    transition:opacity .35s, transform .35s}
+  .panel.off{opacity:.18; transform:translateY(4px)}
+  .panel h3{margin:0 0 6px; font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; font-weight:600;
+    display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap}
+  .panel h3 .when{font-weight:400; color:var(--muted)}
+  .panel.said h3{color:var(--roleA)}
+  .panel.said.b h3{color:var(--roleB)}
+  .panel.meant{border-style:dashed}
+  .panel.meant h3{color:var(--muted)}
+  .panel.interp h3{color:var(--ink)}
+  .panel.compare{border-color:var(--signal)}
+  .panel.compare h3{color:var(--signal)}
+  .sentence{font-size:22px; line-height:1.4; margin:2px 0 0}
+  .plain{font-style:italic; color:var(--muted); margin:2px 0 8px}
+  .twocol{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  @media (max-width:760px){ .twocol{grid-template-columns:1fr} .lane{grid-template-columns:1fr} .lane .tag{padding-top:0} }
+  .needs{display:flex; flex-direction:column; gap:6px; margin-top:6px}
+  .need{display:flex; gap:8px; align-items:baseline; font-family:var(--mono); font-size:13px}
+  .need .pol{font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); width:66px; flex:none}
+  .need .pol.no{color:var(--fault)}
+  .none{font-family:var(--mono); font-size:13px; color:var(--muted); font-style:italic}
+  .note{font-size:14px; color:var(--muted); margin:8px 0 0}
+
+  table{width:100%; border-collapse:collapse; margin-top:8px}
+  th, td{text-align:left; padding:9px 10px; border-top:1px solid var(--line-soft); vertical-align:top}
+  th{font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); font-weight:500; border-top:0}
+  td{font-family:var(--mono); font-size:13px}
+  td .pol{color:var(--muted); font-size:11px}
+  td .pol.no{color:var(--fault)}
+  .verdict{display:inline-block; border-radius:99px; padding:2px 10px; font-size:11.5px; white-space:nowrap}
+  .verdict.carried{background:var(--signal-tint); color:var(--signal)}
+  .verdict.missed{background:var(--fault-tint); color:var(--fault)}
+  .verdict.added{border:1px dashed var(--roleA); color:var(--roleA-ink)}
+  .flip{display:block; font-size:11px; color:var(--fault); margin-top:3px}
+  tr.enter{animation:rowin .4s both}
+  @keyframes rowin{from{opacity:0; transform:translateX(-6px)} to{opacity:1; transform:none}}
+  @media (prefers-reduced-motion: reduce){ tr.enter{animation:none} .panel{transition:none} }
+  .tally{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; font-family:var(--mono); font-size:12px}
+  .tally span{border:1px solid var(--line); border-radius:99px; padding:3px 11px}
+
+  /* rules */
+  .rules{display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:12px; margin-top:16px}
+  .rule{border:1px solid var(--line); border-radius:12px; padding:14px 16px; background:var(--panel)}
+  .rule .verdict{margin-bottom:8px}
+  .rule p{margin:0; font-size:15px}
+  .limits{margin-top:16px}
+  .limits li{margin:6px 0; font-size:16px}
+
+  /* totals */
+  .bars{display:grid; gap:14px; margin-top:16px}
+  .bar-row{display:grid; grid-template-columns:170px 1fr 240px; gap:12px; align-items:center; font-family:var(--mono); font-size:12.5px}
+  @media (max-width:760px){ .bar-row{grid-template-columns:1fr} }
+  .bar{height:14px; border-radius:8px; background:var(--line-soft); overflow:hidden; display:flex}
+  .bar i{display:block; height:100%}
+  .bar i.carried{background:var(--signal)}
+  .bar i.missed{background:var(--fault)}
+  .bar i.added{background:repeating-linear-gradient(90deg, var(--roleA) 0 5px, transparent 5px 8px)}
+  .pending{font-family:var(--mono); font-size:13px; color:var(--muted); font-style:italic}
+  .back{font-family:var(--mono); font-size:12px}
+
+  /* the comparison as two overlapping ovals: missed · carried · new */
+  .venn{position:relative; display:grid; grid-template-columns:1fr 1fr 1fr; align-items:center;
+    min-height:250px; padding:40px 2% 30px; margin:6px 0 16px}
+  .venn-bg{position:absolute; inset:0; width:100%; height:100%}
+  .venn-bg ellipse{stroke-width:2; vector-effect:non-scaling-stroke}
+  .venn-bg .e-meant{fill:var(--roleA-tint); fill-opacity:.55; stroke:var(--roleA)}
+  .venn-bg .e-heard{fill:var(--signal-tint); fill-opacity:.55; stroke:var(--signal)}
+  .vzone{position:relative; display:flex; flex-direction:column; align-items:center; text-align:center; gap:3px; padding:0 6px}
+  .vzone b{font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase}
+  .vzone.missed b{color:var(--fault)}
+  .vzone.carried b{color:var(--signal)}
+  .vzone.added b{color:var(--roleA-ink)}
+  .vzone small{font-family:var(--mono); font-size:10px; color:var(--muted)}
+  .chips{display:flex; flex-direction:column; gap:5px; margin-top:8px; align-items:center}
+  .chip{font-family:var(--mono); font-size:12px; border-radius:99px; padding:3px 10px; background:var(--panel);
+    border:1px solid var(--line); white-space:nowrap}
+  .chip.missed{border-color:var(--fault); color:var(--fault); text-decoration:line-through; text-decoration-thickness:1px}
+  .chip.carried{border-color:var(--signal); color:var(--signal)}
+  .chip.added{border:1px dashed var(--roleA); color:var(--roleA-ink)}
+  .empty{font-family:var(--mono); font-size:11px; color:var(--muted); font-style:italic}
+  .vlabel{position:absolute; top:8px; font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase}
+  .vlabel.left{left:8%; color:var(--roleA)}
+  .vlabel.right{right:8%; color:var(--signal)}
+  .vcount{font-family:var(--serif); font-size:46px; line-height:1; margin-top:4px}
+  .vzone.missed .vcount{color:var(--fault)}
+  .vzone.carried .vcount{color:var(--signal)}
+  .vzone.added .vcount{color:var(--roleA-ink)}
+  .vtwo{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+  .vtwo h3{margin:0; font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:500}
+  @media (max-width:760px){
+    .venn{grid-template-columns:1fr; gap:14px; padding:36px 4% 18px}
+    .venn-bg{display:none}
+    .vlabel{position:static; text-align:center}
+    .chip{white-space:normal}
+    .vtwo{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow"><a class="back" href="i-want-i-do-not-want.html">← I Want, I Do Not Want</a></p>
+  <h1>How the comparison works</h1>
+  <p class="lede">Every “carried”, “missed” and “added” on the analysis page comes from one comparison. Nobody in a
+    conversation makes it, and nobody in a conversation ever sees it. This page shows what happens during a run, what
+    the page does afterwards, and the exact rule it uses.</p>
+
+  <section>
+    <h2>Two different times</h2>
+    <p class="muted">Only the top row is the conversation. The dashed step is a question asked during the run whose answer
+      is never passed on. The bottom row happens later, on the page, from the recording.</p>
+    <div class="lanes">
+      <div class="lane run">
+        <div class="tag">During the run</div>
+        <div class="steps">
+          <div class="step shared"><b>Role 1</b>says a line</div>
+          <span class="arrow">→</span>
+          <div class="step shared"><b>The builder</b>interprets the sentence as needs</div>
+          <span class="arrow">→</span>
+          <div class="step shared"><b>The builder</b>builds from those needs</div>
+        </div>
+      </div>
+      <div class="lane run">
+        <div class="tag">Also during the run</div>
+        <div class="steps">
+          <div class="step private"><b>Role 1 · asked privately</b>“What did you mean?” — answered in its own words and as needs.
+            Recorded, never shown to anyone.</div>
+        </div>
+      </div>
+      <div class="lane after">
+        <div class="tag">Afterwards · this page</div>
+        <div class="steps">
+          <div class="step page"><b>Compare</b>what Role 1 meant (as needs) against what the builder interpreted, one need at a time</div>
+          <span class="arrow">→</span>
+          <div class="step page"><b>Verdict</b>carried · missed · interpreted but never meant</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>One line, step by step</h2>
+    <p class="muted">A real line from the recordings. Step through it, or pick another.</p>
+    <div class="picker">
+      <label>Use case <select id="scenPick"></select></label>
+      <label>Route <select id="routePick"></select></label>
+      <label>Line <select id="linePick"></select></label>
+      <label>Compare with <select id="whoPick"></select></label>
+      <button id="shuffle" type="button">Another line</button>
+    </div>
+    <div class="stepper" id="stepper"></div>
+    <div class="stage" id="stage"><p class="pending">Loading the recordings…</p></div>
+  </section>
+
+  <section>
+    <h2>The rule</h2>
+    <p class="muted">Both sides are lists of needs from the same fixed list of seventeen. The page puts the two lists side by
+      side and looks at each need once.</p>
+    <div class="rules">
+      <div class="rule"><span class="verdict carried">carried</span><p>The need is in what the speaker meant <em>and</em> in what the
+        listener interpreted.</p></div>
+      <div class="rule"><span class="verdict missed">missed</span><p>The need is in what the speaker meant, but not in what the
+        listener interpreted.</p></div>
+      <div class="rule"><span class="verdict added">new</span><p>The listener interpreted the need, but the
+        speaker never meant it.</p></div>
+    </div>
+    <ul class="limits">
+      <li><b>It compares needs, not words.</b> The recording keeps no link from a word in the sentence to a need, so the page
+        cannot say which words were understood — only which needs arrived.</li>
+      <li><b>Asking and ruling out count as the same need.</b> If one side asks for “it does not move” and the other rules it out,
+        the need still counts as carried. The walkthrough flags these.</li>
+      <li><b>The same idea said two ways counts as an addition.</b> “Not loads and carts” and “one person's weight” are close in
+        meaning, but they are different needs on the list, so the second shows as interpreted, never meant.</li>
+      <li><b>“Meant” is a self-report.</b> It is the speaker's own answer when asked, after speaking — not a look inside it.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Across every recording</h2>
+    <p class="muted">The same rule applied to every line in every recorded conversation.</p>
+    <div class="card"><div class="bars" id="totals"><p class="pending">Counting…</p></div></div>
+  </section>
+</div>
+
+<script>
+// The recordings are not copied here. They live in the analysis page, and this
+// page reads them from it, along with the page's own names for each need.
+const SOURCE = "i-want-i-do-not-want.html";
+const SCEN = { places: "A log or a slung span", loads: "On foot or by cart", agreed: "The same aim, unknown",
+               pairs: "A driver and a walker", refs: "Two drawings" };
+const STEPS = ["Said", "The builder interprets", "Role 1 says what it meant", "The page compares"];
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const $ = id => document.getElementById(id);
+let LABEL = {}, LINES = [], step = 4;
+
+function lineOf(ss, t, i, people) {
+  const other = t.who === "A" ? "B" : "A";
+  const reply = people[i + 1];
+  const unread = t.phase === "confer" || t.unread || t.refused || (t.byWord === null && t.byModel === null);
+  const k = xs => (xs || []).filter(f => f in LABEL);
+  return {
+    scenario: ss.meta.scenario, route: ss.meta.label || ss.meta.case, who: t.who, other, text: t.text || "",
+    plain: t.meantPlainly || "",
+    meant: { asks: k(t.meantAsks || (t.meantRefuses ? (t.meant || []).filter(f => !t.meantRefuses.includes(f)) : t.meant)),
+             refuses: k(t.meantRefuses) },
+    builder: unread ? null : { asks: k(t.takenAsks || (t.takenRefuses ? (t.taken || []).filter(f => !t.takenRefuses.includes(f)) : t.taken)),
+                               refuses: k(t.takenRefuses) },
+    otherHeard: reply && reply.who === other && (reply.tookThemToMean || []).length ? { asks: k(reply.tookThemToMean), refuses: [] } : null,
+  };
+}
+
+function compare(meant, heard) {
+  const pol = (side, f) => side.refuses.includes(f) ? "rules out" : "asks";
+  const m = [...meant.asks, ...meant.refuses], h = [...heard.asks, ...heard.refuses];
+  const rows = [];
+  for (const f of m) rows.push({ f, meant: pol(meant, f), heard: h.includes(f) ? pol(heard, f) : null,
+                                 verdict: h.includes(f) ? "carried" : "missed" });
+  for (const f of h) if (!m.includes(f)) rows.push({ f, meant: null, heard: pol(heard, f), verdict: "added" });
+  return rows;
+}
+
+const needList = side => {
+  const all = [...side.asks.map(f => ["asks", f]), ...side.refuses.map(f => ["rules out", f])];
+  return all.length
+    ? `<div class="needs">${all.map(([p, f]) => `<div class="need"><span class="pol${p === "rules out" ? " no" : ""}">${p}</span>${esc(LABEL[f])}</div>`).join("")}</div>`
+    : `<p class="none">no need from the list</p>`;
+};
+
+// Two overlapping ovals: what the speaker meant on the left, what the listener
+// interpreted on the right. A need sits where it falls — only in the meant oval
+// (missed), in the overlap (carried), or only in the interpreted oval (new).
+const vennFrame = (leftName, rightName, zones) => `
+  <div class="venn">
+    <svg class="venn-bg" viewBox="0 0 1000 320" preserveAspectRatio="none" aria-hidden="true">
+      <ellipse class="e-meant" cx="330" cy="165" rx="320" ry="150"/>
+      <ellipse class="e-heard" cx="670" cy="165" rx="320" ry="150"/>
+    </svg>
+    <div class="vlabel left">${esc(leftName)}</div><div class="vlabel right">${esc(rightName)}</div>
+    <div class="vzone missed"><b>missed</b><small>meant, not interpreted</small>${zones.missed}</div>
+    <div class="vzone carried"><b>carried</b><small>meant and interpreted</small>${zones.carried}</div>
+    <div class="vzone added"><b>new</b><small>interpreted, never meant</small>${zones.added}</div>
+  </div>`;
+
+function venn(rows, leftName, rightName) {
+  const chips = v => {
+    const list = rows.filter(r => r.verdict === v);
+    if (!list.length) return `<div class="chips"><span class="empty">none</span></div>`;
+    return `<div class="chips">${list.map(r => {
+      const not = (v === "added" ? r.heard : r.meant) === "rules out" ? "not: " : "";
+      return `<span class="chip ${v}">${not}${esc(LABEL[r.f])}</span>`;
+    }).join("")}</div>`;
+  };
+  return vennFrame(leftName, rightName, { missed: chips("missed"), carried: chips("carried"), added: chips("added") });
+}
+
+function vennCounts(s, leftName, rightName) {
+  const n = v => `<div class="vcount">${s[v].toLocaleString()}</div>`;
+  return vennFrame(leftName, rightName, { missed: n("missed"), carried: n("carried"), added: n("added") });
+}
+
+function render() {
+  const L = LINES[+$("linePick").value];
+  if (!L) { $("stage").innerHTML = `<p class="pending">No line matches.</p>`; return; }
+  const whoOpts = [];
+  if (L.builder) whoOpts.push(["builder", "the builder"]);
+  if (L.otherHeard) whoOpts.push(["other", L.other === "A" ? "Role 1 (the other person)" : "Role 2 (the other person)"]);
+  const keep = $("whoPick").value;
+  $("whoPick").innerHTML = whoOpts.map(([v, t]) => `<option value="${v}">${t}</option>`).join("") || `<option value="">nobody interpreted it</option>`;
+  if (whoOpts.some(([v]) => v === keep)) $("whoPick").value = keep;
+  const who = $("whoPick").value;
+  const speaker = L.who === "A" ? "Role 1" : "Role 2";
+  const listener = who === "other" ? (L.other === "A" ? "Role 1" : "Role 2") : "The builder";
+  const heard = who === "other" ? L.otherHeard : L.builder;
+
+  STEPS[1] = who === "other" ? `${listener} interprets` : "The builder interprets";
+  STEPS[2] = `${speaker} says what it meant`;
+  $("stepper").innerHTML = STEPS.map((s, i) => `<button type="button" data-step="${i + 1}" ${i + 1 === step ? 'aria-current="step"' : ""}>${i + 1} · ${esc(s)}</button>`).join("")
+    + `<button type="button" id="next" class="primary" ${step >= 4 ? "disabled" : ""}>Next step</button>`;
+  $("stepper").querySelectorAll("[data-step]").forEach(b => b.onclick = () => { step = +b.dataset.step; render(); });
+  $("next").onclick = () => { step = Math.min(4, step + 1); render(); };
+
+  const on = n => step >= n ? "" : " off";
+  const rows = heard ? compare(L.meant, heard) : [];
+  const count = v => rows.filter(r => r.verdict === v).length;
+  $("stage").innerHTML = `
+    <div class="panel said${L.who === "B" ? " b" : ""}${on(1)}">
+      <h3>1 · ${speaker} said <span class="when">during the run · passed on</span></h3>
+      <p class="sentence">${esc(L.text)}</p>
+    </div>
+    <div class="twocol">
+      <div class="panel interp${on(2)}">
+        <h3>2 · ${esc(listener)} interpreted it as <span class="when">during the run · ${who === "other" ? "its own report, on its next turn" : "from the sentence alone"}</span></h3>
+        ${heard ? needList(heard) : `<p class="none">This line never reached ${esc(listener.toLowerCase())} on this route.</p>`}
+        <p class="note">${who === "other" ? `${esc(listener)} was asked what it took ${speaker}'s last line to need.` : "This is what the builder builds from. It never sees step 3."}</p>
+      </div>
+      <div class="panel meant${on(3)}">
+        <h3>3 · ${speaker} meant <span class="when">during the run · asked privately, never shared</span></h3>
+        ${L.plain ? `<p class="plain">“${esc(L.plain)}”</p>` : ""}
+        ${needList(L.meant)}
+        <p class="note">One answer, written two ways: in its own words, and as needs from the list.</p>
+      </div>
+    </div>
+    <div class="panel compare${on(4)}">
+      <h3>4 · The page compares <span class="when">afterwards · nobody in the run sees this</span></h3>
+      ${heard ? `
+        ${venn(rows, `${speaker} meant`, `${listener} interpreted`)}
+        <table>
+          <thead><tr><th>Need</th><th>${speaker} meant</th><th>${esc(listener)} interpreted</th><th>Verdict</th></tr></thead>
+          <tbody>${rows.map((r, i) => `<tr class="${step >= 4 ? "enter" : ""}" style="animation-delay:${i * 90}ms">
+            <td>${esc(LABEL[r.f])}</td>
+            <td>${r.meant ? `<span class="pol${r.meant === "rules out" ? " no" : ""}">${r.meant}</span>` : "—"}</td>
+            <td>${r.heard ? `<span class="pol${r.heard === "rules out" ? " no" : ""}">${r.heard}</span>` : "—"}</td>
+            <td><span class="verdict ${r.verdict}">${r.verdict === "added" ? "new" : r.verdict}</span>
+              ${r.verdict === "carried" && r.meant !== r.heard ? `<span class="flip">one side asks, the other rules it out</span>` : ""}</td>
+          </tr>`).join("") || `<tr><td colspan="4" class="muted">Neither side named a need from the list.</td></tr>`}</tbody>
+        </table>
+        <div class="tally"><span>carried ${count("carried")}</span><span>missed ${count("missed")}</span><span>new ${count("added")}</span></div>`
+      : `<p class="none">Nothing to compare: this line was never interpreted by ${esc(listener.toLowerCase())}.</p>`}
+    </div>`;
+}
+
+function fillLines(prefer) {
+  const scen = $("scenPick").value, route = $("routePick").value;
+  const idx = LINES.map((l, i) => [l, i]).filter(([l]) => (!scen || l.scenario === scen) && (!route || l.route === route));
+  $("linePick").innerHTML = idx.map(([l, i]) => `<option value="${i}">${esc((l.who === "A" ? "Role 1: " : "Role 2: ") + l.text.slice(0, 90))}${l.text.length > 90 ? "…" : ""}</option>`).join("");
+  if (prefer != null && idx.some(([, i]) => i === prefer)) $("linePick").value = String(prefer);
+}
+
+function totals() {
+  const sum = { builder: { carried: 0, missed: 0, added: 0, lines: 0 }, other: { carried: 0, missed: 0, added: 0, lines: 0 } };
+  for (const L of LINES) for (const [key, heard] of [["builder", L.builder], ["other", L.otherHeard]]) {
+    if (!heard || !(L.meant.asks.length + L.meant.refuses.length)) continue;
+    const rows = compare(L.meant, heard);
+    sum[key].lines++;
+    for (const r of rows) sum[key][r.verdict]++;
+  }
+  const row = (name, s) => {
+    const meantN = s.carried + s.missed, all = s.carried + s.missed + s.added || 1;
+    return `<div class="bar-row"><span>${name} · ${s.lines} lines</span>
+      <span class="bar"><i class="carried" style="width:${100 * s.carried / all}%"></i><i class="missed" style="width:${100 * s.missed / all}%"></i><i class="added" style="width:${100 * s.added / all}%"></i></span>
+      <span>${Math.round(100 * s.carried / Math.max(1, meantN))}% of meant needs carried · ${s.added} added</span></div>`;
+  };
+  $("totals").innerHTML = `<div class="vtwo">
+      <div><h3>The builder · ${sum.builder.lines.toLocaleString()} lines</h3>${vennCounts(sum.builder, "speakers meant", "the builder interpreted")}</div>
+      <div><h3>The other person · ${sum.other.lines.toLocaleString()} lines</h3>${vennCounts(sum.other, "speakers meant", "the other interpreted")}</div>
+    </div>`
+    + row("The builder", sum.builder) + row("The other person", sum.other)
+    + `<p class="note"><span class="verdict carried">carried</span> <span class="verdict missed">missed</span> <span class="verdict added">new</span> — each count is needs, not lines; the percentage is carried out of what was meant.</p>`;
+}
+
+(async () => {
+  try {
+    const html = await fetch(SOURCE).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); });
+    const lab = html.match(/const FEATLABEL = (\{[\s\S]*?\});/);
+    LABEL = new Function(`return ${lab[1]}`)();
+    const s0 = html.indexOf("const SESSIONS = ") + "const SESSIONS = ".length;
+    const chunk = html.slice(s0, html.indexOf("\n", s0));
+    const sessions = JSON.parse(chunk.slice(0, chunk.lastIndexOf("]") + 1));
+    for (const ss of sessions) {
+      const people = (ss.transcript || []).filter(x => x.who === "A" || x.who === "B");
+      people.forEach((t, i) => LINES.push(lineOf(ss, t, i, people)));
+    }
+  } catch (e) {
+    $("stage").innerHTML = `<p class="pending">Could not read the recordings from the analysis page (${esc(e.message)}).</p>`;
+    $("totals").innerHTML = "";
+    return;
+  }
+  $("scenPick").innerHTML = `<option value="">all</option>` + Object.entries(SCEN).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join("");
+  const routes = [...new Set(LINES.map(l => l.route))];
+  $("routePick").innerHTML = `<option value="">all</option>` + routes.map(r => `<option>${esc(r)}</option>`).join("");
+  const start = LINES.findIndex(l => l.text.startsWith("The water's movement is loud"));
+  fillLines(start >= 0 ? start : 0);
+  $("scenPick").onchange = $("routePick").onchange = () => { fillLines(); step = 1; render(); };
+  $("linePick").onchange = () => { step = 1; render(); };
+  $("whoPick").onchange = () => render();
+  $("shuffle").onclick = () => {
+    const opts = [...$("linePick").options];
+    if (opts.length) { $("linePick").value = opts[Math.floor(Math.random() * opts.length)].value; step = 1; render(); }
+  };
+  render();
+  totals();
+})();
+</script>
+</body>
+</html>
