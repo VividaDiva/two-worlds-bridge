@@ -402,8 +402,10 @@
   }
   .wcard.a h5 .who{color:var(--roleA)}
   .wcard.b h5 .who{color:var(--roleB)}
-  .wline{display:grid; grid-template-columns:52px 1fr; gap:2px 10px; margin:0 0 3px; font-size:14px; line-height:1.45}
+  .wline{display:grid; grid-template-columns:96px 1fr; gap:2px 10px; margin:0 0 3px; font-size:14px; line-height:1.45}
   .wline .lbl{font-family:var(--mono); font-size:8.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); padding-top:4px}
+  .wline .lbl em{display:block; font-style:normal; text-transform:none; letter-spacing:.02em; font-size:9.5px; opacity:.8; margin-top:1px}
+  .wwho{font-size:12px !important; color:var(--muted); max-width:90ch; line-height:1.5; margin-top:4px !important}
   .wline .said{font-family:var(--read); color:var(--ink)}
   .wline .meant{font-family:var(--read); color:var(--muted); font-style:italic}
   .wflow h6{font-family:var(--mono); font-size:8.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin:10px 0 2px}
@@ -3228,7 +3230,7 @@ function renderWords(){
     const added = heard.filter(f => !meant.includes(f));
     const rows = [...meant.map(f => ({ f, kind: heard.includes(f) ? "kept" : "lost" })),
                   ...added.map(f => ({ f, kind: "added" }))];
-    if (!rows.length) return `<p class="wnote">Nothing on the list was meant by this line, and ${hx(listener)} took nothing from it.</p>`;
+    if (!rows.length) return `<p class="wnote">The speaker coded nothing from the list for this line, and ${hx(listener)} took nothing from it.</p>`;
     // Columns sized to what is in them: the meant column to its longest label,
     // then room for "✗ not heard", then the heard column to its longest label.
     const txtMeant = r => (refused.has(r.f) ? "not: " : "") + lab(r.f);
@@ -3241,8 +3243,11 @@ function renderWords(){
     const pill = (x, y, txt, cls) => `<rect class="pill ${cls}" x="${x}" y="${y - 11}" width="${width(txt)}" height="22" rx="11"/>`
       + `<text class="${cls}" x="${x + 11}" y="${y + 4}">${hx(txt)}</text>`;
     let s = `<div class="wscroll"><svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="What was meant by this line, and what ${hx(listener)} heard">`
-      + `<text class="col" x="${SX}" y="11">SAID</text><text class="col" x="${MX}" y="11">MEANT</text>`
-      + `<text class="col" x="${HX}" y="11">${hx(listener.toUpperCase())} HEARD</text>`
+      // The middle column is the speaker's own coding of its line into the list,
+      // not the line and not the builder's reading of it. The other person's
+      // column is likewise their own report, so it is labelled as one.
+      + `<text class="col" x="${SX}" y="11">SAID</text><text class="col" x="${MX}" y="11">CODED BY THEM AS</text>`
+      + `<text class="col" x="${HX}" y="11">${listener === "the builder" ? "THE BUILDER HEARD" : hx(listener.toUpperCase()) + " SAYS IT HEARD"}</text>`
       + `<rect class="saidbar" x="${SX}" y="${TOP}" width="6" height="${rows.length * RH - 8}" rx="3"/>`;
     rows.forEach((r, i) => {
       const y = TOP + i * RH + RH / 2 - 4;
@@ -3295,7 +3300,7 @@ function renderWords(){
       <h5><span class="who">Line ${i + 1} · ${name(role)}${typeof turn.persona === "string" && turn.persona ? " · " + hx(turn.persona) : ""}</span>
         <span>${confer ? "to the other, not the builder" : ""}</span></h5>
       <p class="wline"><span class="lbl">said</span><span class="said">${hx(turn.text || "")}</span></p>
-      ${turn.meantPlainly ? `<p class="wline"><span class="lbl">meant</span><span class="meant">${hx(turn.meantPlainly)}</span></p>` : ""}
+      ${turn.meantPlainly ? `<p class="wline"><span class="lbl">meant<em>in their own words</em></span><span class="meant">${hx(turn.meantPlainly)}</span></p>` : ""}
       <div class="wflow">${body}</div>
     </article>`;
   });
@@ -3303,11 +3308,15 @@ function renderWords(){
   host.innerHTML = `
     <div class="fhead">
       <h4>${hx(CASES[S.case].label)} · ${hx(SC().label.toLowerCase())}</h4>
-      <p>${t.length} lines. Their speakers meant <b>${meantN}</b> needs between them. <b>${toBuilder}</b> reached the builder
-         as meant${extraBuilder ? `, and it heard ${extraBuilder} nobody meant` : ""}; the other person caught <b>${toOther}</b>${
-         extraOther ? `, and heard ${extraOther} that were never meant` : ""}.</p>
-      <p class="wlegend"><span><i class="k"></i>carried</span><span><i class="l"></i>meant, not heard</span>
-        <span><i class="d"></i>heard, never meant</span><span>“not:” something ruled out, not asked for</span></p>
+      <p>${t.length} lines. Their speakers coded them as <b>${meantN}</b> needs between them. <b>${toBuilder}</b> of those reached
+         the builder${extraBuilder ? `, and it heard ${extraBuilder} nobody coded` : ""}; the other person says they caught <b>${toOther}</b>${
+         extraOther ? `, and heard ${extraOther} that were never coded` : ""}.</p>
+      <p class="wlegend"><span><i class="k"></i>carried</span><span><i class="l"></i>coded, not heard</span>
+        <span><i class="d"></i>heard, never coded</span><span>“not:” something ruled out, not asked for</span></p>
+      <p class="wwho">Each line is interpreted twice. First the speaker, asked straight afterwards, says what it meant in its own
+        words and codes that into needs from a fixed list — the middle column. Then each listener takes needs from the
+        sentence alone: the builder by its own reading, the other person by their own report. The builder never sees the
+        speaker's meaning or coding.</p>
     </div>
     ${cards.join("")}`;
 }
@@ -3517,7 +3526,7 @@ const VNOTE = {
   said:    "Every word the first two have said, ejected into the space between them and left there. Colour is the little of it the builder could use.",
   dropped: "The same run, counted: what carried, what was heard and dropped, and what the builder took each sentence to be about.",
   flow:    "Where each word of this case went, from the one who said it to the need it fed — or to nothing.",
-  words:   "Every line of this conversation, one at a time: what was said, what its speaker says they meant by it, and which of those needs the builder and the other person actually took from it.",
+  words:   "Every line of this conversation, one at a time: what was said, what its speaker says they meant and how they coded it into needs, and which of those needs the builder and the other person actually took from it.",
   rec:     "Separate arguments that actually happened, between models that had never seen each other's lines.",
 };
 
