@@ -649,7 +649,7 @@ function builderColumn(h){
     }
     // On a route that builds once at the end, a line it read but did not answer
     // was held, not withheld. It used to say "never given to it" here.
-    acts.push({ said: l, did, held: !did && h.defer && !!l.taken });
+    acts.push({ said: l, did, held: !did && h.defer && !!l.taken, heard: !did && l.talk && !!l.taken });
   });
   const body = !acts.length
     ? `<p class="muted">${h.open ? "Nothing yet. It answers when one of them confirms a decision."
@@ -674,6 +674,7 @@ function builderColumn(h){
                 : `<p class="move">${esc(a.did.text)}</p>
                  ${a.did.built ? `<span class="made">→ ${esc(a.did.built)}</span>` : ""}`)
           : a.held ? `<p class="move muted">Held — it builds once, after both of them have spoken.</p>`
+          : a.heard ? `<p class="move muted">Heard — it builds when one of them confirms a decision.</p>`
           : `<p class="move muted">${a.said.phase === "confer"
                ? "Not heard — they were talking to each other."
                : "This line was never given to it."}</p>`}

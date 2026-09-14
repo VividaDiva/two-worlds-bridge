@@ -117,8 +117,11 @@ export const ROUTES = {
   },
   all: {
     arrow: "Role 1 ↔ Role 2 ↔ AI → Build",
-    note: "All three of you in one conversation. Talk freely; each decision either of you confirms goes to the builder, and it answers in front of you both.",
-    script: ["A", "B", "A", "B"], see: { A: BOTH, B: BOTH }, open: true,
+    // `hearsTalk`: unlike confer, the AI is in the room for all of it. It reads
+    // every message from both of them as it arrives, and builds from all of it
+    // whenever either of them confirms a decision.
+    note: "All three of you in one conversation. The AI hears everything both of you say; whenever either of you confirms a decision, it builds from all of it, in front of you both.",
+    script: ["A", "B", "A", "B"], see: { A: BOTH, B: BOTH }, open: true, hearsTalk: true,
   },
 };
 

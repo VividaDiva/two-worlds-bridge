@@ -109,6 +109,7 @@ function view(room, role) {
     lines: room.transcript.filter(e => visible(room, e, role))
       .map(e => ({ who: e.who, text: e.text, phase: e.phase, built: e.built || null,
         ...(e.decision ? { decision: true } : {}),
+        ...(e.talk ? { talk: true } : {}),
         ...(e.relay ? { relay: true, about: e.about } : {}),
         // It laid something and would not say why. Distinct from saying nothing,
         // and the trace should not show an empty bubble as though it had.
@@ -246,6 +247,9 @@ async function builderTurn(room, line) {
       line.picture = pic.needs.filter(f => f in FEATURES);
       hear(room.ctx, line.who, "want", line.picture);
     }
+    // Talk the AI can hear is taken in and remembered, and nothing is built from
+    // it yet; the next confirmed decision builds from everything heard so far.
+    if (line.talk) { room.thinking = false; return; }
     // Deferred and relay routes build once, after the last line. On a relay route
     // every line before that is passed on instead: the AI tells the one who could
     // not hear it what it understood, in its own words, and builds nothing.
@@ -517,14 +521,18 @@ const srv = http.createServer(async (req, res) => {
       const decide = mode === "build";
       if (decide && r.thinking)
         return json(res, 409, { error: "the builder is still working on the last decision" });
+      // On the all-in-one-room route the AI hears the talk too, so it is not
+      // marked private; it is read as it arrives, and only a confirmed decision
+      // makes it build.
+      const hears = !!ROUTES[r.route].hearsTalk;
       const line = decide
         ? { who: role, text: said, phase: "main", decision: true, at: Date.now() }
-        : { who: role, text: said, phase: "confer", at: Date.now() };
+        : { who: role, text: said, phase: hears ? "main" : "confer", talk: true, at: Date.now() };
       r.transcript.push(line);
       r.turn++;
       push(id);
       json(res, 200, { ok: true });
-      if (decide) { await builderTurn(r, line); push(id); }
+      if (decide || hears) { await builderTurn(r, line); push(id); }
       return;
     }
 
