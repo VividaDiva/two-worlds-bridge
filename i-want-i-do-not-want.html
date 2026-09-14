@@ -3226,11 +3226,11 @@ function renderWords(){
   const width = s => 22 + s.length * 7.3;
 
   // SAID (the sentence) → MEANT (its speaker's needs) → HEARD (one listener's).
-  function diagram(meant, refused, heard, heardRefused, listener){
+  function diagram(meant, refused, heard, heardRefused, listener, speaker){
     const added = heard.filter(f => !meant.includes(f));
     const rows = [...meant.map(f => ({ f, kind: heard.includes(f) ? "kept" : "lost" })),
                   ...added.map(f => ({ f, kind: "added" }))];
-    if (!rows.length) return `<p class="wnote">The speaker coded nothing from the list for this line, and ${hx(listener)} took nothing from it.</p>`;
+    if (!rows.length) return `<p class="wnote">${hx(speaker)}'s meaning holds none of the listed needs, and ${hx(listener)} interpreted none from it.</p>`;
     // Columns sized to what is in them: the meant column to its longest label,
     // then room for "✗ not heard", then the heard column to its longest label.
     const txtMeant = r => (refused.has(r.f) ? "not: " : "") + lab(r.f);
@@ -3246,8 +3246,8 @@ function renderWords(){
       // The middle column is the speaker's own coding of its line into the list,
       // not the line and not the builder's reading of it. The other person's
       // column is likewise their own report, so it is labelled as one.
-      + `<text class="col" x="${SX}" y="11">SAID</text><text class="col" x="${MX}" y="11">CODED BY THEM AS</text>`
-      + `<text class="col" x="${HX}" y="11">${listener === "the builder" ? "THE BUILDER HEARD" : hx(listener.toUpperCase()) + " SAYS IT HEARD"}</text>`
+      + `<text class="col" x="${SX}" y="11">SAID</text><text class="col" x="${MX}" y="11">${hx(speaker.toUpperCase())} MEANT (AS NEEDS)</text>`
+      + `<text class="col" x="${HX}" y="11">${listener === "the builder" ? "BUILDER" : hx(listener.toUpperCase())} INTERPRETED AS</text>`
       + `<rect class="saidbar" x="${SX}" y="${TOP}" width="6" height="${rows.length * RH - 8}" rx="3"/>`;
     rows.forEach((r, i) => {
       const y = TOP + i * RH + RH / 2 - 4;
@@ -3260,7 +3260,7 @@ function renderWords(){
       s += curve(SX + 6, y, MX, y, "base") + pill(MX, y, meantTxt, "meant");
       s += r.kind === "kept"
         ? curve(MX + w, y, HX, y, "kept") + pill(HX, y, heardTxt, "kept")
-        : curve(MX + w, y, MX + w + 40, y, "lost") + `<text class="lost" x="${MX + w + 48}" y="${y + 4}">✗ not heard</text>`;
+        : curve(MX + w, y, MX + w + 40, y, "lost") + `<text class="lost" x="${MX + w + 48}" y="${y + 4}">✗ missed</text>`;
     });
     return s + `</svg></div>`;
   }
@@ -3284,13 +3284,13 @@ function renderWords(){
     } else {
       toBuilder += meant.filter(f => taken.includes(f)).length;
       extraBuilder += taken.filter(f => !meant.includes(f)).length;
-      body += diagram(meant, refused, taken, new Set(known(turn.takenRefuses)), "the builder");
+      body += diagram(meant, refused, taken, new Set(known(turn.takenRefuses)), "the builder", name(role));
     }
     body += `<h6>${name(other)}</h6>`;
     if (byOther && byOther.length) {
       toOther += meant.filter(f => byOther.includes(f)).length;
       extraOther += byOther.filter(f => !meant.includes(f)).length;
-      body += diagram(meant, refused, byOther, new Set(), name(other));
+      body += diagram(meant, refused, byOther, new Set(), name(other), name(role));
     } else {
       body += `<p class="wnote">${reply && reply.who === other
         ? `${name(other)} took nothing from it — or could not hear it on this route.`
@@ -3308,15 +3308,15 @@ function renderWords(){
   host.innerHTML = `
     <div class="fhead">
       <h4>${hx(CASES[S.case].label)} · ${hx(SC().label.toLowerCase())}</h4>
-      <p>${t.length} lines. Their speakers coded them as <b>${meantN}</b> needs between them. <b>${toBuilder}</b> of those reached
-         the builder${extraBuilder ? `, and it heard ${extraBuilder} nobody coded` : ""}; the other person says they caught <b>${toOther}</b>${
-         extraOther ? `, and heard ${extraOther} that were never coded` : ""}.</p>
-      <p class="wlegend"><span><i class="k"></i>carried</span><span><i class="l"></i>coded, not heard</span>
-        <span><i class="d"></i>heard, never coded</span><span>“not:” something ruled out, not asked for</span></p>
-      <p class="wwho">Each line is interpreted twice. First the speaker, asked straight afterwards, says what it meant in its own
-        words and codes that into needs from a fixed list — the middle column. Then each listener takes needs from the
-        sentence alone: the builder by its own reading, the other person by their own report. The builder never sees the
-        speaker's meaning or coding.</p>
+      <p>${t.length} line${t.length === 1 ? "" : "s"}. Their speakers meant <b>${meantN}</b> need${meantN === 1 ? "" : "s"} between them.
+         The builder interpreted <b>${toBuilder}</b> of them${extraBuilder ? `, and added ${extraBuilder} nobody meant` : ""}; the other
+         person interpreted <b>${toOther}</b>${extraOther ? `, and added ${extraOther} that were never meant` : ""}.</p>
+      <p class="wlegend"><span><i class="k"></i>meant and interpreted</span><span><i class="l"></i>meant, missed</span>
+        <span><i class="d"></i>interpreted, never meant</span><span>“not:” something ruled out, not asked for</span></p>
+      <p class="wwho">Each party interprets the line on its own. The speaker, asked straight afterwards, says what it meant —
+        in its own words, and as needs from a fixed list (the middle column): one answer, written two ways. The builder
+        interprets the sentence alone, choosing needs from the same list (the right column); the other person reports what
+        they took it to need. None of them ever sees another's interpretation.</p>
     </div>
     ${cards.join("")}`;
 }
@@ -3526,7 +3526,7 @@ const VNOTE = {
   said:    "Every word the first two have said, ejected into the space between them and left there. Colour is the little of it the builder could use.",
   dropped: "The same run, counted: what carried, what was heard and dropped, and what the builder took each sentence to be about.",
   flow:    "Where each word of this case went, from the one who said it to the need it fed — or to nothing.",
-  words:   "Every line of this conversation, one at a time: what was said, what its speaker says they meant and how they coded it into needs, and which of those needs the builder and the other person actually took from it.",
+  words:   "Every line of this conversation, one at a time: what was said, what its speaker meant by it, and how the builder and the other person each interpreted it.",
   rec:     "Separate arguments that actually happened, between models that had never seen each other's lines.",
 };
 
