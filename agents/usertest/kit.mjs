@@ -82,15 +82,19 @@ export const ROUTES = {
     note: "You each tell the builder separately. You never hear each other. It builds once, from the pair of you.",
     script: ["A", "B"], defer: true, see: { A: NONE, B: NONE },
   },
+  // `relay`: the AI passes on what it understood the first speaker to need, in
+  // its own words and without building; the second answers that, and the AI
+  // builds once from both. The human test's reading of these routes — the
+  // machine experiment built after the first line and let its report stand in.
   "via-1": {
     arrow: "Role 1 → AI → Role 2 → AI → Build",
-    note: "Role 2 never hears Role 1 — only the builder's account of Role 1, and answers that.",
-    script: ["A", "B"], see: { A: NONE, B: ECHO },
+    note: "Role 2 never hears Role 1. The AI tells Role 2 what it understood Role 1 to need, Role 2 answers, and the AI builds once from both.",
+    script: ["A", "B"], see: { A: NONE, B: ECHO }, relay: true,
   },
   "via-2": {
     arrow: "Role 2 → AI → Role 1 → AI → Build",
-    note: "The same the other way round: Role 1 hears only what the builder made of Role 2.",
-    script: ["B", "A"], see: { A: ECHO, B: NONE },
+    note: "The same the other way round: the AI tells Role 1 what it understood Role 2 to need, Role 1 answers, and the AI builds once from both.",
+    script: ["B", "A"], see: { A: ECHO, B: NONE }, relay: true,
   },
   // `open`: the two of them talk as long as they like, in any order, out of the
   // builder's hearing, and either one hands it a decision with Confirm to build.

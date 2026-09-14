@@ -205,6 +205,40 @@ export async function speak({ said, took, before, after, props, wants, avoids, c
   return typeof out.say === "string" ? out.say.trim() : "";
 }
 
+// The relay routes. The AI has heard one person and builds nothing yet; it tells
+// the other, who could not hear, what it understood the first to need. In its
+// own words: the interpretation is the thing the route is about, so it must not
+// hand the sentence across unchanged.
+const RELAY = [
+  `You build crossings out of matchsticks, for two people who each need something of it. You have not built`,
+  `anything yet and you will not build until both have spoken.`,
+  `One of them has just spoken to you. The other could not hear it and will know only what you tell them.`,
+  ``,
+  `Tell the other person what you understood the first one to need from the crossing.`,
+  ``,
+  `Hold to this:`,
+  `- One or two sentences, under forty words, spoken to the other person.`,
+  `- In your own words. Never quote the first person and never repeat their sentence back.`,
+  `- Only what you took them to need or to rule out, as you are told it below. Add nothing, drop nothing,`,
+  `  and do not argue with it or soften it.`,
+  `- Do not describe building or laying anything: nothing has been built.`,
+  `- Do not ask the other person anything, and do not tell them what they should want.`,
+  `- Never use the word "user".`,
+].join("\n");
+
+export async function relay({ from, to, said, asks, refuses }) {
+  const list = ks => ks.map(f => FEATURES[f]).join("; ");
+  const user = [
+    `${from} said to you: "${said}"`,
+    `You took ${from} to need: ${asks.length ? list(asks) : "nothing you could build from"}.`,
+    ...(refuses.length ? [`You took ${from} to rule out: ${list(refuses)}.`] : []),
+    ``,
+    `Tell ${to} what ${from} needs, as you understood it.`,
+  ].join("\n");
+  const out = await ask(RELAY, user, SAY_JSON);
+  return typeof out.say === "string" ? out.say.trim() : "";
+}
+
 // Returns the eight axes and the needs they imply. Used on upload only.
 export async function readPicture(base64, media) {
   const out = await ask(SEE, { text: "What is this crossing like?", images: [base64], media }, SHAPE_JSON);

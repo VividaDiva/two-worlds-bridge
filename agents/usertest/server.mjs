@@ -15,7 +15,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { mkCtx, hear, newTurn, build, provenance } from "../engine.mjs";
 import { ARGUMENTS, ROUTES, NAME, FEATURES, KIT, propsOf } from "./kit.mjs";
-import { readLine, chooseBuild, speak, readPicture } from "./builder.mjs";
+import { readLine, chooseBuild, speak, readPicture, relay } from "./builder.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 8780);
@@ -109,6 +109,7 @@ function view(room, role) {
     lines: room.transcript.filter(e => visible(room, e, role))
       .map(e => ({ who: e.who, text: e.text, phase: e.phase, built: e.built || null,
         ...(e.decision ? { decision: true } : {}),
+        ...(e.relay ? { relay: true, about: e.about } : {}),
         // It laid something and would not say why. Distinct from saying nothing,
         // and the trace should not show an empty bubble as though it had.
         ...(e.failed ? { failed: e.failed } : {}),
@@ -174,7 +175,7 @@ function toMarkdown(s) {
     `## Conversation`, "",
   ];
   for (const e of s.transcript) {
-    out.push(`**${WHO[e.who] || e.who}**${e.decision ? " (confirmed to the builder)" : e.phase === "confer" ? " (to each other)" : ""} · ${clock(e.at)}  `,
+    out.push(`**${WHO[e.who] || e.who}**${e.relay ? ` (passing on ${WHO[e.about] || e.about})` : e.decision ? " (confirmed to the builder)" : e.phase === "confer" ? " (to each other)" : ""} · ${clock(e.at)}  `,
              e.failed ? "_It laid something and would not say why._" : (e.text || "_(nothing)_"));
     if (e.taken && e.taken.length) out.push("", `> read as: ${e.taken.join(", ")}`);
     if (e.picture && e.picture.length) out.push("", `> saw in their picture: ${e.picture.join(", ")}`);
@@ -245,10 +246,24 @@ async function builderTurn(room, line) {
       line.picture = pic.needs.filter(f => f in FEATURES);
       hear(room.ctx, line.who, "want", line.picture);
     }
-    if (route.defer && room.turn < route.script.length) { room.thinking = false; return; }
-    // A deferred route builds once, from everyone it heard, so that is what it
-    // reports on — not only the last line.
-    if (route.defer) {
+    // Deferred and relay routes build once, after the last line. On a relay route
+    // every line before that is passed on instead: the AI tells the one who could
+    // not hear it what it understood, in its own words, and builds nothing.
+    const once = route.defer || route.relay;
+    if (once && room.turn < route.script.length) {
+      if (route.relay) {
+        const to = line.who === "A" ? "Role 2" : "Role 1", from = line.who === "A" ? "Role 1" : "Role 2";
+        const text = await relay({ from, to, said: line.text,
+          asks: [...asks, ...(line.picture || [])], refuses });
+        room.transcript.push({ who: "builder", text, phase: "main", relay: true, about: line.who,
+                               built: null, at: Date.now() });
+      }
+      room.thinking = false;
+      return;
+    }
+    // Built once, from everyone it heard, so that is what it reports on — not
+    // only the last line.
+    if (once) {
       const heard = room.transcript.filter(e => e.who !== "builder" && e.taken);
       await lay(room, null, [...new Set(heard.flatMap(e => [...e.taken, ...(e.picture || [])]))]);
     } else {
@@ -528,7 +543,7 @@ const srv = http.createServer(async (req, res) => {
 
     await builderTurn(r, line);
     // A deferred route lays once, after the last line, from everything it heard.
-    if (ROUTES[r.route].defer && r.turn >= script.length && !r.standing) {
+    if ((ROUTES[r.route].defer || ROUTES[r.route].relay) && r.turn >= script.length && !r.standing) {
       r.thinking = true; push(id);
       try { await lay(r, null, []); } catch (e) {
         r.transcript.push({ who: "builder", failed: e.message, text: "",
