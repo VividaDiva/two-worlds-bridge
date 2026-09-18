@@ -82,6 +82,8 @@ function view(room, role) {
       : !!room.uploads[role],
     picture: role === "host" ? null : (room.uploads[role] || null),
     needsUpload: !!arg.upload && role !== "host" && !room.uploads[role],
+    // Shown means handed over as this person's turn — not merely brought along.
+    shown: role === "host" ? null : room.transcript.some(e => e.who === role && e.upload),
     defer: !!route.defer,
     turn, open, yourTurn: open ? !room.finished && role !== "host" : turn === role,
     // How many lines this person has in the route at all; 0 on the routes they
@@ -495,6 +497,10 @@ const srv = http.createServer(async (req, res) => {
     if (!r) return json(res, 404, { error: "no such room" });
     const m = /^data:(image\/[a-z+]+);base64,(.+)$/s.exec(dataUrl || "");
     if (!m) return json(res, 400, { error: "that did not look like an image" });
+    // Refused before the picture is read, so a drawing already handed over is
+    // never read again and never quietly replaces the one the builder saw.
+    if (ARGUMENTS[r.argument].upload && r.transcript.some(e => e.who === role && e.upload))
+      return json(res, 409, { error: "you have already shown your drawing" });
     try {
       const read = await readPicture(m[2], m[1]);
       fs.writeFileSync(path.join(UPLOADS, `${id}-${role}.${m[1].split("/")[1].replace("+xml", "")}`),
@@ -505,14 +511,14 @@ const srv = http.createServer(async (req, res) => {
       // type — so showing it is the line, and the route decides the rest: who
       // may go when, whose drawing the builder is given, and when it builds.
       if (ARGUMENTS[r.argument].upload) {
-        if (r.finished) return json(res, 409, { error: "this session is over" });
-        if (r.transcript.some(e => e.who === role && e.upload))
-          return json(res, 409, { error: "you have already shown your drawing" });
         const route = ROUTES[r.route];
-        if (!route.open) {
-          if (r.turn >= route.script.length) return json(res, 409, { error: "there are no turns left" });
-          if (route.script[r.turn] !== role) return json(res, 409, { error: "it is not your turn" });
-        }
+        // A drawing brought before your turn is kept, and handed over when the
+        // turn comes round. It used to be read, stored and then refused, which
+        // left a picture on screen that had been given to nobody — and no way
+        // to give it.
+        const theirTurn = !r.finished
+          && (route.open || (r.turn < route.script.length && route.script[r.turn] === role));
+        if (!theirTurn) { push(id); return json(res, 200, { ok: true, shown: false }); }
         const line = { who: role, text: "(a drawing of the crossing they have in mind)", upload: true,
                        phase: route.open ? "main" : phaseOf(r, r.turn),
                        ...(route.open ? { decision: true } : {}), at: Date.now() };

@@ -261,6 +261,8 @@ textarea[disabled]{opacity:.5}
 .upstrip{padding:11px 15px; border-bottom:1px solid var(--rule-2); background:var(--card)}
 .upstrip .drop{padding:14px}
 .upstrip .drop img{max-height:150px}
+.showrow{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:9px}
+.showrow .muted{font-size:12.5px}
 
 /* the agent's reading, before what it did about it */
 .act.fa{border-left-color:var(--rust)} .act.fb{border-left-color:var(--blue)}
@@ -434,6 +436,7 @@ function panel(s, people){
     : s.thinking ? `<span class="pill think">it is deciding</span>`
     : spent ? `<span class="pill wait">all said</span>`
     : s.needsUpload ? `<span class="pill ${s.yourTurn ? "now" : "wait"}">${s.yourTurn ? "your turn — add your drawing" : "add your drawing"}</span>`
+    : s.upload && !s.shown ? `<span class="pill ${s.yourTurn ? "now" : "wait"}">${s.yourTurn ? "your turn — show it" : "ready to show"}</span>`
     : s.upload ? `<span class="pill wait">drawing shown</span>`
     : mine ? `<span class="pill now">${s.open ? "talk freely" : "your turn"}</span>`
     : `<span class="pill wait">${esc(roleName(s.turn))}&rsquo;s turn</span>`;
@@ -462,9 +465,14 @@ function panel(s, people){
                            <span class="muted">Showing it is your whole turn — there is nothing to type. The other person never sees it.</span></p>`}
         </div>
         <input type="file" id="file-${r}" accept="image/*" hidden>
+        ${s.picture && !s.shown ? `<div class="showrow">
+          <button class="confirm" id="show-${r}" ${s.yourTurn && !s.finished ? "" : "disabled"}>${
+            s.yourTurn ? "Show it to the room" : `Waiting for ${esc(roleName(s.turn))}`}</button>
+          <span class="muted">Tap the picture to choose a different one.</span>
+        </div>` : ""}
       </div>` : ""}
       ${conversation(s, "chat-" + r, people)}
-      ${s.upload ? `<p class="foot">A drawing is the whole turn here. Nobody types.</p>` : ""}
+      ${s.upload ? `<p class="foot">A drawing is the whole turn here. Nobody types.</p><div id="err-${r}"></div>` : ""}
       ${s.finished || s.upload ? "" : `
         <div class="composer">
           <textarea id="say-${r}" ${mine ? "" : "disabled"} placeholder="${esc(ph)}">${esc(drafts[r] || "")}</textarea>
@@ -517,6 +525,18 @@ function wire(s){
     if (box && !box.value.trim()) box.value = text;
     const again = document.getElementById(btn.id);
     if (again) again.disabled = false;
+    if (note) note.innerHTML = `<div class="warn">${esc(j.error || "that did not send")}</div>`;
+  };
+  // Handing over a drawing that was brought early: the picture is already in
+  // this view, so it goes back up as it is, without picking a file again.
+  const showBtn = document.getElementById("show-" + r);
+  if (showBtn) showBtn.onclick = async () => {
+    showBtn.disabled = true;
+    const { ok, j } = await post("/api/upload", { room: s.room, role: r, dataUrl: s.picture.dataUrl });
+    if (ok) return;
+    const again = document.getElementById("show-" + r);
+    if (again) again.disabled = false;
+    const note = document.getElementById("err-" + r);
     if (note) note.innerHTML = `<div class="warn">${esc(j.error || "that did not send")}</div>`;
   };
   const send = document.getElementById("send-" + r);
