@@ -405,7 +405,9 @@ function conversation(s, id, people, cls){
         l.relay ? `<span class="private">passing on ${esc(roleName(l.about))}</span>`
         : l.decision ? `<span class="private decided">confirmed to the builder</span>`
         : l.phase === "confer" ? `<span class="private">between you two</span>` : ""}</span>
-      <p class="said${l.failed ? " muted" : ""}">${l.failed ? esc(failNote(l, s.role === "host")) : esc(l.text)}</p>
+      <p class="said${l.failed || l.upload ? " muted" : ""}">${l.failed ? esc(failNote(l, s.role === "host"))
+        : l.upload ? (l.who === s.role ? "You showed your drawing." : `${esc(roleName(l.who))} showed their drawing.`)
+        : esc(l.text)}</p>
       ${l.built ? `<span class="built">it now stands as ${esc(l.built)}</span>` : ""}
     </div>`;
   }).join("") + `</div>`;
@@ -431,7 +433,8 @@ function panel(s, people){
     : absent ? `<span class="pill wait">not in this one</span>`
     : s.thinking ? `<span class="pill think">it is deciding</span>`
     : spent ? `<span class="pill wait">all said</span>`
-    : s.needsUpload ? `<span class="pill wait">add your picture</span>`
+    : s.needsUpload ? `<span class="pill ${s.yourTurn ? "now" : "wait"}">${s.yourTurn ? "your turn — add your drawing" : "add your drawing"}</span>`
+    : s.upload ? `<span class="pill wait">drawing shown</span>`
     : mine ? `<span class="pill now">${s.open ? "talk freely" : "your turn"}</span>`
     : `<span class="pill wait">${esc(roleName(s.turn))}&rsquo;s turn</span>`;
   const ph = s.finished ? "The session is over."
@@ -455,12 +458,14 @@ function panel(s, people){
       ${s.upload && !absent ? `<div class="upstrip">
         <div class="drop" id="drop-${r}">
           ${s.picture ? `<img src="${s.picture.dataUrl}" alt="the crossing you brought">`
-                      : `<p>Tap to add the crossing you have in mind.<br><span class="muted">Only you see it. The builder never does.</span></p>`}
+                      : `<p>${s.yourTurn ? "Your turn. Tap to show the crossing you have in mind." : `Tap to add the crossing you have in mind. ${esc(roleName(s.turn))} goes first.`}<br>
+                           <span class="muted">Showing it is your whole turn — there is nothing to type. The other person never sees it.</span></p>`}
         </div>
         <input type="file" id="file-${r}" accept="image/*" hidden>
       </div>` : ""}
       ${conversation(s, "chat-" + r, people)}
-      ${s.finished ? "" : `
+      ${s.upload ? `<p class="foot">A drawing is the whole turn here. Nobody types.</p>` : ""}
+      ${s.finished || s.upload ? "" : `
         <div class="composer">
           <textarea id="say-${r}" ${mine ? "" : "disabled"} placeholder="${esc(ph)}">${esc(drafts[r] || "")}</textarea>
           <button class="send" id="send-${r}" ${mine ? "" : "disabled"}
@@ -656,8 +661,8 @@ function builderColumn(h){
                                  : "Nothing yet. It answers once somebody has spoken to it."}</p>`
     : acts.map(a => `
       <div class="act${a.did ? "" : " none"} ${a.said.who === "A" ? "fa" : "fb"}">
-        <span class="stamp">${esc(roleName(a.said.who))} ${a.said.decision ? "confirmed" : "said"}</span>
-        <p class="quote">${esc(a.said.text.slice(0, 120))}${a.said.text.length > 120 ? "…" : ""}</p>
+        <span class="stamp">${esc(roleName(a.said.who))} ${a.said.upload ? "showed" : a.said.decision ? "confirmed" : "said"}</span>
+        <p class="quote">${a.said.upload ? "their drawing" : esc(a.said.text.slice(0, 120)) + (a.said.text.length > 120 ? "…" : "")}</p>
         ${a.said.taken && a.said.taken.length
           ? `<p class="read"><span class="lbl">interpreted as</span>${a.said.taken.map(k =>
                `<span class="key">${esc(k)}</span>`).join("")}</p>`

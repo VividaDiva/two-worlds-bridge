@@ -110,6 +110,7 @@ function view(room, role) {
       .map(e => ({ who: e.who, text: e.text, phase: e.phase, built: e.built || null,
         ...(e.decision ? { decision: true } : {}),
         ...(e.talk ? { talk: true } : {}),
+        ...(e.upload ? { upload: true } : {}),
         ...(e.relay ? { relay: true, about: e.about } : {}),
         // It laid something and would not say why. Distinct from saying nothing,
         // and the trace should not show an empty bubble as though it had.
@@ -228,7 +229,9 @@ async function builderTurn(room, line) {
   if (line.phase === "confer" || !reads) return;
   room.thinking = true; push(room.id);
   try {
-    const { asks, refuses } = await readLine(line.text);
+    // A drawing carries no sentence to read; everything it asks for comes from
+    // the picture itself, folded in below.
+    const { asks, refuses } = line.upload ? { asks: [], refuses: [] } : await readLine(line.text);
     line.taken = [...asks, ...refuses];
     // Kept apart as well, so a room can be heard again after a restart exactly
     // as it was heard the first time.
@@ -497,6 +500,29 @@ const srv = http.createServer(async (req, res) => {
       fs.writeFileSync(path.join(UPLOADS, `${id}-${role}.${m[1].split("/")[1].replace("+xml", "")}`),
                        Buffer.from(m[2], "base64"));
       r.uploads[role] = { dataUrl, media: m[1], ...read };
+
+      // On this argument the drawing is the whole turn — there is nothing to
+      // type — so showing it is the line, and the route decides the rest: who
+      // may go when, whose drawing the builder is given, and when it builds.
+      if (ARGUMENTS[r.argument].upload) {
+        if (r.finished) return json(res, 409, { error: "this session is over" });
+        if (r.transcript.some(e => e.who === role && e.upload))
+          return json(res, 409, { error: "you have already shown your drawing" });
+        const route = ROUTES[r.route];
+        if (!route.open) {
+          if (r.turn >= route.script.length) return json(res, 409, { error: "there are no turns left" });
+          if (route.script[r.turn] !== role) return json(res, 409, { error: "it is not your turn" });
+        }
+        const line = { who: role, text: "(a drawing of the crossing they have in mind)", upload: true,
+                       phase: route.open ? "main" : phaseOf(r, r.turn),
+                       ...(route.open ? { decision: true } : {}), at: Date.now() };
+        r.transcript.push(line);
+        r.turn++;
+        push(id);
+        json(res, 200, { ok: true });
+        await builderTurn(r, line);
+        return push(id);
+      }
       push(id);
       return json(res, 200, { ok: true });
     } catch (e) { return json(res, 502, { error: e.message }); }
@@ -507,6 +533,10 @@ const srv = http.createServer(async (req, res) => {
     const r = rooms.get(id);
     if (!r) return json(res, 404, { error: "no such room" });
     if (r.finished) return json(res, 409, { error: "this session is over" });
+    // Drawings only: the page shows no box here, and the server does not take a
+    // typed line either, so the two cannot disagree.
+    if (ARGUMENTS[r.argument].upload)
+      return json(res, 409, { error: "this one is drawings only — show your drawing instead" });
     const script = ROUTES[r.route].script;
 
     // The open routes. Talk goes to the other person only, in any order and as
