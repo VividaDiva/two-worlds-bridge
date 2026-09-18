@@ -502,7 +502,12 @@ const srv = http.createServer(async (req, res) => {
     if (ARGUMENTS[r.argument].upload && r.transcript.some(e => e.who === role && e.upload))
       return json(res, 409, { error: "you have already shown your drawing" });
     try {
-      const read = await readPicture(m[2], m[1]);
+      // Handing over a drawing brought earlier sends the same picture again.
+      // It was read when it arrived, so it is not read a second time.
+      const had = r.uploads[role];
+      const read = had && had.dataUrl === dataUrl && Array.isArray(had.needs)
+        ? { shape: had.shape, needs: had.needs, saw: had.saw }
+        : await readPicture(m[2], m[1]);
       fs.writeFileSync(path.join(UPLOADS, `${id}-${role}.${m[1].split("/")[1].replace("+xml", "")}`),
                        Buffer.from(m[2], "base64"));
       r.uploads[role] = { dataUrl, media: m[1], ...read };
