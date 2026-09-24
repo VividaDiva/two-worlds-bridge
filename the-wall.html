@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A proposed redesign of how the AI hears in the two-people-one-AI bridge experiment: quotes, needs and themes on one wall, every theme answered, and a kit that grows to fit the conversation.">
+<title>The Wall</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --board:#F1F2EE; --paper:#FFFFFF; --ink:#1E2321; --ink2:#5B635E; --line:#D3D7D1; --line2:#E7E9E4;
+    --marker:#D6482E; --marker-soft:#FBE7E1;
+    --quote:#F8DC5D; --need:#C6DDF2; --sticky-ink:#1B1E1A;
+    --ok:#3E7D4E; --ok-soft:#E1F0E3;
+    --chip:#E9EBE6;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --board:#17191A; --paper:#202323; --ink:#E6E8E3; --ink2:#A2A9A3; --line:#3A3F3C; --line2:#2C302E;
+      --marker:#F06A4C; --marker-soft:#3A2520;
+      --ok:#7CC48C; --ok-soft:#1F3324;
+      --chip:#2A2E2C;
+    }
+  }
+  :root[data-theme="dark"]{
+    --board:#17191A; --paper:#202323; --ink:#E6E8E3; --ink2:#A2A9A3; --line:#3A3F3C; --line2:#2C302E;
+    --marker:#F06A4C; --marker-soft:#3A2520;
+    --ok:#7CC48C; --ok-soft:#1F3324;
+    --chip:#2A2E2C;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--board);color:var(--ink);font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.5;margin:0}
+  .wrap{max-width:1080px;margin:0 auto;padding-block:32px 80px;padding-inline:20px}
+  h1,h2,h3{text-wrap:balance;margin:0}
+  h1{font-family:"Caveat",cursive;font-weight:700;font-size:clamp(44px,7vw,72px);line-height:.95;letter-spacing:-.01em}
+  h2{font-size:24px;line-height:1.2;margin-bottom:10px}
+  h3{font-size:17px;line-height:1.3}
+  p{margin:0 0 12px;max-width:66ch}
+  .lede{font-size:19px;color:var(--ink2);max-width:60ch}
+  .eyebrow{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);margin-bottom:8px}
+  .k{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.92em;background:var(--chip);padding:1px 6px;border-radius:4px;white-space:nowrap}
+  section{margin-top:56px}
+  header{display:flex;flex-wrap:wrap;gap:14px 28px;align-items:end;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:18px}
+  .status{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px;color:var(--marker);border:1.5px solid var(--marker);padding:4px 10px;border-radius:999px;white-space:nowrap}
+  figure{margin:18px 0 0}
+  figure svg{max-width:100%;height:auto;display:block}
+  figcaption{font-size:14px;color:var(--ink2);margin-top:10px;max-width:70ch}
+  .scroll{overflow-x:auto}
+
+  /* the wall */
+  .wall{background:var(--paper);border:1px solid var(--line);padding:22px;margin-top:18px;
+        background-image:linear-gradient(var(--line2) 1px,transparent 1px),linear-gradient(90deg,var(--line2) 1px,transparent 1px);background-size:28px 28px}
+  .themes{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:22px 18px}
+  .theme{display:flex;flex-direction:column;gap:10px;min-width:0}
+  .theme-name{font-family:"Caveat",cursive;font-weight:700;font-size:28px;line-height:1;color:var(--ink);display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .tag{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:3px;background:var(--chip);color:var(--ink2)}
+  .tag.shared{background:var(--ok-soft);color:var(--ok)}
+  .tag.tension{background:var(--marker-soft);color:var(--marker)}
+  .sticky{padding:12px 13px 14px;color:var(--sticky-ink);font-size:14px;line-height:1.4;box-shadow:0 2px 0 rgba(0,0,0,.12),0 10px 18px -12px rgba(0,0,0,.35);position:relative}
+  .sticky.quote{background:var(--quote);font-style:italic}
+  .sticky.need{background:var(--need)}
+  .sticky .who{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;font-style:normal;opacity:.7;display:block;margin-bottom:4px}
+  .sticky .why{display:block;margin-top:5px;font-size:13px;opacity:.75}
+  .sticky.need b{font-weight:700}
+  .rungs{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin-top:6px;font-size:13px;line-height:1.35}
+  .rungs .r{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;opacity:.65;padding-top:2px}
+  .rungs .said,.rungs .inf{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;letter-spacing:.06em;margin-left:6px;padding:0 4px;border-radius:2px}
+  .rungs .said{background:rgba(0,0,0,.08)}
+  .rungs .inf{background:#D6482E;color:#fff}
+  .rungs .ask{background:transparent;border:1px dashed #1B1E1A;color:#1B1E1A}
+  .verdict{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px;line-height:1.45;padding:8px 10px;border:1.5px dashed var(--line);color:var(--ink2)}
+  .verdict.can{border-color:var(--ok);color:var(--ok)}
+  .verdict.cant{border-color:var(--marker);color:var(--marker)}
+  .verdict.grew{border-color:var(--marker);border-style:solid;color:var(--marker)}
+  .verdict.rule{border-color:var(--ink);border-style:solid;color:var(--ink)}
+  .spec{margin-top:16px;background:var(--paper);border:1px solid var(--line);padding:14px 16px}
+  .spec table{font-size:13.5px}
+  .spec td:first-child{color:var(--ink);font-family:"Caveat",cursive;font-size:20px;line-height:1;padding-top:11px}
+  .score{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}
+  .score > div{border-top:2px solid var(--ink);padding-top:8px;font-size:14px}
+  .score b{font-size:28px;font-weight:700;display:block;line-height:1.1;font-variant-numeric:tabular-nums}
+  .score .drop{color:var(--marker)}
+  @media (max-width:560px){.score{grid-template-columns:1fr}}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--ink2);margin-top:14px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:14px;height:14px;display:inline-block;box-shadow:0 1px 0 rgba(0,0,0,.15)}
+  .today{margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .today > div{border:1px solid var(--line);background:var(--paper);padding:14px 16px}
+  .today .eyebrow{margin-bottom:6px}
+  .speech{border-left:3px solid var(--ok);padding:10px 14px;background:var(--paper);margin-top:14px;max-width:70ch}
+  .speech .eyebrow{margin-bottom:4px}
+
+  /* compare table */
+  table{border-collapse:collapse;width:100%;font-size:14.5px}
+  th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line)}
+  th{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink2);font-weight:500}
+  td:first-child{color:var(--ink2)}
+  tr.new td{background:var(--ok-soft)}
+
+  /* sorting board */
+  .board{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:18px}
+  .col{background:var(--paper);border:1px solid var(--line);min-height:160px;padding:10px;display:flex;flex-direction:column;gap:10px}
+  .col.over{outline:2px dashed var(--marker);outline-offset:-4px}
+  .col-h{display:flex;justify-content:space-between;align-items:baseline;padding:2px 4px 8px;border-bottom:1.5px solid var(--ink)}
+  .col-h b{font-family:"Caveat",cursive;font-size:26px;font-weight:700;line-height:1}
+  .col-h small{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;color:var(--ink2)}
+  .col-h .hint{font-size:12.5px;color:var(--ink2);flex-basis:100%;padding-top:4px}
+  .piece{background:var(--board);border:1px solid var(--line);padding:10px 11px 9px;cursor:grab;display:flex;flex-direction:column;gap:6px}
+  .piece:active{cursor:grabbing}
+  .piece h3{font-size:15px}
+  .piece p{font-size:13px;color:var(--ink2);margin:0;max-width:none}
+  .piece .meta{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;color:var(--ink2);display:flex;flex-wrap:wrap;gap:4px 10px}
+  .seg{display:flex;gap:3px;margin-top:2px}
+  .seg button{flex:1;font:inherit;font-size:11.5px;padding:3px 0;border:1px solid var(--line);background:var(--paper);color:var(--ink2);cursor:pointer;border-radius:3px}
+  .seg button[aria-pressed="true"]{background:var(--ink);color:var(--board);border-color:var(--ink)}
+  .seg button:focus-visible,.opt input:focus-visible+span,.btn:focus-visible{outline:2px solid var(--marker);outline-offset:2px}
+  .board-note{font-size:13.5px;color:var(--ink2);margin-top:10px}
+
+  /* decisions */
+  .decisions{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:18px}
+  .dec{background:var(--paper);border:1px solid var(--line);padding:14px 16px}
+  .dec h3{margin-bottom:8px}
+  .opt{display:flex;gap:10px;align-items:flex-start;padding:6px 0;cursor:pointer;font-size:14px}
+  .opt input{margin-top:4px;accent-color:var(--marker)}
+  .opt em{display:block;font-style:normal;color:var(--ink2);font-size:13px}
+  .rec{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;color:var(--ok);letter-spacing:.06em;text-transform:uppercase;margin-left:6px}
+
+  /* methods: stage strip with toggles, and a mini wall that reacts */
+  .stages{display:flex;gap:0;margin-top:18px;overflow-x:auto;padding-bottom:6px}
+  .stage{min-width:150px;flex:1;display:flex;flex-direction:column;gap:6px;position:relative;padding-right:22px}
+  .stage:not(:last-child)::after{content:"";position:absolute;right:6px;top:14px;width:10px;height:10px;border-top:1.5px solid var(--ink2);border-right:1.5px solid var(--ink2);transform:rotate(45deg)}
+  .stage-h{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink2);border-bottom:1.5px solid var(--ink);padding-bottom:6px;margin-bottom:4px}
+  .chip{font:inherit;font-size:13px;text-align:left;padding:7px 9px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer;border-radius:4px;line-height:1.25}
+  .chip small{display:block;font-size:11.5px;color:var(--ink2);margin-top:2px}
+  .chip[aria-pressed="true"]{border-color:var(--marker);background:var(--marker-soft)}
+  .chip[aria-pressed="true"]::before{content:"● ";color:var(--marker)}
+  .chip:focus-visible{outline:2px solid var(--marker);outline-offset:2px}
+  .wall.mini{padding:16px;margin-top:14px}
+  .wall.mini .theme-name{font-size:23px}
+  .wall.mini .sticky{font-size:13px;padding:9px 10px 10px}
+  .wall.mini .rungs{font-size:12px}
+  .banner{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px;color:var(--marker);border:1.5px dashed var(--marker);padding:8px 12px;margin-bottom:14px}
+  .journey{display:flex;flex-wrap:wrap;gap:6px 0;margin-bottom:16px;font-size:12.5px}
+  .journey span{padding:4px 10px;border:1px solid var(--line);background:var(--paper);position:relative}
+  .journey span:not(:last-child){margin-right:14px}
+  .journey span:not(:last-child)::after{content:"→";position:absolute;right:-13px;top:4px;color:var(--ink2)}
+  .journey b{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;font-weight:500;display:block;color:var(--ink2)}
+  .dots{font-size:13px;letter-spacing:1px;color:var(--marker);white-space:nowrap}
+  .dots i{font-style:normal;color:var(--ink2);font-size:10.5px;letter-spacing:0;font-family:"IBM Plex Mono",ui-monospace,monospace;margin-left:4px}
+  .sticky.feel{background:#E8D3EE}
+  .hmw{font-family:"Caveat",cursive;font-size:19px;line-height:1.05;color:var(--ink);border-left:2px solid var(--ink);padding-left:8px}
+  .sorted{font-size:11.5px;color:var(--ink2);font-family:"IBM Plex Mono",ui-monospace,monospace;line-height:1.5}
+  .aside{margin-top:12px;background:var(--paper);border:1px solid var(--line);padding:12px 14px;font-size:14px}
+  .aside .eyebrow{margin-bottom:4px}
+  .aside q{font-style:italic}
+  .same{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:14px}
+  .same div{border-top:2px solid var(--ink);padding-top:8px;font-size:14px}
+  .same b{display:block;margin-bottom:2px}
+
+  .plan{margin-top:18px;background:var(--paper);border:1px solid var(--line);padding:16px}
+  .btn{font:inherit;font-size:14px;padding:8px 14px;border:1.5px solid var(--ink);background:var(--ink);color:var(--board);cursor:pointer;border-radius:4px}
+  .btn.quiet{background:transparent;color:var(--ink)}
+  .plan textarea{width:100%;min-height:200px;margin-top:12px;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12.5px;line-height:1.5;background:var(--board);color:var(--ink);border:1px solid var(--line);padding:10px;resize:vertical}
+  .toast{font-size:13px;color:var(--ok);margin-left:10px}
+  ol.q{padding-left:20px;max-width:70ch}
+  ol.q li{margin-bottom:8px}
+
+  @media (max-width:820px){.board{grid-template-columns:1fr 1fr}}
+  @media (max-width:560px){.board{grid-template-columns:1fr}.today{grid-template-columns:1fr}}
+  @media (prefers-reduced-motion:no-preference){.piece{transition:transform .12s}.piece:hover{transform:translateY(-1px)}}
+</style>
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <p class="eyebrow">Two people, one AI · a proposed condition</p>
+    <h1>The Wall</h1>
+    <p class="lede">Let the AI hear the way a researcher does — quotes, needs, reasons, grouped on one wall for both people — and let the wall decide what gets built, including what the workshop has to learn to make.</p>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+    <span class="status">idea · nothing built yet</span>
+    <a href="toolmakers-kit.html" style="font-size:13px;color:var(--marker)">Toolmakers' Kit — the methods, as tools →</a>
+  </div>
+</header>
+
+<section>
+  <p class="eyebrow">1 · What changes</p>
+  <h2>Turn the flow around: the wall decides what the workshop needs</h2>
+  <p>Today the AI can only hear what it can build: the reader's 17 keys are generated from the workshop's 8 axes, so hearing and building are one act, and anything the kit can't make is never heard. The Wall reverses the dependency. Hearing has no vocabulary. Every theme on the wall gets a decision — a part from the kit, a part the kit learns on the spot, or a rule — and the kit grows to fit the conversation instead of the conversation shrinking to fit the kit.</p>
+  <figure class="scroll">
+    <svg viewBox="0 0 1120 400" role="img" aria-label="Two flows compared. Today: a sentence is read straight into 17 keys, counted in a tally, the builder sets 8 axes, and the bridge is scored in keys; three leaks are marked and there is no path back to the speaker. The Wall: a sentence becomes a sticky of quote, need and why; stickies cluster on a wall shared by both people; the wall is read back and the speaker can correct it; then every theme gets one decision — a part from the kit, a new part the kit learns if both agree, or a rule — and the bridge plus its spec sheet is scored per theme as met, declined or dropped." font-family="Atkinson Hyperlegible, system-ui, sans-serif" font-size="12.5">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker>
+        <marker id="ahm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#D6482E"/></marker>
+      </defs>
+      <g fill="none" stroke="currentColor" stroke-width="1.3" color="currentColor">
+        <!-- lane labels -->
+        <text x="16" y="42" font-family="IBM Plex Mono, monospace" font-size="11" letter-spacing="1.5" fill="currentColor" stroke="none">TODAY</text>
+        <text x="16" y="238" font-family="IBM Plex Mono, monospace" font-size="11" letter-spacing="1.5" fill="currentColor" stroke="none">THE WALL</text>
+        <line x1="16" y1="200" x2="1104" y2="200" stroke-dasharray="3 5" opacity=".5"/>
+
+        <!-- TODAY lane, y center 100 -->
+        <rect x="16" y="78" width="112" height="44" rx="3"/><text x="72" y="104" text-anchor="middle" fill="currentColor" stroke="none">a sentence</text>
+        <line x1="128" y1="100" x2="186" y2="100" marker-end="url(#ah)"/><text x="157" y="92" text-anchor="middle" fill="currentColor" stroke="none" font-size="11">reads</text>
+        <rect x="186" y="78" width="112" height="44" rx="3" stroke="#D6482E" stroke-width="2"/><text x="242" y="98" text-anchor="middle" fill="#D6482E" stroke="none" font-weight="700">17 keys</text><text x="242" y="113" text-anchor="middle" fill="#D6482E" stroke="none" font-size="10.5">at the ear</text>
+        <line x1="298" y1="100" x2="356" y2="100" marker-end="url(#ah)"/><text x="327" y="92" text-anchor="middle" fill="currentColor" stroke="none" font-size="11">counts</text>
+        <rect x="356" y="78" width="96" height="44" rx="3"/><text x="404" y="104" text-anchor="middle" fill="currentColor" stroke="none">tally</text>
+        <line x1="452" y1="100" x2="510" y2="100" marker-end="url(#ah)"/>
+        <rect x="510" y="78" width="104" height="44" rx="3"/><text x="562" y="104" text-anchor="middle" fill="currentColor" stroke="none">builder</text>
+        <line x1="614" y1="100" x2="672" y2="100" marker-end="url(#ah)"/><text x="643" y="92" text-anchor="middle" fill="currentColor" stroke="none" font-size="11">sets</text>
+        <rect x="672" y="78" width="96" height="44" rx="3"/><text x="720" y="104" text-anchor="middle" fill="currentColor" stroke="none">8 axes</text>
+        <line x1="768" y1="100" x2="826" y2="100" marker-end="url(#ah)"/>
+        <rect x="826" y="78" width="96" height="44" rx="3"/><text x="874" y="104" text-anchor="middle" fill="currentColor" stroke="none">bridge</text>
+        <line x1="922" y1="100" x2="980" y2="100" marker-end="url(#ah)"/><text x="951" y="92" text-anchor="middle" fill="currentColor" stroke="none" font-size="11">scored in</text>
+        <rect x="980" y="78" width="112" height="44" rx="3"/><text x="1036" y="104" text-anchor="middle" fill="currentColor" stroke="none">17 keys</text>
+        <!-- leaks -->
+        <g fill="#D6482E" stroke="none" font-size="11">
+          <text x="242" y="146" text-anchor="middle">leak · no slot, or slot missed</text>
+          <text x="562" y="146" text-anchor="middle">leak · picks a side, silently</text>
+          <text x="72" y="146" text-anchor="middle">no path back</text>
+        </g>
+        <line x1="242" y1="122" x2="242" y2="134" stroke="#D6482E"/>
+        <line x1="562" y1="122" x2="562" y2="134" stroke="#D6482E"/>
+
+        <!-- WALL lane, y center 300 -->
+        <rect x="16" y="278" width="112" height="44" rx="3"/><text x="72" y="304" text-anchor="middle" fill="currentColor" stroke="none">a sentence</text>
+        <line x1="128" y1="300" x2="186" y2="300" marker-end="url(#ah)"/><text x="157" y="292" text-anchor="middle" fill="currentColor" stroke="none" font-size="11">writes</text>
+        <rect x="186" y="270" width="118" height="60" rx="3"/>
+        <text x="245" y="290" text-anchor="middle" fill="currentColor" stroke="none">sticky</text>
+        <text x="245" y="306" text-anchor="middle" fill="currentColor" stroke="none" font-size="10.5">quote · need · why</text>
+        <text x="245" y="320" text-anchor="middle" fill="currentColor" stroke="none" font-size="10.5">no vocabulary</text>
+        <line x1="304" y1="300" x2="362" y2="300" marker-end="url(#ah)"/><text x="333" y="292" text-anchor="middle" fill="currentColor" stroke="none" font-size="11">clusters</text>
+        <rect x="362" y="270" width="118" height="60" rx="3"/>
+        <text x="421" y="290" text-anchor="middle" fill="currentColor" stroke="none">the wall</text>
+        <text x="421" y="306" text-anchor="middle" fill="currentColor" stroke="none" font-size="10.5">themes, both people</text>
+        <text x="421" y="320" text-anchor="middle" fill="currentColor" stroke="none" font-size="10.5">shared · one-sided · tension</text>
+        <line x1="480" y1="300" x2="538" y2="300" marker-end="url(#ah)"/><text x="509" y="292" text-anchor="middle" fill="currentColor" stroke="none" font-size="11">read back</text>
+        <rect x="538" y="270" width="118" height="60" rx="3" stroke="#D6482E" stroke-width="2"/>
+        <text x="597" y="290" text-anchor="middle" fill="#D6482E" stroke="none" font-weight="700">member check</text>
+        <text x="597" y="306" text-anchor="middle" fill="#D6482E" stroke="none" font-size="10.5">I understand · I can</text>
+        <text x="597" y="320" text-anchor="middle" fill="#D6482E" stroke="none" font-size="10.5">I can't · go ahead?</text>
+        <!-- repair arrow back to the speaker -->
+        <path d="M597 330 L597 366 L72 366 L72 322" stroke="#D6482E" stroke-width="1.6" marker-end="url(#ahm)"/>
+        <text x="334" y="380" text-anchor="middle" fill="#D6482E" stroke="none" font-size="11">the speaker corrects the wall before anything is built</text>
+        <line x1="656" y1="300" x2="714" y2="300" marker-end="url(#ah)"/><text x="685" y="292" text-anchor="middle" fill="currentColor" stroke="none" font-size="11">decides</text>
+        <rect x="714" y="266" width="118" height="56" rx="3" stroke="#D6482E" stroke-width="2"/>
+        <text x="773" y="286" text-anchor="middle" fill="#D6482E" stroke="none" font-weight="700">one decision</text>
+        <text x="773" y="301" text-anchor="middle" fill="#D6482E" stroke="none" font-size="10.5">per theme</text>
+        <text x="773" y="314" text-anchor="middle" fill="#D6482E" stroke="none" font-size="10.5">a part · a new part · a rule</text>
+        <line x1="832" y1="294" x2="870" y2="294" marker-end="url(#ah)"/>
+        <rect x="870" y="272" width="96" height="44" rx="3"/><text x="918" y="290" text-anchor="middle" fill="currentColor" stroke="none">bridge</text><text x="918" y="305" text-anchor="middle" fill="currentColor" stroke="none" font-size="10.5">+ spec sheet</text>
+        <line x1="966" y1="294" x2="1000" y2="294" marker-end="url(#ah)"/>
+        <rect x="1000" y="266" width="104" height="56" rx="3"/>
+        <text x="1052" y="286" text-anchor="middle" fill="currentColor" stroke="none">scored</text>
+        <text x="1052" y="301" text-anchor="middle" fill="currentColor" stroke="none" font-size="10.5">per theme</text>
+        <text x="1052" y="314" text-anchor="middle" fill="currentColor" stroke="none" font-size="10.5">met · declined · dropped</text>
+        <!-- the kit learns a part when a theme has none -->
+        <path d="M750 322 L750 344" stroke="#D6482E" stroke-width="1.6" marker-end="url(#ahm)"/>
+        <path d="M796 344 L796 322" stroke="#D6482E" stroke-width="1.6" marker-end="url(#ahm)"/>
+        <rect x="714" y="344" width="118" height="36" rx="3" stroke="#D6482E" stroke-width="1.6"/>
+        <text x="773" y="359" text-anchor="middle" fill="#D6482E" stroke="none" font-weight="700" font-size="12">the kit</text>
+        <text x="773" y="372" text-anchor="middle" fill="#D6482E" stroke="none" font-size="10.5">8 axes, and it grows</text>
+        <text x="846" y="366" fill="currentColor" stroke="none" font-size="11">a theme with no part → the kit learns one, if both agree</text>
+      </g>
+    </svg>
+    <figcaption>Three things in red are new. The arrow back to the speaker, which today's flow has nowhere. The decision box: every theme is answered, so nothing on the wall ends in “can't build”. And the kit, which is no longer fixed — when a theme has no part, the AI proposes one and, if both people agree, it enters this room's workshop and drawing.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <p class="eyebrow">2 · What it would look like</p>
+  <h2>Room lv3s4, on the wall</h2>
+  <p>Six real lines from your Two lives session, written up the way a researcher would — and then answered, theme by theme. Each blue sticky is a <b>ladder</b>: the attribute they named, the consequence it's for, the value underneath — with each rung marked as said, inferred, or asked. The need statements, theme names and decisions are hand-written here to show the form; in the app the AI writes them and the two people confirm.</p>
+  <div class="wall">
+    <div class="themes">
+      <div class="theme">
+        <div class="theme-name">Getting the car across <span class="tag">Role 1</span></div>
+        <div class="sticky quote"><span class="who">Role 1 said</span>I'd like to have a wide road for a SUV taking my kids to school.</div>
+        <div class="sticky need"><span class="who">need · ladder</span><b>Role 1 needs</b> to get two kids across by car at rush hour
+          <div class="rungs">
+            <span class="r">attribute</span><span>a wide road<span class="said">said</span></span>
+            <span class="r">consequence</span><span>the SUV fits and doesn't queue at rush hour<span class="said">half said</span></span>
+            <span class="r">value</span><span>the kids get to school reliably<span class="inf">inferred</span></span>
+          </div></div>
+        <div class="verdict can">DECIDED · from the kit<br>two lanes, braced with struts</div>
+      </div>
+      <div class="theme">
+        <div class="theme-name">Walking the dog <span class="tag">Role 2</span></div>
+        <div class="sticky quote"><span class="who">Role 2 said</span>…at least one side of the bridge should have pavement for pedestrians and dogs</div>
+        <div class="sticky need"><span class="who">need · ladder</span><b>Role 2 needs</b> somewhere to walk the dog, clear of the cars
+          <div class="rungs">
+            <span class="r">attribute</span><span>a pavement on one side<span class="said">said</span></span>
+            <span class="r">consequence</span><span>walker and dog are apart from the traffic<span class="said">half said</span></span>
+            <span class="r">value</span><span>the daily walk is safe and pleasant<span class="inf">inferred</span></span>
+          </div></div>
+        <div class="verdict grew">DECIDED · new part, both agreed<br>a footway on one side, kept clear of the lanes</div>
+      </div>
+      <div class="theme">
+        <div class="theme-name">Underfoot <span class="tag">Role 1</span></div>
+        <div class="sticky quote"><span class="who">Role 1 said</span>It also needs to be smooth cement.</div>
+        <div class="sticky need"><span class="who">need · ladder</span><b>Role 1 needs</b> an even surface
+          <div class="rungs">
+            <span class="r">attribute</span><span>smooth cement<span class="said">said</span></span>
+            <span class="r">consequence</span><span>“the stroller rattles on anything rough”<span class="ask">asked: why smooth?</span></span>
+            <span class="r">value</span><span>a calm crossing with small children<span class="inf">inferred</span></span>
+          </div></div>
+        <div class="verdict grew">DECIDED · at the consequence rung<br>a braced deck already stops the rattle — met by other means, no new part; a sealed surface offered as well</div>
+      </div>
+      <div class="theme">
+        <div class="theme-name">When it's usable <span class="tag shared">shared · agreed</span></div>
+        <div class="sticky quote"><span class="who">Role 1 said</span>I also want it to be 24 hours to be open because we may go to stores at night</div>
+        <div class="sticky quote"><span class="who">Role 2 said</span>Hmmm I would only need the pavement after work for dog walks</div>
+        <div class="sticky quote"><span class="who">Role 1 said</span>…maybe 12 hours and it closes after 11 pm.</div>
+        <div class="sticky need"><span class="who">need · both · ladder</span><b>They agreed</b> it should be open until 11 pm
+          <div class="rungs">
+            <span class="r">attribute</span><span>open 12 hours, closes after 11<span class="said">said</span></span>
+            <span class="r">consequence</span><span>one can reach the shops at night; the other walks after work<span class="said">said</span></span>
+            <span class="r">value</span><span>the bridge fits both their days<span class="said">said — “as long as it works for you too”</span></span>
+          </div></div>
+        <div class="verdict rule">DECIDED · a new part and a rule<br>a gate at each end; closed 11 pm – 7 am, written on the spec</div>
+      </div>
+    </div>
+    <div class="legend">
+      <span><i class="sw" style="background:#F8DC5D"></i> quote, verbatim</span>
+      <span><i class="sw" style="background:#C6DDF2"></i> need statement</span>
+      <span><i class="sw" style="border:1.5px dashed #3E7D4E"></i> decided from the kit as it is</span>
+      <span><i class="sw" style="border:1.5px solid #D6482E"></i> decided with a part the kit learned</span>
+      <span><i class="sw" style="border:1.5px solid currentColor"></i> decided as a rule, not a shape</span>
+    </div>
+  </div>
+
+  <div class="today">
+    <div>
+      <p class="eyebrow">What today's reader heard from these six lines</p>
+      <p style="margin:0"><span class="k">heavy</span> — once. Everything else: nothing.</p>
+    </div>
+    <div>
+      <p class="eyebrow">What it built</p>
+      <p style="margin:0">Two abreast, struts, a coarse surface, footed ends. Role 1 met 2 of 2 · Role 2 met 0 of 2.</p>
+    </div>
+  </div>
+
+  <div class="speech">
+    <p class="eyebrow">What the AI would say before building, from this wall</p>
+    <p style="margin:0">“Here's what I have. Role 1: get the car across at rush hour, and an even surface. Role 2: somewhere to walk the dog clear of the cars. Both of you: open until 11 pm. Two lanes and struts I can do now. For the rest I have nothing in the kit — so I'd add three things: a footway on one side, a sealed surface, and a gate at each end that I'd mark closed after 11. Do you both want those, or should I leave any of them out?”</p>
+  </div>
+
+  <div class="spec">
+    <p class="eyebrow">What it builds: the drawing, and this sheet beside it</p>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Theme</th><th>Decision</th><th>How</th><th>Whose need</th></tr></thead>
+      <tbody>
+        <tr><td>Getting the car across</td><td>two lanes, braced</td><td>from the kit — width: two · bracing: struts</td><td>Role 1</td></tr>
+        <tr><td>Walking the dog</td><td>a footway, kept clear</td><td>new part — footway: separate · drawn beside the lanes</td><td>Role 2</td></tr>
+        <tr><td>Underfoot</td><td>a sealed surface</td><td>new option — surface: sealed</td><td>Role 1</td></tr>
+        <tr><td>When it's usable</td><td>gates, closed 11 pm – 7 am</td><td>new part — gate: yes · plus a rule on the sheet</td><td>both</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="score">
+      <div><span class="eyebrow">On the wall</span><b>4 of 4</b>themes met — 2 as said, 2 by other means (the rattle by a braced deck, the hours by a gate and a rule) · 0 declined · 0 dropped — and both people confirmed the wall before it was built</div>
+      <div><span class="eyebrow">Today, same six lines</span><b class="drop">1 of 4</b>one need heard, three dropped without a word — and one built as its opposite</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">2b · Laddering, inside the sticky</p>
+  <h2>Up from what they said, over, and down to what the kit has</h2>
+  <p>Your participants speak almost entirely at the bottom rung — “smooth cement”, “wide road”, “wood”, “pavement”. The kit is also a set of bottom rungs, just a different set. That is the conduit failure in one line: two attribute vocabularies that don't overlap, with no way between them. A ladder is the way between. Climb from their attribute to the consequence it's for; then come down a different leg to an attribute the builder actually has.</p>
+  <figure class="scroll">
+    <svg viewBox="0 0 780 260" role="img" aria-label="A ladder drawn as an inverted V. Bottom left: the attribute the person said, smooth cement, which has no key. An arrow labelled why goes up to the consequence, nothing rattles or trips underfoot, and another up to the value, a calm safe crossing with the kids. From the consequence a red arrow labelled how, with what I have, comes down the right leg to a braced deck, two lanes, which is in the kit. The need is met by other means." font-family="Atkinson Hyperlegible, system-ui, sans-serif" font-size="12.5">
+      <defs>
+        <marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker>
+        <marker id="ahm2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#D6482E"/></marker>
+      </defs>
+      <g fill="none" stroke="currentColor" stroke-width="1.3">
+        <!-- rung labels -->
+        <g font-family="IBM Plex Mono, monospace" font-size="10.5" letter-spacing="1.2" fill="currentColor" stroke="none">
+          <text x="16" y="42">VALUE</text>
+          <text x="16" y="118">CONSEQUENCE</text>
+          <text x="16" y="212">ATTRIBUTE</text>
+        </g>
+        <!-- value -->
+        <rect x="250" y="20" width="300" height="38" rx="3"/>
+        <text x="400" y="44" text-anchor="middle" fill="currentColor" stroke="none">a calm, safe crossing with the kids</text>
+        <!-- consequence -->
+        <rect x="220" y="96" width="360" height="38" rx="3"/>
+        <text x="400" y="120" text-anchor="middle" fill="currentColor" stroke="none">nothing rattles or trips underfoot</text>
+        <!-- left attribute: said, no key -->
+        <rect x="120" y="190" width="220" height="44" rx="3"/>
+        <text x="230" y="209" text-anchor="middle" fill="currentColor" stroke="none">“smooth cement”</text>
+        <text x="230" y="225" text-anchor="middle" fill="currentColor" stroke="none" font-size="10.5">what they said — no key for it</text>
+        <!-- right attribute: in the kit -->
+        <rect x="460" y="190" width="220" height="44" rx="3" stroke="#D6482E" stroke-width="2"/>
+        <text x="570" y="209" text-anchor="middle" fill="#D6482E" stroke="none" font-weight="700">a braced deck, two lanes</text>
+        <text x="570" y="225" text-anchor="middle" fill="#D6482E" stroke="none" font-size="10.5">in the kit — steady, heavy</text>
+        <!-- up the left leg -->
+        <line x1="260" y1="190" x2="330" y2="134" marker-end="url(#ah2)"/>
+        <text x="262" y="158" fill="currentColor" stroke="none" font-size="11">why?</text>
+        <line x1="400" y1="96" x2="400" y2="58" marker-end="url(#ah2)"/>
+        <text x="410" y="82" fill="currentColor" stroke="none" font-size="11">why?</text>
+        <!-- down the right leg -->
+        <line x1="470" y1="134" x2="540" y2="190" stroke="#D6482E" stroke-width="1.8" marker-end="url(#ahm2)"/>
+        <text x="520" y="158" fill="#D6482E" stroke="none" font-size="11">how, with what I have?</text>
+      </g>
+    </svg>
+    <figcaption>The words never cross. “Smooth cement” is unbuildable and stays that way. But the consequence it was for — nothing rattles underfoot — the kit can already deliver with struts. The need is met by other means, which is the case the conduit metaphor says cannot happen and the toolmakers paradigm says is the normal one.</figcaption>
+  </figure>
+  <p style="margin-top:14px">Three things follow. <b>Each rung is marked</b> said, inferred or asked, so the member check knows what to confirm. <b>The builder decides at the consequence rung</b> and then picks whichever attribute it has — so a need counts as met when the consequence is delivered, not only when the word matches. And <b>a short ladder is a reason to ask</b>: “smooth cement” alone could mean a stroller, a bike, tyre noise or potholes, and those lead to different builds. One “why?” is the cheapest intervention in the study — and it breaks the “AI cannot ask” premise, which is why it's a decision below, not a default.</p>
+</section>
+
+<section>
+  <p class="eyebrow">2c · When there's only one sentence</p>
+  <h2>Most rooms are one line per person. Design for that first.</h2>
+  <p>Of the 32 rooms where anyone typed, in <b>27 nobody typed more than once</b>, and the median line is 14 words. A wall built from a conversation is the exception; the normal case is a single sentence, and the ladder above it is mostly inferred. So the sticky writer shouldn't paraphrase a thin sentence into <i>one</i> need — that hides the ambiguity. It should paraphrase into two or three readings and let the person pick, because choosing is cheaper than typing, and that is presumably why they typed once.</p>
+  <div class="speech" style="border-left-color:var(--marker)">
+    <p class="eyebrow">What the person sees, right after their one line</p>
+    <p style="margin:0 0 8px"><b>You said</b> “It also needs to be smooth cement.” Did you mean —</p>
+    <p style="margin:0 0 4px">○ the stroller shouldn't rattle → <i>a braced, steady deck</i></p>
+    <p style="margin:0 0 4px">○ bike tyres shouldn't slip → <i>a sealed surface</i></p>
+    <p style="margin:0 0 4px">○ nothing to trip on → <i>an even, bare walk</i></p>
+    <p style="margin:0">○ none of these — I meant: ______</p>
+  </div>
+  <p style="margin-top:14px">One tap turns a bare attribute into a checked consequence, and each reading shows what it would build, so the choice is about the bridge rather than about words. In a one-shot room this is the whole member check.</p>
+  <div class="scroll">
+  <table style="margin-top:6px">
+    <thead><tr><th>Lever for a thin room</th><th>What it adds</th><th>Cost to the person</th></tr></thead>
+    <tbody>
+      <tr><td>Offer two or three readings</td><td>Exposes the ambiguity instead of resolving it silently</td><td>one tap</td></tr>
+      <tr><td>One “why?” (decision 7)</td><td>Doubles the input of a one-line room</td><td>one short line</td></tr>
+      <tr><td>The AI sees the person's situation (decision 8)</td><td>The goal paragraph each role is given — today the reader never sees it. The biggest gain on thin input, and a study condition rather than a default</td><td>none</td></tr>
+      <tr><td>The other person's line</td><td>The wall is cross-person; “pavement for dogs” says what “wide road” is not</td><td>none</td></tr>
+      <tr><td>Build to the reading that survives all of them</td><td>If no answer comes, pick the attribute every ladder accepts</td><td>none</td></tr>
+      <tr><td>Let the drawing be the question</td><td>In a one-shot room the artifact is the second turn: “is this it?”, one line back</td><td>one short line</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="margin-top:12px"><b>Not on the list:</b> base rates from earlier rooms (“people who say <i>smooth</i> usually mean…”). It would work, and it stereotypes — the AI's hearing would depend on who came before.</p>
+</section>
+
+<section>
+  <p class="eyebrow">2d · Where each method plugs in — pick them</p>
+  <h2>Twelve research methods, each at the stage it belongs to</h2>
+  <p>The flow of a room runs left to right. Under each stage are the methods that could live there. <b>Click one to switch it on</b> — the wall below redraws to show what it adds, so you can see the method rather than read about it. Your picks are saved in this browser and go into the plan at the bottom.</p>
+  <div class="stages" id="stages"></div>
+  <div class="wall mini" id="miniwall"></div>
+  <div id="miniaside"></div>
+</section>
+
+<section>
+  <p class="eyebrow">3 · Where the idea comes from</p>
+  <h2>The research method, row by row</h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>In user research</th><th>In the instrument today</th><th>On the Wall</th></tr></thead>
+    <tbody>
+      <tr><td>The quote is never thrown away; every need stays pinned to its verbatim</td><td>The sentence is read once; only the key survives</td><td>Every sticky carries its quote</td></tr>
+      <tr><td>Quote → observation → need → why, a chain you can audit</td><td>Quote → key, one invisible jump</td><td>Quote · need · why, written down</td></tr>
+      <tr><td>Categories emerge from the data</td><td>17 categories fixed before anyone speaks</td><td>Themes named by the AI, bottom-up</td></tr>
+      <tr><td>Synthesis is done across people, on one wall</td><td>Each sentence read alone, no context</td><td>One wall for both people</td></tr>
+      <tr><td>Tensions are made visible and discussed</td><td>The builder silently picks a side</td><td>Tension is a tag, and is said out loud</td></tr>
+      <tr><td>Findings are member-checked with participants</td><td>Nobody is ever asked “did I get that right?”</td><td>One check before each build</td></tr>
+      <tr><td>Themes become design principles, then decisions</td><td>Themes don't exist; the kit is fixed, so most needs have no decision at all</td><td>One decision per theme — a part, a new part, or a rule</td></tr>
+      <tr><td>Laddering — “why is that important to you?” until you reach a value</td><td>“Do not guess at what sort of person is speaking or why”</td><td>Attribute → consequence → value on every sticky, each rung marked; one why when the ladder is short</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">4 · What gets built, in what order</p>
+  <h2>The Wall is twelve parts. Which go into the first version?</h2>
+  <p>Each card is one part that can be built and tested on its own, and each belongs to a stage of the room — the stage is printed on the card. Move cards between the four columns; the starting positions are my recommendation, and your sort is saved in this browser.</p>
+  <div class="scroll">
+  <table style="margin:14px 0 4px">
+    <tbody>
+      <tr><td><b>Now</b></td><td>goes into the first version — the one two real people try while you watch</td></tr>
+      <tr><td><b>Next</b></td><td>built once the first version works in a room</td></tr>
+      <tr><td><b>Later</b></td><td>waits on one of the decisions in section 5</td></tr>
+      <tr><td><b>Drop</b></td><td>not part of this study</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="board" id="board"></div>
+  <p class="board-note"><b>If only the Now column is built,</b> a room works like this: each person types as they do today; the facilitator's page shows the wall growing beside the transcript; before each build the AI reads the wall back to both people, says what it would make and what it would have to add, and waits for a yes; then it builds, and shows the drawing with a spec sheet beside it. Everything else on the board makes that first version richer, more visible to participants, or measurable — none of it is needed to try it.</p>
+</section>
+
+<section>
+  <p class="eyebrow">5 · Decisions only you can make</p>
+  <h2>Eight choices that change the experiment</h2>
+  <div class="decisions" id="decisions"></div>
+</section>
+
+<section>
+  <p class="eyebrow">6 · What you keep, and what you give up</p>
+  <h2>The 340 runs stay the problem statement, not the yardstick</h2>
+  <div class="same">
+    <div><b>You keep the matchsticks</b>The 8 axes are still the starting kit and the drawing. The Wall adds to them; it never removes one.</div>
+    <div><b>You keep the routes and the pairs</b>Same eight ways of connecting two people and an AI, same scripts, same goals.</div>
+    <div><b>You keep the current reader</b>Untouched, as v1. The Wall is v2, chosen per room and recorded in the session file.</div>
+    <div><b>You give up key-for-key comparison</b>A Wall room can't be scored in the 17 keys, because it may have built parts the keys don't name. The comparison moves to the theme rubric — and the 340 runs recorded what each speaker <i>meant</i>, so they can be rescored on it.</div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">7 · What you can measure that you couldn't</p>
+  <h2>Score the wall, not the keys</h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Measure</th><th>What it answers</th><th>How it's taken</th></tr></thead>
+    <tbody>
+      <tr class="new"><td>met as said · met by other means · declined · dropped</td><td>What happened to each theme — and did the words have to cross for it?</td><td>Spec sheet against the wall. <i>As said</i>: the attribute they named. <i>By other means</i>: the consequence delivered by a different attribute — the number the conduit metaphor predicts is zero. <i>Declined</i>: with a stated reason. <i>Dropped</i>: never answered — the number that should go to zero.</td></tr>
+      <tr class="new"><td>grown</td><td>How much did the kit have to learn?</td><td>Parts added in the room, and whether both people agreed to each</td></tr>
+      <tr class="new"><td>captured</td><td>Did the need statement hold the quote?</td><td>The person confirms or corrects at the member check</td></tr>
+      <tr class="new"><td>understood</td><td>Did they feel heard?</td><td>One tap after the wall is read back</td></tr>
+      <tr class="new"><td>agreement</td><td>Does the AI synthesise like a researcher?</td><td>Your own affinity of the same quotes vs the AI's themes</td></tr>
+      <tr><td>carried · missed · new</td><td>The old question, on the old runs</td><td>Kept for the 340 recorded runs; not computed for Wall rooms</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="margin-top:12px"><b>The comparison that matters:</b> the 340 runs recorded what each speaker meant, line by line. Read those as themes and score them met · declined · dropped, and you have the baseline on the same rubric — today's design, on the six lines above, scores 1 · 0 · 3.</p>
+</section>
+
+<section>
+  <p class="eyebrow">8 · Still open</p>
+  <h2>Questions I'd want answered before building</h2>
+  <ol class="q">
+    <li>How far can the kit grow in one room before it stops being the same experiment? A footway is a bridge part; a bus stop is not. Where's the line, and who holds it — you, or the two people in the room?</li>
+    <li>A rule on the sheet (“closed after 11”) meets a need without changing the shape. Does that count as built, or is it a promise? Decision 6 above, but it deserves a paragraph in the thesis either way.</li>
+    <li>Does showing people the wall change how they speak? Seeing your own words grouped is itself an intervention — possibly the one you want to study.</li>
+    <li>A theme in tension: is the AI a mediator, a decider who explains, or a menu?</li>
+    <li>Do the relay routes still make sense once the other person can see the wall directly?</li>
+  </ol>
+</section>
+
+<section>
+  <p class="eyebrow">9 · Hand it back</p>
+  <h2>Your plan, as text</h2>
+  <p>Copies your sort and your five decisions so you can paste them into the conversation.</p>
+  <div class="plan">
+    <button class="btn" id="copy" type="button">Copy the plan</button>
+    <button class="btn quiet" id="reset" type="button">Reset to my recommendation</button>
+    <span class="toast" id="toast" aria-live="polite"></span>
+    <textarea id="planText" readonly aria-label="Your plan as text"></textarea>
+  </div>
+</section>
+</div>
+
+<script>
+(function(){
+  const COLS = [
+    {id:"now",   name:"Now",   hint:"enough to run two rooms by hand"},
+    {id:"next",  name:"Next",  hint:"once the wall works"},
+    {id:"later", name:"Later", hint:"needs its own decision"},
+    {id:"drop",  name:"Drop",  hint:"not for this study"},
+  ];
+  const PIECES = [
+    {id:"sticky",  col:"now",   t:"Sticky writer",           p:"Each line becomes quote · need · why. Replaces the key reader in this condition.", cost:"1 call per line (same as now)", needs:"—"},
+    {id:"cluster", col:"now",   t:"Wall clustering",         p:"Regroup every sticky into themes across both people as the wall grows; tag shared, one-sided, in tension.", cost:"1 call per turn", needs:"sticky writer"},
+    {id:"desk",    col:"now",   t:"Wall on the desk",        p:"The /both page shows the wall live, beside the transcript.", cost:"UI only", needs:"clustering"},
+    {id:"decide",  col:"now",   t:"One decision per theme",  p:"The builder answers every theme: a part from the kit, a new part, or a rule. Nothing on the wall ends in “can't build” — it is met, or declined with a reason.", cost:"prompt change", needs:"clustering"},
+    {id:"check",   col:"now",   t:"Member check",            p:"Before a build: here's your wall, here's what I'd do, here's what I'd add — go ahead? One turn per person.", cost:"+1 turn per build", needs:"wall on the desk"},
+    {id:"grow",    col:"now",   t:"The kit grows",           p:"When a theme has no part, the AI proposes one — footway, gate, sealed surface, clearance… — and once both agree it enters this room's kit and drawing.", cost:"engine + drawing + picture reader", needs:"decision 4"},
+    {id:"spec",    col:"now",   t:"Spec sheet",              p:"The build is a drawing plus a sheet: theme → decision → how → whose need. Rules (hours) live here beside the parts.", cost:"UI", needs:"one decision per theme"},
+    {id:"flag",    col:"now",   t:"v1 / v2 flag",            p:"The current reader and prompts stay as v1. Everything here is v2, chosen per room and written into the session file.", cost:"small", needs:"—"},
+    {id:"axo",     col:"next",  t:"Axonometric drawing",     p:"Turn the matchstick view so a footway, two lanes and a gate can actually be seen. Needed once the kit grows sideways.", cost:"~40 lines of canvas", needs:"the kit grows"},
+    {id:"relay",   col:"next",  t:"Relay carries the wall",  p:"In Role 1 → AI → Role 2 routes the other person gets the wall, not a paraphrase.", cost:"prompt + UI", needs:"wall on the desk"},
+    {id:"people",  col:"next",  t:"Wall for participants",   p:"People see the wall on their own page, not only the facilitator.", cost:"UI + a decision", needs:"decision 1"},
+    {id:"measure", col:"next",  t:"New measures",            p:"met · declined · dropped per theme; captured (member check); understood (one tap); agreement (your affinity vs the AI's).", cost:"UI + analysis", needs:"spec sheet"},
+    {id:"rescore", col:"next",  t:"Rescore the 340 runs",    p:"Read each recorded run on the same theme rubric, using the needs it recorded as meant — so old and new compare without the 17 keys.", cost:"one offline pass", needs:"new measures"},
+    {id:"two",     col:"later", t:"Two builds on tension",   p:"Where a theme is in tension, offer two crossings and let them choose.", cost:"2 builds per turn", needs:"decision 3"},
+  ];
+  // which stage of the room each part belongs to — printed on the card
+  const STAGE = { sticky:"hearing", cluster:"hearing", desk:"showing", decide:"deciding", check:"checking",
+                  grow:"deciding", spec:"showing", flag:"safety", axo:"showing", relay:"showing",
+                  people:"showing", measure:"measuring", rescore:"measuring", two:"deciding" };
+  const DECISIONS = [
+    {id:"d1", q:"Who sees the wall?", opts:[
+      ["facilitator","Facilitator only","Cleanest comparison with today; people speak as they do now.", true],
+      ["both","Both people, live","The wall becomes a shared object they can argue with. Changes how they speak."],
+      ["relay","The other person, only via relay","Only in Role 1 → AI → Role 2 routes; elsewhere facilitator only."]]},
+    {id:"d2", q:"When does the member check happen?", opts:[
+      ["every","Before every build","Most repair, most turns.", true],
+      ["first","Before the first build only","One check, then it builds freely."],
+      ["never","Never — it just says what it took","Read-back without a reply; no repair, but people still hear what was lost."]]},
+    {id:"d3", q:"When the two of them are in tension?", opts:[
+      ["say","AI chooses and says so","Today's behaviour, made audible.", true],
+      ["menu","AI offers two builds","They choose; costs a second build."],
+      ["ask","AI asks them to settle it first","No build until the tension theme is resolved."]]},
+    {id:"d4", q:"How far may the kit grow?", opts:[
+      ["agree","A new part whenever a theme needs one, if both agree","The wall shapes the workshop. Drawn and scored like the original eight.", true],
+      ["shelf","Only from a prepared shelf","Footway, gate, clearance, sealed surface — ready in code; the AI may offer them, nothing else."],
+      ["fixed","Not at all — fixed at 8 axes","Unmet themes are declined with a reason. Cleanest comparison, least useful wall."]]},
+    {id:"d5", q:"Who writes the stickies?", opts:[
+      ["ai","The AI alone","People only confirm or correct at the check.", true],
+      ["edit","The AI drafts, people can edit","Each person can rewrite their own need statements on the wall."]]},
+    {id:"d6", q:"Can a decision be a rule rather than a shape?", opts:[
+      ["yes","Yes — rules go on the spec sheet","“Closed 11 pm – 7 am” counts as met. The artifact is a bridge and its sheet.", true],
+      ["parts","No — only parts count","Hours and the like are declined with a reason. The artifact stays a shape."]]},
+    {id:"d7", q:"When a ladder is short, may the AI ask why?", opts:[
+      ["ask","Yes — one “why?” per short ladder","Breaks the “AI cannot ask” premise, deliberately. Cheapest intervention in the study; the answer goes on the sticky as said.", true],
+      ["infer","No — infer the rung and mark it","The member check confirms or corrects it. Keeps the premise; more inferred rungs to check."],
+      ["leave","No — leave the rung empty","The builder decides from the attribute alone, as today."]]},
+    {id:"d8", q:"Does the AI see each person's situation — the goal paragraph they were given?", opts:[
+      ["no","No — only what they say","As in the 340 machine runs, where the builder never knew who it was talking to. Keeps the comparison clean.", true],
+      ["yes","Yes — the AI knows who it's talking to","The single biggest gain on one-line rooms. Run it as its own condition against “no”."],
+      ["other","Only what the other person has been told","In relay routes, the AI knows as much about Role 1 as Role 2 does — no more."]]},
+  ];
+
+  // ---- research methods: where each plugs in, and what it draws on the wall ----
+  const STAGES = ["before", "hearing", "synthesis", "prioritising", "deciding", "checking", "evaluating"];
+  const METHODS = [
+    {id:"woz",     stage:"before",       name:"Wizard of Oz",             what:"you play the AI, by hand, first", on:true},
+    {id:"job",     stage:"hearing",      name:"Job stories",              what:"when · I want · so I can"},
+    {id:"ladder",  stage:"hearing",      name:"Laddering",                what:"attribute → consequence → value", on:true},
+    {id:"empathy", stage:"hearing",      name:"Empathy map",              what:"pains and feelings get a sticky"},
+    {id:"journey", stage:"synthesis",    name:"Journey map",              what:"themes pinned to moments of the day"},
+    {id:"sort",    stage:"synthesis",    name:"Open card sort",           what:"the two people file the stickies"},
+    {id:"dots",    stage:"prioritising", name:"Dot voting",               what:"three dots each before a build", on:true},
+    {id:"kano",    stage:"prioritising", name:"Kano",                     what:"must-have vs nice-to-have"},
+    {id:"hmw",     stage:"deciding",     name:"How Might We",             what:"a question before a part"},
+    {id:"rep",     stage:"deciding",     name:"Repertory grid",           what:"their constructs become the axes"},
+    {id:"iliw",    stage:"checking",     name:"I like · I wish · What if", what:"the shape of the member check", on:true},
+    {id:"retro",   stage:"evaluating",   name:"Retrospective walkthrough", what:"each narrates the drawing after"},
+  ];
+  // the four themes of lv3s4, with what every method would add to each
+  const MINI = [
+    {name:"Getting the car across", who:"Role 1", moment:"8 am · rush hour", dots:[2,0], kano:"must",
+     quote:["Role 1", "I'd like to have a wide road for a SUV taking my kids to school."],
+     need:"to get two kids across by car at rush hour", job:"When I drive the kids to school at rush hour, I want a road wide enough for the SUV, so I can get them there without queueing",
+     ladder:[["a wide road","said"],["the SUV fits and doesn't queue","half said"],["the kids get to school reliably","inferred"]],
+     feel:"Role 1 · uneasy about traffic on the school run", sorted:["Commute","Cars"], hmw:"HMW get a car across without a queue?",
+     verdict:["can","DECIDED · from the kit — two lanes, braced"]},
+    {name:"Walking the dog", who:"Role 2", moment:"6 pm · after work", dots:[1,3], kano:"must",
+     quote:["Role 2", "…at least one side of the bridge should have pavement for pedestrians and dogs"],
+     need:"somewhere to walk the dog, clear of the cars", job:"When I walk the dog after work, I want a path off the road, so I can cross without him near the cars",
+     ladder:[["a pavement on one side","said"],["walker and dog apart from the traffic","half said"],["the daily walk is safe and pleasant","inferred"]],
+     feel:"Role 2 · nervous about the dog near cars", sorted:["Sidewalk","Safety"], hmw:"HMW keep the dog clear of the cars?",
+     verdict:["grew","DECIDED · new part — a footway, kept clear"]},
+    {name:"Underfoot", who:"Role 1", moment:"any time", dots:[1,0], kano:"nice",
+     quote:["Role 1", "It also needs to be smooth cement."],
+     need:"an even surface", job:"When I push the stroller across, I want it not to rattle, so I can keep the kids calm",
+     ladder:[["smooth cement","said"],["“the stroller rattles on anything rough”","asked"],["a calm crossing with small children","inferred"]],
+     feel:null, sorted:["Comfort","Surface"], hmw:"HMW stop the rattle?",
+     verdict:["grew","DECIDED · by other means — a braced deck"]},
+    {name:"When it's usable", who:"shared · agreed", moment:"9 pm shop · 11 pm close", dots:[2,1], kano:"must / nice",
+     quote:["Role 1", "…maybe 12 hours and it closes after 11 pm."],
+     need:"open until 11 pm", job:"When we come back late, we want it open, so we can get home",
+     ladder:[["open 12 hours, closes after 11","said"],["one reaches the shops at night; the other walks after work","said"],["the bridge fits both their days","said"]],
+     feel:"Role 1 · “too restrictive” — frustrated by a short day", sorted:["Hours","When"], hmw:"HMW make it usable late without leaving it open all night?",
+     verdict:["rule","DECIDED · gates, closed 11 pm – 7 am, plus a rule"]},
+  ];
+  function renderMethods(){
+    const st = document.getElementById("stages"); if (!st) return;
+    st.innerHTML = STAGES.map(s => `<div class="stage"><div class="stage-h">${s}</div>${
+      METHODS.filter(m => m.stage === s).map(m =>
+        `<button type="button" class="chip" data-m="${m.id}" aria-pressed="${!!state.methods[m.id]}">${esc(m.name)}<small>${esc(m.what)}</small></button>`).join("")}</div>`).join("");
+    renderMini();
+  }
+  function renderMini(){
+    const on = id => !!state.methods[id];
+    const w = document.getElementById("miniwall"), a = document.getElementById("miniaside"); if (!w) return;
+    const rung = ([t, tag]) => `<span class="r"></span><span>${esc(t)}<span class="${tag === "asked" ? "ask" : tag === "inferred" ? "inf" : "said"}">${esc(tag === "asked" ? "asked: why?" : tag)}</span></span>`;
+    w.innerHTML =
+      (on("woz") ? `<div class="banner">FIRST RUN · a person plays the AI and follows exactly this protocol by hand — before any of it is coded</div>` : "") +
+      (on("journey") ? `<div class="journey"><span><b>7:50 am</b>Role 1 leaves with the kids</span><span><b>8:05 am</b>crosses at rush hour</span><span><b>6 pm</b>Role 2 walks the dog</span><span><b>9 pm</b>Role 1 to the shop</span><span><b>11 pm</b>closes</span></div>` : "") +
+      `<div class="themes">` + MINI.map(t => `<div class="theme">
+        <div class="theme-name">${esc(t.name)}
+          <span class="tag ${t.who.startsWith("shared") ? "shared" : ""}">${esc(t.who)}</span>
+          ${on("journey") ? `<span class="tag">${esc(t.moment)}</span>` : ""}
+          ${on("kano") ? `<span class="tag ${t.kano.startsWith("must") ? "tension" : ""}">${esc(t.kano)}</span>` : ""}
+          ${on("dots") ? `<span class="dots">${"●".repeat(t.dots[0])}<i>R1</i> ${"●".repeat(t.dots[1])}<i>R2</i></span>` : ""}
+        </div>
+        ${on("sort") ? `<div class="sorted">Role 1 filed it under: ${esc(t.sorted[0])}<br>Role 2 filed it under: ${esc(t.sorted[1])}</div>` : ""}
+        <div class="sticky quote"><span class="who">${esc(t.quote[0])} said</span>${esc(t.quote[1])}</div>
+        <div class="sticky need"><span class="who">${on("job") ? "job story" : "need"}${on("ladder") ? " · ladder" : ""}</span>${
+          on("job") ? esc(t.job) : `<b>${t.who.startsWith("shared") ? "They agreed" : esc(t.who) + " needs"}</b> ${esc(t.need)}`}${
+          on("ladder") ? `<div class="rungs">${t.ladder.map(rung).join("")}</div>` : ""}</div>
+        ${on("empathy") && t.feel ? `<div class="sticky feel"><span class="who">feels</span>${esc(t.feel)}</div>` : ""}
+        ${on("hmw") ? `<div class="hmw">${esc(t.hmw)}</div>` : ""}
+        <div class="verdict ${t.verdict[0]}">${esc(t.verdict[1])}</div>
+      </div>`).join("") + `</div>` +
+      (on("rep") ? `<div class="aside" style="margin-top:16px"><p class="eyebrow">Constructs elicited before the room — three bridges, “which two are alike, and how is the third different?”</p>Role 1: <q>smooth ↔ bumpy</q>, <q>fast ↔ slow to cross</q> · Role 2: <q>apart from cars ↔ shared with cars</q>, <q>can see the water ↔ closed in</q>. These become axes of the kit, in the participants' own words.</div>` : "");
+    const asides = [];
+    asides.push(on("iliw")
+      ? `<div class="aside"><p class="eyebrow">The member check, in this shape</p><b>AI:</b> Here's your wall. Tell me — I like… / I wish… / What if…<br><b>Role 2:</b> <q>I like that the dog gets its own path. I wish it were on the side away from the lanes. What if it had its own rail?</q><br><b>Role 1:</b> <q>I like the two lanes. I wish it were open later. What if the gate were a barrier you could lift?</q></div>`
+      : `<div class="aside"><p class="eyebrow">The member check</p><b>AI:</b> Here's what I have. Two lanes and struts I can do now; a footway, a braced deck for the stroller, and gates closed after 11 I'd add. Go ahead?</div>`);
+    if (on("retro")) asides.push(`<div class="aside"><p class="eyebrow">After the build — each narrates the drawing</p><b>Role 1:</b> <q>I see the two lanes and the struts underneath. That's ours.</q> → understood: full<br><b>Role 2:</b> <q>I see the footway. I can't tell where the gate is, or which side the dog walks.</q> → understood: partial — the drawing needs the axonometric view</div>`);
+    a.innerHTML = asides.join("");
+  }
+  const KEY = "the-wall-plan-v1";
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || "null"); } catch { return null; } };
+  const save = s => { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch {} };
+  const defaults = () => ({
+    place: Object.fromEntries(PIECES.map(p => [p.id, p.col])),
+    dec: Object.fromEntries(DECISIONS.map(d => [d.id, (d.opts.find(o => o[3]) || d.opts[0])[0]])),
+    methods: Object.fromEntries(METHODS.map(m => [m.id, !!m.on])),
+  });
+  let state = Object.assign(defaults(), load() || {});
+  state.place = Object.assign(defaults().place, state.place || {});
+  state.dec = Object.assign(defaults().dec, state.dec || {});
+  state.methods = Object.assign(defaults().methods, state.methods || {});
+
+  const board = document.getElementById("board");
+  const decs = document.getElementById("decisions");
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+  function renderBoard(){
+    board.innerHTML = COLS.map(c => {
+      const items = PIECES.filter(p => state.place[p.id] === c.id);
+      return `<div class="col" data-col="${c.id}">
+        <div class="col-h"><b>${c.name}</b><small>${items.length}</small><span class="hint">${c.hint}</span></div>
+        ${items.map(p => `<div class="piece" draggable="true" data-id="${p.id}">
+          <h3>${esc(p.t)}</h3><p>${esc(p.p)}</p>
+          <div class="meta"><span class="tag">${esc(STAGE[p.id] || "")}</span><span>cost: ${esc(p.cost)}</span><span>needs: ${esc(p.needs)}</span></div>
+          <div class="seg" role="group" aria-label="Move ${esc(p.t)}">${COLS.map(k =>
+            `<button type="button" data-move="${k.id}" aria-pressed="${k.id === c.id}">${k.name}</button>`).join("")}</div>
+        </div>`).join("")}
+      </div>`;
+    }).join("");
+    renderPlan();
+  }
+  function renderDecisions(){
+    decs.innerHTML = DECISIONS.map(d => `<div class="dec"><h3>${esc(d.q)}</h3>${d.opts.map(o =>
+      `<label class="opt"><input type="radio" name="${d.id}" id="${d.id}-${o[0]}" value="${o[0]}" ${state.dec[d.id] === o[0] ? "checked" : ""}>
+       <span>${esc(o[1])}${o[3] ? '<span class="rec">recommended</span>' : ""}<em>${esc(o[2])}</em></span></label>`).join("")}</div>`).join("");
+  }
+  function planText(){
+    const lines = ["THE WALL — my plan", ""];
+    for (const c of COLS) {
+      const items = PIECES.filter(p => state.place[p.id] === c.id);
+      lines.push(`${c.name.toUpperCase()}: ${items.length ? items.map(p => p.t).join(" · ") : "—"}`);
+    }
+    const on = METHODS.filter(m => state.methods[m.id]).map(m => m.name);
+    lines.push("", `METHODS: ${on.length ? on.join(" · ") : "—"}`);
+    lines.push("", "DECISIONS");
+    for (const d of DECISIONS) {
+      const o = d.opts.find(o => o[0] === state.dec[d.id]);
+      lines.push(`- ${d.q} ${o ? o[1] : "?"}`);
+    }
+    return lines.join("\n");
+  }
+  function renderPlan(){ document.getElementById("planText").value = planText(); }
+
+  board.addEventListener("click", e => {
+    const b = e.target.closest("button[data-move]"); if (!b) return;
+    const id = b.closest(".piece").dataset.id;
+    state.place[id] = b.dataset.move; save(state); renderBoard();
+  });
+  board.addEventListener("dragstart", e => {
+    const p = e.target.closest(".piece"); if (!p) return;
+    e.dataTransfer.setData("text/plain", p.dataset.id); e.dataTransfer.effectAllowed = "move";
+  });
+  board.addEventListener("dragover", e => { const c = e.target.closest(".col"); if (!c) return; e.preventDefault(); c.classList.add("over"); });
+  board.addEventListener("dragleave", e => { const c = e.target.closest(".col"); if (c && !c.contains(e.relatedTarget)) c.classList.remove("over"); });
+  board.addEventListener("drop", e => {
+    const c = e.target.closest(".col"); if (!c) return; e.preventDefault(); c.classList.remove("over");
+    const id = e.dataTransfer.getData("text/plain"); if (!id) return;
+    state.place[id] = c.dataset.col; save(state); renderBoard();
+  });
+  decs.addEventListener("change", e => {
+    if (e.target.type !== "radio") return;
+    state.dec[e.target.name] = e.target.value; save(state); renderPlan();
+  });
+  document.getElementById("stages").addEventListener("click", e => {
+    const b = e.target.closest("button[data-m]"); if (!b) return;
+    state.methods[b.dataset.m] = !state.methods[b.dataset.m]; save(state);
+    b.setAttribute("aria-pressed", String(!!state.methods[b.dataset.m]));
+    renderMini(); renderPlan();
+  });
+  document.getElementById("copy").addEventListener("click", async () => {
+    const t = document.getElementById("toast"), txt = planText();
+    try { await navigator.clipboard.writeText(txt); t.textContent = "Copied."; }
+    catch { const ta = document.getElementById("planText"); ta.focus(); ta.select(); t.textContent = "Select the text below and copy it."; }
+    setTimeout(() => { t.textContent = ""; }, 2500);
+  });
+  document.getElementById("reset").addEventListener("click", () => {
+    state = defaults(); save(state); renderBoard(); renderDecisions(); renderMethods();
+  });
+
+  renderBoard(); renderDecisions(); renderMethods();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A board for hearing two people at once, and thirteen research-derived tools that plug into it, for an AI that has to build something from what people say.">
+<title>Toolmakers' Kit</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --ground:#EEF1F2; --paper:#FFFFFF; --ink:#1B2224; --ink2:#5A6568; --line:#CFD6D8; --line2:#E3E8EA;
+    --kit:#1E6E76; --kit-soft:#DCEEEF; --kit-ink:#FFFFFF;
+    --warn:#C7502F; --warn-soft:#F8E4DD;
+    --quote:#F8DC5D; --need:#C6DDF2; --sticky-ink:#1B1E1A;
+    --chip:#E4E9EB;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#15191B; --paper:#1E2426; --ink:#E4E9EA; --ink2:#9FAAAD; --line:#374144; --line2:#2A3235;
+      --kit:#5FB3BA; --kit-soft:#173539; --kit-ink:#0F1A1C;
+      --warn:#F0704F; --warn-soft:#3B241D;
+      --chip:#2A3235;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#15191B; --paper:#1E2426; --ink:#E4E9EA; --ink2:#9FAAAD; --line:#374144; --line2:#2A3235;
+    --kit:#5FB3BA; --kit-soft:#173539; --kit-ink:#0F1A1C;
+    --warn:#F0704F; --warn-soft:#3B241D;
+    --chip:#2A3235;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--ground);color:var(--ink);font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.5;margin:0}
+  .wrap{max-width:1120px;margin:0 auto;padding-block:32px 80px;padding-inline:20px}
+  h1,h2,h3{text-wrap:balance;margin:0}
+  h1{font-family:"Caveat",cursive;font-weight:700;font-size:clamp(46px,7vw,76px);line-height:.95}
+  h2{font-size:24px;line-height:1.2;margin-bottom:10px}
+  h3{font-size:17px;line-height:1.3}
+  p{margin:0 0 12px;max-width:68ch}
+  .lede{font-size:19px;color:var(--ink2);max-width:62ch}
+  .eyebrow{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);margin-bottom:8px}
+  section{margin-top:56px}
+  header{display:flex;flex-wrap:wrap;gap:14px 28px;align-items:end;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:18px}
+  .status{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px;color:var(--kit);border:1.5px solid var(--kit);padding:4px 10px;border-radius:999px;white-space:nowrap}
+  a{color:var(--kit)}
+  .scroll{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;font-size:14.5px}
+  th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line)}
+  th{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink2);font-weight:500}
+  figure{margin:16px 0 0}
+  figure svg{max-width:100%;height:auto;display:block}
+  figcaption{font-size:14px;color:var(--ink2);margin-top:8px;max-width:70ch}
+
+  /* the wall, up front */
+  .wallbox{background:var(--paper);border:2px solid var(--kit);padding:20px 22px;margin-top:16px}
+  .three{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px 22px;margin-top:14px}
+  .three div{font-size:14.5px}
+  .three b{display:block;margin-bottom:3px}
+  .example{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:16px}
+  .theme{display:flex;flex-direction:column;gap:8px}
+  .theme-name{font-family:"Caveat",cursive;font-weight:700;font-size:26px;line-height:1}
+  .sticky{padding:10px 12px;color:var(--sticky-ink);font-size:13.5px;line-height:1.4;box-shadow:0 2px 0 rgba(0,0,0,.12)}
+  .sticky.quote{background:var(--quote);font-style:italic}
+  .sticky.need{background:var(--need)}
+  .sticky .who{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-style:normal;opacity:.7;display:block;margin-bottom:3px}
+  .answer{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px;line-height:1.45;padding:7px 10px;border:1.5px solid var(--kit);color:var(--kit)}
+  .vs{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+  .vs > div{border-top:2px solid var(--ink);padding-top:8px;font-size:14px}
+  .vs b{display:block;font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums}
+  .vs .bad b{color:var(--warn)}
+  @media (max-width:560px){.vs{grid-template-columns:1fr}}
+
+  /* principles */
+  .principles{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:14px}
+  .principle{border-top:2px solid var(--ink);padding-top:8px;font-size:14px}
+  .principle b{display:block;font-size:15.5px;margin-bottom:2px}
+
+  /* tools */
+  .filters{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+  .filters button{font:inherit;font-size:13px;padding:5px 11px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer;border-radius:999px}
+  .filters button[aria-pressed="true"]{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+  .filters button:focus-visible,.add:focus-visible,.btn:focus-visible,summary:focus-visible{outline:2px solid var(--kit);outline-offset:2px}
+  .stagehead{margin-top:28px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;border-bottom:1.5px solid var(--ink);padding-bottom:6px}
+  .stagehead h3{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--kit);font-weight:500}
+  .stagehead span{font-size:14px;color:var(--ink2)}
+  .stagehead[hidden]{display:none}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;margin-top:14px}
+  .card{background:var(--paper);border:1px solid var(--line);padding:16px 18px 12px;display:flex;flex-direction:column;gap:9px}
+  .card[hidden]{display:none}
+  .card .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .card .name{font-family:"Caveat",cursive;font-weight:700;font-size:31px;line-height:1;color:var(--ink)}
+  .card .sub{font-size:14px;color:var(--ink2);margin-top:2px}
+  .f{font-size:14px;line-height:1.45}
+  .f b{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);display:block;font-weight:500;margin-bottom:1px}
+  .f ol{margin:2px 0 0;padding-left:18px}
+  .f li{margin:0 0 2px}
+  .ex{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:13.5px;line-height:1.4;background:var(--ground);padding:9px 11px}
+  .ex i{font-style:normal;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);padding-top:2px}
+  .asks{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11.5px;color:var(--kit);border-top:1px solid var(--line2);padding-top:8px;margin-top:auto}
+  details.more{font-size:13.5px;color:var(--ink2)}
+  details.more summary{cursor:pointer;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);list-style:none}
+  details.more summary::before{content:"+ ";color:var(--kit)}
+  details.more[open] summary::before{content:"− "}
+  details.more div{margin-top:6px;display:flex;flex-direction:column;gap:5px}
+  details.more b{color:var(--ink);font-weight:700}
+  .add{font:inherit;font-size:12.5px;padding:5px 10px;border:1.5px solid var(--kit);background:transparent;color:var(--kit);cursor:pointer;border-radius:4px;white-space:nowrap}
+  .add[aria-pressed="true"]{background:var(--kit);color:var(--kit-ink)}
+
+  /* visual examples on the cards */
+  .vis{background:var(--ground);border:1px solid var(--line2);padding:10px 11px;font-size:12.5px;line-height:1.35;color:var(--ink)}
+  .vis svg{max-width:100%;height:auto;display:block}
+  .s{padding:6px 8px;color:var(--sticky-ink);box-shadow:0 1.5px 0 rgba(0,0,0,.12);font-size:12px;line-height:1.3}
+  .s.q{background:var(--quote);font-style:italic}
+  .s.n{background:var(--need)}
+  .s.f{background:#E8D3EE}
+  .s.hand{font-family:"Caveat",cursive;font-size:16px;font-style:normal;line-height:1.05}
+  .tn{font-family:"Caveat",cursive;font-weight:700;font-size:19px;line-height:1;margin-bottom:2px}
+  .ans{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;color:var(--kit);border:1.5px solid var(--kit);padding:4px 7px}
+  .mw{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .mw > div{display:flex;flex-direction:column;gap:5px;min-width:0}
+  .chair{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;color:var(--ink2);margin-bottom:6px}
+  .chair b{color:var(--kit)}
+  .paper{margin-top:6px;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;color:var(--ink2);border-top:1px dashed var(--line);padding-top:5px}
+  .job mark{background:var(--need);color:var(--sticky-ink);padding:0 3px;border-radius:2px}
+  .rd .said{margin-bottom:5px}
+  .rd label{display:block;padding:3px 0;color:var(--ink2)}
+  .rd label.sel{color:var(--ink);font-weight:700}
+  .rd label span{color:var(--kit);font-weight:400}
+  .em{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+  .em > div{border:1px solid var(--line);padding:5px 6px;min-height:46px}
+  .em b{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);display:block;margin-bottom:3px;font-weight:500}
+  .jm{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+  .jm span{padding:3px 7px;border:1px solid var(--line);background:var(--paper);white-space:nowrap}
+  .jm span.r2{border-color:var(--kit);color:var(--kit)}
+  .jm b{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:9.5px;font-weight:500;display:block;color:var(--ink2)}
+  .jm em{font-style:normal;color:var(--ink2)}
+  .cs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .cs h5{margin:0 0 4px;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);font-weight:500}
+  .cs .g{border:1px dashed var(--line);padding:4px 6px;margin-bottom:5px}
+  .cs .g b{display:block;font-family:"Caveat",cursive;font-size:16px;line-height:1;font-weight:700;margin-bottom:3px}
+  .cs .g .s{margin-top:3px}
+  .cs .hit{outline:2px solid var(--kit)}
+  .dv{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center}
+  .dv .d1{color:var(--ink)}.dv .d2{color:var(--kit)}
+  .dv .d{font-size:14px;letter-spacing:1px;white-space:nowrap}
+  .kn div{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px solid var(--line2)}
+  .kn .res{justify-content:flex-start;border:0;padding-top:6px;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;color:var(--warn)}
+  .hmw{font-family:"Caveat",cursive;font-size:19px;line-height:1.05;margin-bottom:7px}
+  .chips{display:flex;flex-wrap:wrap;gap:5px}
+  .chip{padding:3px 8px;border:1px solid var(--line);background:var(--paper);font-size:12px}
+  .chip.on{border-color:var(--kit);color:var(--kit);font-weight:700}
+  .rg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center}
+  .rg .lab{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;color:var(--ink2)}
+  .rg .pick svg{outline:2px solid var(--kit)}
+  .rgq{margin-top:6px;color:var(--ink2)}
+  .rgq b{color:var(--ink)}
+  .chat{display:flex;flex-direction:column;gap:5px}
+  .bub{padding:6px 9px;border-radius:8px;background:var(--paper);border:1px solid var(--line);max-width:95%}
+  .bub.ai{align-self:flex-start;border-bottom-left-radius:2px}
+  .bub.me{align-self:flex-end;border-bottom-right-radius:2px;background:var(--kit-soft);border-color:var(--kit)}
+  .bub i{font-style:normal;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);display:block;margin-bottom:2px}
+  .rt{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:start}
+  .rt .tag{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;color:var(--warn);border:1px solid var(--warn);padding:1px 5px;display:inline-block;margin-top:4px}
+  /* recipes */
+  .recipes{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px;margin-top:16px}
+  .recipe{background:var(--paper);border:1px solid var(--line);padding:14px 16px}
+  .recipe h3{margin-bottom:4px}
+  .recipe .why{font-size:13.5px;color:var(--ink2);margin-bottom:8px}
+  .recipe ol{margin:0;padding-left:18px;font-size:14px}
+  .recipe li{margin-bottom:3px}
+  .recipe .use{margin-top:10px}
+
+  /* my kit */
+  .mykit{margin-top:18px;background:var(--paper);border:1px solid var(--line);padding:16px}
+  .btn{font:inherit;font-size:14px;padding:8px 14px;border:1.5px solid var(--ink);background:var(--ink);color:var(--ground);cursor:pointer;border-radius:4px}
+  .btn.quiet{background:transparent;color:var(--ink)}
+  .mykit textarea{width:100%;min-height:120px;margin-top:12px;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12.5px;line-height:1.5;background:var(--ground);color:var(--ink);border:1px solid var(--line);padding:10px;resize:vertical}
+  .toast{font-size:13px;color:var(--kit);margin-left:10px}
+  @media (prefers-reduced-motion:no-preference){.card{transition:transform .12s}.card:hover{transform:translateY(-1px)}}
+</style>
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <p class="eyebrow">Two people · one AI · something to build</p>
+    <h1>Toolmakers' Kit</h1>
+    <p class="lede">A board for hearing two people at once, and thirteen tools that plug into it — for an AI that has to make something from what people say.</p>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+    <span class="status">v0.2 · from 148 rooms and 340 recorded runs</span>
+    <a href="the-wall.html" style="font-size:13px">The Wall — the full proposal and its eight decisions →</a>
+  </div>
+</header>
+
+<section>
+  <p class="eyebrow">Start here</p>
+  <h2>The Wall — the board everything plugs into</h2>
+  <p>Today the AI hears in a list of 17 words, and the list was made from what it can build. Anything a person needs that isn't on the list is never heard. The Wall changes that in one move: <b>the AI hears in plain language, on a board, and only meets the limits of its kit at the moment of building</b> — out loud, with the people in the room.</p>
+  <div class="wallbox">
+    <figure>
+      <svg viewBox="0 0 900 120" role="img" aria-label="Five steps left to right: hear, group, check, decide, build. Hear: every line becomes a note with their words, what they need and why. Group: notes cluster into themes across both people. Check: the AI reads the wall back and both people correct it. Decide: every theme gets an answer, a part from the kit, a new part, or a rule. Build: the drawing, with a sheet listing each answer." font-family="Atkinson Hyperlegible, system-ui, sans-serif" font-size="13">
+        <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+        <g fill="none" stroke="currentColor" stroke-width="1.3">
+          <rect x="10" y="20" width="150" height="72" rx="4"/><rect x="195" y="20" width="150" height="72" rx="4"/><rect x="380" y="20" width="150" height="72" rx="4"/><rect x="565" y="20" width="150" height="72" rx="4"/><rect x="750" y="20" width="140" height="72" rx="4"/>
+          <line x1="160" y1="56" x2="195" y2="56" marker-end="url(#ah)"/><line x1="345" y1="56" x2="380" y2="56" marker-end="url(#ah)"/><line x1="530" y1="56" x2="565" y2="56" marker-end="url(#ah)"/><line x1="715" y1="56" x2="750" y2="56" marker-end="url(#ah)"/>
+        </g>
+        <g fill="currentColor" font-weight="700" text-anchor="middle">
+          <text x="85" y="44">1 · Hear</text><text x="270" y="44">2 · Group</text><text x="455" y="44">3 · Check</text><text x="640" y="44">4 · Decide</text><text x="820" y="44">5 · Build</text>
+        </g>
+        <g fill="currentColor" font-size="11.5" text-anchor="middle">
+          <text x="85" y="63">every line → a note:</text><text x="85" y="78">their words · need · why</text>
+          <text x="270" y="63">notes → themes,</text><text x="270" y="78">across both people</text>
+          <text x="455" y="63">read it back;</text><text x="455" y="78">they correct it</text>
+          <text x="640" y="63">every theme gets an answer:</text><text x="640" y="78">a part · a new part · a rule</text>
+          <text x="820" y="63">the drawing,</text><text x="820" y="78">plus a sheet of answers</text>
+        </g>
+      </svg>
+      <figcaption>Nothing is sorted into categories at step 1. The kit only enters at step 4 — and where it has no part for a theme, it says so and can add one if both people agree.</figcaption>
+    </figure>
+    <div class="three">
+      <div><b>What changes for the person</b>They talk as they do now. Before anything is built, they see their own words grouped and can say “not quite”.</div>
+      <div><b>What changes for the AI</b>It stops matching sentences to 17 words. It writes notes, groups them, answers every theme, and says what it can't do.</div>
+      <div><b>What changes for the kit</b>It's the starting point, not the ceiling. A theme with no part can become a part — a footway, a gate — when both people want it.</div>
+    </div>
+    <p class="eyebrow" style="margin-top:18px">A real room, on the wall — two of its four themes</p>
+    <div class="example">
+      <div class="theme">
+        <div class="theme-name">Getting the car across</div>
+        <div class="sticky quote"><span class="who">Role 1 said</span>I'd like to have a wide road for a SUV taking my kids to school.</div>
+        <div class="sticky need"><span class="who">need · why</span>Get two kids across by car at rush hour — because they commute daily and don't want to queue</div>
+        <div class="answer">ANSWER · two lanes, braced — from the kit</div>
+      </div>
+      <div class="theme">
+        <div class="theme-name">Walking the dog</div>
+        <div class="sticky quote"><span class="who">Role 2 said</span>…at least one side of the bridge should have pavement for pedestrians and dogs</div>
+        <div class="sticky need"><span class="who">need · why</span>Somewhere to walk the dog clear of the cars — because they cross on foot every day after work</div>
+        <div class="answer">ANSWER · a footway on one side — a new part, both agreed</div>
+      </div>
+    </div>
+    <div class="vs">
+      <div class="bad"><span class="eyebrow">Today, same six lines</span><b>1 of 4</b>needs heard; three dropped without a word; one built as its opposite</div>
+      <div><span class="eyebrow">On the wall</span><b>4 of 4</b>themes answered — two as said, two by other means; none dropped</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">What every tool shares</p>
+  <h2>Five rules</h2>
+  <div class="principles">
+    <div class="principle"><b>Hear first, limit later</b>Limit what can be built, never what can be heard.</div>
+    <div class="principle"><b>Keep their words</b>Every need stays pinned to the sentence it came from.</div>
+    <div class="principle"><b>Ask what it's for</b>Build for the reason behind the thing they named.</div>
+    <div class="principle"><b>Make every ask a tap</b>Most people type once. Choosing is cheaper than typing.</div>
+    <div class="principle"><b>Say what you couldn't</b>A need silently dropped is the one thing a person can't fix.</div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">The tools</p>
+  <h2>Thirteen tools, by the stage they belong to</h2>
+  <p>Each card has the same five parts: what it is, when to use it, how it works in three steps, one example, and what it asks of the person. Open <i>more</i> for the detail. Add tools to your kit and copy the list at the bottom.</p>
+  <div class="filters" id="filters"></div>
+  <div id="tools"></div>
+</section>
+
+<section>
+  <p class="eyebrow">Recipes</p>
+  <h2>Which tools, for which room</h2>
+  <div class="recipes" id="recipes"></div>
+</section>
+
+<section>
+  <p class="eyebrow">Measures</p>
+  <h2>What you can count afterwards</h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Number</th><th>Question it answers</th><th>Comes from</th></tr></thead>
+    <tbody>
+      <tr><td><b>answered as said · by other means · declined · dropped</b></td><td>What happened to each theme — and did the words have to cross?</td><td>The Wall's sheet, with Laddering</td></tr>
+      <tr><td><b>captured</b></td><td>Did the note say what they meant?</td><td>Member check, Three readings</td></tr>
+      <tr><td><b>understood</b></td><td>Did they feel heard, and did they see what was built?</td><td>Member check, Retrospective walkthrough</td></tr>
+      <tr><td><b>agreement</b></td><td>Do the two people see the same problem?</td><td>Open card sort</td></tr>
+      <tr><td><b>priority</b></td><td>What mattered most, to whom?</td><td>Dot voting, Kano</td></tr>
+      <tr><td><b>grown</b></td><td>How much did the kit have to learn?</td><td>The Wall, Repertory grid</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">Your kit</p>
+  <h2>What you've picked</h2>
+  <div class="mykit">
+    <button class="btn" id="copy" type="button">Copy my kit</button>
+    <button class="btn quiet" id="reset" type="button">Reset to the recommended four</button>
+    <span class="toast" id="toast" aria-live="polite"></span>
+    <textarea id="kitText" readonly aria-label="Your kit as text"></textarea>
+  </div>
+</section>
+</div>
+
+<script>
+(function(){
+  const STAGES = [
+    ["before",       "Try the plan before writing code"],
+    ["hearing",      "Turn what someone said into what they need"],
+    ["synthesis",    "See both people's needs together"],
+    ["prioritising", "Find out what matters most"],
+    ["deciding",     "Choose what to build"],
+    ["checking",     "Confirm before building"],
+    ["evaluating",   "Find out whether they were understood"],
+  ];
+  // ---- a small picture of each tool in use ----
+  // side view of a crossing, 120×50: banks, deck; optional rail, tower, and a
+  // separate footway drawn as a second, dashed deck
+  const bg = ({rail, tower, footway, gate} = {}) => `<svg viewBox="0 0 120 50" role="img" aria-label="a crossing, side view" width="120" height="50">
+    <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <path d="M2 34 H22 M98 34 H118"/><path d="M22 34 V48 M98 34 V48" stroke-width="1" opacity=".4"/>
+      <path d="M22 28 H98"/>
+      ${rail ? `<path d="M26 28 V19 M60 28 V19 M94 28 V19 M26 19 H94" stroke-width="1.5"/>` : ""}
+      ${tower ? `<path d="M52 28 V46 M68 28 V46 M52 46 L68 28 M68 46 L52 28" stroke-width="1.5"/>` : ""}
+      ${footway ? `<path d="M22 36 H98" stroke-width="1.5" stroke-dasharray="3 3" stroke="#1E6E76"/>` : ""}
+      ${gate ? `<path d="M24 28 V17 M24 19 H32" stroke-width="1.5"/>` : ""}
+    </g></svg>`;
+  const VIS = {
+    wall: () => `<div class="mw">
+      <div><div class="tn">Getting the car across</div><div class="s q">wide road for a SUV taking my kids to school</div><div class="s n">get the kids across by car at rush hour</div><div class="ans">two lanes, braced</div></div>
+      <div><div class="tn">Walking the dog</div><div class="s q">pavement for pedestrians and dogs</div><div class="s n">walk the dog clear of the cars</div><div class="ans">a footway — new part</div></div>
+    </div>`,
+    woz: () => `<div class="chair">the AI's chair → <b>you</b>, with the plan on paper</div>
+      <div class="mw"><div><div class="s q hand">wide road for a SUV…</div><div class="s n hand">needs: kids across by car</div></div>
+      <div><div class="s q hand">pavement for the dog</div><div class="s n hand">needs: dog clear of cars</div></div></div>
+      <div class="paper">step 3 · read the wall back: “Role 1, is this what you meant?”</div>`,
+    ladder: () => `<svg viewBox="0 0 320 118" role="img" aria-label="a ladder: from smooth cement, up to nothing rattles underfoot, up to a calm crossing, and down the other side to a braced deck" font-family="Atkinson Hyperlegible, system-ui, sans-serif" font-size="11">
+      <defs><marker id="la" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+      <g fill="none" stroke="currentColor" stroke-width="1.2">
+        <rect x="100" y="4" width="120" height="22" rx="3"/><rect x="80" y="44" width="160" height="22" rx="3"/>
+        <rect x="4" y="88" width="120" height="24" rx="3"/><rect x="196" y="88" width="120" height="24" rx="3" stroke="#1E6E76" stroke-width="2"/>
+        <line x1="70" y1="88" x2="110" y2="66" marker-end="url(#la)"/><line x1="160" y1="44" x2="160" y2="26" marker-end="url(#la)"/>
+        <line x1="210" y1="66" x2="250" y2="88" stroke="#1E6E76" stroke-width="1.6" marker-end="url(#la)"/>
+      </g>
+      <g fill="currentColor" text-anchor="middle">
+        <text x="160" y="19">a calm crossing with the kids</text><text x="160" y="59">nothing rattles underfoot</text>
+        <text x="64" y="100">“smooth cement”</text><text x="64" y="110" font-size="9" opacity=".7">no part for it</text>
+        <text x="256" y="100" fill="#1E6E76" font-weight="700">a braced deck</text><text x="256" y="110" font-size="9" fill="#1E6E76">in the kit</text>
+        <text x="78" y="72" font-size="9.5">why?</text><text x="174" y="38" font-size="9.5">why?</text><text x="262" y="72" font-size="9.5" fill="#1E6E76">how, with what I have?</text>
+      </g></svg>`,
+    job: () => `<div class="job">When <mark>I drive the kids to school at rush hour</mark>, I want <mark>a road wide enough for the SUV</mark>, so I can <mark>get them there without queueing</mark>.</div>
+      <div class="paper">from: “I'd like to have a wide road for a SUV taking my kids to school”</div>`,
+    readings: () => `<div class="rd"><div class="said">You said <i>“smooth cement”</i>. Did you mean —</div>
+      <label>○ the stroller shouldn't rattle <span>→ a braced deck</span></label>
+      <label class="sel">● bike tyres shouldn't slip <span>→ a sealed surface</span></label>
+      <label>○ nothing to trip on <span>→ an even walk</span></label>
+      <label>○ none of these — I meant …</label></div>`,
+    empathy: () => `<div class="em">
+      <div><b>says</b>“maybe 12 hours and it closes after 11”</div><div><b>thinks</b>a short day won't work for us</div>
+      <div><b>feels</b><div class="s f">frustrated — “too restrictive”</div></div><div><b>does</b>agrees anyway</div></div>`,
+    journey: () => `<div class="jm"><span><b>7:50 am</b>R1 leaves with the kids</span><em>→</em><span><b>8:05</b>rush hour</span><em>→</em><span class="r2"><b>6 pm</b>R2 walks the dog</span><em>→</em><span><b>9 pm</b>R1 to the shop</span><em>→</em><span><b>11 pm</b>closes</span></div>`,
+    sort: () => `<div class="cs">
+      <div><h5>Role 1's groups</h5><div class="g"><b>Commute</b><div class="s q">wide road for a SUV</div></div><div class="g"><b>Sidewalk</b><div class="s q hit">pavement for dogs</div></div></div>
+      <div><h5>Role 2's groups</h5><div class="g"><b>Cars</b><div class="s q">wide road for a SUV</div></div><div class="g"><b>Safety</b><div class="s q hit">pavement for dogs</div><div class="s q">avoid falling</div></div></div>
+    </div>`,
+    dots: () => `<div class="dv">
+      <span>Walking the dog</span><span class="d"><span class="d1">●</span> <span class="d2">●●●</span></span>
+      <span>Getting the car across</span><span class="d"><span class="d1">●●</span></span>
+      <span>When it's usable</span><span class="d"><span class="d1">●</span> <span class="d2">●</span></span>
+      <span>Underfoot</span><span class="d"><span class="d2">·</span></span></div>
+      <div class="paper"><span class="d1">●</span> Role 1 &nbsp; <span class="d2" style="color:var(--kit)">●</span> Role 2</div>`,
+    kano: () => `<div class="kn">
+      <div><span>A footway for the dog — with it?</span><b>● I'd expect it</b></div>
+      <div><span>— and without it?</span><b>● I'd dislike it</b></div>
+      <div class="res">→ MUST-HAVE · never traded away</div></div>`,
+    hmw: () => `<div class="hmw">How might we keep the dog clear of the cars?</div>
+      <div class="chips"><span class="chip on">a footway — new part</span><span class="chip">a rail between — in the kit</span><span class="chip">walkers at another hour — a rule</span></div>`,
+    rep: () => `<div class="rg">
+      <div class="pick">${bg({footway:true})}<div class="lab">A</div></div><div class="pick">${bg({rail:true, footway:true})}<div class="lab">B</div></div><div>${bg({rail:true})}<div class="lab">C</div></div></div>
+      <div class="rgq">“Which two are alike?” — <b>A and B: walkers kept apart from the cars.</b> → axis: <b>apart ↔ shared</b></div>`,
+    check: () => `<div class="chat">
+      <div class="bub ai"><i>AI</i>Here's your wall. I'd make two lanes with struts and add a footway. I can't make it smooth. Tell me — I like… / I wish… / What if…</div>
+      <div class="bub me"><i>Role 2</i>I like the dog's path. I wish it were on the side away from the lanes. What if it had a rail?</div></div>`,
+    retro: () => `<div class="rt">${bg({rail:true, footway:true, gate:true})}
+      <div><div class="bub me"><i>Role 2, describing it</i>I see the footway. I can't tell where the gate is, or which side the dog walks.</div><span class="tag">partly understood → fix the drawing</span></div></div>`,
+  };
+  const T = [
+    {id:"wall", stage:"hearing", name:"The Wall", sub:"the board itself — pin, group, answer",
+     what:"The AI keeps a board for the room. Every line becomes a note: their words, what they need, why. Notes are grouped into themes across both people, and every theme gets an answer before anything is built.",
+     when:"Always. Every other tool plugs into it.",
+     how:["Pin each line as a note — quote, need, why.","Group the notes into themes; mark which are shared, which belong to one person, which are in tension.","Read the wall back, then answer every theme — with a part, a new part, or a rule."],
+     ex:[["today","six lines → one need heard, three dropped"],["on the wall","four themes → four answers, none dropped"]],
+     asks:"nothing extra — they talk as they do now",
+     more:{io:"lines from two people → notes → themes → one answer per theme → a drawing and a sheet", measure:"answered as said · by other means · declined · dropped; grown", pairs:"everything", fixes:"In lv3s4 the same six lines gave one heard key and a bridge built as the opposite of what was asked."},
+     on:true},
+    {id:"woz", stage:"before", name:"Wizard of Oz", sub:"try it by hand first",
+     what:"A person sits in the AI's chair and follows the plan on paper — before anything is coded.",
+     when:"Before building any new version. Whenever you're not sure a tool is worth it.",
+     how:["Pick a recipe from below.","Run one room with you as the AI, writing the notes and drawing the bridge.","Score it exactly as you'd score a real run."],
+     ex:[["you, as the AI","“Here's your wall. Role 1, is this what you meant by smooth?”"]],
+     asks:"a normal session",
+     more:{io:"two participants, a script, the plan on paper → one run, on paper", measure:"the same numbers, taken by hand", pairs:"whichever recipe you mean to code", fixes:"If the plan doesn't give a better bridge with a human doing it, no prompt will."},
+     on:true},
+    {id:"ladder", stage:"hearing", name:"Laddering", sub:"ask why until you reach what matters",
+     what:"Climb from the thing they named to what it's for, then build for that — with any part you have.",
+     when:"Whenever someone names a thing the kit doesn't have: a material, a finish, a brand of thing.",
+     how:["Write down what they named.","Write what it's for. If you can't tell, ask one “why?”","Build for step 2, with whatever part delivers it."],
+     ex:[["they said","“smooth cement”"],["what it's for","the stroller rattles on anything rough"],["so","a braced deck — no smooth surface needed"]],
+     asks:"nothing — or one “why?”",
+     more:{io:"a sentence → attribute → consequence → value → an answer at the consequence", measure:"answered by other means", pairs:"Three readings, Member check. Overlaps with Job stories — pick one.", fixes:"12 of 78 lines named a material. All were things the kit can't make; all had a reason it can."},
+     on:true},
+    {id:"job", stage:"hearing", name:"Job stories", sub:"say every need the same way",
+     what:"Rewrite each need in one shape: When …, I want …, so I can …",
+     when:"When needs have to travel from one person to the other.",
+     how:["Fill the three blanks from what they said.","Mark any blank you had to guess.","Pass the job story on — not the raw sentence."],
+     ex:[["they said","“pavement for pedestrians and dogs”"],["job story","When I walk the dog after work, I want a path off the road, so I can keep him away from cars."]],
+     asks:"nothing",
+     more:{io:"a sentence → when · I want · so I can", measure:"captured", pairs:"relay routes. Overlaps with Laddering — pick one.", fixes:"“Why: not stated” stops being empty. The other person hears the situation, not a category."}},
+    {id:"readings", stage:"hearing", name:"Three readings", sub:"let them tap what they meant",
+     what:"For a short line, show two or three things it could mean — each with the bridge it would give — and let the person tap one.",
+     when:"One-line rooms. That's 27 of your 32.",
+     how:["Write two or three readings that would lead to different bridges.","Show each with its bridge, plus “none of these”.","Take the tap as their answer."],
+     ex:[["they said","“smooth cement”"],["shown","○ stroller shouldn't rattle · ○ bike tyres shouldn't slip · ○ nothing to trip on · ○ none of these"]],
+     asks:"one tap",
+     more:{io:"one sentence → 2–3 readings with builds → a choice", measure:"captured", pairs:"Laddering (fills the missing rung), Member check", fixes:"One paraphrase hides the ambiguity; three show it. Choosing is cheaper than typing, which is why they typed once."}},
+    {id:"empathy", stage:"hearing", name:"Empathy map", sub:"pin feelings too",
+     what:"A note for what someone feels or fears — not only what they need.",
+     when:"When someone pushes back, hesitates, or gives something up.",
+     how:["Spot the feeling in a line.","Pin it as its own note, in their words.","Let it count when the two people disagree — a reluctant yes is not a yes."],
+     ex:[["they said","“I think that is too restrictive”"],["note","Role 1 · frustrated; agreed to 12 hours as a concession"]],
+     asks:"nothing",
+     more:{io:"a line → say · think · feel · do → a feelings note", measure:"understood", pairs:"Dot voting, Kano", fixes:"Frustration currently reads as nothing. The 12-hour agreement cost Role 1 something, and the builder never knew."}},
+    {id:"journey", stage:"synthesis", name:"Journey map", sub:"lay the needs along the day",
+     what:"Put the themes on a timeline of how each person uses the bridge.",
+     when:"When people talk in times — rush hour, after work, at night.",
+     how:["Note every time or occasion mentioned.","Put both people's days on one strip.","Use it to decide rules, like hours, and to explain them."],
+     ex:[["strip","7:50 kids to school → 8:05 rush hour → 6 pm dog walk → 9 pm shop → 11 pm closes"]],
+     asks:"nothing",
+     more:{io:"notes → a timeline per person → themes tagged with their moment", measure:"answered (rules), understood", pairs:"The Wall (rules on the sheet)", fixes:"“Until 11 pm”, “after work”, “rush hour” are moments, not features. Today they're unbuildable."}},
+    {id:"sort", stage:"synthesis", name:"Open card sort", sub:"let them group the notes",
+     what:"Each person groups the notes themselves and names the groups.",
+     when:"To find out whether the two people see the same problem — and whether the AI groups the way they do.",
+     how:["Show the notes unsorted to each person.","Each groups and names them.","Compare: person to person, and each to the AI's wall."],
+     ex:[["Role 1 filed","“pavement for dogs” under Sidewalk"],["Role 2 filed","the same note under Safety"]],
+     asks:"a few minutes, once",
+     more:{io:"the room's notes → two groupings → agreement scores", measure:"agreement", pairs:"Repertory grid", fixes:"A measure of collaboration no bridge score gives you. It changes nothing about the build — that's the point."}},
+    {id:"dots", stage:"prioritising", name:"Dot voting", sub:"three dots each",
+     what:"Before building, each person marks the themes that matter most to them.",
+     when:"When themes are in tension, or there are more than the kit can meet at once.",
+     how:["Ask for three dots each.","Show both people's dots side by side.","Decide the way the dots lean — and say so."],
+     ex:[["wall","Walking the dog ● R1 ●●● R2 · Getting the car across ●● R1"]],
+     asks:"three taps",
+     more:{io:"the wall → 3 dots per person → a priority per theme", measure:"priority", pairs:"Kano, How Might We", fixes:"The builder admits it “picks a side” when people disagree. Dots let the people pick first."},
+     on:true},
+    {id:"kano", stage:"prioritising", name:"Kano", sub:"must-have or nice-to-have?",
+     what:"Two quick questions per theme tell you which needs are non-negotiable.",
+     when:"When counting mentions misleads — one “safety is a must” outweighs three “nice views”.",
+     how:["Ask: how would you feel with it? And without it?","Mark each theme must or nice.","Never trade a must away."],
+     ex:[["asked","“A footway for the dog?” → I'd expect it → must"]],
+     asks:"two taps per theme",
+     more:{io:"a theme → two answers → must / nice / indifferent", measure:"priority", pairs:"Dot voting, Empathy map", fixes:"The builder weighs needs by how often they're said. Kano lets a thing said once count as essential."}},
+    {id:"hmw", stage:"deciding", name:"How Might We", sub:"ask before you pick a part",
+     what:"Turn each theme into a question that has more than one answer.",
+     when:"When the obvious part isn't in the kit, or a theme could be met several ways.",
+     how:["Write “How might we …?” from what the need is for.","List answers — in the kit and beyond it.","Pick one; keep the others on the sheet."],
+     ex:[["theme","Walking the dog"],["HMW","keep the dog clear of the cars? → a footway · a rail between · walkers at a different hour"]],
+     asks:"nothing — or a tap between answers",
+     more:{io:"a theme → a question → 2–3 answers → one chosen", measure:"grown (answers that needed a new part)", pairs:"The Wall, Repertory grid", fixes:"“Pavement” was one answer of several. The question opens the others."}},
+    {id:"rep", stage:"deciding", name:"Repertory grid", sub:"find their own axes",
+     what:"Show three bridges and ask which two are alike. The way they answer reveals the differences that matter to them.",
+     when:"When deciding what the kit should be able to make.",
+     how:["Show three drawings.","Ask which two are alike, and how the third differs.","Keep the differences that keep coming up — those are your new axes."],
+     ex:[["Role 2, shown three","“These two keep walkers away from whatever's crossing. That one mixes them.” → apart ↔ shared"]],
+     asks:"a few rounds, a minute each",
+     more:{io:"triads of drawings → their constructs → candidate axes", measure:"grown (elicited, not guessed)", pairs:"Open card sort, The Wall", fixes:"The 8 axes are the designer's. This gets the participants' — in their words."}},
+    {id:"check", stage:"checking", name:"Member check", sub:"I like · I wish · what if",
+     what:"Before building, read the wall back and ask for three things in a shape people already know.",
+     when:"Before every build. In a one-line room, this is the whole conversation.",
+     how:["Say what you took, what you'd make, what you'd add, and what you can't.","Ask: I like … / I wish … / What if …","Fix the wall. Then build."],
+     ex:[["AI","“Here's your wall. Tell me — I like, I wish, what if.”"],["Role 2","“I like the dog's path. I wish it were away from the lanes. What if it had a rail?”"]],
+     asks:"one tap, or three short lines",
+     more:{io:"the wall and the intended answers → three lines each → corrections applied", measure:"captured, understood", pairs:"Three readings, Dot voting", fixes:"Nobody in 148 rooms was ever asked “did I get that right?”"},
+     on:true},
+    {id:"retro", stage:"evaluating", name:"Retrospective walkthrough", sub:"ask them to describe what they see",
+     what:"After the build, each person describes the drawing in their own words.",
+     when:"At the end of every room.",
+     how:["Ask them to describe the bridge to someone who can't see it.","Compare what they say with what was built.","Where they missed something, fix the drawing — often it's the view, not the build."],
+     ex:[["Role 2","“I see the footway. I can't tell where the gate is.” → partly understood"]],
+     asks:"a minute of talking",
+     more:{io:"the drawing and sheet → their narration → understood: full / partial / not", measure:"understood", pairs:"Member check, the axonometric drawing", fixes:"Role 2 in lv3s4 scored 0 of 2 and never saw why. The side view can't show where the dog walks."}},
+  ];
+  const RECIPES = [
+    {name:"A one-line room", why:"27 of your 32 rooms. Nobody types twice, so every ask has to be a tap.",
+     steps:["The Wall — one note per person","Three readings — they tap what they meant","Laddering — the tap fills in the why","Member check — one tap","Build, with the sheet","Retrospective walkthrough"], use:["wall","readings","ladder","check","retro"]},
+    {name:"Two people in tension", why:"Role 1's lanes against Role 2's footway. Today the builder picks a side silently.",
+     steps:["The Wall — mark the theme in tension","Empathy map — what the compromise costs","Dot voting — three dots each","How Might We — answers that serve both","Member check","Build, or offer two"], use:["wall","empathy","dots","hmw","check"]},
+    {name:"Role 1 → AI → Role 2", why:"The relay routes. What crosses between the people is the whole question.",
+     steps:["The Wall — from Role 1's lines","Job stories — the portable form","Hand Role 2 the wall, not a summary","Open card sort — does Role 2 group it as Role 1 would?","Member check with both, then build"], use:["wall","job","sort","check"]},
+    {name:"Deciding what the kit should be", why:"Before adding a part, find out which differences the participants actually see.",
+     steps:["Repertory grid — before the room","Open card sort — across several rooms","Keep the differences that recur","Add the top two as axes, draw them, then run the Wall"], use:["rep","sort","wall"]},
+    {name:"Before you code anything", why:"The plan is the experiment. Test it with a person in the AI's chair.",
+     steps:["Pick a recipe above","Wizard of Oz — run it by hand","Score it the same way","Code only what worked on paper"], use:["woz","wall","check"]},
+  ];
+
+  const KEY = "toolmakers-kit-v2";
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || "null"); } catch { return null; } };
+  const save = s => { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch {} };
+  const defaults = () => ({ on: Object.fromEntries(T.map(t => [t.id, !!t.on])), stage: "all" });
+  let state = Object.assign(defaults(), load() || {});
+  state.on = Object.assign(defaults().on, state.on || {});
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+  function renderFilters(){
+    document.getElementById("filters").innerHTML = [["all","all stages"], ...STAGES].map(([s, label]) =>
+      `<button type="button" data-stage="${s}" aria-pressed="${state.stage === s}">${s === "all" ? label : s}</button>`).join("");
+  }
+  function card(t){
+    return `<div class="card" data-id="${t.id}">
+      <div class="top"><div><div class="name">${esc(t.name)}</div><div class="sub">${esc(t.sub)}</div></div>
+        <button type="button" class="add" data-add="${t.id}" aria-pressed="${!!state.on[t.id]}">${state.on[t.id] ? "in my kit" : "add to my kit"}</button></div>
+      ${VIS[t.id] ? `<div class="vis">${VIS[t.id]()}</div>` : ""}
+      <div class="f"><b>what it is</b>${esc(t.what)}</div>
+      <div class="f"><b>use it when</b>${esc(t.when)}</div>
+      <div class="f"><b>how</b><ol>${t.how.map(s => `<li>${esc(s)}</li>`).join("")}</ol></div>
+      <div class="f"><b>example</b><div class="ex">${t.ex.map(([w, x]) => `<i>${esc(w)}</i><span>${esc(x)}</span>`).join("")}</div></div>
+      <details class="more"><summary>more</summary><div>
+        <span><b>in → out:</b> ${esc(t.more.io)}</span>
+        <span><b>what it fixes:</b> ${esc(t.more.fixes)}</span>
+        <span><b>number it gives you:</b> ${esc(t.more.measure)}</span>
+        <span><b>pairs with:</b> ${esc(t.more.pairs)}</span>
+      </div></details>
+      <div class="asks">asks of the person: ${esc(t.asks)}</div>
+    </div>`;
+  }
+  function renderTools(){
+    document.getElementById("tools").innerHTML = STAGES.map(([s, label]) => {
+      const xs = T.filter(t => t.stage === s);
+      const hide = state.stage !== "all" && state.stage !== s;
+      return `<div class="stagehead" ${hide ? "hidden" : ""}><h3>${s}</h3><span>${esc(label)}</span></div>
+              <div class="cards" ${hide ? "hidden" : ""}>${xs.map(card).join("")}</div>`;
+    }).join("");
+    renderText();
+  }
+  function renderRecipes(){
+    document.getElementById("recipes").innerHTML = RECIPES.map(r => `<div class="recipe">
+      <h3>${esc(r.name)}</h3><p class="why">${esc(r.why)}</p>
+      <ol>${r.steps.map(s => `<li>${esc(s)}</li>`).join("")}</ol>
+      <button type="button" class="add use" data-use="${r.use.join(",")}">use this recipe</button>
+    </div>`).join("");
+  }
+  function kitText(){
+    const on = T.filter(t => state.on[t.id]);
+    const lines = ["TOOLMAKERS' KIT — my selection", ""];
+    for (const [s] of STAGES) { const xs = on.filter(t => t.stage === s); if (xs.length) lines.push(`${s.toUpperCase()}: ${xs.map(t => t.name).join(" · ")}`); }
+    if (!on.length) lines.push("(nothing picked yet)");
+    return lines.join("\n");
+  }
+  function renderText(){ document.getElementById("kitText").value = kitText(); }
+
+  document.getElementById("filters").addEventListener("click", e => {
+    const b = e.target.closest("button[data-stage]"); if (!b) return;
+    state.stage = b.dataset.stage; save(state); renderFilters(); renderTools();
+  });
+  document.getElementById("tools").addEventListener("click", e => {
+    const b = e.target.closest("button[data-add]"); if (!b) return;
+    state.on[b.dataset.add] = !state.on[b.dataset.add]; save(state); renderTools();
+  });
+  document.getElementById("recipes").addEventListener("click", e => {
+    const b = e.target.closest("button[data-use]"); if (!b) return;
+    for (const id of Object.keys(state.on)) state.on[id] = false;
+    for (const id of b.dataset.use.split(",")) state.on[id] = true;
+    state.stage = "all"; save(state); renderFilters(); renderTools();
+    document.getElementById("tools").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  document.getElementById("copy").addEventListener("click", async () => {
+    const t = document.getElementById("toast"), txt = kitText();
+    try { await navigator.clipboard.writeText(txt); t.textContent = "Copied."; }
+    catch { const ta = document.getElementById("kitText"); ta.focus(); ta.select(); t.textContent = "Select the text and copy it."; }
+    setTimeout(() => { t.textContent = ""; }, 2500);
+  });
+  document.getElementById("reset").addEventListener("click", () => { state = defaults(); save(state); renderFilters(); renderTools(); });
+
+  renderFilters(); renderTools(); renderRecipes();
+})();
+</script>
+</body>
+</html>
