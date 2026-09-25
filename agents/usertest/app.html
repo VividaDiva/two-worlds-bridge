@@ -299,6 +299,16 @@ textarea[disabled]{opacity:.5}
 .result .none{opacity:.55; font-style:italic; font-size:18px}
 .result .row{margin-top:14px}
 .result button.go{background:var(--paper); color:var(--ink)}
+.sketch{margin-top:18px; padding-top:16px; border-top:1px solid rgba(245,240,230,.18);
+  display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:22px; align-items:start}
+.sketch img{width:100%; height:auto; display:block; border-radius:3px; background:#f4efe6}
+.sketch .empty{aspect-ratio:16/10; border:1px dashed rgba(245,240,230,.3); border-radius:3px;
+  display:flex; align-items:center; justify-content:center; color:rgba(245,240,230,.55); font-style:italic; font-size:14px; text-align:center; padding:16px}
+.sketch .note{font-size:13.5px; color:rgba(245,240,230,.72); line-height:1.5; margin:8px 0 0}
+.sketch .row{margin-top:12px}
+.sketch .mini{color:var(--paper); border-color:rgba(245,240,230,.35)}
+.sketch button.go[disabled]{opacity:.55; cursor:progress}
+@media (max-width:760px){.sketch{grid-template-columns:1fr}}
 .scores{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:15px;
   padding-top:15px; border-top:1px solid rgba(245,240,230,.18)}
 @media (max-width:620px){.scores{grid-template-columns:1fr}}
@@ -747,12 +757,38 @@ function resultBar(h){
              <span>${esc(n.text)}</span></li>`).join("") || `<li>no need was set</li>`}
         </ul></div>`).join("")}</div>`
       : `<div class="row"><button class="go" id="fin">End the session and show what they needed</button></div>`}
+    ${h.sketches ? sketchPanel(h) : ""}
     ${h.lines.length ? `<div class="saved">
       <span class="muted">Saved after every line.</span>
       <a class="mini" href="/api/export?room=${esc(h.room)}&format=md" download>Download chat</a>
       <a class="mini" href="/api/export?room=${esc(h.room)}&format=json" download>Download data</a>
       <a class="mini" href="/history" target="_blank" rel="noopener">History</a>
     </div>` : ""}
+  </div>`;
+}
+
+// The AI draws the crossing from the words alone — no keys, no kit — so the desk
+// can put its two reconstructions side by side: the one the workshop could hold,
+// and the one the words carried. Facilitator only, and on request, because each
+// drawing is an image-model call.
+function sketchPanel(h){
+  const ks = h.sketches || [], last = ks[ks.length - 1];
+  const said = h.lines.filter(l => l.who !== "builder" && !l.upload && l.text).length;
+  const stale = last && said > last.lines;
+  return `<div class="sketch">
+    <div>${last
+      ? `<img src="/sketch/${esc(h.room)}/${last.n}.png" alt="the AI's pencil sketch of the bridge, drawn from the chat alone">`
+      : `<div class="empty">${h.sketching ? "Drawing from what they said…" : "No sketch yet. The AI can draw the bridge from the chat alone — no keys, no kit — so you can see what the words carried that the build could not hold."}</div>`}</div>
+    <div>
+      <p class="eyebrow">Sketched from the chat alone</p>
+      <p class="what ${last ? "" : "none"}">${last ? `Drawn from ${last.lines} line${last.lines === 1 ? "" : "s"}${ks.length > 1 ? ` · sketch ${last.n} of ${ks.length}` : ""}` : "nothing drawn yet"}</p>
+      ${h.sketchError ? `<p class="note" style="color:#f2b8a6"><b>Could not draw it:</b> ${esc(h.sketchError)}</p>` : ""}
+      <p class="note">The crossing above is built from the 17 keys. This is drawn from the words, with no keys and no workshop between them — a second reconstruction of the same chat. Where the two differ is what the keys dropped.${stale ? ` <b>${said - last.lines} more line${said - last.lines === 1 ? " has" : "s have"} been said since this was drawn.</b>` : ""}</p>
+      ${h.finished === undefined || h.role !== "host" || !document.getElementById || location.pathname.startsWith("/history") ? "" : `<div class="row">
+        <button class="go" id="sketch" ${h.sketching || !said ? "disabled" : ""}>${h.sketching ? "Drawing…" : last ? "Draw it again from the chat" : "Draw it from the chat"}</button>
+        ${ks.length > 1 ? ks.slice(0, -1).map(k => `<a class="mini" href="/sketch/${esc(h.room)}/${k.n}.png" target="_blank" rel="noopener">sketch ${k.n}</a>`).join("") : ""}
+      </div>`}
+    </div>
   </div>`;
 }
 
@@ -783,6 +819,8 @@ function bothView(){
   if (cv && window.drawCrossing) drawCrossing(cv, h.shape, h.world);
   const f = document.getElementById("fin");
   if (f) f.onclick = () => post("/api/finish", { room: a.room });
+  const sk = document.getElementById("sketch");
+  if (sk) sk.onclick = () => { sk.disabled = true; sk.textContent = "Drawing…"; post("/api/sketch", { room: a.room }); };
   const base = { argument: a.argument, route: a.route };
   app.querySelectorAll("[data-fa]").forEach(x => x.onclick = () => choose(base, { argument: x.dataset.fa }));
   app.querySelectorAll("[data-fr]").forEach(x => x.onclick = () => choose(base, { route: x.dataset.fr }));
@@ -1022,7 +1060,7 @@ async function historyView(id){
   }
   const h = { room: rec.room, role: "host", title: rec.title, arrow: rec.arrow, finished: rec.finished,
     lines: rec.transcript, standing: rec.standing, shape: rec.shape, world: rec.world || {},
-    provenance: rec.provenance, score: rec.score, thinking: false };
+    provenance: rec.provenance, score: rec.score, thinking: false, sketches: rec.sketches || [] };
   const when = t => t ? new Date(t).toLocaleString([], { dateStyle: "full", timeStyle: "short" }) : "";
   app.classList.add("wide");
   app.innerHTML = `

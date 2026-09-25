@@ -284,3 +284,43 @@ export async function readPicture(base64, media) {
   const saw = reads.map(r => typeof r.saw === "string" ? r.saw.trim() : "").find(Boolean) || "";
   return { shape, needs: propsOf(shape), saw };
 }
+
+// A second reconstruction of the same conversation, and a check on the first:
+// the builder makes the crossing out of keys, and the keys are only what the
+// workshop can make. This makes a picture out of the words alone — no keys, no
+// kit, no goals — so the desk can show what the words carried that the kit
+// could not hold. Drawn by hand, on paper, because a rendering would claim a
+// precision the words never had.
+const SKETCH_MODEL = process.env.SKETCH_MODEL || "gemini-2.5-flash-image";
+export async function sketch({ title, ground, lines }) {
+  const said = lines.map(l => `${l.who}: "${l.text}"`).join("\n");
+  const prompt = [
+    `A quick pencil sketch on paper, drawn by hand, of a bridge — as described only by what two people said.`,
+    `Draw what their words support and nothing they did not ask for. Side view with a little depth is fine.`,
+    `No text, no labels, no captions, no title. Plain paper, graphite lines, a few hatched shadows.`,
+    ground ? `The ground between the banks: ${ground}.` : `Nothing was said about what is under it.`,
+    `The case: ${title}.`,
+    ``,
+    `What they said, in order:`,
+    said || "(nothing yet)",
+  ].join("\n");
+  let res;
+  try {
+    res = await generateWithBackoff({
+      model: SKETCH_MODEL, contents: prompt,
+      config: { responseModalities: ["IMAGE", "TEXT"] },
+    });
+  } catch (e) {
+    // The API answers with a JSON body; the facilitator needs the sentence in it.
+    const m = (e.message || "").match(/"code":\s*(\d+)[^}]*?"message":\s*"([^"]*)"/);
+    if (m && m[1] === "403") throw new Error("this key's Google project may not use Gemini's image models (" + m[2] + ") — image generation needs a billing-enabled project, or a key from one");
+    throw new Error(m ? m[1] + " " + m[2] : e.message);
+  }
+  const parts = res.candidates?.[0]?.content?.parts || [];
+  const img = parts.find(p => p.inlineData && /^image\//.test(p.inlineData.mimeType || ""));
+  if (!img) {
+    const why = parts.map(p => p.text).filter(Boolean).join(" ").slice(0, 160);
+    throw new Error("no drawing came back" + (why ? `: ${why}` : ""));
+  }
+  return { base64: img.inlineData.data, media: img.inlineData.mimeType, prompt };
+}

@@ -15,7 +15,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { mkCtx, hear, newTurn, build, provenance } from "../engine.mjs";
 import { ARGUMENTS, ROUTES, NAME, FEATURES, KIT, propsOf } from "./kit.mjs";
-import { readLine, chooseBuild, speak, readPicture, relay } from "./builder.mjs";
+import { readLine, chooseBuild, speak, readPicture, relay, sketch } from "./builder.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 8780);
@@ -106,6 +106,12 @@ function view(room, role) {
     // showing: it is the only place you can see whose meaning it acted on.
     provenance: role === "host" ? provenance(room.ctx).feats : null,
     thinking: room.thinking,
+    // A drawing made from the words alone, beside the crossing made from the
+    // keys. Facilitator only, like the keys: it is a check on the pipeline, not
+    // part of the conversation.
+    sketching: !!room.sketching,
+    sketchError: role === "host" ? (room.sketchError || null) : null,
+    sketches: role === "host" ? (room.sketches || []).map(k => ({ n: k.n, at: k.at, turn: k.turn, lines: k.lines })) : null,
     finished: room.finished,
     score: room.finished ? room.score : null,
     lines: room.transcript.filter(e => visible(room, e, role))
@@ -154,6 +160,9 @@ function record(room) {
     provenance: provenance(room.ctx).feats,
     // Needs met so far, even before End is pressed; `finished` says which.
     score: room.score || scoreRoom(room),
+    // The sketches are files beside the pictures; the record keeps when and
+    // from how much of the chat each was drawn, and the prompt it was drawn from.
+    sketches: (room.sketches || []).map(k => ({ n: k.n, at: k.at, turn: k.turn, lines: k.lines, media: k.media, prompt: k.prompt })),
   };
   // Written aside and moved into place, so a restart mid-write leaves the last
   // good record rather than half of a new one.
@@ -368,7 +377,8 @@ function restore() {
         turn: rec.turn ?? rec.transcript.filter(e => e.who !== "builder").length,
         transcript: rec.transcript, uploads, standing: rec.standingId ?? null, thinking: false,
         finished: !!rec.finished, score: rec.finished ? rec.score : undefined,
-        claimed: rec.claimed || {}, createdAt: rec.createdAt, seenPicture });
+        claimed: rec.claimed || {}, createdAt: rec.createdAt, seenPicture,
+        sketches: (rec.sketches || []).filter(k => fs.existsSync(path.join(pics, `${rec.room}-sketch-${k.n}.png`))) });
       streams.set(rec.room, new Set());
       n++;
     } catch (e) { console.error(`could not restore ${f}: ${e.message}`); }
@@ -407,7 +417,7 @@ const srv = http.createServer(async (req, res) => {
     while (rooms.has(id) || fs.existsSync(path.join(SESSIONS, `${id}.json`))) id = code();
     rooms.set(id, { id, argument, route, ctx: mkCtx(), turn: 0, transcript: [],
                     uploads: {}, standing: null, thinking: false, finished: false,
-                    createdAt: new Date().toISOString() });
+                    sketches: [], createdAt: new Date().toISOString() });
     streams.set(id, new Set());
     // Saved at once, so a room whose links are already out survives a restart
     // even before anybody has spoken in it.
@@ -601,6 +611,42 @@ const srv = http.createServer(async (req, res) => {
       } finally { r.thinking = false; }
     }
     return push(id);
+  }
+
+  // The AI draws the bridge from the chat alone — no keys, no kit — so the desk
+  // can put the two reconstructions side by side. On the facilitator's request,
+  // not on every turn: each drawing is an image-model call.
+  if (p === "/api/sketch" && req.method === "POST") {
+    const { room: id } = await body(req);
+    const r = rooms.get(id);
+    if (!r) return json(res, 404, { error: "no such room" });
+    if (r.sketching) return json(res, 409, { error: "still drawing the last one" });
+    const lines = r.transcript.filter(e => e.who !== "builder" && !e.upload && e.text)
+      .map(e => ({ who: WHO[e.who], text: e.text }));
+    if (!lines.length) return json(res, 409, { error: "nothing has been said yet" });
+    r.sketching = true; push(id);
+    json(res, 200, { ok: true });
+    try {
+      const arg = ARGUMENTS[r.argument];
+      const ground = r.ctx.world.water ? "water" : r.ctx.world.rock ? "a drop in rock" : "";
+      const out = await sketch({ title: arg.title, ground, lines });
+      const n = (r.sketches || []).length + 1;
+      fs.writeFileSync(path.join(UPLOADS, `${id}-sketch-${n}.png`), Buffer.from(out.base64, "base64"));
+      (r.sketches ||= []).push({ n, at: Date.now(), turn: r.turn, lines: lines.length, media: out.media, prompt: out.prompt });
+      r.sketchError = null;
+    } catch (e) {
+      // Not a line in the conversation: the drawing is the facilitator's check,
+      // and a failed check must not appear in the record as something the AI said.
+      r.sketchError = e.message;
+    } finally { r.sketching = false; }
+    return push(id);
+  }
+  const sk = p.match(/^\/sketch\/([a-z0-9]+)\/(\d+)\.png$/);
+  if (sk && req.method === "GET") {
+    const file = path.join(UPLOADS, `${sk[1]}-sketch-${sk[2]}.png`);
+    if (!fs.existsSync(file)) { res.writeHead(404); return res.end("no such sketch"); }
+    res.writeHead(200, { "content-type": "image/png", "cache-control": "private, max-age=31536000" });
+    return res.end(fs.readFileSync(file));
   }
 
   if (p === "/api/finish" && req.method === "POST") {
