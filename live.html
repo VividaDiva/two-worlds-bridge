@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Two worlds, one builder — live</title>
+<style>
+  body{margin:0;background:#f1f2ee;color:#1e2321;font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+  main{max-width:40rem;margin:18vh auto 0;padding:0 20px}
+  h1{font-size:20px;margin:0 0 8px}
+  p{margin:0 0 10px;color:#5b635e}
+  a{color:#1e6e76}
+  code{font-family:ui-monospace,monospace;font-size:14px}
+</style>
+</head>
+<body>
+<main>
+  <h1>Opening the live user test…</h1>
+  <p id="msg">Looking up today's address.</p>
+</main>
+<script>
+// The user test runs on a Mac behind a quick tunnel whose address changes
+// whenever it expires — dozens of times a day. The supervisor on that Mac
+// writes the current address to live.json beside this page each time; this
+// page reads it and sends you on, keeping whatever path you asked for:
+//   live.html                 → the facilitator console
+//   live.html#/j/abcde/both   → that room's desk
+//   live.html#/j/abcde/A      → Role 1's seat in that room
+(async () => {
+  const msg = document.getElementById("msg");
+  const path = location.hash.replace(/^#/, "") || "/";
+  try {
+    const r = await fetch("live.json?" + Date.now(), { cache: "no-store" });
+    const { url, at } = await r.json();
+    if (!url) throw new Error("no address");
+    const to = url.replace(/\/$/, "") + path;
+    msg.innerHTML = `Going to <a href="${to}">${to}</a><br><small>address as of ${new Date(at).toLocaleString()}</small>`;
+    location.replace(to);
+  } catch (e) {
+    msg.textContent = "The live test does not seem to be running right now. Ask the facilitator for a link.";
+  }
+})();
+</script>
+</body>
+</html>

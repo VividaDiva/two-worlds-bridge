@@ -11,6 +11,13 @@ PORT=${PORT:-8780}
 LOG=/tmp/tunnel2.log
 say() { echo "$(date '+%F %T') $*"; }
 
+# The address goes to live.json on the GitHub Pages site, so one permanent
+# link — .../two-worlds-bridge/live.html — always reaches the current one.
+publish() {
+  printf '{ "url": "%s", "at": "%s" }\n' "$1" "$(date -u +%FT%TZ)" > live.json
+  git add live.json && git commit -q -m "live: $(echo "$1" | sed -E 's#https://([a-z0-9-]+).*#\1#')" live.json \
+    && git push -q origin main && say "published to live.html" || say "could not publish the address"
+}
 start_server() {
   say "starting server"
   nohup node --env-file=.env usertest/server.mjs >> /tmp/usertest-server.log 2>&1 &
@@ -22,7 +29,7 @@ start_tunnel() {
   nohup cloudflared tunnel --url "http://localhost:$PORT" --logfile "$LOG" > /tmp/tunnel2.out 2>&1 &
   for i in {1..30}; do
     u=$(grep -ho 'https://[a-z0-9-]*\.trycloudflare\.com' "$LOG" /tmp/tunnel2.out 2>/dev/null | tail -1)
-    [ -n "$u" ] && { say "tunnel up: $u"; return; }
+    [ -n "$u" ] && { say "tunnel up: $u"; publish "$u"; return; }
     sleep 2
   done
   say "tunnel gave no address"
