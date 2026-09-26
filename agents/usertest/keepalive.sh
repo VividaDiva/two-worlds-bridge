@@ -14,9 +14,11 @@ say() { echo "$(date '+%F %T') $*"; }
 # The address goes to live.json on the GitHub Pages site, so one permanent
 # link — .../two-worlds-bridge/live.html — always reaches the current one.
 publish() {
-  printf '{ "url": "%s", "at": "%s" }\n' "$1" "$(date -u +%FT%TZ)" > live.json
-  git add live.json && git commit -q -m "live: $(echo "$1" | sed -E 's#https://([a-z0-9-]+).*#\1#')" live.json \
-    && git push -q origin main && say "published to live.html" || say "could not publish the address"
+  # live.json lives at the repository root, whatever directory this runs from.
+  local root; root=$(git rev-parse --show-toplevel) || { say "not in the repository"; return; }
+  printf '{ "url": "%s", "at": "%s" }\n' "$1" "$(date -u +%FT%TZ)" > "$root/live.json"
+  git -C "$root" add live.json && git -C "$root" commit -q -m "live: $(echo "$1" | sed -E 's#https://([a-z0-9-]+).*#\1#')" live.json \
+    && git -C "$root" push -q origin main && say "published to live.html" || say "could not publish the address"
 }
 start_server() {
   say "starting server"
