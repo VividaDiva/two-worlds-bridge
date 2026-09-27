@@ -24,13 +24,13 @@
 // whenever it expires — dozens of times a day. The supervisor on that Mac
 // writes the current address to live.json beside this page each time; this
 // page reads it and sends you on, keeping whatever path you asked for:
-//   live.html                 → a fresh facilitator room (/desk); previous chats stay in History
+//   live.html                 → the studio; saved pair and path records resume
 //   live.html#/               → the console, to pick a use case first
 //   live.html#/j/abcde/both   → that room's desk
 //   live.html#/j/abcde/A      → Role 1's seat in that room
 (async () => {
   const msg = document.getElementById("msg");
-  const path = location.hash.replace(/^#/, "") || "/desk";
+  const path = location.hash.replace(/^#/, "") || "/";
   try {
     const r = await fetch("live.json?" + Date.now(), { cache: "no-store" });
     const { url, at } = await r.json();

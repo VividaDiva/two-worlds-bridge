@@ -21,6 +21,8 @@ test("new rooms are empty; both people's chat and AI replies survive in History 
   // Exercise the actual server and persistence with a deterministic AI boundary.
   // No SDKs, credentials, model requests, or production session files are used.
   const mock = `
+    export const toolkitReply = async () => "Test AI reply";
+    export const readPictureToolkit = async () => ({description:"A reference crossing"});
     export const readLine = async () => ({ asks: [], refuses: [] });
     export const chooseBuild = async () => ({ id: null });
     export const speak = async () => "Test AI reply";
@@ -91,6 +93,28 @@ test("new rooms are empty; both people's chat and AI replies survive in History 
   }
   try {
     await start();
+    assert.equal((await get("/api/users")).length,2);
+    const ctl=await post("/api/switch",{user:"user1",argument:"pairs",agent:"keys"});
+    assert.equal(ctl.route,"all");
+    await post("/api/say",{room:ctl.room,role:"A",text:"Control contribution"});
+    const tk=await post("/api/switch",{user:"user1",argument:"pairs",agent:"toolkit"});
+    assert.notEqual(tk.room,ctl.room);
+    assert.deepEqual((await get(`/api/state?room=${tk.room}&role=host`)).lines,[]);
+    assert.equal((await post("/api/switch",{user:"user1",argument:"pairs",agent:"keys"})).room,ctl.room);
+    assert.equal((await get(`/api/state?room=${ctl.room}&role=host`)).lines[0].text,"Control contribution");
+    const secondUser=await post("/api/switch",{user:"user2",argument:"pairs",agent:"keys"});
+    assert.notEqual(secondUser.room,ctl.room);
+    assert.deepEqual((await get(`/api/state?room=${secondUser.room}&role=host`)).lines,[]);
+    const otherPath=await post("/api/switch",{user:"user1",argument:"pairs",agent:"keys",route:"confer"});
+    assert.notEqual(otherPath.room,ctl.room);
+    assert.deepEqual((await get(`/api/state?room=${otherPath.room}&role=host`)).lines,[]);
+    const otherToolkit=await post("/api/switch",{user:"user1",argument:"pairs",agent:"toolkit",route:"confer"});
+    assert.notEqual(otherToolkit.room,tk.room);
+    assert.equal((await get(`/api/state?room=${otherToolkit.room}&role=host`)).route,"confer");
+    assert.equal((await post("/api/switch",{user:"user1",argument:"pairs",agent:"keys",route:"all"})).room,ctl.room);
+    assert.equal((await post("/api/switch",{user:"user1",argument:"pairs",agent:"keys",room:otherPath.room})).route,"confer");
+    const invalidPath=await request("/api/switch",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({user:"user1",argument:"pairs",agent:"keys",route:"missing"})});
+    assert.equal(invalidPath.status,400);
     const options = await get("/api/options");
     const argument = options.arguments.find(a => !a.upload).id;
     const { room } = await post("/api/create", { argument, route: "confer" });
@@ -115,10 +139,23 @@ test("new rooms are empty; both people's chat and AI replies survive in History 
     assert.ok((await request(`/api/export?room=${room}&format=md`)).ok);
     assert.equal((await get(`/api/state?room=${room}&role=host`)).lines.length, 4);
     await stop();
+    const profilesPath=path.join(dir,"profiles.json");
+    const profiles=JSON.parse(fs.readFileSync(profilesPath,"utf8"));
+    profiles[0].sessions.find(x=>x.room===ctl.room).historical=true;
+    fs.writeFileSync(profilesPath,JSON.stringify(profiles));
     await start();
+    assert.equal((await get(`/api/state?room=${ctl.room}&role=host`)).archived,true);
+    assert.equal((await get(`/api/export?room=${ctl.room}&format=json`)).finished,false);
+    const denied=await request("/api/say",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({room:ctl.room,role:"A",text:"Do not change archive"})});
+    assert.equal(denied.status,409);
+    assert.equal((await post("/api/switch",{user:"user1",argument:"pairs",agent:"toolkit",route:"confer"})).room,otherToolkit.room);
+    assert.equal((await post("/api/switch",{user:"user1",argument:"pairs",agent:"keys",route:"confer"})).room,otherPath.room);
     assert.deepEqual((await get(`/api/export?room=${room}&format=json`)).transcript, saved.transcript);
     assert.equal((await get(`/api/state?room=${room}&role=host`)).lines.length, 4);
     assert.notEqual(await freshDesk(), room);
+    assert.equal((await post("/api/switch",{user:"user1",argument:"pairs",agent:"toolkit"})).room,tk.room);
+    assert.equal((await post("/api/switch",{user:"user1",argument:"pairs",agent:"keys"})).room,ctl.room);
+    assert.equal((await get(`/api/state?room=${ctl.room}&role=host`)).lines[0].text,"Control contribution");
   } finally {
     await stop();
     fs.rmSync(dir, { recursive: true, force: true });
@@ -133,7 +170,7 @@ test("switching rooms removes old chat and drafts while all three new views load
   const listeners = [];
   let closed = 0;
   const context = vm.createContext({ app, both, seen: { A: 3 }, drafts: { A: "old draft" },
-    document: { getElementById: () => ({}) }, bothView() {},
+    roomDrafts:new Map(), draftRoom:null, document: { getElementById: () => ({}) }, bothView() {},
     listen(room, role, callback) { listeners.push({ room, role, callback }); return () => closed++; },
   });
   vm.runInContext(source + '\nwatchBoth("first"); watchBoth("second");', context);
@@ -146,4 +183,14 @@ test("switching rooms removes old chat and drafts while all three new views load
   assert.ok(!app.innerHTML.includes("old conversation"));
   assert.ok(app.innerHTML.includes("Previous conversations are saved in History"));
   assert.deepEqual(listeners.slice(-3).map(l => [l.room, l.role]), [["second", "A"], ["second", "B"], ["second", "host"]]);
+});
+
+test("drafts return to their own room after switching tabs",()=>{
+  const html=fs.readFileSync(path.join(here,"app.html"),"utf8");
+  const source=html.slice(html.indexOf("let stopBoth = [];"),html.indexOf("// Every use case, always switchable."));
+  const context=vm.createContext({app:{},both:{},seen:{},drafts:{},roomDrafts:new Map(),draftRoom:null,bothView(){},listen(){return ()=>{};}});
+  vm.runInContext(source+'\nwatchBoth("control"); drafts.A="Keep my draft"; watchBoth("toolkit");',context);
+  assert.equal(context.drafts.A,undefined);
+  vm.runInContext('watchBoth("control");',context);
+  assert.equal(context.drafts.A,"Keep my draft");
 });

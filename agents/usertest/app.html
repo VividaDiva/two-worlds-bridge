@@ -476,11 +476,56 @@ td{padding:7px 10px 7px 0; border-top:1px solid var(--rule-2)}
 td.y{color:var(--moss); font-weight:600} td.n{color:var(--rust)}
 .tick{font-family:var(--mono)}
 .muted{color:var(--soft)}
+
+/* Studio edition: presentation only; room permissions and AI behavior stay on the server. */
+:root{--paper:#f6f7f5;--paper-2:#edf0eb;--card:#fff;--ink:#243c35;--soft:#65736e;--faint:#6b7972;--rust:#b95f3c;--moss:#426955;--rule:#dce3dc;--rule-2:#e9ede8;--shadow:none}
+body{background:var(--paper);background-image:none}body::before{display:none}
+.wrap,.wrap.wide{max-width:1480px;padding:30px 42px 64px}.stack>*{animation:none}
+.topnav{max-width:none;padding:18px 42px;background:#fff;border-bottom:1px solid var(--rule);align-items:center}
+.brand{display:flex;align-items:center;gap:12px;margin-right:auto;font-size:17px;font-weight:600;letter-spacing:-.4px}.brand svg{width:37px;height:31px}.brand small{font:10px var(--mono);letter-spacing:1px;color:var(--soft);display:block}
+.navlink{border:0;background:transparent;border-radius:7px}.navlink:first-of-type{background:var(--ink);color:white}
+.studio-heading{display:flex;justify-content:space-between;gap:22px;align-items:center;margin-bottom:24px}.studio-heading h1{font-size:clamp(30px,3.2vw,46px);font-weight:400;letter-spacing:-1.4px;margin:4px 0 9px}.studio-heading .lede{margin:0;font-size:15px;max-width:68ch}.eyebrow{font-size:10px;letter-spacing:1.6px;color:var(--soft)}
+.room-stamp{font:11px var(--mono);padding:10px 14px;background:#fff;border:1px solid var(--rule);border-radius:8px;white-space:nowrap}.room-stamp i{display:inline-block;width:6px;height:6px;border-radius:50%;background:#648b66;margin-right:8px}
+.studio-tools{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:22px}.fold{border:1px solid var(--rule);border-radius:12px;background:white;min-width:0}.fold>summary{list-style:none;cursor:pointer;padding:14px 18px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:12px}.fold>summary::-webkit-details-marker{display:none}.fold>summary::after{content:'+';margin-left:auto;font-size:20px;font-weight:400;color:var(--soft)}.fold[open]>summary::after{content:'−'}.fold>summary small{font-size:11px;font-weight:400;color:var(--soft)}.fold-body{padding:4px 18px 18px}.fold-body .filters{margin:0}.fold-body .invite{margin:0}
+.studio-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(360px,1fr);gap:24px;align-items:start}.workspace-art,.conversation-area{min-width:0}
+.section-top{display:flex;justify-content:space-between;align-items:center;gap:15px;margin:0 0 13px}.section-top h2{font:600 14px var(--body);margin:0}.section-top span{font:10px var(--mono);color:var(--soft)}
+.result{background:white;color:var(--ink);padding:0;border:1px solid var(--rule);border-radius:16px;overflow:hidden;margin:0}.artifact{display:flex;flex-direction:column;gap:0;align-items:stretch}.artifact canvas{display:block;width:100%;height:auto;border-radius:0;background:#eee8dc;aspect-ratio:12/7}.standing{padding:20px 24px}.result .eyebrow{color:var(--soft)}.result .what{font-size:23px;line-height:1.3}.result .none{font-style:normal;font-size:24px;opacity:1;color:var(--ink)}.result .tab{color:var(--soft)}.result .tab[aria-selected=true]{color:var(--ink);border-bottom-color:var(--moss)}.result .tab small{color:var(--soft)}.result .tabs{margin:0;padding:0 20px;border-bottom:1px solid var(--rule)}.result button.go{background:var(--ink);color:white}.result .saved{padding:0 20px 18px;font-size:12px}.result .fold{border-radius:0;border-width:1px 0 0}.result .scores{padding:15px 22px}.result .fold .row{margin:0}.result .sketch{background:var(--paper);padding:15px;color:var(--ink);border-color:var(--rule)}.result .sketch .note{color:var(--soft)}.result .sketch .empty{color:var(--soft);border-color:var(--rule)}
+.ai-note{margin-top:16px;background:#e8eee7;border:1px solid #d9e2d7;border-radius:12px;padding:18px 20px;display:flex;gap:13px}.ai-mark{flex:0 0 28px;height:28px;background:var(--ink);color:white;border-radius:8px;display:grid;place-items:center;font-size:12px}.ai-note h3{font-size:12px;margin:0 0 5px}.ai-note p{font-size:14px;line-height:1.65;margin:0;white-space:pre-wrap}.ai-note small{color:var(--soft);display:block;font-size:11px;margin-top:10px}
+.seat-tabs{display:flex;background:#e9ede7;padding:4px;border-radius:10px;gap:4px;margin-bottom:12px}.seat-tabs button{flex:1;border:0;border-radius:7px;background:transparent;color:var(--soft);padding:10px 12px;font:600 13px var(--body);cursor:pointer}.seat-tabs button[aria-pressed=true]{background:#fff;color:var(--ink);box-shadow:0 1px 4px #243c3512}.seat-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#668780;margin-right:8px}.seat-dot.b{background:#c4885b}
+.rolebox{border-radius:14px;box-shadow:none;margin:0;overflow:hidden}.rolehead{padding:18px;align-items:flex-start;background:white}.avatar{width:32px;height:32px;font-size:13px}.avatar.a{background:#e4eeeb;color:#44685c}.avatar.b{background:#f4e9df;color:#99683e}.goaltext{font-size:13px;line-height:1.55;-webkit-line-clamp:3}.pill{font-size:10px;padding:4px 7px;white-space:normal}.pill.now{background:#edf3e9;color:#48663d}.rolebox .chat{height:390px;max-height:46vh;min-height:210px;padding:20px 18px;background:#fcfdfb;gap:18px}.line{animation:none}.line .bubble{box-shadow:none}.composer{background:white;padding:14px}.composer textarea{font-size:14px;background:#f7f8f5;border-radius:9px;min-height:90px;padding:12px 46px 12px 12px}.composer .send{border-radius:8px;background:var(--ink);color:white}.handles .handle,.key{font-size:11px}.built,.diff{font-size:12px}.seat-work{margin-top:12px}.seat-work .bridgecard{border:0;padding:0;margin:0}.seat-work .bridgecard>.eyebrow,.seat-work .bridgecard>.what{display:none}.seat-work .tabs{display:none}.research-fold{margin-top:24px}.research-fold .builder{max-height:none}.research-fold .trace{max-height:500px}.studio-foot{display:flex;justify-content:space-between;gap:12px;color:var(--soft);font:10px var(--mono);margin-top:24px;padding-top:18px;border-top:1px solid var(--rule);letter-spacing:.5px}
+.card{border-radius:12px}.mini{font-size:12px}.inv{border-style:solid;border-radius:8px}.seats{grid-template-columns:repeat(2,minmax(0,1fr))}.note,.foot{line-height:1.6}.read{line-height:1.7}.trace-fold{margin-top:8px}.trace-fold summary{font-size:11px;cursor:pointer;color:var(--soft)}
+.participant-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(340px,1fr);gap:24px;align-items:start}.participant-grid canvas{width:100%;height:auto}.participant-grid .bridgecard{padding:22px}.participant-title{margin:0 0 25px}.participant-title h1{font-size:34px}.participant-title p{margin:0;color:var(--soft)}
+:focus-visible{outline:3px solid #729d91;outline-offset:3px}button,a,summary{-webkit-tap-highlight-color:transparent}button:disabled{cursor:not-allowed}.demo-label{background:#e9e2ca;color:#514c37;text-align:center;padding:6px 15px;font:11px var(--mono)}
+@media(min-width:1500px){.rolebox .chat{height:460px}}
+@media(max-width:1000px){.wrap,.wrap.wide{padding:25px 24px 45px}.topnav{padding:16px 24px}.studio-grid{grid-template-columns:minmax(0,1fr) minmax(330px,1fr);gap:18px}.room-stamp{display:none}.studio-heading h1{font-size:35px}.pill{max-width:85px}.studio-tools summary small{display:none}}
+@media(max-width:760px){.wrap,.wrap.wide{padding:22px 16px 35px}.topnav{padding:12px 16px;gap:2px}.brand{font-size:14px;gap:8px}.brand small{font-size:8px}.brand svg{width:29px}.navlink{font-size:12px;padding:8px}.studio-heading h1{font-size:33px}.studio-heading .lede{font-size:14px}.studio-tools{gap:8px}.fold>summary{padding:12px;font-size:12px}.studio-grid,.participant-grid{grid-template-columns:1fr}.rolebox .chat{height:330px;max-height:55vh}.seats{grid-template-columns:1fr}.studio-foot{flex-direction:column}.result .what{font-size:20px}.studio-tools .fold-body{padding:0 12px 12px}.studio-tools:has(details[open]){grid-template-columns:1fr}.artifact canvas{max-height:350px}.ai-note{padding:15px}.studio-heading{margin-bottom:18px}}
+
+.studio-tools{align-items:start}.rolebox{height:540px}.rolebox .thread{background:#fcfdfb;padding:20px 18px;gap:18px}.thread .said{font-family:var(--body);font-size:14px}.line.a .who{color:#527566}.line.b .who{color:#9a693e}.line.a .said{border-left-color:#6b9581}.line.a.mine .said{border-right-color:#6b9581}.line.b .said{border-right-color:#c38b5c}.line.m{text-align:left;align-items:flex-start}.rolehead .goaltext{font-family:var(--body);font-size:13px;line-height:1.5}.studio-tools .fold-body .filters{border:0;padding:0}.scores .n{color:#ad573e}.scores .y{color:#446c48}@media(max-width:760px){.rolebox{height:510px}.composer textarea{font-size:16px}}
+.attr .src.no{color:var(--soft);border-color:var(--rule)}.attr .note,.scores h3,.sketch .mini{color:var(--soft)}.attr{border-top-color:var(--rule)}.result .trace-fold{margin-top:14px}.result .trace-fold summary{font-size:12px}.studio-grid .saved .muted{width:100%;font-size:11px}.line .trace-fold summary{font-size:10px}.line .diff{line-height:1.6}
+.artifact canvas,.participant-grid canvas{height:auto!important;aspect-ratio:12/7}
+.tk-inspect{margin:18px 0 24px}.tk-source{background:#f3f5f0;border:1px solid var(--rule);border-radius:10px;padding:16px 18px}.tk-source q{font-size:15px;line-height:1.6;white-space:pre-wrap}.tk-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:20px}.tk-grid section{min-width:0}.tk-grid h3{font:600 14px var(--body);margin:0 0 12px}.tk-reading,.tk-tool{border:1px solid var(--rule);border-radius:10px;padding:15px 16px;margin-bottom:10px;background:var(--card);overflow-wrap:anywhere}.tk-tool-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:13px}.tk-status{font-size:10px;padding:3px 7px;background:#eaf0e7;border-radius:5px;color:#486248}.tk-status.suggested{background:#f6ecd8;color:#876321}.tk-reading blockquote{margin:13px 0;padding-left:12px;border-left:2px solid #b4c6b5;color:var(--soft);font-size:13px}.tk-reading p,.tk-tool p{font-size:13px;line-height:1.65;margin:10px 0 0}.tk-reading strong,.tk-tool strong,.tk-question strong{display:block;font-size:11px;margin-bottom:3px;color:var(--soft)}.tk-purpose{color:var(--soft)}.tk-caption,.tk-empty{color:var(--soft);font-size:12px;line-height:1.6}.tk-question{border-left:3px solid #b6c8b4;padding:8px 13px;background:#f4f7f1}.tk-question p{font-size:13px;margin:0}.tk-history-tools{margin-top:10px}.tk-history-tools .tk-tool{padding:10px}.research-fold>.fold-body{padding-top:10px}@media(max-width:760px){.tk-grid{grid-template-columns:1fr;gap:14px}.research-fold>summary small{display:none}}
+.studio-tools:has(.setup-fold[open]){grid-template-columns:minmax(0,1.65fr) minmax(260px,1fr)}.setup-number{display:grid;place-items:center;flex:none;width:23px;height:23px;border-radius:50%;background:#edf1e9;color:#52664f;font-size:11px}.setup-form{padding:4px 3px 2px}.setup-form fieldset{border:0;padding:0;margin:0 0 22px;min-width:0}.setup-form legend{font-size:13px;font-weight:600;margin-bottom:12px}.scenario-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.scenario-card{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;padding:16px;border:1px solid var(--rule);border-radius:10px;background:white;color:var(--ink);font:inherit;cursor:pointer}.scenario-card[aria-pressed=true]{background:#f0f5ed;border:2px solid #63816a;padding:15px}.scenario-card[aria-pressed=true]::after{content:'✓';position:absolute;right:13px;top:13px;color:#486b4c}.scenario-card:hover{border-color:#63816a}.scenario-icon{font-size:22px;color:#6a8669;line-height:1.2}.scenario-card b{font-size:14px}.scenario-card>span:not(.scenario-icon){font-size:13px;line-height:1.5}.scenario-card small{font-size:11px;color:var(--soft);margin-top:5px}.selected-mode{padding:15px 16px;background:#f5f6f2;border-radius:9px;border:1px solid var(--rule)}.selected-mode>div{display:flex;gap:7px;flex-wrap:wrap;align-items:center}.selected-mode b{font-size:13px}.setup-current{font-size:10px;color:#65715b;background:#e7edde;padding:3px 7px;border-radius:4px}.selected-mode p{font-size:13px;line-height:1.65;margin:8px 0 0;color:var(--soft)}.setup-advanced{margin-top:12px}.setup-advanced summary{font-size:12px;cursor:pointer;color:var(--soft)}.setup-advanced label{margin:12px 0 6px;letter-spacing:0;text-transform:none;font:12px var(--body)}.setup-advanced select{width:100%;padding:11px 10px;border:1px solid var(--rule);border-radius:7px;background:white;color:var(--ink);font:13px var(--body)}.setup-help,.setup-submit p{font-size:12px;line-height:1.6;color:var(--soft);margin:8px 0 0}.setup-submit{padding-top:16px;border-top:1px solid var(--rule)}.setup-submit .go{border-radius:8px}.setup-submit .mini{margin-left:7px}.setup-submit [role=status]{color:#965133}.setup-fold>.fold-body{padding-top:10px}@media(max-width:900px){.studio-tools:has(.setup-fold[open]){grid-template-columns:1fr}}@media(max-width:430px){.scenario-grid{grid-template-columns:1fr}.setup-advanced select{font-size:16px}.setup-submit .go{width:100%}.setup-submit .mini{margin:10px 0 0}}
+.tk-inline{padding:10px 0;max-width:100%;font-size:12px;line-height:1.6}.tk-inline p{margin:0 0 10px}.tk-inline b{display:block;font-size:11px;color:var(--soft)}.tk-inline .tk-inline-label{margin:12px 0 8px;color:var(--ink)}.tk-inline small{color:var(--soft);font-size:10px}
+.process-switch{display:flex;gap:8px;margin:0 0 8px}.process-switch button{flex:1;text-align:left;border:1px solid var(--rule);border-radius:12px;padding:14px 20px;background:#fff;color:var(--ink);font:inherit;font-weight:600;cursor:pointer}.process-switch button[aria-selected="true"]{background:#243e35;color:#fff}.process-switch small{display:block;font-size:12px;font-weight:400;opacity:.75;margin-top:4px}.process-hint,.archive-note{font-size:13px;color:#61756c;margin:8px 0 18px}#user-records{display:flex;align-items:center;gap:8px;font-size:12px}#user-records select,.record-select select{padding:8px;border:1px solid var(--rule);border-radius:8px;background:white;color:var(--ink)}.record-select{display:block;margin-bottom:16px;font-size:13px}@media(max-width:760px){.topnav{flex-wrap:wrap}#user-records{margin-left:auto}#user-records label{display:none}}
+.studio-tools,.studio-tools:has(.setup-fold[open]){grid-template-columns:minmax(0,1fr)}
+.profile-label{display:flex;flex-direction:column;gap:3px;white-space:nowrap;margin-right:4px}.profile-label span{font-size:9px;letter-spacing:1.3px;color:var(--soft)}.profile-label b{font-size:13px;font-weight:600}.profile-icons{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.profile-icon{position:relative;display:grid;place-items:center;width:39px;height:39px;flex:none;border:2px solid transparent;border-radius:50%;background:hsl(var(--avatar-hue) 25% 92%);color:hsl(var(--avatar-hue) 23% 32%);cursor:pointer;padding:7px}.profile-icon svg{width:23px;height:23px;fill:currentColor}.profile-icon>span{position:absolute;right:-3px;bottom:-3px;min-width:16px;height:16px;border-radius:50%;background:white;border:1px solid var(--rule);font:10px var(--body);display:grid;place-items:center}.profile-icon[aria-pressed=true]{border-color:var(--ink);box-shadow:0 0 0 3px #e8eee7}.profile-icon:focus-visible{outline:2px solid var(--ink);outline-offset:4px}.add-profile{background:white;border:1px dashed #a4b0a7;color:var(--soft);font-size:23px}.profile-icon:hover{filter:brightness(.96)}
+.result .output-tabs{display:flex;gap:18px;padding:0 20px}.output-tabs .tab{padding:16px 0;font-size:13px;cursor:pointer}.result>.sketch{display:flex;flex-direction:column;margin:0;border:0;padding:20px;gap:16px;min-height:320px}.result>.sketch .empty{min-height:210px;display:grid;place-items:center;padding:24px;text-align:center;background:#faf9f5}.result>.sketch img{max-height:520px;object-fit:contain;background:#faf9f5}.result>.sketch .what{font-size:18px}
+.pair-profile{display:flex;flex-direction:column;align-items:center;gap:5px;border:1px solid transparent;background:transparent;border-radius:10px;padding:6px 8px;cursor:pointer;color:var(--ink)}.pair-profile[aria-pressed=true]{background:#edf2e9;border-color:#76917e}.pair-profile:focus-visible{outline:2px solid var(--ink);outline-offset:2px}.pair-avatars{display:flex;padding-right:2px}.pair-avatar{position:relative;display:grid;place-items:center;background:hsl(var(--avatar-hue) 25% 90%);color:hsl(var(--avatar-hue) 23% 32%);width:30px;height:30px;border:2px solid white;border-radius:50%}.pair-avatar+ .pair-avatar{margin-left:-7px}.pair-avatar svg{width:19px;height:19px;fill:currentColor}.pair-avatar small{position:absolute;bottom:-3px;right:-3px;background:white;border-radius:50%;min-width:12px;font-size:8px}.pair-caption{font-size:10px;white-space:nowrap}#user-records{flex-wrap:wrap}
+.chat-context{padding:12px 14px;margin:0 0 12px;background:#f0f3ec;border:1px solid var(--rule);border-radius:10px;display:flex;flex-direction:column;gap:5px}.chat-context b{font-size:12px;font-weight:600}.chat-context span{font-size:11px;color:var(--soft)}.chat-context p{font-size:12px;line-height:1.55;margin:4px 0 0;color:var(--soft)}
+.communication-bar{background:#f4f6f0;border:1px solid #cdd8cb;border-radius:12px;padding:16px 20px;margin-bottom:16px}.path-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px}.path-heading label{font-size:13px;font-weight:600;letter-spacing:0;text-transform:none;margin:0}.path-heading span{font-size:9px;letter-spacing:1px;color:var(--soft)}.communication-bar select{width:100%;padding:12px;border:1px solid #adbfae;border-radius:8px;font:600 14px var(--body);color:var(--ink);background:white}.communication-bar p{font-size:13px;line-height:1.6;margin:10px 0 0}.communication-bar .path-default{font-size:11px;color:var(--soft)}@media(max-width:760px){.communication-bar{padding:14px}.communication-bar select{font-size:16px}.path-heading{flex-wrap:wrap}}
+.scenario-top{margin-bottom:20px}.scenario-top .setup-form{padding:0}.scenario-top fieldset{margin:0}.scenario-top legend{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--soft)}.scenario-top .scenario-card{padding:14px 18px}.scenario-top .scenario-card[aria-pressed=true]{padding:13px 17px}.scenario-top .setup-help{display:none}.studio-heading h1{font-size:30px}.studio-heading{margin-bottom:18px}
+/* Workspace hierarchy: experiment, condition, then work. */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.wrap.wide{padding-top:20px}.topnav{padding:12px 24px}.brand small{display:none}.profile-label{display:none}.pair-profile{padding:4px 7px}.pair-caption{font-size:9px}.pair-avatar{width:25px;height:25px}.profile-icons{gap:5px}#user-records{margin-left:auto}.topnav .navlink{font-size:11px;padding:8px}.scenario-top{margin-bottom:16px}.scenario-top legend{display:none}.scenario-top .scenario-grid{display:flex;gap:0;border-bottom:1px solid var(--rule)}.scenario-top .scenario-card,.scenario-top .scenario-card[aria-pressed=true]{border:0;border-bottom:3px solid transparent;border-radius:0;padding:10px 22px 13px;background:transparent;flex:1}.scenario-top .scenario-card[aria-pressed=true]{border-bottom-color:#365b48}.scenario-top .scenario-card[aria-pressed=true]::after{display:none}.scenario-top .scenario-card b{font-size:17px}.scenario-top .scenario-card>span{font-size:11px;color:var(--soft)}
+.study-controls{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:18px;align-items:end}.communication-bar{margin:0;padding:0;border:0;background:none}.communication-bar label,.control-label{display:block;font-size:11px;font-weight:500;color:var(--soft);letter-spacing:0;text-transform:none;margin:0 0 7px}.communication-bar select{font-size:13px;font-weight:400;padding:11px 12px;border-color:var(--rule);height:43px}.process-switch{display:flex;gap:3px;padding:3px;border-radius:9px;background:#e9ede5;margin:0;height:43px}.process-switch button{border:0;border-radius:6px;padding:6px 14px;text-align:center;font-size:13px;background:none}.process-switch button[aria-selected=true]{background:#2f5142;color:white}.study-status{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--soft);margin:12px 0 22px}.study-status>span:last-child{margin-left:auto}.status-dot{width:6px;height:6px;border-radius:50%;background:#81997c}.studio-grid{align-items:start}.section-top{margin-bottom:10px}.section-top h2{font-size:17px}.section-top>span{font-size:9px}.session-details{margin:20px 0 10px}.session-details p{font-size:12px;line-height:1.6}.research-fold{margin-top:10px}.ai-note{padding:13px;margin-top:12px}.ai-note small{display:none}.ai-note p{font-size:13px}.studio-foot{font-size:10px}
+@media(max-width:760px){.wrap.wide{padding:14px 16px 30px}.topnav{padding:10px 16px;gap:8px}.brand{font-size:12px}.brand svg{width:24px}.study-controls{grid-template-columns:minmax(0,1fr) 155px;gap:10px}.communication-bar select{font-size:12px;padding:10px 7px}.process-switch button{font-size:12px;padding:6px 8px}.scenario-top .scenario-card,.scenario-top .scenario-card[aria-pressed=true]{padding:8px 12px 10px}.scenario-top .scenario-card b{font-size:16px}.study-status{margin-bottom:16px}.profile-icon.add-profile{width:30px;height:30px}.study-status>span:last-child{display:none}}
+@media(max-width:430px){.study-controls{grid-template-columns:1fr}.scenario-top .scenario-card>span{display:none}.pair-caption{font-size:8px}.topnav .brand{max-width:110px}.topnav .navlink{padding:5px}}
 </style>
 </head>
 <body>
 <nav class="topnav" id="topnav" hidden>
-  <a class="navlink" id="new-room" href="/desk">New room</a>
+  <div class="brand"><svg viewBox="0 0 44 32" fill="none" aria-hidden="true"><path d="M3 25V10M41 25V10M3 15C13 28 31 28 41 15M3 26H41M12 22V26M22 25V26M32 22V26" stroke="currentColor" stroke-width="2"/><circle cx="3" cy="6" r="3" fill="#6f9687"/><circle cx="41" cy="6" r="3" fill="#c58d64"/></svg><span>Two Worlds Bridge<small>A SHARED BUILDING EXPERIMENT</small></span></div>
+  <span id="user-records"></span>
   <a class="navlink" href="/history">History</a>
 </nav>
 <div class="wrap stack" id="app"><p class="muted" id="opening">Opening the room…</p></div>
@@ -607,7 +652,7 @@ function devExtras(s, l){
       ${l.alt ? `<div class="alt"><span class="lbl">or</span><span>${esc(l.alt.name)}${l.alt.why ? ` — ${esc(l.alt.why)}` : ""}</span>
         ${l.altTaken ? `<span class="tag">taken by ${esc(byName(s, l.altTaken))}</span>`
           : canAct ? `<button class="handle go" data-try="${esc(l.alt.id)}">Try this one</button>` : ""}</div>` : ""}
-      ${l.steps ? stepsStrip(s, l.steps) : ""}`;
+      ${l.steps ? `<details class="trace-fold" data-fold="steps-${s.role}-${l.i}"><summary>How the AI interpreted this</summary>${stepsStrip(s, l.steps)}</details>` : ""}`;
   }
   if (l.sheet) return `<span class="tag">on the sheet</span>`;
   const tagsHtml = [
@@ -615,7 +660,7 @@ function devExtras(s, l){
     Number.isInteger(l.replyTo) ? `<span class="tag">building on ${esc(roleName((s.lines.find(x => x.i === l.replyTo) || {}).who))}</span>` : "",
     l.prefer ? `<span class="tag">took the alternative</span>` : "",
   ].join("");
-  const read = l.taken ? `<p class="read"><span class="lbl">${l.corrected ? "now heard as" : "heard as"}</span>${
+  const read = s.agent === "toolkit" ? (Array.isArray(l.cards) ? toolkitLineReading(s,l) : `<p class="muted">Toolkit interpretation not recorded yet.</p>`) : l.taken ? `<p class="read"><span class="lbl">${l.corrected ? "now heard as" : "heard as"}</span>${
       (l.asks || []).map(k => `<span class="key">${esc(k)}</span>`).join("")}${
       (l.refuses || []).map(k => `<span class="key">not: ${esc(k)}</span>`).join("")}${
       !(l.asks || []).length && !(l.refuses || []).length ? `<span class="key none">nothing it can build from</span>` : ""}${
@@ -632,7 +677,7 @@ function devExtras(s, l){
         <div class="row"><button class="handle go" id="corrsend-${me}">Send what I meant</button><button class="handle" id="corrcancel-${me}">Cancel</button></div></div>`
     : `<div class="handles">${l.who === me && l.taken ? `<button class="handle" data-nq="${l.i}">Not quite →</button>` : ""}${
         l.who !== me && !l.prefer ? `<button class="handle" data-on="${l.i}">Build on this</button>` : ""}</div>`;
-  return tagsHtml + read + readings + handles;
+  return tagsHtml + (read ? `<details class="trace-fold" data-fold="reading-${me}-${l.i}"><summary>${l.corrected ? "AI’s revised reading" : "Inspect this interpretation"}</summary>${read}</details>` : "") + readings + handles;
 }
 
 // The sheet: rules and new parts the AI proposed for this room. Each counts
@@ -691,7 +736,7 @@ function bridgeCard(s, compact){
         ? `<ul class="unres">${un.map(u => u.kind === "conflict"
             ? `<li><b>${esc(u.text)}</b> — wanted by ${esc(u.wantedBy.join(" and "))}, ruled out by ${esc(u.refusedBy.join(" and "))}</li>`
             : u.kind === "pending" ? `<li><b>${esc(u.what)}</b> — ${esc(KINDL[u.pkind] || u.pkind)} on the sheet, ${u.accepted.length ? "accepted by " + esc(u.accepted.join(" and ")) + " only" : "accepted by nobody"}</li>`
-            : `<li><b>${esc(u.text)}</b> — ${esc(u.who)} asked for it; nothing in the kit can make it</li>`).join("")}</ul>`
+            : u.kind === "unverified" ? `<li><b>${esc(u.text)}</b> — ${esc(u.who)}: not yet checked with the participant against the build</li>` : `<li><b>${esc(u.text)}</b> — ${esc(u.who)} asked for it; nothing in the kit can make it</li>`).join("")}</ul>`
         : `<p class="muted">Nothing left open between you.</p>`}`
       : `<div class="row"><button class="mini" id="finish-${r}" ${s.standing ? "" : "disabled"}>Finish — what is still open stays visible</button></div>`}
     ${s.sheet && s.sheet.length ? sheetList(s, s.sheet, !s.finished && r !== "host") : ""}
@@ -975,7 +1020,13 @@ function hostView(s){
   if (chat && s.lines.length !== seen.host) { chat.scrollTop = chat.scrollHeight; seen.host = s.lines.length; }
 }
 
-function playerView(s){ last[s.role] = s; app.innerHTML = (s.develop ? bridgeCard(s) : "") + panel(s); wire(s); }
+function playerView(s){
+  const focus = studioFocus();
+  last[s.role] = s;
+  app.classList.toggle("wide",!!s.develop);
+  app.innerHTML = `<header class="participant-title"><p class="eyebrow">TWO WORLDS BRIDGE · ROOM ${esc(s.room)}</p><h1>Make room for both of you.</h1><p>${esc(roleName(s.role))} · ${esc(s.title)} · ${s.agent === "keys" ? "Keys" : s.agent === "toolkit" ? "Toolkit" : "Legacy mixed"}</p></header><main class="${s.develop ? "participant-grid" : ""}">${s.develop ? bridgeCard(s) : ""}${panel(s)}</main>`;
+  restoreStudioFolds(); wire(s); restoreStudioFocus(focus);
+}
 
 // Both of them on one screen. Two streams, two columns, and each column still
 // shows only what its own role is allowed to see — so putting them side by side
@@ -991,20 +1042,77 @@ let stopBoth = [];
 function watchBoth(room){
   stopBoth.forEach(stop => stop());
   both.A = both.B = both.host = null;
-  seen = {}; drafts = {};
+  if(draftRoom) roomDrafts.set(draftRoom,{...drafts});
+  seen = {}; drafts = roomDrafts.get(room) || {}; draftRoom=room;
   app.innerHTML = `<div class="card" role="status"><p>Opening the room…</p>
     <p class="muted">Previous conversations are saved in History.</p></div>`;
-  document.getElementById("new-room").onclick = e => e.preventDefault();
+
   stopBoth = [
-    listen(room, "A", s => { both.A = s; bothView(); }),
-    listen(room, "B", s => { both.B = s; bothView(); }),
-    listen(room, "host", s => { both.host = s; bothView(); }),
+    listen(room, "A", s => { if(draftRoom!==room)return; both.A = s; bothView(); }),
+    listen(room, "B", s => { if(draftRoom!==room)return; both.B = s; bothView(); }),
+    listen(room, "host", s => { if(draftRoom!==room)return; both.host = s; bothView(); }),
   ];
 }
 
 // Every use case, always switchable. Picking one opens a fresh room on that
 // combination — a route cannot be changed underneath a conversation that is
 // already running, so switching starts a new one.
+const ROUTE_NAMES = {develop:"Build together · automatic updates",all:"Build together · confirm to update",confer:"Discuss privately, then ask AI to build",chain:"One person passes the other's needs to AI",both:"Tell AI separately", "via-1":"AI relays Role 1's needs to Role 2","via-2":"AI relays Role 2's needs to Role 1","only-1":"Role 1 only","only-2":"Role 2 only"};
+let setupDraft = null, setupRoom = null;
+function sessionSetup(current){
+  if(!opts) return "";
+  return `<div class="setup-form"><fieldset><legend>Starting point</legend><div class="scenario-grid">${opts.arguments.map(a=>`<button class="scenario-card" data-sa="${esc(a.id)}" aria-pressed="${a.id===current.argument}"><b>${esc(a.id==='pairs'?'Two lives':a.id==='refs'?'Two references':a.title)}</b><span>${a.upload ? "Build from two reference images" : "Build from two people's needs"}</span></button>`).join("")}</div></fieldset><p class="setup-help">Each starting point keeps its own Control and Toolkit conversations. Switching brings back your saved work.</p></div>`;
+}
+function communicationBar(a){
+  const order=['all','develop','confer','both','chain','via-1','via-2','only-1','only-2'];
+  const routes=[...(opts?.routes||[])].sort((x,y)=>order.indexOf(x.id)-order.indexOf(y.id));
+  return `<section class="communication-bar" aria-label="Communication path"><label for="setup-route">Communication path</label><select id="setup-route">${routes.map(r=>`<option value="${esc(r.id)}" ${r.id===a.route?'selected':''}>${esc(ROUTE_NAMES[r.id]||r.arrow)}${r.id==='all'?' (default)':''}</option>`).join('')}</select></section>`;
+}
+let users=[], selectedUser=null, selectedProcess="keys", switchBusy=false;
+const roomDrafts=new Map();
+let draftRoom=null;
+function userNav(){
+  const target=document.getElementById("user-records");
+  if(!target || !users.length) return;
+  const pairOf=u=>u.participants || [1,u.id==='user2'?2:3];
+  const pairName=u=>pairOf(u).map(n=>`Role ${n}`).join(' & ');
+  const current=users.find(u=>u.id===selectedUser);
+  const ordered=[...users].sort((a,b)=>pairOf(a)[1]-pairOf(b)[1]);
+  target.innerHTML=`<div class="profile-label"><span>COLLABORATION PAIR</span><b>${esc(current ? pairName(current) : 'Choose a pair')}</b></div><div class="profile-icons" role="group" aria-label="Collaboration pairs">${ordered.map(u=>`<button class="pair-profile" data-user="${esc(u.id)}" aria-pressed="${u.id===selectedUser}" aria-label="${esc(pairName(u))}${u.sessions.some(x=>x.hasContent)?' · Saved conversations':' · Not started'}" title="${esc(pairName(u))}"><span class="pair-avatars" aria-hidden="true">${pairOf(u).map(n=>`<span class="pair-avatar" style="--avatar-hue:${n===1?145:28+(n-2)*70}"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg><small>${n}</small></span>`).join('')}</span><span class="pair-caption">${esc(pairName(u))}</span></button>`).join('')}<button class="profile-icon add-profile" id="add-user" aria-label="New collaboration pair" title="New collaboration pair">+</button></div>`;
+  target.querySelectorAll("[data-user]").forEach(button=>button.onclick=()=>{activeSeat="B";switchProcess(selectedProcess,both.A?.argument||"pairs",button.dataset.user);});
+  document.getElementById("add-user").onclick=async()=>{
+    if(switchBusy)return;
+    const {ok,j}=await post("/api/users",{});
+    if(ok){users.push(j);activeSeat="B";await switchProcess("keys","pairs",j.id);}
+  };
+}
+async function switchProcess(agent,argument=both.A?.argument||"pairs",user=selectedUser,room,route){
+  if(switchBusy)return;
+  switchBusy=true;
+  try {
+    // A saved run supplies its own path. Process tabs retain the current path;
+    // another user or starting point can resume that record's existing default.
+    const sameContext=user===selectedUser && argument===both.A?.argument;
+    const requestedRoute=route ?? (!room && sameContext ? both.A?.route : undefined);
+    const {ok,j}=await post("/api/switch",{user,argument,agent,room,route:requestedRoute});
+    if(!ok)throw Error(j.error||"Unable to open saved work");
+    selectedUser=user; selectedProcess=agent;
+    users=await fetch("/api/users").then(r=>r.json());
+    try{localStorage.setItem("bridge-user",user);}catch{}
+    history.pushState(null,"",`/j/${j.room}/both`);
+    userNav(); watchBoth(j.room);
+  }catch(e){alert(e.message);}finally{switchBusy=false;}
+}
+function processTabs(a){
+  return `<section class="process-control" aria-label="AI approach"><span class="control-label">AI approach</span><div class="process-switch" role="tablist" aria-label="AI process">${['keys','toolkit'].map(m=>`<button role="tab" aria-selected="${selectedProcess===m}" data-process="${m}">${m==='keys'?'Control':'Toolkit'}</button>`).join('')}</div></section>`;
+}
+function sessionDetails(a,h){
+  const records=users.find(u=>u.id===selectedUser)?.sessions || [];
+  const current=records.find(x=>x.room===a.room);
+  const saved=records.filter(x=>x.agent===selectedProcess&&x.argument===a.argument&&x.route===a.route);
+  return `<details class="fold session-details" data-fold="session-details"><summary>Session details <small>${h.archived?'Historical record':'Saved automatically'}</small></summary><div class="fold-body"><p>${esc(ROUTE_NAMES[a.route]||a.route)}</p><p>${esc(a.note)}</p><p class="muted">New pairs start with Build together · confirm to update. Each path keeps separate Control and Toolkit conversations.</p>${current?.historical?`<p class="archive-note">${esc(current.label)} · Original processing mode was not recorded.</p>`:''}<p class="muted">Record: ${esc(a.room)}</p>${saved.length>1?`<label class="record-select">Saved runs <select id="saved-run">${saved.map(x=>`<option value="${esc(x.room)}" ${x.room===a.room?'selected':''}>${esc(x.label||x.room)}</option>`).join('')}</select></label>`:''}</div></details>`;
+}
+
 function filterBar(cur, pending){
   if (!opts) return "";
   return `<div class="filters${pending ? " busy" : ""}">
@@ -1022,7 +1130,7 @@ function filterBar(cur, pending){
 // whose it is, how it reached the builder, the words, the need, the reason or
 // the labelled guess, the keys, and whether what stands meets it.
 const VIA = { direct: ["said to it", ""], "reported-by-A": ["reported by Role 1", "rep"], "reported-by-B": ["reported by Role 2", "rep"], inferred: ["the AI's inference", "inf"] };
-const METL = { met: "met", partial: "partly met", no: "not met", unsupported: "no part for it", proposed: "on the sheet — awaiting both", "met-by-rule": "met by a rule", "met-by-new": "met by a new part" };
+const METL = { unverified:"not yet verified", "accepted-proposal":"proposal accepted by both", met: "met", partial: "partly met", no: "not met", unsupported: "no part for it", proposed: "on the sheet — awaiting both", "met-by-rule": "met by a rule", "met-by-new": "met by a new part" };
 const KINDL = { rule: "a rule", new: "a new part" };
 function wallCard(c, small){
   const [vl, vc] = VIA[c.via] || [c.via, ""];
@@ -1048,7 +1156,7 @@ function wallCards(w, small){
     const met = c.withdrawn ? `<span class="met open">withdrawn</span>` : c.met ? `<span class="met ${c.met}">${METL[c.met] || c.met}</span>` : `<span class="met open">open</span>`;
     return `<details class="wrow ${c.who === "A" ? "ra" : "rb"}${c.withdrawn ? " gone" : ""}"><summary><i></i><b>${esc(c.need)}<small>${esc(roleName(c.who))} · ${esc(vl)}${c.why ? " · " + esc(c.why.replace(/^hypothesis:\s*/i, "maybe: ")) : ""}</small></b>${met}</summary>
       <div class="body"><q>${esc(c.quote)}</q>
-        ${c.keys.length || c.rulesOut.length ? `<p><b>checked against</b>${c.keys.map(k => FEATURES_TEXT[k] || k).join("; ")}${c.rulesOut.length ? " · not: " + c.rulesOut.map(k => FEATURES_TEXT[k] || k).join("; ") : ""}</p>` : `<p><b>checked against</b>nothing in the kit carries this</p>`}
+        ${w.kind === "toolkit" ? `<p><b>Evaluation</b>Needs remain unverified until checked against the work with participants.</p>` : c.keys.length || c.rulesOut.length ? `<p><b>checked against</b>${c.keys.map(k => FEATURES_TEXT[k] || k).join("; ")}${c.rulesOut.length ? " · not: " + c.rulesOut.map(k => FEATURES_TEXT[k] || k).join("; ") : ""}</p>` : `<p><b>checked against</b>nothing in the kit carries this</p>`}
         ${c.concern ? `<p><b>concern</b>${esc(c.concern)}</p>` : ""}${c.when ? `<p><b>when</b>${esc(c.when)}</p>` : ""}
         ${c.readings && c.readings.length ? `<p><b>readings</b>${c.readings.map(esc).join(" · ")}</p>` : ""}${c.hmw ? `<p><b>how might we</b>${esc(c.hmw)}</p>` : ""}
         ${c.story ? `<p><b>job story</b>${esc(c.story)}</p>` : ""}${c.checked ? `<p><b>checked by</b>${esc(roleName(c.checked.by))} (${esc(c.checked.how)})</p>` : ""}
@@ -1082,8 +1190,10 @@ function wallPanel(h){
 // for each thing said to it, what it READ out of that line, and then what it
 // DID about it. The gap between those two is the whole subject.
 function builderColumn(h){
+  if (h.agent === "keys") return `<div class="card"><h2>Key process</h2><p class="muted">Key interpretation → constraints → build. This room does not use Toolkit methods.</p>${h.lines.map(l=>l.who==="builder" ? `<article class="tk-tool"><b>AI build</b><p>${esc(l.text)}</p><p>${esc(l.built || "No build recorded")}</p></article>` : `<article class="tk-reading"><b>${esc(roleName(l.who))}</b><blockquote>${esc(l.text)}</blockquote><p><strong>Matched keys</strong>${(l.asks || []).map(esc).join(", ") || "None recorded"}</p><p><strong>Excluded keys</strong>${(l.refuses || []).map(esc).join(", ") || "None recorded"}</p>${l.beyond ? `<p><strong>Not represented by a key</strong>${esc(l.beyond)}</p>` : ""}</article>`).join("")}</div>`;
+
   const tabs = h.control ? `<div class="tabs" role="tablist">
-      <button class="tab" role="tab" data-atab="toolkit" aria-selected="${agentTab === "toolkit"}">Toolkit<small>the wall, the tools, what it built</small></button>
+      <button class="tab" role="tab" data-atab="toolkit" aria-selected="${agentTab === "toolkit"}">Toolkit<small>understanding, methods & reasons</small></button>
       <button class="tab" role="tab" data-atab="control" aria-selected="${agentTab === "control"}">Control<small>keys only, built beside it</small></button>
     </div>` : "";
   if (h.control && agentTab === "control") return controlColumn(h, tabs);
@@ -1119,7 +1229,7 @@ function builderColumn(h){
                `<span class="key">${esc(k)}</span>`).join("")}</p>`
           : a.said.taken || a.did ? `<p class="read"><span class="lbl">interpreted as</span><span class="key none">nothing it could build from</span></p>` : ""}
         ${a.said.beyond ? `<p class="read"><span class="lbl">couldn't carry</span><span class="key none">${esc(a.said.beyond)}</span></p>` : ""}
-        ${a.said.tools && a.said.tools.length ? `<p class="tools">${a.said.tools.map(t => `<span class="tool${t.facilitatorRun ? " fac" : ""}" title="${esc(t.why)}">${esc(t.tool)}${t.facilitatorRun ? " · yours to run" : ""}</span>`).join("")}</p>` : ""}
+        ${a.said.tools?.length ? `<div class="tk-history-tools">${toolkitTools(a.said.tools)}</div>` : ""}
         ${a.said.ask ? `<p class="asked">asked ${esc(roleName(a.said.who))}: ${esc(a.said.ask)}</p>` : ""}
         ${a.said.picture && a.said.picture.length
           ? `<p class="read"><span class="lbl">saw in their picture</span>${a.said.picture.map(k =>
@@ -1150,26 +1260,50 @@ function builderColumn(h){
 
 // The toolkit's last turn as five steps on a rail: what it heard, which tools
 // fired, what it decided, what it built, and how each need came out.
+function toolkitLineReading(s,l){
+  const cards = (s.wall?.cards || []).filter(c=>(l.cards || []).includes(c.id));
+  return `<div class="tk-inline">${cards.map(c=>`<p><b>AI understood · ${esc(roleName(c.who))}</b>${esc(c.need)}</p>${c.why ? `<p><b>${/^hypothesis/i.test(c.why) ? "Unconfirmed hypothesis" : "Recorded reason"}</b>${esc(c.why)}</p>` : ""}${c.readings?.length ? `<p><b>Possible meanings</b>${c.readings.map(esc).join(" / ")}</p>` : ""}`).join("") || `<p>No new need card recorded.</p>`}<b class="tk-inline-label">Toolkit methods</b>${l.tools?.length ? l.tools.map(t=>`<p><b>${esc(TOOLKIT_LABELS[t.tool]?.[0] || t.tool)}${t.facilitatorRun ? " · suggested, not run" : " · reported by AI"}</b>${esc(t.why || "No reason recorded.")}</p>`).join("") : `<p>No method recorded.</p>`}${l.ask ? `<p><b>Question recorded</b>${esc(l.ask)}</p>` : ""}<small>AI interpretation, not participant confirmation. Cards show the current saved record.</small></div>`;
+}
+
+const TOOLKIT_LABELS = {
+  laddering: ["Laddering", "Separate a requested feature from the purpose behind it."],
+  "three-readings": ["Three readings", "Keep alternative meanings open until the speaker clarifies."],
+  empathy: ["Empathy", "Keep the person's hesitation or concern visible."],
+  journey: ["Journey", "Understand when and in what situation the need matters."],
+  hmw: ["How might we", "Frame a need the current building kit cannot yet support."],
+  "job-story": ["Job story", "Express the situation, intention and outcome for the other person."],
+  "dot-voting": ["Dot voting", "Invite people to prioritize when a verified constraint prevents meeting every need."],
+  "priority-check": ["Priority check", "Ask which needs are essential and which are optional."],
+  "card-sort": ["Card sort", "Ask participants how they group the needs."],
+  "repertory-grid": ["Repertory grid", "Invite participants to compare the qualities that matter to them."],
+  "wizard-of-oz": ["Wizard of Oz", "Have a facilitator simulate an interaction for participants to try."]
+};
+function toolkitTools(items){
+  if (!items?.length) return `<p class="tk-empty">No toolkit method was recorded for this contribution.</p>`;
+  return items.map(t => {
+    const [name, purpose] = TOOLKIT_LABELS[t.tool] || [t.tool, ""];
+    return `<article class="tk-tool"><div class="tk-tool-head"><b>${esc(name)}</b><span class="tk-status${t.facilitatorRun ? " suggested" : ""}">${t.facilitatorRun ? "Suggested · not run by AI" : "Reported by AI"}</span></div>
+      ${purpose ? `<p class="tk-purpose">${esc(purpose)}</p>` : ""}
+      <p><strong>Why this method</strong>${t.why ? esc(t.why) : "No reason was recorded."}</p>
+      ${t.facilitatorRun ? `<p class="tk-empty">Requires a facilitator. No participant outcome is implied.</p>` : ""}</article>`;
+  }).join("");
+}
 function processRail(h){
-  const w = h.wall, cards = w ? w.cards.filter(c => !c.withdrawn) : [];
-  const ai = [...h.lines].reverse().find(l => l.who === "builder" && !l.failed && !l.relay);
-  const st = ai && ai.steps, rec = w && w.record;
-  const lastHuman = [...h.lines].reverse().find(l => l.who !== "builder" && l.cards);
-  const heard = lastHuman ? cards.filter(c => lastHuman.cards.includes(c.id)) : [];
-  const tools = lastHuman ? (lastHuman.tools || []) : [];
-  const n = k => cards.filter(c => c.met === k).length;
-  const pend = (w && w.sheet || []).filter(p => !p.declined && !(p.accepted.A && p.accepted.B));
-  const chip = c => `<span class="needchip ${c.who === "A" ? "ra" : "rb"}" title="${esc(c.quote)}"><i></i>${esc(c.need)}</span>`;
-  const CHK = { nothingLost: "nothing lost", inferencesLabelled: "inferences labelled", noFalseConflicts: "no false conflicts", defaultsChecked: "defaults checked", buildNotConsent: "build ≠ consent", kindsDistinct: "parts / rules / proposals apart" };
-  if (!lastHuman) return `<p class="muted" style="margin:0 0 14px">Nothing yet. It answers once somebody has spoken to it.</p>`;
-  return `<p class="eyebrow" style="margin:0 0 10px">This turn — ${esc(roleName(lastHuman.who))}'s line</p>
-  <div class="proc">
-    <div class="node" data-n="1"><p class="nl">heard as needs</p><div class="nc">${heard.length ? `<div class="needs">${heard.map(chip).join("")}</div>` : `<span class="muted">nothing new — an answer, or already on the wall</span>`}</div></div>
-    <div class="node${tools.length ? "" : " off"}" data-n="2"><p class="nl">tools that fired</p><div class="nc">${tools.length ? `<div class="needs">${tools.map(t => `<span class="tool${t.facilitatorRun ? " fac" : ""}" title="${esc(t.why)}">${esc(t.tool)}${t.facilitatorRun ? " · yours to run" : ""}</span>`).join("")}</div>` : `<span class="muted">none needed</span>`}${lastHuman.memberCheck ? `<p class="mc">member check: ${esc(lastHuman.memberCheck)}</p>` : ""}${lastHuman.ask ? `<p class="asked">asked: ${esc(lastHuman.ask)}</p>` : ""}</div></div>
-    <div class="node${rec ? "" : " off"}" data-n="3"><p class="nl">decided, before building</p><div class="nc">${rec ? `<div class="counts">${[["part","from the kit","from the kit"],["rule","rule for the sheet","rules for the sheet"],["new","new part proposed","new parts proposed"],["none","with no answer","with no answer"]].map(([k, one, many]) => { const c = rec.decisions.filter(d => d.response === k).length; return c ? `<span><b>${c}</b> ${c > 1 ? many : one}</span>` : ""; }).filter(Boolean).join("") || "nothing to decide"}</div>${rec.checks ? `<p class="ticks">${Object.entries(rec.checks).map(([k, v]) => `<span class="${v ? "y" : "n"}">${v ? "✓" : "✗"} ${CHK[k] || k}</span>`).join(" · ")}</p>` : ""}` : `<span class="muted">waiting — it builds once it has heard enough</span>`}</div></div>
-    <div class="node${ai ? "" : " off"}" data-n="4"><p class="nl">built</p><div class="nc">${ai ? `<b>${esc(ai.built || "nothing")}</b>${ai.diff && (ai.diff.added.length || ai.diff.removed.length) ? `<p class="chg">${ai.diff.added.map(x => `<span class="plus">+ ${esc(x.text)}</span>`).join(" · ")}${ai.diff.added.length && ai.diff.removed.length ? " · " : ""}${ai.diff.removed.map(x => `<span class="minus">− ${esc(x.text)}</span>`).join(" · ")}</p>` : ""}` : `<span class="muted">not yet</span>`}</div></div>
-    <div class="node${ai ? "" : " off"}" data-n="5"><p class="nl">each need, against what stands</p><div class="nc"><div class="counts">${[["met","met"],["partial","partly"],["proposed","on the sheet"],["met-by-rule","met by a rule"],["met-by-new","met by a new part"],["no","not met"],["unsupported","no part for it"]].map(([k, l]) => n(k) ? `<span><b>${n(k)}</b> ${l}</span>` : "").filter(Boolean).join("") || `<span class="muted">nothing linked yet</span>`}</div>${pend.length ? `<p class="chg">waiting for both to accept: ${pend.map(p => esc(p.what)).join(" · ")}</p>` : ""}</div></div>
-  </div>`;
+  const lines = h.lines || [];
+  // A newer unprocessed contribution must not be presented as an older reading.
+  const human = [...lines].reverse().find(l => l.who === "A" || l.who === "B");
+  const line = [...lines].reverse().find(l => (l.who === "A" || l.who === "B") && Array.isArray(l.cards));
+  if (!line) return `<div class="tk-empty">${human ? "No Toolkit interpretation has been recorded yet for this conversation." : "Once someone contributes, this panel will show what the AI understood and which toolkit methods it reported using."}</div>`;
+  const allCards = h.wall?.cards || [];
+  const cards = allCards.filter(c => line.cards.includes(c.id));
+  const reading = cards.map(c => `<article class="tk-reading"><div class="tk-tool-head"><b>${esc(roleName(c.who))}</b><span class="tk-status">${esc((VIA[c.via] || [c.via || "source not recorded"])[0])}${c.withdrawn ? " · withdrawn" : ""}</span></div>
+    <blockquote>${c.quote ? esc(c.quote) : "No source quotation recorded."}</blockquote><p><strong>AI understood</strong>${esc(c.need)}</p>
+    ${c.why ? `<p><strong>${/^hypothesis/i.test(c.why) ? "AI hypothesis · unconfirmed" : "Recorded reason"}</strong>${esc(c.why)}</p>` : ""}
+    ${[["Concern",c.concern],["When it matters",c.when],["Possible readings",(c.readings || []).join(" / ")],["How might we",c.hmw],["Job story",c.story]].filter(([,v])=>v).map(([k,v])=>`<p><strong>${k}</strong>${esc(v)}</p>`).join("")}
+    </article>`).join("");
+  return `<div class="tk-inspect"><div class="tk-source"><p class="eyebrow">Latest recorded interpretation · ${esc(roleName(line.who))}</p><q>${esc(line.upload ? "Participant submitted a drawing." : line.text || "No text recorded.")}</q>${human !== line ? `<p class="tk-empty">A newer contribution has no recorded Toolkit reading yet. This panel still refers to the contribution quoted above.</p>` : ""}</div>
+    <div class="tk-grid"><section><h3>01 &nbsp; What the AI understood</h3>${reading || `<p class="tk-empty">No new need card was recorded. This may be an acknowledgement or an update to an existing need; see the full record below.</p>`}<p class="tk-caption">Need cards reflect the current saved record. This is the AI's interpretation, not confirmation from either person.</p></section>
+    <section><h3>02 &nbsp; Which toolkit methods it used</h3>${toolkitTools(line.tools)}${line.ask ? `<div class="tk-question"><strong>Question recorded</strong><p>${esc(line.ask)}</p></div>` : ""}${line.memberCheck ? `<p class="tk-caption">Correction opportunity: ${esc(line.memberCheck)}</p>` : ""}<p class="tk-caption">Methods are reported by the AI in its response; this is not an independent execution log.</p></section></div></div>`;
 }
 
 // The control agent's trace: the same lines, the keys-only reading, and what
@@ -1232,31 +1366,38 @@ function attribution(h){
   </div>`;
 }
 
+const outputTabs = new Map();
 function resultBar(h){
+  const output = outputTabs.get(h.room) || "matchsticks";
   const ctl = h.control && bridgeTab === "control";
   const v = ctl ? { ...h, standing: h.control.standing, shape: h.control.shape, world: h.control.world, provenance: h.control.provenance, score: h.control.score } : h;
   const sc = v.score;
   return `<div class="result">
     ${h.control ? `<div class="tabs" role="tablist">
-      <button class="tab" role="tab" data-btab="toolkit" aria-selected="${!ctl}">Toolkit's bridge<small>${esc(h.standing || "nothing yet")}</small></button>
-      <button class="tab" role="tab" data-btab="control" aria-selected="${ctl}">Control's bridge<small>${esc(h.control.standing || "nothing yet")}</small></button>
+      <button class="tab" role="tab" data-btab="toolkit" aria-selected="${!ctl}">With toolkit</button>
+      <button class="tab" role="tab" data-btab="control" aria-selected="${ctl}">Keys only · comparison</button>
     </div>` : ""}
-    <div class="artifact">
+    <div class="tabs output-tabs" role="tablist" aria-label="Result format">
+      <button class="tab" role="tab" data-output="matchsticks" aria-selected="${output==='matchsticks'}">Matchstick bridge</button>
+      <button class="tab" role="tab" data-output="sketch" aria-selected="${output==='sketch'}">Line sketch</button>
+    </div>
+    ${output==='sketch' ? sketchPanel(h) : `<div class="artifact" role="tabpanel" aria-label="Matchstick bridge">
       <canvas id="crossing" aria-label="the crossing as it stands"></canvas>
       <div class="standing">
         <p class="eyebrow">What stands${h.control ? (ctl ? " — control, keys only" : " — toolkit") : ""}</p>
-        <p class="what ${v.standing ? "" : "none"}">${v.standing ? esc(v.standing) : "nothing built yet"}</p>
-        ${ctl ? "" : sheetLegend(h.sheetDrawn, true)}
-        ${attribution(v)}
+        <p class="what ${v.standing ? "" : "none"}">${v.standing ? esc(v.standing) : "A crossing starts with both of you."}</p>
+        ${ctl ? "" : sheetLegend(h.sheetDrawn, false)}
+        ${v.provenance?.length ? `<details class="trace-fold" data-fold="attribution"><summary>Whose needs are reflected in this build?</summary>${attribution(v)}</details>` : ""}
       </div>
-    </div>
-    ${sc ? `<div class="scores">${["A","B"].map(r => `
+    </div>`}
+    <details class="fold" data-fold="outputs"><summary>Session outputs & reflection <small>Evaluation & finish</small></summary><div class="fold-body">
+    ${sc?.unavailable ? `<p class="muted">${esc(sc.reason)}</p>` : sc ? `<div class="scores">${["A","B"].map(r => `
         <div><h3>${roleName(r)} — ${sc.per[r].met} of ${sc.per[r].of}</h3><ul>
           ${sc.per[r].needs.map(n => `<li><span class="${n.met ? "y" : "n"}">${n.met ? "✓" : "✗"}</span>
              <span>${esc(n.text)}</span></li>`).join("") || `<li>no need was set</li>`}
         </ul></div>`).join("")}</div>`
       : `<div class="row"><button class="go" id="fin">End the session and show what they needed</button></div>`}
-    ${h.sketches ? sketchPanel(h) : ""}
+    </div></details>
     ${h.lines.length ? `<div class="saved">
       <span class="muted">Saved after every line.</span>
       <a class="mini" href="/api/export?room=${esc(h.room)}&format=md" download>Download chat</a>
@@ -1273,46 +1414,83 @@ function resultBar(h){
 function sketchPanel(h){
   const ks = h.sketches || [], last = ks[ks.length - 1];
   const said = h.lines.filter(l => l.who !== "builder" && !l.upload && l.text).length;
-  const stale = last && said > last.lines;
-  return `<div class="sketch">
+  const fromRefs = last?.source === "reference assets";
+  const canDraw = said > 0 || h.lines.some(l=>l.upload);
+  const stale = !fromRefs && last && said > last.lines;
+  return `<div class="sketch" role="tabpanel" aria-label="Line sketch">
     <div>${last
-      ? `<img src="/sketch/${esc(h.room)}/${last.n}.png" alt="the AI's pencil sketch of the bridge, drawn from the chat alone">`
-      : `<div class="empty">${h.sketching ? "Drawing from what they said…" : "No sketch yet. The AI can draw the bridge from the chat alone — no keys, no kit — so you can see what the words carried that the build could not hold."}</div>`}</div>
+      ? `<img src="/sketch/${esc(h.room)}/${last.n}.png" alt="${fromRefs ? 'Bridge line sketch reconstructed from the saved reference images' : 'Bridge line sketch drawn from the saved conversation'}">`
+      : `<div class="empty">${h.sketching ? "Drawing from what they said…" : "No line sketch saved for this conversation yet."}</div>`}</div>
     <div>
-      <p class="eyebrow">Sketched from the chat alone</p>
-      <p class="what ${last ? "" : "none"}">${last ? `Drawn from ${last.lines} line${last.lines === 1 ? "" : "s"}${ks.length > 1 ? ` · sketch ${last.n} of ${ks.length}` : ""}` : "nothing drawn yet"}</p>
+      ${h.archived && !last ? `<p class="note">This historical record has no saved sketch.</p>` : ""}
+      <p class="eyebrow">${fromRefs ? (last?.retrospective ? "Generated later from saved reference images" : "Drawn from the submitted reference images") : last?.retrospective ? "Generated later from the saved conversation" : "Sketched from the chat alone"}</p>
+      <p class="what ${last ? "" : "none"}">${last ? `Drawn from ${fromRefs ? `${last.references} reference image${last.references===1?"":"s"}` : `${last.lines} line${last.lines === 1 ? "" : "s"}`}${ks.length > 1 ? ` · sketch ${last.n} of ${ks.length}` : ""}` : "nothing drawn yet"}</p>
       ${h.sketchError ? `<p class="note" style="color:#f2b8a6"><b>Could not draw it:</b> ${esc(h.sketchError)}</p>` : ""}
-      <p class="note">The crossing above is built from the 17 keys. This is drawn from the words, with no keys and no workshop between them — a second reconstruction of the same chat. Where the two differ is what the keys dropped.${stale ? ` <b>${said - last.lines} more line${said - last.lines === 1 ? " has" : "s have"} been said since this was drawn.</b>` : ""}</p>
-      ${h.finished === undefined || h.role !== "host" || !document.getElementById || location.pathname.startsWith("/history") ? "" : `<div class="row">
-        <button class="go" id="sketch" ${h.sketching || !said ? "disabled" : ""}>${h.sketching ? "Drawing…" : last ? "Draw it again from the chat" : "Draw it from the chat"}</button>
+      <p class="note">This sketch is a separate drawing from ${fromRefs ? "the saved reference images and recorded AI outcome" : "the conversation"}, not a tracing of the matchstick bridge.${stale ? ` <b>${said - last.lines} more line${said - last.lines === 1 ? " has" : "s have"} been said since this was drawn.</b>` : ""}</p>
+      ${h.archived || h.finished === undefined || h.role !== "host" || !document.getElementById || location.pathname.startsWith("/history") ? "" : `<div class="row">
+        <button class="go" id="sketch" ${h.sketching || !canDraw ? "disabled" : ""}>${h.sketching ? "Drawing…" : last ? "Generate another sketch" : "Generate line sketch"}</button>
         ${ks.length > 1 ? ks.slice(0, -1).map(k => `<a class="mini" href="/sketch/${esc(h.room)}/${k.n}.png" target="_blank" rel="noopener">sketch ${k.n}</a>`).join("") : ""}
       </div>`}
     </div>
   </div>`;
 }
 
+let activeSeat = "B";
+const studioScroll = {};
+const studioFolds = new Set();
+app.addEventListener("toggle", e => {
+  const key = e.target.dataset && e.target.dataset.fold;
+  if (key) { if (e.target.open) studioFolds.add(key); else studioFolds.delete(key); }
+}, true);
+function restoreStudioFolds(){
+  app.querySelectorAll("details[data-fold]").forEach(el => { el.open = studioFolds.has(el.dataset.fold); });
+}
+function studioFocus(){
+  const el = document.activeElement;
+  return el && app.contains(el) && el.tagName === "TEXTAREA" ? {id:el.id,start:el.selectionStart,end:el.selectionEnd} : null;
+}
+function restoreStudioFocus(f){
+  const el = f && document.getElementById(f.id);
+  if (el && !el.disabled) { el.focus({preventScroll:true}); el.setSelectionRange(f.start,f.end); }
+}
 function bothView(){
   const a = both.A, b = both.B, h = both.host;
   if (!a || !b || !h) return;
   last.A = a; last.B = b;
+  if (setupRoom !== a.room) { setupRoom = a.room; setupDraft = null; }
   app.classList.add("wide");
+  const focus = studioFocus();
+  app.querySelectorAll(".thread[id]").forEach(el => { studioScroll[el.id] = el.scrollTop; });
+  const seat = activeSeat === "A" ? a : b;
+  const latestAI = [...h.lines].reverse().find(l => l.who === "builder" && l.text);
   app.innerHTML = `
-    <div>
-      <p class="eyebrow">Room ${esc(a.room)} · ${esc(a.title)}</p>
-      <h1>${esc(a.arrow)}</h1>
-      <p class="lede">${esc(a.note)}</p>
-    </div>
-    ${filterBar(picking || { argument: a.argument, route: a.route }, !!picking)}
-    ${invite(a.room)}
-    <div class="desk">
-      <div class="pair">
-        <div class="col" id="col-A">${a.develop ? bridgeCard(a, true) : ""}${panel(a, false)}</div>
-        <div class="col" id="col-B">${b.develop ? bridgeCard(b, true) : ""}${panel(b, false)}</div>
-      </div>
-      ${builderColumn(h)}
-    </div>
-    ${resultBar(h)}`;
-  wire(a); wire(b);
+    <div class="scenario-top" aria-label="Experiment starting point">${sessionSetup({argument:a.argument,route:a.route,agent:a.agent})}</div>
+    <h1 class="sr-only">Two Worlds Bridge collaboration studio</h1>
+    <div class="study-controls">${communicationBar(a)}${processTabs(a)}</div>
+    <div class="study-status"><span class="status-dot"></span>${h.archived?'Viewing a saved session':h.thinking?'AI is building…':'Ready to collaborate'}<span>${a.argument==='refs'?'Two reference images':'Two perspectives'} · ${selectedProcess==='keys'?'Control':'Toolkit'}</span></div>
+    <main class="studio-grid">
+      <section class="workspace-art" aria-label="Shared work">
+        <div class="section-top"><h2>Shared work</h2><span>${h.archived ? "SAVED RESULT" : h.finished ? "SESSION FINISHED" : h.thinking ? "AI IS BUILDING…" : "WORK IN PROGRESS"}</span></div>
+        ${resultBar(h)}
+        <div class="ai-note"><span class="ai-mark" aria-hidden="true">✳</span><div><h3>${latestAI ? "From your AI builder" : "Meet your AI builder"}</h3><p>${latestAI ? esc(latestAI.text) : a.develop ? "Start with what each of you needs. Once both people have spoken, the AI will make a first version you can respond to." : "The AI builds from the contributions it receives on this route."}</p><small>${latestAI ? "Latest contribution · the conversation keeps the full record" : "Your words are the starting material."}</small></div></div>
+      </section>
+      <section class="conversation-area" aria-label="Participant views">
+        <div class="section-top"><h2>Conversation</h2><span>PARTICIPANT VIEW</span></div>
+        <div class="seat-tabs" role="group" aria-label="Choose participant view">${["A","B"].map(r=>`<button data-seat="${r}" aria-pressed="${activeSeat===r}"><span class="seat-dot ${r.toLowerCase()}"></span>${roleName(r)}</button>`).join("")}</div>
+        <div class="col" id="col-${activeSeat}">${panel(seat,false)}
+        ${seat.develop ? `<details class="fold seat-work" data-fold="work-${activeSeat}"><summary>Respond to the build <small>Parts, proposals & what remains open${seat.sheet?.length ? " · "+seat.sheet.length+" proposals" : ""}</small></summary><div class="fold-body">${bridgeCard(seat,true)}</div></details>` : ""}</div>
+      </section>
+    </main>
+    ${sessionDetails(a,h)}
+    <details class="fold research-fold" data-fold="research"><summary>${a.agent === "keys" ? "Keys · interpret & build" : a.agent === "toolkit" ? "Toolkit · understand & build" : "Saved interpretation & build record"} <small>Interpretation & build record</small></summary><div class="fold-body">${builderColumn(h)}</div></details>
+    <footer class="studio-foot"><span>TWO PEOPLE + AN AI BUILDER</span><span>Every contribution is saved to this room’s history.</span></footer>`;
+  restoreStudioFolds();
+  const alreadySeen = seen[seat.role] === seat.lines.length;
+  wire(seat);
+  const thread = document.getElementById("chat-" + seat.role);
+  if (alreadySeen && thread) thread.scrollTop = studioScroll[thread.id] || 0;
+  restoreStudioFocus(focus);
+  app.querySelectorAll("[data-seat]").forEach(el => el.onclick = () => { activeSeat = el.dataset.seat; bothView(); });
   // The artifact is a thing, not a name. Drawn after the markup exists, and
   // again on resize, because the canvas is sized from its own box.
   const cv = document.getElementById("crossing");
@@ -1320,20 +1498,22 @@ function bothView(){
   if (cv && window.drawCrossing) drawCrossing(cv, shown.shape, shown.world, shown === h ? h.sheetDrawn : null);
   app.querySelectorAll("[data-atab]").forEach(t => t.onclick = () => { agentTab = t.dataset.atab; bothView(); });
   app.querySelectorAll("[data-btab]").forEach(t => t.onclick = () => { bridgeTab = t.dataset.btab; bothView(); });
+  app.querySelectorAll("[data-output]").forEach(t=>t.onclick=()=>{outputTabs.set(h.room,t.dataset.output);bothView();app.querySelector(`[data-output="${t.dataset.output}"]`)?.focus({preventScroll:true});});
   const f = document.getElementById("fin");
   if (f) f.onclick = () => post("/api/finish", { room: a.room });
   const sk = document.getElementById("sketch");
-  if (sk) sk.onclick = () => { sk.disabled = true; sk.textContent = "Drawing…"; post("/api/sketch", { room: a.room }); };
-  const base = { argument: a.argument, route: a.route };
-  document.getElementById("new-room").onclick = e => {
-    e.preventDefault();
-    if (openRoom.busy) return;
-    clearTimeout(choose.timer);
-    picking = null;
-    openRoom(base.argument, base.route, base.wall);
+  if (sk) sk.onclick = async () => {
+    sk.disabled=true;sk.textContent="Drawing…";
+    try { const {ok,j}=await post("/api/sketch",{room:a.room}); if(!ok)throw Error(j.error || "Could not start drawing"); }
+    catch(e){alert(e.message);if(sk.isConnected){sk.disabled=false;sk.textContent="Try drawing again";}}
   };
-  app.querySelectorAll("[data-fa]").forEach(x => x.onclick = () => choose(base, { argument: x.dataset.fa }));
-  app.querySelectorAll("[data-fr]").forEach(x => x.onclick = () => choose(base, { route: x.dataset.fr }));
+  userNav();
+  app.querySelectorAll("[data-process]").forEach(x=>x.onclick=()=>switchProcess(x.dataset.process));
+  app.querySelectorAll("[data-sa]").forEach(x=>x.onclick=()=>switchProcess(selectedProcess,x.dataset.sa));
+  const routePicker=document.getElementById("setup-route");
+  if(routePicker) routePicker.onchange=()=>switchProcess(selectedProcess,a.argument,selectedUser,undefined,routePicker.value);
+  const saved=document.getElementById("saved-run");
+  if(saved) saved.onchange=()=>switchProcess(selectedProcess,a.argument,selectedUser,saved.value);
   app.querySelectorAll("[data-copy]").forEach(b => b.onclick = async () => {
     try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = "Copied"; }
     catch { b.textContent = "Select the link above"; }
@@ -1422,12 +1602,12 @@ function choose(base, change) {
   choose.timer = setTimeout(() => openRoom(picking.argument, picking.route, picking.wall), 500);
 }
 
-async function openRoom(argument, route, wall){
+async function openRoom(argument, route, wall, agent = "toolkit"){
   // One room at a time. A pick made while one is being opened is not dropped:
   // when it comes back, if the choice has moved on, open the latest instead.
   if (openRoom.busy) return;
   openRoom.busy = true;
-  let want = { argument, route, wall: !!wall };
+  let want = { argument, route, wall: !!wall, agent };
   for (;;) {
     const { ok, j } = await post("/api/create", want)
       .catch(() => ({ ok: false, j: {} }));
@@ -1446,7 +1626,7 @@ async function openRoom(argument, route, wall){
       watchBoth(j.room);
       return;
     }
-    want = { argument: latest.argument, route: latest.route, wall: !!latest.wall };
+    want = { argument: latest.argument, route: latest.route, wall: !!latest.wall, agent: latest.agent || agent };
   }
 }
 
@@ -1569,7 +1749,7 @@ async function historyView(id){
       <p class="muted">A session is kept from the first line anybody sends. <a href="/history">Back to history</a></p></div>`;
     return;
   }
-  const h = { room: rec.room, role: "host", title: rec.title, arrow: rec.arrow, finished: rec.finished,
+  const h = { agent:rec.agent || "both", room: rec.room, role: "host", title: rec.title, arrow: rec.arrow, finished: rec.finished,
     lines: rec.transcript, standing: rec.standing, shape: rec.shape, world: rec.world || {},
     provenance: rec.provenance, score: rec.score, thinking: false, sketches: rec.sketches || [],
     agent: rec.agent || "keys", wall: rec.wall || null, retro: rec.retro || {},
@@ -1597,6 +1777,7 @@ async function historyView(id){
   if (cv && window.drawCrossing) drawCrossing(cv, shown.shape, shown.world, shown === h ? h.sheetDrawn : null);
   app.querySelectorAll("[data-atab]").forEach(t => t.onclick = () => { agentTab = t.dataset.atab; historyView(id); });
   app.querySelectorAll("[data-btab]").forEach(t => t.onclick = () => { bridgeTab = t.dataset.btab; historyView(id); });
+  app.querySelectorAll("[data-output]").forEach(t=>t.onclick=()=>{outputTabs.set(h.room,t.dataset.output);historyView(id);});
 }
 
 (async () => {
@@ -1630,7 +1811,14 @@ async function historyView(id){
     // from. The options are needed before the first paint or the filters across
     // the top have nothing to draw.
     opts = await fetch("/api/options").then(r => r.json());
-    watchBoth(ROOM);
+    users=await fetch("/api/users").then(r=>r.json());
+    const owner=users.find(u=>u.sessions.some(x=>x.room===ROOM));
+    let remembered; try{remembered=localStorage.getItem("bridge-user");}catch{}
+    selectedUser=owner?.id || users.find(u=>u.id===remembered)?.id || "user2";
+    selectedProcess=owner?.sessions.find(x=>x.room===ROOM)?.agent || "keys";
+    userNav();
+    if(owner)watchBoth(ROOM);
+    else await switchProcess(selectedProcess,"pairs");
     // Rooms are switched in place, so Back has to be handled here: go to the
     // room the address now names.
     window.onpopstate = () => location.reload();
@@ -1639,7 +1827,14 @@ async function historyView(id){
   } else if (q) {
     opts = opts || await fetch("/api/options").then(r => r.json()).catch(() => null);
     listen(q, "host", s => hostView(s));
-  } else setup();
+  } else {
+    opts=await fetch("/api/options").then(r=>r.json());
+    users=await fetch("/api/users").then(r=>r.json());
+    let remembered;try{remembered=localStorage.getItem("bridge-user");}catch{}
+    selectedUser=users.find(u=>u.id===remembered)?.id || "user2";
+    userNav(); await switchProcess("keys","pairs");
+    window.onpopstate=()=>location.reload();
+  }
 })();
 </script>
 </body>

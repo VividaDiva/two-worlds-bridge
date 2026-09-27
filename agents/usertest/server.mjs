@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 import { mkCtx, hear, newTurn, build, provenance } from "../engine.mjs";
 import { ARGUMENTS, ROUTES, NAME, FEATURES, KIT, propsOf } from "./kit.mjs";
 import { readLine, chooseBuild, speak, readPicture, relay, sketch, readLineB, chooseBuildB, propose,
-         wallHear, wallDecide, relayFromWall, chooseBuildT } from "./builder.mjs";
+         wallHear, wallDecide, relayFromWall, chooseBuildT, readPictureToolkit, toolkitReply } from "./builder.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 8780);
@@ -50,7 +50,26 @@ function publicUrl() {
   } catch { return null; }
 }
 
+const modeOf = room => room.agent || "both";
 const rooms = new Map();
+// Profiles associate independent conversations without mixing their transcripts.
+const PROFILES = path.join(SESSIONS, "..", "profiles.json");
+let profiles = fs.existsSync(PROFILES) ? JSON.parse(fs.readFileSync(PROFILES,"utf8")) : [
+  {id:"user1",name:"用户 1",sessions:[]}, {id:"user2",name:"用户 2",sessions:[]}
+];
+// A profile is a collaboration pair, not an individual participant.
+profiles = profiles.map((u,i)=>({...u,participants:u.participants || [1,u.id==="user2"?2:u.id==="user1"?3:i+2]}));
+function saveProfiles() {
+  fs.writeFileSync(PROFILES+".tmp",JSON.stringify(profiles,null,2));
+  fs.renameSync(PROFILES+".tmp",PROFILES);
+}
+function profileRoom(argument,route,agent) {
+  let id=code();
+  while(rooms.has(id)||fs.existsSync(path.join(SESSIONS,`${id}.json`))) id=code();
+  const r={id,argument,route,agent,ctx:mkCtx(),turn:0,transcript:[],uploads:{},standing:null,
+    thinking:false,finished:false,sketches:[],wall:agent==="toolkit"?newWall():null,control:null,retro:{},createdAt:new Date().toISOString()};
+  record(r); rooms.set(id,r); streams.set(id,new Set()); return id;
+}
 const streams = new Map();            // room id -> Set of { res, role }
 const code = () => Math.random().toString(36).slice(2, 7);
 
@@ -70,6 +89,7 @@ function visible(room, entry, role) {
 }
 
 function view(room, role) {
+  if(profiles.some(u=>u.sessions.some(x=>x.room===room.id && x.historical))) room={...room,finished:true,archived:true};
   const arg = ARGUMENTS[room.argument], route = ROUTES[room.route];
   const script = route.script;
   // On the open routes nobody waits for a turn: both talk as they like and
@@ -77,7 +97,7 @@ function view(room, role) {
   const open = !!route.open, dev = !!route.develop;
   const turn = open ? null : (room.turn < script.length ? script[room.turn] : null);
   return {
-    room: room.id, argument: room.argument, route: room.route,
+    room: room.id, argument: room.argument, route: room.route, archived:!!room.archived,
     title: arg.title, blurb: arg.blurb, arrow: route.arrow, note: route.note,
     role,
     goal: role === "host" ? null : arg[role].goal,
@@ -109,7 +129,7 @@ function view(room, role) {
     // Which of them asked for each property of what stands. This is the whole
     // question when an agent has two principals instead of one, so it is worth
     // showing: it is the only place you can see whose meaning it acted on.
-    provenance: role === "host" ? (room.wall ? wallProvenance(room) : provenance(room.ctx).feats) : null,
+    provenance: role === "host" ? (modeOf(room) === "toolkit" ? [] : room.wall ? wallProvenance(room) : provenance(room.ctx).feats) : null,
     thinking: room.thinking,
     // Condition B. Both people see the bridge, what it has, what changed, the
     // AI's reading of every line (marked as its guess), and at the end what was
@@ -118,7 +138,7 @@ function view(room, role) {
     // With the wall on, the builder keeps a card per need. The facilitator
     // always sees the wall; on condition B both people do — it is the thing they
     // respond to. On the other routes a person's page stays as it was.
-    agent: "both",
+    agent: modeOf(room),
     control: room.control && (role === "host" || dev) ? {
       standing: room.control.standing ? NAME(room.control.standing) : null,
       shape: room.control.ctx.design ? room.control.ctx.design.shape : null,
@@ -141,7 +161,7 @@ function view(room, role) {
     // part of the conversation.
     sketching: !!room.sketching,
     sketchError: role === "host" ? (room.sketchError || null) : null,
-    sketches: role === "host" ? (room.sketches || []).map(k => ({ n: k.n, at: k.at, turn: k.turn, lines: k.lines })) : null,
+    sketches: role === "host" ? (room.sketches || []).map(k => ({ n: k.n, at: k.at, turn: k.turn, lines: k.lines, retrospective: !!k.retrospective, source:k.source, references:k.references })) : null,
     finished: room.finished,
     score: room.finished ? room.score : null,
     lines: room.transcript.map((e, i) => ({ e, i })).filter(({ e }) => visible(room, e, role))
@@ -193,7 +213,7 @@ function record(room) {
   const rec = {
     room: room.id, argument: room.argument, title: arg.title,
     route: room.route, arrow: route.arrow, version: route.develop ? "B" : "A",
-    agent: "both", wall: room.wall || null, retro: room.retro || {},
+    agent: modeOf(room), wall: room.wall || null, retro: room.retro || {},
     sheetDrawn: room.wall ? sheetDrawn(room) : null,
     control: room.control ? { standingId: room.control.standing, lines: room.control.lines,
                               standing: room.control.standing ? NAME(room.control.standing) : null,
@@ -207,18 +227,18 @@ function record(room) {
     // The pictures are theirs; the record keeps what was read off them, not the
     // image. The files already on disk are gitignored.
     uploads: Object.fromEntries(Object.entries(room.uploads)
-      .map(([k, v]) => [k, { shape: v.shape, needs: v.needs }])),
+      .map(([k, v]) => [k, { shape: v.shape, needs: v.needs, description: v.description, saw: v.saw }])),
     transcript: room.transcript.map(e => ({ ...e })),
     standing: room.standing ? NAME(room.standing) : null,
     shape: room.ctx.design ? room.ctx.design.shape : null,
     // The ground under it, so the crossing can be drawn again from the record.
     world: { ...room.ctx.world },
-    provenance: room.wall ? wallProvenance(room) : provenance(room.ctx).feats,
+    provenance: modeOf(room) === "toolkit" ? [] : room.wall ? wallProvenance(room) : provenance(room.ctx).feats,
     // Needs met so far, even before End is pressed; `finished` says which.
     score: room.score || scoreRoom(room),
     // The sketches are files beside the pictures; the record keeps when and
     // from how much of the chat each was drawn, and the prompt it was drawn from.
-    sketches: (room.sketches || []).map(k => ({ n: k.n, at: k.at, turn: k.turn, lines: k.lines, media: k.media, prompt: k.prompt })),
+    sketches: (room.sketches || []).map(k => ({ n: k.n, at: k.at, turn: k.turn, lines: k.lines, media: k.media, prompt: k.prompt, retrospective: !!k.retrospective, source: k.source, references:k.references, model: k.model })),
   };
   // Written aside and moved into place, so a restart mid-write leaves the last
   // good record rather than half of a new one.
@@ -234,7 +254,7 @@ const clock = t => (t ? new Date(t).toLocaleTimeString() : "");
 function toMarkdown(s) {
   const out = [
     `# ${s.title} — room ${s.room}`, "",
-    `- Route: ${s.arrow}`,
+    `- Route: ${s.arrow}`, `- Processing mode: ${s.agent || "both (legacy)"}`,
     `- Started: ${s.createdAt ? new Date(s.createdAt).toLocaleString() : "?"}`,
     `- Last change: ${new Date(s.updatedAt).toLocaleString()}`,
     `- Ended: ${s.finished ? "yes" : "no — saved as it stood"}`, "",
@@ -246,7 +266,7 @@ function toMarkdown(s) {
   for (const e of s.transcript) {
     out.push(`**${WHO[e.who] || e.who}**${e.relay ? ` (passing on ${WHO[e.about] || e.about})` : e.decision ? " (confirmed to the builder)" : e.phase === "confer" ? " (to each other)" : ""} · ${clock(e.at)}  `,
              e.failed ? "_It laid something and would not say why._" : (e.text || "_(nothing)_"));
-    if (e.taken && e.taken.length) out.push("", `> read as: ${e.taken.join(", ")}`);
+    if (s.agent !== "toolkit" && e.taken && e.taken.length) out.push("", `> read as: ${e.taken.join(", ")}`);
     if (e.picture && e.picture.length) out.push("", `> saw in their picture: ${e.picture.join(", ")}`);
     if (e.who === "builder" && e.built) out.push("", `> built: ${e.built}`);
     out.push("");
@@ -285,10 +305,10 @@ const json = (res, code, body) => {
   res.writeHead(code, { "content-type": "application/json" });
   res.end(JSON.stringify(body));
 };
-const body = req => new Promise((resolve, reject) => {
+const body = req => req.parsedBody || (req.parsedBody = new Promise((resolve, reject) => {
   let b = ""; req.on("data", d => { b += d; if (b.length > 3e7) reject(new Error("too big")); });
   req.on("end", () => { try { resolve(b ? JSON.parse(b) : {}); } catch (e) { reject(e); } });
-});
+}));
 
 // ── the wall ──────────────────────────────────────────────────────────────
 // The Toolmakers' Kit as the builder's hearing and thinking. One card per need,
@@ -320,15 +340,22 @@ const canAskOn = (room, who) => {
 // tally and the build. Two hearings of the same words, side by side.
 async function hearLine(room, line) {
   const dev = !!ROUTES[room.route].develop;
-  const base = dev ? await readLineB(line.text) : await readLine(line.text);
-  line.keysRead = { asks: base.asks, refuses: base.refuses, ...(dev ? { beyond: base.beyond } : {}) };
-  room.control ||= newControl();
-  newTurn(room.control.ctx);
-  hear(room.control.ctx, line.who, "want", base.asks);
-  hear(room.control.ctx, line.who, "avoid", base.refuses);
+  if (modeOf(room) !== "toolkit") {
+    const base = dev ? await readLineB(line.text) : await readLine(line.text);
+    line.asks = base.asks; line.refuses = base.refuses; line.beyond = base.beyond || "";
+    line.taken = [...base.asks,...base.refuses];
+    if (modeOf(room) === "keys") return;
+    line.keysRead = base;
+    room.control ||= newControl();
+    newTurn(room.control.ctx);
+    hear(room.control.ctx, line.who, "want", base.asks);
+    hear(room.control.ctx, line.who, "avoid", base.refuses);
+  }
   room.wall ||= newWall();
+  if (modeOf(room) === "toolkit") room.wall.kind = "toolkit";
   const route = ROUTES[room.route];
   const heard = await wallHear({
+    pureToolkit: modeOf(room) === "toolkit",
     routeNote: `${route.arrow}. ${route.note}`,
     canAsk: canAskOn(room, line.who),
     wall: room.wall, line: line.text, speaker: WHO[line.who],
@@ -357,7 +384,7 @@ async function hearLine(room, line) {
   line.asks = [...new Set(mine.flatMap(c => c.keys))].slice(0, 3);
   line.refuses = [...new Set(mine.flatMap(c => c.rulesOut))].slice(0, 3);
   line.taken = [...line.asks, ...line.refuses];
-  line.beyond = mine.filter(c => !c.keys.length).map(c => c.need).join("; ");
+  line.beyond = modeOf(room) === "toolkit" ? "" : mine.filter(c => !c.keys.length).map(c => c.need).join("; ");
   line.cards = ids; line.tools = tools; line.ask = heard.ask; line.memberCheck = memberCheck;
 }
 
@@ -395,11 +422,11 @@ function sheetDrawn(room) {
 async function decideWall(room) {
   if (!room.wall) return { record: "", unsupported: [], proposals: [] };
   const rec = await wallDecide({ wall: room.wall, standing: room.standing ? NAME(room.standing) : null,
-                                 props: room.ctx.design ? room.ctx.design.has : [] });
+                                 props: room.ctx.design ? room.ctx.design.has : [], pureToolkit: modeOf(room) === "toolkit" });
   // A card no key carries cannot be answered with a part, whatever the record
   // says: the link to what stands is structural, and the record must agree.
   const keyless = new Set(room.wall.cards.filter(c => !c.keys.length).map(c => c.id));
-  for (const d of rec.decisions) {
+  for (const d of modeOf(room) === "toolkit" ? [] : rec.decisions) {
     if (d.response === "part" && keyless.has(d.id)) d.response = "none";
     // ...and a need the kit already carries is answered with the part, never a new one.
     if (d.response === "new" && !keyless.has(d.id)) d.response = "part";
@@ -429,6 +456,13 @@ async function decideWall(room) {
 // carries is there; never because it was planned.
 function linkWall(room) {
   if (!room.wall) return;
+  if (modeOf(room) === "toolkit") {
+    for (const c of room.wall.cards) {
+      const item = (room.wall.sheet || []).find(p=>p.cardId===c.id && !p.declined);
+      c.met = c.withdrawn ? null : item ? (item.accepted.A && item.accepted.B ? "accepted-proposal" : "proposed") : "unverified";
+    }
+    return;
+  }
   const has = room.ctx.design ? room.ctx.design.has : [];
   for (const c of room.wall.cards) {
     if (c.withdrawn) continue;
@@ -455,7 +489,11 @@ async function builderTurn(room, line) {
   try {
     // A drawing carries no sentence to read; everything it asks for comes from
     // the picture itself, folded in below.
-    if (line.upload) { line.asks = []; line.refuses = []; line.taken = []; } else await hearLine(room, line);
+    if (line.upload && modeOf(room) === "toolkit") {
+      const saved = line.text;
+      line.text = "Reference image (visual observation, not confirmed intention): " + (room.uploads[line.who]?.description || "No description available");
+      try { await hearLine(room,line); } finally { line.text = saved; }
+    } else if (line.upload) { line.asks = []; line.refuses = []; line.taken = []; } else await hearLine(room, line);
     const asks = line.asks, refuses = line.refuses;
     newTurn(room.ctx);
     hear(room.ctx, line.who, "want", asks);
@@ -481,7 +519,7 @@ async function builderTurn(room, line) {
     if (once && room.turn < route.script.length) {
       if (route.relay) {
         const to = line.who === "A" ? "Role 2" : "Role 1", from = line.who === "A" ? "Role 1" : "Role 2";
-        const text = room.wall
+        const text = modeOf(room) === "toolkit" ? await toolkitReply({cards:activeCards(room),record:null,relayTo:to}) : room.wall
           ? await relayFromWall({ from, to, cards: room.wall.cards.filter(c => (line.cards || []).includes(c.id)) })
           : await relay({ from, to, said: line.text, asks: [...asks, ...(line.picture || [])], refuses });
         if (room.control && line.keysRead) {
@@ -515,9 +553,25 @@ async function builderTurn(room, line) {
   } finally { room.thinking = false; }
 }
 
+async function layExclusive(room,line,develop,clarification) {
+  const toolkit = modeOf(room) === "toolkit";
+  const before = room.standing, beforeHas = room.ctx.design?.has || [];
+  const said = room.transcript.filter(e=>e.who!=="builder" && e.phase==="main" && (!ROUTES[room.route].reads || ROUTES[room.route].reads===e.who)).map(e=>({who:WHO[e.who],text:e.corrected ? e.text + " — clarified: " + e.corrected : e.text}));
+  const plan = toolkit ? await decideWall(room) : null;
+  const choose = toolkit ? await chooseBuildT({cards:activeCards(room),record:plan.record,standing:before ? NAME(before):null,said,pictures:[]})
+    : await chooseBuild({wants:[...room.ctx.wants.keys()],avoids:[...room.ctx.avoids.keys()],standing:before ? NAME(before):null,said,pictures:Object.entries(room.uploads).filter(([r])=>room.seenPicture?.[r]).map(([r,p])=>({who:WHO[r],needs:p.needs || []}))});
+  if (choose.id) room.ctx.design = KIT.find(k=>k.id===choose.id) || room.ctx.design;
+  room.standing = room.ctx.design?.id || null;
+  const text = toolkit ? await toolkitReply({cards:activeCards(room),record:room.wall.record,before:before ? NAME(before):null,after:room.standing ? NAME(room.standing):null,change:clarification || line?.text,question:line?.ask || ""})
+    : await speak({said:clarification || line?.text || said.map(x=>x.text).join(" "),took:line?.taken || [],before:before ? NAME(before):null,after:room.standing ? NAME(room.standing):null,props:room.ctx.design?.has || [],wants:[...room.ctx.wants.keys()],avoids:[...room.ctx.avoids.keys()],changed:before!==room.standing});
+  if (toolkit) linkWall(room);
+  room.transcript.push({who:"builder",text,phase:"main",built:room.standing ? NAME(room.standing):null,proposal:develop,at:Date.now(),...(toolkit ? {steps:stepsFor(room,line || {})} : {diff:diffOf(room,beforeHas,room.ctx.design?.has || [])})});
+}
+
 async function lay(room, line, took) {
+  if (modeOf(room) !== "both") return layExclusive(room,line,false);
   const before = room.standing;
-  const said = room.transcript.filter(e => e.who !== "builder" && e.phase === "main")
+  const said = room.transcript.filter(e => e.who !== "builder" && e.phase === "main" && (!ROUTES[room.route].reads || ROUTES[room.route].reads === e.who))
                               .map(e => ({ who: e.who === "A" ? "Role 1" : "Role 2", text: e.text }));
   const pictures = Object.keys(room.seenPicture || {})
     .filter(r => room.uploads[r]?.needs)
@@ -563,7 +617,7 @@ function replay(room) {
 // What changed between two builds, and who had named each thing. "none" is a
 // property nobody asked for — the kit's doing, not theirs.
 function diffOf(room, beforeHas, afterHas) {
-  const named = f => { const s = new Set(activeCards(room).filter(c => c.keys.includes(f)).map(c => c.who)); return !s.size ? "none" : s.has("A") && s.has("B") ? "both" : s.has("A") ? "A" : "B"; };
+  const named = f => { const s = new Set(modeOf(room) === "keys" ? room.transcript.filter(e=>(e.asks || []).includes(f)).map(e=>e.who) : activeCards(room).filter(c => c.keys.includes(f)).map(c => c.who)); return !s.size ? "none" : s.has("A") && s.has("B") ? "both" : s.has("A") ? "A" : "B"; };
   const refused = f => { const rs = new Set(room.transcript.filter(e => (e.refuses || []).includes(f)).map(e => e.who));
                          return !rs.size ? "none" : rs.size === 2 ? "both" : [...rs][0]; };
   return {
@@ -584,6 +638,8 @@ function openBeyond(room) {
 // out, and anything asked for that nothing in the kit can make. Shown to both
 // at the end. Silence is not agreement, so nothing here is closed by default.
 function unresolved(room) {
+  if (modeOf(room) === "toolkit") return activeCards(room).map(c=>({kind:"unverified",who:WHO[c.who],text:c.need})).concat(pending(room).map(p=>({kind:"pending",what:p.what,pkind:p.kind,accepted:Object.keys(p.accepted).filter(k=>p.accepted[k]).map(k=>WHO[k])})));
+
   const want = new Map(), refuse = new Map();
   for (const e of room.transcript) {
     if (e.who === "builder") continue;
@@ -630,8 +686,9 @@ async function developTurn(room, line) {
 // Choose (with one alternative when they pull apart), then say what was done
 // with what was just said — to both of them, in relation to what each said.
 async function layB(room, line, said) {
+  if (modeOf(room) !== "both") return layExclusive(room,line,true,said);
   const before = room.standing, beforeHas = room.ctx.design ? room.ctx.design.has.slice() : [];
-  const conv = room.transcript.filter(e => e.who !== "builder" && e.phase === "main")
+  const conv = room.transcript.filter(e => e.who !== "builder" && e.phase === "main" && (!ROUTES[room.route].reads || ROUTES[room.route].reads === e.who))
     .map(e => ({ who: WHO[e.who], text: (e.part ? `[about ${FEATURES[e.part]}] ` : "") + e.text + (e.corrected ? ` — they clarified: "${e.corrected}"` : "") }));
   const pictures = Object.keys(room.seenPicture || {}).filter(r => room.uploads[r]?.needs)
     .map(r => ({ who: WHO[r], needs: room.uploads[r].needs }));
@@ -666,7 +723,7 @@ async function layControl(room, line, took) {
   const c = room.control; if (!c) return;
   const before = c.standing;
   build(c.ctx);
-  const said = room.transcript.filter(e => e.who !== "builder" && e.phase === "main")
+  const said = room.transcript.filter(e => e.who !== "builder" && e.phase === "main" && (!ROUTES[room.route].reads || ROUTES[room.route].reads === e.who))
                               .map(e => ({ who: WHO[e.who], text: e.text }));
   const pictures = Object.keys(room.seenPicture || {}).filter(r => room.uploads[r]?.needs)
     .map(r => ({ who: WHO[r], needs: room.uploads[r].needs }));
@@ -714,7 +771,7 @@ function scoreRoom(room) {
     per[r] = { needs: needs.map(f => ({ key: f, text: FEATURES[f], met: got.includes(f) })),
                met: needs.filter(f => got.includes(f)).length, of: needs.length };
   }
-  return { built: room.standing ? NAME(room.standing) : null, has: got, per };
+  return { built: room.standing ? NAME(room.standing) : null, has: got, per, ...(modeOf(room) === "toolkit" && arg.upload ? {unavailable:true,reason:"Toolkit image needs are recorded in natural language. Evaluate them with participants; no fixed-key image score is available."} : {}) };
 }
 
 // Rooms come back after a restart. Each is rebuilt from its record by hearing
@@ -749,7 +806,7 @@ function restore() {
         uploads[role] = { ...u, media, dataUrl: pic
           ? `data:${media};base64,${fs.readFileSync(path.join(pics, pic)).toString("base64")}` : null };
       }
-      rooms.set(rec.room, { id: rec.room, argument: rec.argument, route: rec.route, ctx,
+      rooms.set(rec.room, { id: rec.room, argument: rec.argument, route: rec.route, agent: rec.agent || "both", ctx,
         turn: rec.turn ?? rec.transcript.filter(e => e.who !== "builder").length,
         transcript: rec.transcript, uploads, standing: rec.standingId ?? null, thinking: false,
         finished: !!rec.finished, score: rec.finished ? rec.score : undefined,
@@ -771,6 +828,12 @@ function restore() {
 
 const srv = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
+  if(req.method === "POST") {
+    let data; try { data=await body(req); } catch { return json(res,400,{error:"Invalid request"}); }
+    if(data.room && profiles.some(u=>u.sessions.some(x=>x.room===data.room && x.historical)) && !["/api/switch"].includes(url.pathname))
+      return json(res,409,{error:"This historical record is read-only. Switch to Toolkit to start the comparison."});
+  }
+
   const p = url.pathname;
 
   if (req.method === "GET" && p === "/draw.js") {
@@ -783,7 +846,8 @@ const srv = http.createServer(async (req, res) => {
   // testing alone. Each column still sees only what its own role is allowed to.
   if (req.method === "GET" && (p === "/" || p === "/sessions" || p === "/history" || /^\/history\/[a-z0-9]+$/.test(p) || /^\/j\/[a-z0-9]+(\/(A|B|both))?$/.test(p))) {
     res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-    return res.end(fs.readFileSync(path.join(here, "app.html"), "utf8"));
+    const html = fs.readFileSync(path.join(here, "app.html"), "utf8");
+    return res.end(html);
   }
 
   // The public entry always starts a fresh session. Existing room-specific
@@ -795,8 +859,9 @@ const srv = http.createServer(async (req, res) => {
     const argument = last && STUDY.includes(last.argument) ? last.argument : STUDY[0], route = last?.route || Object.keys(ROUTES)[0];
     let id = code();
     while (rooms.has(id) || fs.existsSync(path.join(SESSIONS, `${id}.json`))) id = code();
-    const live = { id, argument, route, ctx: mkCtx(), turn: 0, transcript: [], uploads: {}, standing: null,
-      thinking: false, finished: false, sketches: [], wall: newWall(), control: newControl(), retro: {},
+    const agent = ["toolkit","keys"].includes(last?.agent) ? last.agent : "toolkit";
+    const live = { id, argument, route, agent, ctx: mkCtx(), turn: 0, transcript: [], uploads: {}, standing: null,
+      thinking: false, finished: false, sketches: [], wall: agent === "toolkit" ? newWall() : null, control: null, retro: {},
       createdAt: new Date().toISOString() };
     try { record(live); } catch (e) {
       console.error(`could not save ${id}: ${e.message}`);
@@ -806,6 +871,29 @@ const srv = http.createServer(async (req, res) => {
     res.writeHead(302, { location: `/j/${live.id}/both`, "cache-control": "no-store" }); return res.end();
   }
 
+  if (p === "/api/users" && req.method === "GET") return json(res,200,profiles.map(u=>({...u,sessions:u.sessions.map(x=>({...x,hasContent:!!rooms.get(x.room)?.transcript.length}))})));
+  if (p === "/api/users" && req.method === "POST") {
+    const n=profiles.length+1;
+    const nextRole=Math.max(1,...profiles.flatMap(u=>u.participants))+1;
+    const user={id:`user${n}`,name:`Role 1 & Role ${nextRole}`,participants:[1,nextRole],sessions:[]};
+    profiles.push(user); saveProfiles(); return json(res,200,user);
+  }
+  if (p === "/api/switch" && req.method === "POST") {
+    const {user,argument,agent,room,route:requestedRoute}=await body(req);
+    const profile=profiles.find(x=>x.id===user);
+    if(!profile || !STUDY.includes(argument) || !["keys","toolkit"].includes(agent)) return json(res,400,{error:"Unknown user, starting point or process"});
+    if(requestedRoute !== undefined && !Object.hasOwn(ROUTES,requestedRoute)) return json(res,400,{error:"Unknown communication path"});
+    const route=requestedRoute || (room ? profile.sessions.find(x=>x.room===room)?.route : profile.sessions.find(x=>x.argument===argument)?.route) || "all";
+    let entry=profile.sessions.find(x=>x.argument===argument && x.agent===agent && x.route===route && (!room || x.room===room));
+    if(room && !entry) return json(res,404,{error:"This record does not belong to this user and process"});
+    if(!entry) {
+      // Each path keeps its own Control and Toolkit conversations.
+      entry={argument,route,agent,room:profileRoom(argument,route,agent)};
+      profile.sessions.push(entry); saveProfiles();
+    }
+    return json(res,200,{...entry,user:profile.id});
+  }
+
   if (p === "/api/options") return json(res, 200, {
     publicUrl: publicUrl(),
     arguments: Object.entries(ARGUMENTS).filter(([k]) => STUDY.includes(k)).map(([k, v]) => ({ id: k, title: v.title, blurb: v.blurb, upload: !!v.upload })),
@@ -813,14 +901,15 @@ const srv = http.createServer(async (req, res) => {
   });
 
   if (p === "/api/create" && req.method === "POST") {
-    const { argument, route } = await body(req);
+    const { argument, route, agent = "toolkit" } = await body(req);
+    if (!["toolkit","keys"].includes(agent)) return json(res, 400, {error:"choose toolkit or keys for a new room"});
     if (!ARGUMENTS[argument] || !ROUTES[route]) return json(res, 400, { error: "unknown argument or route" });
     // Never reuse the name of a session already on disk, or its record goes.
     let id = code();
     while (rooms.has(id) || fs.existsSync(path.join(SESSIONS, `${id}.json`))) id = code();
-    rooms.set(id, { id, argument, route, ctx: mkCtx(), turn: 0, transcript: [],
+    rooms.set(id, { id, argument, route, agent, ctx: mkCtx(), turn: 0, transcript: [],
                     uploads: {}, standing: null, thinking: false, finished: false,
-                    sketches: [], wall: newWall(), control: newControl(), retro: {}, createdAt: new Date().toISOString() });
+                    sketches: [], wall: agent === "toolkit" ? newWall() : null, control: null, retro: {}, createdAt: new Date().toISOString() });
     streams.set(id, new Set());
     // Saved at once, so a room whose links are already out survives a restart
     // even before anybody has spoken in it.
@@ -908,6 +997,7 @@ const srv = http.createServer(async (req, res) => {
     const { room: id, role, dataUrl } = await body(req);
     const r = rooms.get(id);
     if (!r) return json(res, 404, { error: "no such room" });
+    if (!["A","B"].includes(role)) return json(res,400,{error:"unknown role"});
     const m = /^data:(image\/[a-z+]+);base64,(.+)$/s.exec(dataUrl || "");
     if (!m) return json(res, 400, { error: "that did not look like an image" });
     // Refused before the picture is read, so a drawing already handed over is
@@ -918,9 +1008,7 @@ const srv = http.createServer(async (req, res) => {
       // Handing over a drawing brought earlier sends the same picture again.
       // It was read when it arrived, so it is not read a second time.
       const had = r.uploads[role];
-      const read = had && had.dataUrl === dataUrl && Array.isArray(had.needs)
-        ? { shape: had.shape, needs: had.needs, saw: had.saw }
-        : await readPicture(m[2], m[1]);
+      const read = had && had.dataUrl === dataUrl ? had : modeOf(r) === "toolkit" ? await readPictureToolkit(m[2], m[1]) : await readPicture(m[2], m[1]);
       fs.writeFileSync(path.join(UPLOADS, `${id}-${role}.${m[1].split("/")[1].replace("+xml", "")}`),
                        Buffer.from(m[2], "base64"));
       r.uploads[role] = { dataUrl, media: m[1], ...read };
@@ -1045,16 +1133,17 @@ const srv = http.createServer(async (req, res) => {
     if (r.sketching) return json(res, 409, { error: "still drawing the last one" });
     const lines = r.transcript.filter(e => e.who !== "builder" && !e.upload && e.text)
       .map(e => ({ who: WHO[e.who], text: e.text }));
-    if (!lines.length) return json(res, 409, { error: "nothing has been said yet" });
+    const references = [...new Set(r.transcript.filter(e=>e.upload && (!ROUTES[r.route].reads || ROUTES[r.route].reads===e.who)).map(e=>e.who))].map(role=>({who:WHO[role],media:r.uploads[role]?.media,data:r.uploads[role]?.dataUrl?.split(",")[1]})).filter(x=>x.data);
+    if (!lines.length && !references.length) return json(res, 409, { error: "Add a message or submit a reference image first" });
     r.sketching = true; push(id);
     json(res, 200, { ok: true });
     try {
       const arg = ARGUMENTS[r.argument];
       const ground = r.ctx.world.water ? "water" : r.ctx.world.rock ? "a drop in rock" : "";
-      const out = await sketch({ title: arg.title, ground, lines });
+      const out = await sketch({ title: arg.title, ground, lines, references, outcome:r.transcript.filter(e=>e.who==="builder"&&e.text).at(-1)?.text || "" });
       const n = (r.sketches || []).length + 1;
       fs.writeFileSync(path.join(UPLOADS, `${id}-sketch-${n}.png`), Buffer.from(out.base64, "base64"));
-      (r.sketches ||= []).push({ n, at: Date.now(), turn: r.turn, lines: lines.length, media: out.media, prompt: out.prompt });
+      (r.sketches ||= []).push({ n, at: Date.now(), turn: r.turn, lines: lines.length, media: out.media, prompt: out.prompt, source:references.length ? "reference assets" : "conversation", references:references.length });
       r.sketchError = null;
     } catch (e) {
       // Not a line in the conversation: the drawing is the facilitator's check,

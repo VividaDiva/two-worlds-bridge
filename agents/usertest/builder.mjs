@@ -408,9 +408,9 @@ export async function propose({ line, took, before, after, props, changed, alt, 
 // could not hold. Drawn by hand, on paper, because a rendering would claim a
 // precision the words never had.
 const SKETCH_MODEL = process.env.SKETCH_MODEL || "gemini-2.5-flash-image";
-export async function sketch({ title, ground, lines }) {
+export async function sketch({ title, ground, lines, references = [], outcome = "" }) {
   const said = lines.map(l => `${l.who}: "${l.text}"`).join("\n");
-  const prompt = [
+  const prompt = references.length ? `Draw one graphite pencil line sketch on plain white paper of a bridge from the submitted reference images and recorded AI outcome. No text or labels. Use the outcome when references disagree. This is a visualization of the saved result, not a new design decision. Saved outcome: ${outcome || "Not recorded"}.` : [
     `A quick pencil sketch on paper, drawn by hand, of a bridge — as described only by what two people said.`,
     `Draw what their words support and nothing they did not ask for. Side view with a little depth is fine.`,
     `No text, no labels, no captions, no title. Plain paper, graphite lines, a few hatched shadows.`,
@@ -423,7 +423,7 @@ export async function sketch({ title, ground, lines }) {
   let res;
   try {
     res = await generateWithBackoff({
-      model: SKETCH_MODEL, contents: prompt,
+      model: SKETCH_MODEL, contents: references.length ? [{role:"user",parts:[{text:prompt},...references.flatMap(r=>[{text:r.who+" reference"},{inlineData:{mimeType:r.media,data:r.data}}])]}] : prompt,
       config: { responseModalities: ["IMAGE", "TEXT"] },
     });
   } catch (e) {
@@ -513,12 +513,12 @@ const HEAR = [
   `- Never use the word "user".`,
 ].join("\n");
 
-export async function wallHear({ routeNote, canAsk, wall, line, speaker }) {
+export async function wallHear({ routeNote, canAsk, wall, line, speaker, pureToolkit = false }) {
   // Withdrawn cards are not shown: after a correction the line is heard again,
   // and a card listed as already there would be "updated" instead of re-made.
   const live = wall.cards.filter(c => !c.withdrawn);
   const existing = live.length
-    ? live.map(c => `  [${c.id}] ${c.who} (${c.via}): "${c.quote}" → ${c.need}${c.keys.length ? " {" + c.keys.join(",") + "}" : " {no key}"}`).join("\n")
+    ? live.map(c => `  [${c.id}] ${c.who} (${c.via}): "${c.quote}" → ${c.need}${pureToolkit ? "" : c.keys.length ? " {" + c.keys.join(",") + "}" : " {no key}"}`).join("\n")
     : "  (empty)";
   const user = [
     `The route: ${routeNote}`,
@@ -530,7 +530,14 @@ export async function wallHear({ routeNote, canAsk, wall, line, speaker }) {
     ``,
     `What does this add to the wall, what does it change, which tools did you use, and is there a question?`,
   ].join("\n");
-  const out = await ask(HEAR, user, HEAR_JSON);
+  const schema = structuredClone(HEAR_JSON);
+  if (pureToolkit) {
+    delete schema.properties.cards.items.properties.keys;
+    delete schema.properties.cards.items.properties.rulesOut;
+    schema.properties.cards.items.required = schema.properties.cards.items.required.filter(k => !["keys","rulesOut"].includes(k));
+  }
+  const instruction = pureToolkit ? HEAR.replace(/- keys:[\s\S]*?(?=Tools\.)/, "Describe needs in natural language, including explicit prohibitions. Do not translate them into feature codes. Use theme to group related needs.\n\n") : HEAR;
+  const out = await ask(instruction, user, schema);
   const clean = xs => (Array.isArray(xs) ? xs : []).filter(k => k in FEATURES).slice(0, 3);
   const str = x => typeof x === "string" ? x.trim() : "";
   const cards = (Array.isArray(out.cards) ? out.cards : []).slice(0, 3).map(c => ({
@@ -538,7 +545,7 @@ export async function wallHear({ routeNote, canAsk, wall, line, speaker }) {
     via: /reported by role 1/i.test(str(c.via)) ? "reported-by-A" : /reported by role 2/i.test(str(c.via)) ? "reported-by-B"
        : /infer/i.test(str(c.via)) ? "inferred" : "direct",
     quote: str(c.quote).slice(0, 200), need: str(c.need).slice(0, 140), why: str(c.why).slice(0, 160),
-    keys: clean(c.keys), rulesOut: clean(c.rulesOut), theme: str(c.theme).slice(0, 40) || "other",
+    keys: pureToolkit ? [] : clean(c.keys), rulesOut: pureToolkit ? [] : clean(c.rulesOut), theme: str(c.theme).slice(0, 40) || "other",
     concern: str(c.concern).slice(0, 160), when: str(c.when).slice(0, 120),
     readings: (Array.isArray(c.readings) ? c.readings : []).map(str).filter(Boolean).slice(0, 3),
     hmw: str(c.hmw).slice(0, 140), story: str(c.story).slice(0, 200),
@@ -587,19 +594,20 @@ const DECIDE = [
   `Never use the word "user".`,
 ].join("\n");
 
-export async function wallDecide({ wall, standing, props }) {
+export async function wallDecide({ wall, standing, props, pureToolkit = false }) {
   const list = ks => ks.length ? ks.map(f => FEATURES[f]).join("; ") : "nothing";
   const cards = wall.cards.filter(c => !c.withdrawn);
   if (!cards.length) return { decisions: [], conflicts: [], checks: null };
   const user = [
     `The wall:`,
-    ...cards.map(c => `  [${c.id}] ${c.who} (${c.via}): "${c.quote}" → ${c.need}${c.why ? " — " + c.why : ""}${c.keys.length ? " {" + c.keys.join(",") + "}" : " {no key}"}${c.concern ? " · concern: " + c.concern : ""}${c.when ? " · when: " + c.when : ""}${c.conflictsWith.length ? " · conflicts with " + c.conflictsWith.join(",") : ""}`),
+    ...cards.map(c => `  [${c.id}] ${c.who} (${c.via}): "${c.quote}" → ${c.need}${c.why ? " — " + c.why : ""}${pureToolkit ? "" : c.keys.length ? " {" + c.keys.join(",") + "}" : " {no key}"}${c.concern ? " · concern: " + c.concern : ""}${c.when ? " · when: " + c.when : ""}${c.conflictsWith.length ? " · conflicts with " + c.conflictsWith.join(",") : ""}`),
     ``,
     standing ? `What stands now: ${standing} — ${list(props)}.` : `Nothing stands yet.`,
     ``,
     `Write the decision record.`,
   ].join("\n");
-  const out = await ask(DECIDE, user, DECIDE_JSON);
+  const instruction = pureToolkit ? DECIDE.replace("a part you can make delivers it — the card's keys name what.", "a described part in the available workshop could address this need; cite the part and preserve uncertainty.") + "\nAvailable workshop:\n" + kitForChoosing().map(k=>k.id + ": " + k.props).join("\n") : DECIDE;
+  const out = await ask(instruction, user, DECIDE_JSON);
   const str = x => typeof x === "string" ? x.trim() : "";
   const ids = new Set(cards.map(c => c.id));
   return {
@@ -687,4 +695,14 @@ export async function chooseBuildT({ cards, record, standing, said, pictures = [
   };
   const id = find(out.build), altId = find(out.alt);
   return { id, why: out.why, alt: altId && altId !== id ? { id: altId, why: String(out.altWhy || "").trim() } : null };
+}
+
+// Toolkit-specific natural-language boundaries. Shared geometry is downstream only.
+export async function readPictureToolkit(base64, media) {
+  const out = await ask("Describe the visible crossing for a two-person design collaboration. Preserve distinctive features, relationships and uncertainties. Do not infer the owner's motives or emit feature keys. This is visual evidence, not confirmed needs.", {text:"Describe this reference image.",images:[base64],media}, {type:"object",properties:{description:{type:"string"}},required:["description"]});
+  return {description:String(out.description || ""),saw:String(out.description || "")};
+}
+export async function toolkitReply({cards,record,before,after,change,question,relayTo}) {
+  const out = await ask("You are an AI builder collaborating with two people using a design toolkit. Explain your contribution from their stated needs and the decision record. Preserve whose words they are, distinguish hypotheses, and name unresolved needs. Do not invent tool use or claim acceptance. Do not output feature keys. If relaying, pass on the needs to the named person without claiming a build. Otherwise briefly state what changed, why, and what remains open. Ask at most the supplied question. Return a short text.", JSON.stringify({needs:cards.map(({who,quote,need,why,concern,when,readings,story})=>({who,quote,need,why,concern,when,readings,story})),decisions:record,before,after,change,question,relayTo}), {type:"object",properties:{text:{type:"string"}},required:["text"]});
+  return String(out.text || "");
 }

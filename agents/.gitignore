@@ -15,3 +15,7 @@ drawings/*.jpeg
 drawings/*.webp
 drawings/*.gif
 drawings/manifest.json
+
+# Private collaboration pair/session index
+usertest/profiles.json
+usertest/profiles.json.tmp

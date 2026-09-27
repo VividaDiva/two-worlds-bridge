@@ -1,0 +1,15 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+const html=fs.readFileSync(new URL('./app.html',import.meta.url),'utf8');
+const chunk=html.slice(html.indexOf('const TOOLKIT_LABELS ='),html.indexOf('// The control agent',html.indexOf('const TOOLKIT_LABELS =')));
+const ctx=vm.createContext({esc:s=>String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'),roleName:r=>r==='A'?'Role 1':'Role 2',VIA:{direct:['said to it'],inferred:["the AI’s inference"]}});
+vm.runInContext(chunk,ctx);
+const render=h=>{ctx.h=h;return vm.runInContext('processRail(h)',ctx)};
+const line={who:'A',text:'Keep the edge safe',cards:['n1'],tools:[{tool:'laddering',why:'The speaker names a feature and its purpose.'},{tool:'priority-check',why:'The priority is not yet known.',facilitatorRun:true}]};
+const card={id:'n1',who:'A',via:'direct',quote:'Keep the edge safe',need:'An edge to hold',why:'hypothesis: reassurance',keys:['guarded']};
+test('shows evidence, hypothesis and method reasons; distinguishes facilitator suggestions',()=>{const out=render({lines:[line],wall:{cards:[card]}});for(const text of ['AI understood','An edge to hold','AI hypothesis · unconfirmed','Laddering','The speaker names a feature and its purpose.','Suggested · not run by AI','The priority is not yet known.'])assert.ok(out.includes(text),text)});
+test('does not attach a prior reading to newer unprocessed text',()=>{const out=render({lines:[line,{who:'B',text:'New thought'}],wall:{cards:[card]}});assert.ok(out.includes('newer contribution'));assert.ok(out.includes('Keep the edge safe'));assert.ok(!out.includes('<q>New thought'))});
+test('empty and historical records do not invent toolkit usage',()=>{assert.ok(render({lines:[]}).includes('Once someone contributes'));assert.ok(render({lines:[{who:'A',text:'Old record'}]}).includes('No Toolkit interpretation'));assert.ok(render({lines:[{...line,cards:[],tools:[]}]}).includes('No toolkit method was recorded'))});
+test('model text is escaped before rendering',()=>{const out=render({lines:[{...line,text:'<img src=x>',tools:[{tool:'<svg>',why:'<script>'}]}],wall:{cards:[{...card,need:'<script>'}]}});assert.ok(!out.includes('<script>'));assert.ok(!out.includes('<img'));assert.ok(out.includes('&lt;script&gt;'))});

@@ -1,3 +1,21 @@
+# Collaboration studio
+
+Two people and one AI builder. The studio stores independent conversations by collaboration pair, scenario, communication path and AI process (Control or Toolkit). Start with `all` for shared-screen sessions; one participant confirming asks the AI to build, not mutual consent.
+
+Run from `agents/` with Node 24+: `node --env-file=.env usertest/server.mjs`. Use the existing `.env` configuration with GEMINI_API_KEY (or GOOGLE_API_KEY); the current server also checks ANTHROPIC_API_KEY at startup. Never commit credentials. This server imports the real Gemini builder; the design preview mock is not part of this repository.
+
+Run checks: `node --test usertest/modes.test.mjs usertest/room-history.test.mjs usertest/toolkit-ui.test.mjs`.
+
+`SESSIONS_DIR` and `UPLOADS_DIR` can isolate test data. The private `profiles.json` index lives one directory above SESSIONS_DIR. Session data, uploaded assets and profiles are ignored by Git. Back them up privately. The public studio has no participant authentication; access follows the existing facilitator deployment.
+
+`live.html` on GitHub Pages redirects to the live.json tunnel address. GitHub Pages does not host the Node/API backend. The Mac server and Cloudflare tunnel must stay running; keepalive.sh maintains them and updates live.json. Opening the entry resumes profiles instead of creating a fresh room.
+
+Historical mode provenance remains labeled unknown when absent. Retrospective sketches are marked separately from original study artifacts. Control and Toolkit can generate text and reference-image sketches; the latter use submitted images and the saved AI outcome. Do not interpret these visual probes as evidence of historical Toolkit use.
+
+---
+
+## Earlier experiment documentation
+
 # The same study, with two people in the chairs
 
 The experiment next door runs Role 1 and Role 2 as language models. This runs
