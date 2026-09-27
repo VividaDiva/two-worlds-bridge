@@ -520,6 +520,7 @@ body{background:var(--paper);background-image:none}body::before{display:none}
 .study-controls{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:18px;align-items:end}.communication-bar{margin:0;padding:0;border:0;background:none}.communication-bar label,.control-label{display:block;font-size:11px;font-weight:500;color:var(--soft);letter-spacing:0;text-transform:none;margin:0 0 7px}.communication-bar select{font-size:13px;font-weight:400;padding:11px 12px;border-color:var(--rule);height:43px}.process-switch{display:flex;gap:3px;padding:3px;border-radius:9px;background:#e9ede5;margin:0;height:43px}.process-switch button{border:0;border-radius:6px;padding:6px 14px;text-align:center;font-size:13px;background:none}.process-switch button[aria-selected=true]{background:#2f5142;color:white}.study-status{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--soft);margin:12px 0 22px}.study-status>span:last-child{margin-left:auto}.status-dot{width:6px;height:6px;border-radius:50%;background:#81997c}.studio-grid{align-items:start}.section-top{margin-bottom:10px}.section-top h2{font-size:17px}.section-top>span{font-size:9px}.session-details{margin:20px 0 10px}.session-details p{font-size:12px;line-height:1.6}.research-fold{margin-top:10px}.ai-note{padding:13px;margin-top:12px}.ai-note small{display:none}.ai-note p{font-size:13px}.studio-foot{font-size:10px}
 @media(max-width:760px){.wrap.wide{padding:14px 16px 30px}.topnav{padding:10px 16px;gap:8px}.brand{font-size:12px}.brand svg{width:24px}.study-controls{grid-template-columns:minmax(0,1fr) 155px;gap:10px}.communication-bar select{font-size:12px;padding:10px 7px}.process-switch button{font-size:12px;padding:6px 8px}.scenario-top .scenario-card,.scenario-top .scenario-card[aria-pressed=true]{padding:8px 12px 10px}.scenario-top .scenario-card b{font-size:16px}.study-status{margin-bottom:16px}.profile-icon.add-profile{width:30px;height:30px}.study-status>span:last-child{display:none}}
 @media(max-width:430px){.study-controls{grid-template-columns:1fr}.scenario-top .scenario-card>span{display:none}.pair-caption{font-size:8px}.topnav .brand{max-width:110px}.topnav .navlink{padding:5px}}
+.understanding-wall{margin:20px 0}.understanding-wall h3{font-size:20px;margin:0 0 6px}.people-wall{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:20px}.person-wall{padding:18px;border-radius:14px;background:#eef4ef;border:1px solid #d6e3d8}.person-b{background:#f8f0e7;border-color:#e9dbcb}.person-wall h4,.wall-decisions h4{margin:0 0 14px;font-size:14px}.need-note{padding:16px;background:#fff;border-radius:9px;margin:10px 0;box-shadow:0 2px 5px #20352608;overflow-wrap:anywhere}.need-note small{font-size:11px;color:var(--soft);text-transform:none;letter-spacing:normal}.need-note p{font-size:15px;margin:10px 0}.need-note blockquote,.reading-version blockquote,.timeline-step blockquote{font-size:13px;border-left:2px solid #b7c6b7;margin:10px 0;padding-left:10px;color:var(--soft)}.need-methods{border-top:1px dashed var(--rule);margin-top:12px;padding-top:10px}.need-methods p{font-size:12px}.need-methods small{display:block;margin-top:5px}.need-note.withdrawn{opacity:.6}.wall-arrow{text-align:center;font-size:28px;color:#708570;padding:8px}.wall-decisions{border:1px solid var(--rule);border-radius:14px;padding:20px}.decision-link{display:grid;grid-template-columns:1fr 28px 1fr;gap:12px;align-items:center;border-bottom:1px solid var(--rule);padding:12px 0}.decision-link small,.build-destination small{font-size:10px;color:var(--soft)}.decision-link p{font-size:13px;margin:6px 0}.build-destination{background:#edf2e9;border-radius:9px;padding:15px;margin-top:14px}.build-destination p{margin:6px 0;font-size:16px}.step-timeline{border-left:2px solid #d7e1d4;margin:20px 0 0 12px;padding-left:18px}.timeline-step{padding:12px 0;border-bottom:1px solid var(--rule)}.timeline-step>summary{font-size:13px;cursor:pointer}.step-number{display:inline-block;background:#e7eee3;border-radius:50%;padding:4px 9px;margin-right:7px}.reading-version{margin:10px 0}.tk-inline{max-width:100%}@media(max-width:650px){.people-wall{grid-template-columns:1fr}.decision-link{grid-template-columns:1fr}.decision-link>span{transform:rotate(90deg);text-align:center}}
 </style>
 </head>
 <body>
@@ -632,7 +633,7 @@ function conversation(s, id, people, cls){
         : l.upload ? (l.who === s.role ? "You showed your drawing." : `${esc(roleName(l.who))} showed their drawing.`)
         : esc(l.text)}</p>
       ${l.built && !(s.develop && l.proposal) ? `<span class="built">it now stands as ${esc(l.built)}</span>` : ""}
-      ${s.develop ? devExtras(s, l) : ""}
+      ${s.develop ? devExtras(s, l) : (s.open || s.role === "host") ? inlineInterpretation(s,l) : ""}
     </div>`;
   }).join("") + `</div>`;
 }
@@ -652,6 +653,7 @@ function devExtras(s, l){
       ${l.alt ? `<div class="alt"><span class="lbl">or</span><span>${esc(l.alt.name)}${l.alt.why ? ` — ${esc(l.alt.why)}` : ""}</span>
         ${l.altTaken ? `<span class="tag">taken by ${esc(byName(s, l.altTaken))}</span>`
           : canAct ? `<button class="handle go" data-try="${esc(l.alt.id)}">Try this one</button>` : ""}</div>` : ""}
+      ${l.decisionSnapshot ? `<details class="trace-fold" data-fold="decision-${s.role}-${l.i}"><summary>Saved build decision</summary>${decisionDiagram(l.decisionSnapshot)}</details>` : ""}
       ${l.steps ? `<details class="trace-fold" data-fold="steps-${s.role}-${l.i}"><summary>How the AI interpreted this</summary>${stepsStrip(s, l.steps)}</details>` : ""}`;
   }
   if (l.sheet) return `<span class="tag">on the sheet</span>`;
@@ -783,7 +785,7 @@ function panel(s, people){
     : absent ? `${roleName(r)} has no part in this route. Only ${other} speaks.`
     : spent ? "Everyone has had their say. Nothing more to add."
     : s.needsUpload ? "Add your picture first."
-    : mine && s.open ? `Talk to ${other} here. When you have decided, write it and press Confirm to build.`
+    : mine && s.open ? (s.route === "all" ? `Talk with ${other} and AI. AI reads each message; Confirm to build updates the bridge.` : `Talk privately to ${other}. AI only receives what you Confirm to build.`)
     : mine ? "What do you need of it, and what happens to you when it is wrong?"
     : s.step === 0 ? `${roleName(s.turn)} goes first on this route. Waiting for them…`
     : `Waiting for ${roleName(s.turn)}…`;
@@ -819,7 +821,7 @@ function panel(s, people){
         <div class="composer">
           <textarea id="say-${r}" ${mine ? "" : "disabled"} placeholder="${esc(ph)}">${esc(drafts[r] || "")}</textarea>
           <button class="send" id="send-${r}" ${mine ? "" : "disabled"}
-            aria-label="${dev ? "Send to everyone" : s.open ? `Send to ${other}` : "Send"}" title="${dev ? "Send — everyone hears it, and the AI revises" : s.open ? `Send to ${other} (the builder does not hear it)` : "Send"}">&uarr;</button>
+            aria-label="${dev ? "Send to everyone" : s.route === "all" ? "Send to everyone" : s.open ? `Send to ${other}` : "Send"}" title="${dev ? "Send — everyone hears it, and the AI revises" : s.route === "all" ? "Send — AI reads this; building waits for Confirm to build" : s.open ? `Send to ${other} (the builder does not hear it)` : "Send"}">&uarr;</button>
           ${s.open && !dev ? `<button class="confirm" id="confirm-${r}" ${mine && !s.thinking ? "" : "disabled"}
             title="Hand this message to the builder as your decision">Confirm to build</button>` : ""}
         </div>
@@ -1252,8 +1254,9 @@ function builderColumn(h){
   return `<div class="card tab mach did">
     <h2>What the agent did</h2>
     ${tabs}
-    ${processRail(h)}
-    ${wallInside(h)}
+    ${understandingBoard(h)}
+    <details class="every" data-fold="latest-reading"><summary>Latest contribution · methods and evidence</summary>${processRail(h)}</details>
+    <details class="every" data-fold="full-wall"><summary>Full need-card details</summary>${wallInside(h)}</details>
     <details class="every"><summary>Every line, in order</summary>${body}</details>
     ${h.thinking ? `<p class="muted" style="margin-top:10px">Deciding…</p>` : ""}</div>`;
 }
@@ -1261,8 +1264,9 @@ function builderColumn(h){
 // The toolkit's last turn as five steps on a rail: what it heard, which tools
 // fired, what it decided, what it built, and how each need came out.
 function toolkitLineReading(s,l){
+  if(l.interpretations?.length) return readingVersions(l);
   const cards = (s.wall?.cards || []).filter(c=>(l.cards || []).includes(c.id));
-  return `<div class="tk-inline">${cards.map(c=>`<p><b>AI understood · ${esc(roleName(c.who))}</b>${esc(c.need)}</p>${c.why ? `<p><b>${/^hypothesis/i.test(c.why) ? "Unconfirmed hypothesis" : "Recorded reason"}</b>${esc(c.why)}</p>` : ""}${c.readings?.length ? `<p><b>Possible meanings</b>${c.readings.map(esc).join(" / ")}</p>` : ""}`).join("") || `<p>No new need card recorded.</p>`}<b class="tk-inline-label">Toolkit methods</b>${l.tools?.length ? l.tools.map(t=>`<p><b>${esc(TOOLKIT_LABELS[t.tool]?.[0] || t.tool)}${t.facilitatorRun ? " · suggested, not run" : " · reported by AI"}</b>${esc(t.why || "No reason recorded.")}</p>`).join("") : `<p>No method recorded.</p>`}${l.ask ? `<p><b>Question recorded</b>${esc(l.ask)}</p>` : ""}<small>AI interpretation, not participant confirmation. Cards show the current saved record.</small></div>`;
+  return `<div class="tk-inline">${cards.map(c=>`<p><b>AI understood · ${esc(roleName(c.who))}</b>${esc(c.need)}</p>${c.why ? `<p><b>${/^hypothesis/i.test(c.why) ? "Unconfirmed hypothesis" : "Recorded reason"}</b>${esc(c.why)}</p>` : ""}${c.readings?.length ? `<p><b>Possible meanings</b>${c.readings.map(esc).join(" / ")}</p>` : ""}`).join("") || `<p>No new need card recorded.</p>`}<b class="tk-inline-label">Toolkit methods</b>${l.tools?.length ? l.tools.map(t=>`<p><b>${esc(TOOLKIT_LABELS[t.tool]?.[0] || t.tool)}${t.facilitatorRun ? " · suggested, not run" : " · reported by AI"}</b>${esc(t.why || "No reason recorded.")}</p>`).join("") : `<p>No method recorded.</p>`}${l.ask ? `<p><b>Question recorded</b>${esc(l.ask)}</p>` : ""}<small>AI interpretation, not participant confirmation. Historical snapshot unavailable. Cards show the current saved record, not necessarily what the AI understood at that time.</small></div>`;
 }
 
 const TOOLKIT_LABELS = {
@@ -1294,16 +1298,50 @@ function processRail(h){
   const human = [...lines].reverse().find(l => l.who === "A" || l.who === "B");
   const line = [...lines].reverse().find(l => (l.who === "A" || l.who === "B") && Array.isArray(l.cards));
   if (!line) return `<div class="tk-empty">${human ? "No Toolkit interpretation has been recorded yet for this conversation." : "Once someone contributes, this panel will show what the AI understood and which toolkit methods it reported using."}</div>`;
-  const allCards = h.wall?.cards || [];
-  const cards = allCards.filter(c => line.cards.includes(c.id));
+  const snapshot = line.interpretations?.at(-1);
+  const allCards = snapshot?.cards || h.wall?.cards || [];
+  const cards = snapshot ? allCards : allCards.filter(c => line.cards.includes(c.id));
   const reading = cards.map(c => `<article class="tk-reading"><div class="tk-tool-head"><b>${esc(roleName(c.who))}</b><span class="tk-status">${esc((VIA[c.via] || [c.via || "source not recorded"])[0])}${c.withdrawn ? " · withdrawn" : ""}</span></div>
     <blockquote>${c.quote ? esc(c.quote) : "No source quotation recorded."}</blockquote><p><strong>AI understood</strong>${esc(c.need)}</p>
     ${c.why ? `<p><strong>${/^hypothesis/i.test(c.why) ? "AI hypothesis · unconfirmed" : "Recorded reason"}</strong>${esc(c.why)}</p>` : ""}
     ${[["Concern",c.concern],["When it matters",c.when],["Possible readings",(c.readings || []).join(" / ")],["How might we",c.hmw],["Job story",c.story]].filter(([,v])=>v).map(([k,v])=>`<p><strong>${k}</strong>${esc(v)}</p>`).join("")}
     </article>`).join("");
   return `<div class="tk-inspect"><div class="tk-source"><p class="eyebrow">Latest recorded interpretation · ${esc(roleName(line.who))}</p><q>${esc(line.upload ? "Participant submitted a drawing." : line.text || "No text recorded.")}</q>${human !== line ? `<p class="tk-empty">A newer contribution has no recorded Toolkit reading yet. This panel still refers to the contribution quoted above.</p>` : ""}</div>
-    <div class="tk-grid"><section><h3>01 &nbsp; What the AI understood</h3>${reading || `<p class="tk-empty">No new need card was recorded. This may be an acknowledgement or an update to an existing need; see the full record below.</p>`}<p class="tk-caption">Need cards reflect the current saved record. This is the AI's interpretation, not confirmation from either person.</p></section>
+    <div class="tk-grid"><section><h3>01 &nbsp; What the AI understood</h3>${reading || `<p class="tk-empty">No new need card was recorded. This may be an acknowledgement or an update to an existing need; see the full record below.</p>`}<p class="tk-caption">${snapshot ? "Saved interpretation at this step." : "Historical snapshot unavailable; cards reflect the current saved record."} This is the AI's interpretation, not confirmation from either person.</p></section>
     <section><h3>02 &nbsp; Which toolkit methods it used</h3>${toolkitTools(line.tools)}${line.ask ? `<div class="tk-question"><strong>Question recorded</strong><p>${esc(line.ask)}</p></div>` : ""}${line.memberCheck ? `<p class="tk-caption">Correction opportunity: ${esc(line.memberCheck)}</p>` : ""}<p class="tk-caption">Methods are reported by the AI in its response; this is not an independent execution log.</p></section></div></div>`;
+}
+
+// Saved public interpretations and decisions, never an internal reasoning transcript.
+function readingSnapshot(r){
+  if(r.kind === "keys") return `<div class="tk-inline"><p><b>Matched keys</b>${(r.asks || []).map(esc).join(", ") || "None"}</p><p><b>Excluded keys</b>${(r.refuses || []).map(esc).join(", ") || "None"}</p>${r.beyond ? `<p><b>Not represented</b>${esc(r.beyond)}</p>` : ""}</div>`;
+  return `<div class="tk-inline">${r.observation ? `<p><b>Visual observation · not confirmed intention</b>${esc(r.observation)}</p>` : ""}${(r.cards || []).map(c=>`<article class="tk-reading"><b>${esc(roleName(c.who))} · ${esc(c.id)}</b><blockquote>${esc(c.quote || r.source)}</blockquote><p><strong>AI understood${c.withdrawn ? " · withdrawn" : ""}</strong>${esc(c.need)}</p>${c.why ? `<p><strong>Reason / hypothesis · not confirmed</strong>${esc(c.why)}</p>` : ""}${c.readings?.length ? `<p><strong>Possible meanings</strong>${c.readings.map(esc).join(" / ")}</p>` : ""}</article>`).join("") || `<p>No new need in this reading.</p>`}${toolkitTools(r.tools)}${(r.updates || []).map(u=>`<p>Updated ${esc(u.id)}: ${esc(u.change)}</p>`).join("")}${r.ask ? `<p><b>Question recorded</b>${esc(r.ask)}</p>` : ""}</div>`;
+}
+function readingVersions(l){
+  return [...l.interpretations].reverse().map((r,i)=>`<${i ? 'details' : 'div'} class="reading-version">${i ? `<summary>Earlier reading · version ${esc(r.version)}</summary>` : `<p class="tk-caption">Saved at this step · version ${esc(r.version)}</p>`}<blockquote>${esc(r.source)}</blockquote>${readingSnapshot(r)}</${i ? 'details' : 'div'}>`).join("") + `<p class="tk-caption">Saved AI interpretation, not participant confirmation.${l.interpretations.at(-1)?.kind === "toolkit" ? " Methods are reported by the model." : ""}</p>`;
+}
+function inlineInterpretation(s,l){
+  if(l.who === "builder") return l.decisionSnapshot ? `<details class="trace-fold" data-fold="decision-${s.role}-${l.i}"><summary>What the AI decided for this build</summary>${decisionDiagram(l.decisionSnapshot)}</details>` : "";
+  const body=l.interpretations?.length ? readingVersions(l) : s.agent !== "keys" && l.cards ? toolkitLineReading(s,l) : `<p class="tk-caption">No step snapshot recorded. ${l.phase === "confer" ? "This discussion was not sent to the AI." : "This may be an older record or a contribution awaiting interpretation."}</p>`;
+  return `<details class="trace-fold" data-fold="reading-${s.role}-${l.i}"><summary>How the AI understood this</summary>${body}<p class="tk-caption">If this misses your meaning, clarify in your next message.</p></details>`;
+}
+function decisionDiagram(d){
+  const cards=d.cards || [], rec=d.record;
+  return `<div class="decision-map">${rec?.decisions?.map(x=>`<article class="decision-link"><div><small>NEED · ${esc(x.id)}</small><p>${esc(cards.find(c=>c.id===x.id)?.need || x.id)}</p></div><span aria-hidden="true">→</span><div><small>AI RESPONSE · ${esc(x.response)}</small><p>${esc(x.what)}</p>${x.uncertainty ? `<p class="tk-caption">Uncertain: ${esc(x.uncertainty)}</p>` : ""}</div></article>`).join("") || `<p class="tk-empty">No per-need decision was recorded.</p>`}${rec?.conflicts?.length ? `<div class="tk-question"><b>Tensions the AI identified</b>${rec.conflicts.map(c=>`<p>${esc(cards.find(n=>n.id===c.a)?.need || c.a)} ↔ ${esc(cards.find(n=>n.id===c.b)?.need || c.b)}: ${esc(c.note)}</p>`).join("")}</div>` : `<p class="tk-caption">No conflict recorded; this does not establish agreement.</p>`}<div class="build-destination"><small>BUILD RESULT</small><p>${esc(d.after || "No build recorded for this step")}</p>${d.before ? `<small>Previously: ${esc(d.before)}</small>` : ""}</div><p class="tk-caption">A proposed response does not mean either person accepted it or the result satisfied the need.</p></div>`;
+}
+function cardMethods(h,c){
+  const line=(h.lines || []).find((l,i)=>(l.i ?? i)===c.line);
+  const snapshot=line?.interpretations?.find(r=>r.cards?.some(n=>n.id===c.id));
+  const methods=snapshot?.tools || line?.tools || [];
+  return methods.length ? `<div class="need-methods"><small>METHODS REPORTED</small>${methods.map(t=>`<p><b>${esc(TOOLKIT_LABELS[t.tool]?.[0] || t.tool)}${t.facilitatorRun ? " · suggested" : ""}</b><small>${esc(t.why || "No reason recorded")}</small></p>`).join("")}</div>` : `<small>No method recorded for this card.</small>`;
+}
+function understandingBoard(h){
+  const w=h.wall || {cards:[]};
+  const events=(h.lines || []).flatMap((l,i)=>[
+    ...(l.interpretations || []).map(r=>({at:r.at,i,r})),
+    ...(l.decisionSnapshot ? [{at:l.decisionSnapshot.at,i,d:l.decisionSnapshot}] : [])
+  ]).sort((a,b)=>a.at-b.at || a.i-b.i);
+  const latest=[...(h.lines || [])].reverse().find(l=>l.decisionSnapshot)?.decisionSnapshot;
+  return `<section class="understanding-wall" aria-label="AI understanding wall"><header><h3>Two people → shared understanding → build</h3><p class="tk-caption">Current need cards, with a separate saved timeline for each new reading and build.</p></header><div class="people-wall">${["A","B"].map(who=>`<section class="person-wall ${who === 'A' ? 'person-a' : 'person-b'}"><h4>${esc(roleName(who))} · needs heard</h4>${w.cards.filter(c=>c.who===who).map(c=>`<article class="need-note${c.withdrawn ? ' withdrawn' : ''}"><small>${esc(c.id)} · ${c.withdrawn ? 'Withdrawn' : c.checked ? 'Clarified by participant' : 'AI interpretation · unconfirmed'}</small><blockquote>${esc(c.quote || 'No source quote recorded')}</blockquote><p>${esc(c.need)}</p>${c.why ? `<small>${esc(c.why)}</small>` : ''}${cardMethods(h,c)}</article>`).join('') || `<p class="tk-empty">No need cards recorded for this person.</p>`}</section>`).join('')}</div><div class="wall-arrow" aria-hidden="true">↓</div><section class="wall-decisions"><h4>How the AI responded to both people</h4>${decisionDiagram(latest || {cards:w.cards,record:w.record,after:h.standing})}${!latest && h.lines?.length ? '<p class="tk-caption">Current saved record only. A historical build snapshot is unavailable.</p>' : ''}</section><details class="every" data-fold="step-timeline"><summary>Step-by-step history · ${events.length} saved steps</summary><div class="step-timeline">${events.map((e,n)=>`<details class="timeline-step" data-fold="timeline-${esc(h.room || '')}-${e.i}-${e.r?.version || 'build'}"><summary><span class="step-number">${n+1}</span> ${e.r ? `${esc(roleName(e.r.who))} · AI reading · v${esc(e.r.version)}` : 'AI · build decision'}</summary>${e.r ? `<blockquote>${esc(e.r.source)}</blockquote>${readingSnapshot(e.r)}` : decisionDiagram(e.d)}</details>`).join('') || '<p class="tk-empty">No step snapshots in this record. New contributions will save them; old steps are not reconstructed.</p>'}</div></details></section>`;
 }
 
 // The control agent's trace: the same lines, the keys-only reading, and what
@@ -1457,7 +1495,7 @@ function bothView(){
   const a = both.A, b = both.B, h = both.host;
   if (!a || !b || !h) return;
   last.A = a; last.B = b;
-  if (setupRoom !== a.room) { setupRoom = a.room; setupDraft = null; }
+  if (setupRoom !== a.room) { setupRoom = a.room; setupDraft = null; if(a.agent === "toolkit") studioFolds.add("research"); }
   app.classList.add("wide");
   const focus = studioFocus();
   app.querySelectorAll(".thread[id]").forEach(el => { studioScroll[el.id] = el.scrollTop; });
@@ -1750,9 +1788,9 @@ async function historyView(id){
     return;
   }
   const h = { agent:rec.agent || "both", room: rec.room, role: "host", title: rec.title, arrow: rec.arrow, finished: rec.finished,
-    lines: rec.transcript, standing: rec.standing, shape: rec.shape, world: rec.world || {},
+    lines: rec.transcript.map((l,i)=>({...l,i})), standing: rec.standing, shape: rec.shape, world: rec.world || {},
     provenance: rec.provenance, score: rec.score, thinking: false, sketches: rec.sketches || [],
-    agent: rec.agent || "keys", wall: rec.wall || null, retro: rec.retro || {},
+    wall: rec.wall || null, retro: rec.retro || {},
     control: rec.control ? { standing: rec.control.standing, shape: rec.control.shape, world: rec.control.world || {}, provenance: null, lines: rec.control.lines || [], score: rec.control.score || null } : null,
     sheetDrawn: rec.sheetDrawn || null };
   const when = t => t ? new Date(t).toLocaleString([], { dateStyle: "full", timeStyle: "short" }) : "";

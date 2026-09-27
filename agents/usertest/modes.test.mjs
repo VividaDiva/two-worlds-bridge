@@ -7,6 +7,7 @@ import net from 'node:net';
 import {spawn} from 'node:child_process';
 import {once} from 'node:events';
 import {fileURLToPath} from 'node:url';
+import {ROUTES} from './kit.mjs';
 const here=path.dirname(fileURLToPath(import.meta.url));
 test('exclusive pipelines: real prompts, corrections, images, restart, and legacy preservation',async()=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'bridge-modes-'));
@@ -42,7 +43,16 @@ test('exclusive pipelines: real prompts, corrections, images, restart, and legac
   await post('/api/say',{room,role:'B',text:'I also need protection'});let h=await settled(room);
   assert.equal(h.agent,agent);assert.equal(h.control,null);assert.equal(h.lines.at(-1).text,agent==='toolkit'?'TOOLKIT RESPONSE':'KEY RESPONSE');
   assert.ok(h.shape);
+  const original=JSON.stringify(h.lines[0].interpretations[0]);
+  const originalBuild=JSON.stringify(h.lines.find(l=>l.decisionSnapshot)?.decisionSnapshot);
+  assert.equal(h.lines[0].interpretations[0].kind,agent);
+  if(agent==='toolkit') assert.ok(h.lines.at(-1).decisionSnapshot);
+
   await post('/api/correct',{room,role:'A',index:0,text:'I mean a rail'});h=await settled(room);assert.equal(h.lines[0].corrected,'I mean a rail');
+  assert.equal(JSON.stringify(h.lines.find(l=>l.decisionSnapshot)?.decisionSnapshot),originalBuild);
+  assert.equal(h.lines[0].interpretations.length,2);
+  assert.equal(JSON.stringify(h.lines[0].interpretations[0]),original);
+  assert.ok(h.lines[0].interpretations[1].source.includes('I mean a rail'));
   const trace=calls().slice(begin);
   if(agent==='toolkit'){
    assert.ok(trace.some(c=>c.schema.properties.cards));assert.ok(trace.some(c=>c.schema.properties.decisions));assert.ok(!trace.some(c=>c.schema.properties.asks));
@@ -58,17 +68,27 @@ test('exclusive pipelines: real prompts, corrections, images, restart, and legac
   const imageStart=calls().length;
   const img=await post('/api/create',{argument:'refs',route:'both',agent});
   for(const role of ['A','B']){await post('/api/upload',{room:img.room,role,dataUrl:'data:image/png;base64,ZmFrZQ=='});await settled(img.room)}
+  const imageState=await settled(img.room);assert.ok(imageState.lines.filter(l=>l.upload).every(l=>l.interpretations?.length));
   const imageCalls=calls().slice(imageStart);assert.equal(imageCalls.some(c=>c.schema.properties.description),agent==='toolkit');assert.equal(imageCalls.some(c=>c.schema.properties.saw),agent==='keys');
-  for(const route of ['via-1','all']){
+  for(const route of ['via-1','via-2','both','only-1','only-2','confer','all']){
    const startIndex=calls().length;const rr=await post('/api/create',{argument:'pairs',route,agent});
-   for(const role of ['A','B']){await post('/api/say',{room:rr.room,role,text:'Please add an edge',...(route==='all'?{mode:'build'}:{})});await settled(rr.room)}
+   if(ROUTES[route].open){
+    await post('/api/say',{room:rr.room,role:'A',text:'Discussion before confirming'});
+    const beforeConfirm=await settled(rr.room);
+    assert.ok(!beforeConfirm.shape);assert.ok(!beforeConfirm.lines.some(l=>l.who==='builder'));
+    assert.equal(!!beforeConfirm.lines[0].interpretations,route==='all');
+   }
+   for(const role of (ROUTES[route].open ? ['A','B'] : ROUTES[route].script)){await post('/api/say',{room:rr.room,role,text:'Please add an edge',...(ROUTES[route].open?{mode:'build'}:{})});await settled(rr.room)}
+   const participant=await get(`/api/state?room=${rr.room}&role=A`);
+   if(ROUTES[route].open) assert.ok(participant.lines.some(l=>l.interpretations?.length));
+   else assert.ok(participant.lines.every(l=>!l.interpretations && !l.decisionSnapshot));
    const sequence=calls().slice(startIndex);
    assert.ok(agent==='toolkit' ? !sequence.some(c=>c.schema.properties.asks) : !sequence.some(c=>c.schema.properties.cards||c.schema.properties.decisions));
   }
 
  }
  await stop();await start();
- for(let i=0;i<ids.length;i++){const h=await settled(ids[i]);assert.equal(h.agent,['toolkit','keys'][i]);assert.equal(h.control,null);assert.ok(h.lines.some(l=>l.corrected))}
+ for(let i=0;i<ids.length;i++){const h=await settled(ids[i]);assert.equal(h.agent,['toolkit','keys'][i]);assert.equal(h.control,null);assert.ok(h.lines.some(l=>l.corrected));assert.equal(h.lines[0].interpretations.length,2)}
  // A historical record without a mode stays explicitly legacy, never relabeled.
  await stop();const f=path.join(dir,'sessions',ids[0]+'.json');const old=JSON.parse(fs.readFileSync(f));delete old.agent;fs.writeFileSync(f,JSON.stringify(old));await start();assert.equal((await settled(ids[0])).agent,'both');
  }finally{await stop();fs.rmSync(dir,{recursive:true,force:true})}

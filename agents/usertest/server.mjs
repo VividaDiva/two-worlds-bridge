@@ -91,6 +91,7 @@ function visible(room, entry, role) {
 function view(room, role) {
   if(profiles.some(u=>u.sessions.some(x=>x.room===room.id && x.historical))) room={...room,finished:true,archived:true};
   const arg = ARGUMENTS[room.argument], route = ROUTES[room.route];
+  const inspect = role === "host" || !!route.develop || !!route.open;
   const script = route.script;
   // On the open routes nobody waits for a turn: both talk as they like and
   // confirm a decision to the builder when they have one.
@@ -183,12 +184,14 @@ function view(room, role) {
         ...((role === "host" || dev) && e.keysRead ? { keysRead: e.keysRead } : {}),
         // The wall's trace for this line: which cards it made, which tools fired,
         // and the question it asked, if the route allowed one.
-        ...((role === "host" || dev) && e.cards ? { cards: e.cards, tools: e.tools || [], ask: e.ask || "", memberCheck: e.memberCheck || "" } : {}),
+        ...((role === "host" || dev || route.open) && e.cards ? { cards: e.cards, tools: e.tools || [], ask: e.ask || "", memberCheck: e.memberCheck || "" } : {}),
         ...((role === "host" || dev) && e.steps ? { steps: e.steps } : {}),
         // Condition B: the line's number (to answer or correct it), what it asked
         // for that no key carries, what it was about, what it built on, how it
         // was corrected, and for the AI's lines what changed and what else it offered.
-        ...(dev ? { i,
+        ...(inspect ? { i,
+          ...(e.interpretations ? {interpretations:e.interpretations} : {}),
+          ...(e.decisionSnapshot ? {decisionSnapshot:e.decisionSnapshot} : {}),
           ...(e.beyond ? { beyond: e.beyond } : {}),
           ...(e.part ? { part: e.part } : {}),
           ...(Number.isInteger(e.replyTo) ? { replyTo: e.replyTo } : {}),
@@ -338,13 +341,17 @@ const canAskOn = (room, who) => {
 // session used — reads it first and its reading is kept on the line for
 // comparison; then the wall hears it, and the wall's keys are what feed the
 // tally and the build. Two hearings of the same words, side by side.
+function captureReading(room,line,reading) {
+  const snapshots=line.interpretations ||= [];
+  snapshots.push(structuredClone({version:snapshots.length+1,at:Date.now(),line:room.transcript.indexOf(line),who:line.who,source:line.upload ? "Submitted reference image" : line.text,...(line.upload && reading.kind === "toolkit" ? {observation:line.text} : {}),...reading}));
+}
 async function hearLine(room, line) {
   const dev = !!ROUTES[room.route].develop;
   if (modeOf(room) !== "toolkit") {
     const base = dev ? await readLineB(line.text) : await readLine(line.text);
     line.asks = base.asks; line.refuses = base.refuses; line.beyond = base.beyond || "";
     line.taken = [...base.asks,...base.refuses];
-    if (modeOf(room) === "keys") return;
+    if (modeOf(room) === "keys") { captureReading(room,line,{kind:"keys",asks:line.asks,refuses:line.refuses,beyond:line.beyond}); return; }
     line.keysRead = base;
     room.control ||= newControl();
     newTurn(room.control.ctx);
@@ -386,6 +393,8 @@ async function hearLine(room, line) {
   line.taken = [...line.asks, ...line.refuses];
   line.beyond = modeOf(room) === "toolkit" ? "" : mine.filter(c => !c.keys.length).map(c => c.need).join("; ");
   line.cards = ids; line.tools = tools; line.ask = heard.ask; line.memberCheck = memberCheck;
+  const affected = new Set([...ids,...heard.updates.map(u=>u.id)]);
+  captureReading(room,line,{kind:"toolkit",cards:room.wall.cards.filter(c=>affected.has(c.id)),tools,updates:heard.updates,ask:heard.ask,memberCheck});
 }
 
 // What the wall took from one line, in its own words — for the spoken line.
@@ -509,6 +518,7 @@ async function builderTurn(room, line) {
       line.picture = pic.needs.filter(f => f in FEATURES);
       hear(room.ctx, line.who, "want", line.picture);
     }
+    if(line.upload && modeOf(room) === "keys") captureReading(room,line,{kind:"keys",asks:line.picture || [],refuses:[],beyond:""});
     // Talk the AI can hear is taken in and remembered, and nothing is built from
     // it yet; the next confirmed decision builds from everything heard so far.
     if (line.talk) { room.thinking = false; return; }
@@ -565,7 +575,7 @@ async function layExclusive(room,line,develop,clarification) {
   const text = toolkit ? await toolkitReply({cards:activeCards(room),record:room.wall.record,before:before ? NAME(before):null,after:room.standing ? NAME(room.standing):null,change:clarification || line?.text,question:line?.ask || ""})
     : await speak({said:clarification || line?.text || said.map(x=>x.text).join(" "),took:line?.taken || [],before:before ? NAME(before):null,after:room.standing ? NAME(room.standing):null,props:room.ctx.design?.has || [],wants:[...room.ctx.wants.keys()],avoids:[...room.ctx.avoids.keys()],changed:before!==room.standing});
   if (toolkit) linkWall(room);
-  room.transcript.push({who:"builder",text,phase:"main",built:room.standing ? NAME(room.standing):null,proposal:develop,at:Date.now(),...(toolkit ? {steps:stepsFor(room,line || {})} : {diff:diffOf(room,beforeHas,room.ctx.design?.has || [])})});
+  room.transcript.push({who:"builder",text,phase:"main",built:room.standing ? NAME(room.standing):null,proposal:develop,at:Date.now(),...(toolkit ? {decisionSnapshot:structuredClone({at:Date.now(),sourceLine:line ? room.transcript.indexOf(line):null,cards:room.wall.cards,record:room.wall.record,sheet:room.wall.sheet,before:before ? NAME(before):null,after:room.standing ? NAME(room.standing):null}),steps:stepsFor(room,line || {})} : {diff:diffOf(room,beforeHas,room.ctx.design?.has || [])})});
 }
 
 async function lay(room, line, took) {
@@ -1188,6 +1198,7 @@ const srv = http.createServer(async (req, res) => {
           const read = await readLineB(line.text, meant);
           line.asks = read.asks; line.refuses = read.refuses; line.beyond = read.beyond;
           line.taken = [...read.asks, ...read.refuses];
+          captureReading(r,line,{kind:"keys",source:line.text+" — clarified: "+meant,asks:line.asks,refuses:line.refuses,beyond:line.beyond});
         }
         line.corrected = meant;
         replay(r);
