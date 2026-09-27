@@ -398,6 +398,51 @@ textarea[disabled]{opacity:.5}
 .retro{margin-top:12px; padding-top:12px; border-top:1px solid var(--rule-2)}
 .retro textarea{min-height:70px; font-size:14.5px}
 .retro .said{font-family:var(--display); font-size:15px; margin:6px 0 0}
+/* the toolkit's process, one turn at a time: five nodes on a rail */
+.proc{position:relative; margin:4px 0 18px; padding-left:30px}
+.proc::before{content:""; position:absolute; left:10px; top:8px; bottom:8px; width:2px; background:var(--rule)}
+.node{position:relative; padding:0 0 14px}
+.node:last-child{padding-bottom:0}
+.node::before{content:attr(data-n); position:absolute; left:-30px; top:0; width:22px; height:22px; border-radius:50%;
+  background:var(--moss); color:var(--paper); font:600 11px/22px var(--mono); text-align:center}
+.node.off::before{background:var(--paper-2); color:var(--faint); border:1px solid var(--rule); line-height:20px}
+.node .nl{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); margin:3px 0 4px}
+.node .nc{font-size:13.5px; line-height:1.45}
+.node .nc .muted{font-size:13px}
+.needs{display:flex; flex-wrap:wrap; gap:5px}
+.needchip{display:inline-flex; align-items:center; gap:6px; font-size:12.5px; line-height:1.3; padding:4px 9px 4px 7px;
+  border:1px solid var(--rule); border-radius:99px; background:var(--card); max-width:100%}
+.needchip i{width:7px; height:7px; border-radius:50%; flex:none}
+.needchip.ra i{background:var(--rust)} .needchip.rb i{background:var(--blue)}
+.needchip.dim{opacity:.6}
+.counts{display:flex; flex-wrap:wrap; gap:4px 10px; font-size:13px}
+.counts b{font-family:var(--mono); font-weight:500; font-size:12px}
+.ticks{margin:6px 0 0; font-family:var(--mono); font-size:10.5px; line-height:1.9; color:var(--soft)}
+.ticks .y{color:var(--moss)} .ticks .n{color:var(--rust)}
+.chg{font-size:12.5px; color:var(--soft); margin-top:3px}
+.chg .plus{color:var(--moss)} .chg .minus{color:var(--rust)}
+/* the wall as rows: one line per need at rest, the rest on demand */
+.wtheme{margin:12px 0 0}
+.wtheme h3{font-family:var(--mono); font-weight:500; font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); margin:0 0 6px}
+.wrow{border:1px solid var(--rule); border-radius:3px; background:var(--card); margin:0 0 5px}
+.wrow summary{list-style:none; cursor:pointer; display:grid; grid-template-columns:auto 1fr auto; gap:8px; align-items:center; padding:8px 10px}
+.wrow summary::-webkit-details-marker{display:none}
+.wrow summary i{width:8px; height:8px; border-radius:50%}
+.wrow.ra summary i{background:var(--rust)} .wrow.rb summary i{background:var(--blue)}
+.wrow summary b{font-size:13.5px; font-weight:600; line-height:1.35; min-width:0}
+.wrow summary b small{display:block; font:400 11.5px/1.3 var(--body); color:var(--faint); margin-top:1px}
+.wrow.gone summary b{text-decoration:line-through; color:var(--faint)}
+.wrow .body{padding:2px 10px 10px 26px; font-size:12.5px; line-height:1.45; color:var(--soft); border-top:1px solid var(--rule-2)}
+.wrow .body q{display:block; font-family:var(--display); font-size:13.5px; color:var(--ink); margin:6px 0}
+.wrow .body q::before,.wrow .body q::after{content:""}
+.wrow .body p{margin:3px 0 0}
+.wrow .body b{font-family:var(--mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; font-weight:500; color:var(--faint); margin-right:5px}
+.met{white-space:nowrap}
+details.every{margin-top:16px; border-top:1px solid var(--rule-2); padding-top:10px}
+details.every summary{cursor:pointer; font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); list-style:none}
+details.every summary::-webkit-details-marker{display:none}
+details.every summary::before{content:"+ "; color:var(--moss)} details.every[open] summary::before{content:"− "}
+details.every .act{margin-top:12px}
 .tabs{display:flex; gap:4px; margin:0 0 12px; border-bottom:1px solid var(--rule)}
 .tab{font:600 12.5px/1 var(--body); padding:9px 12px; border:0; background:transparent; color:var(--soft); cursor:pointer;
   border-bottom:2px solid transparent; margin-bottom:-1px; letter-spacing:.01em}
@@ -989,8 +1034,24 @@ function wallCard(c, small){
 }
 function wallCards(w, small){
   const themes = [...new Set(w.cards.map(c => c.theme || "other"))];
-  return themes.map(t => `<div class="wtheme"><h3>${esc(t)}</h3><div class="wcards">${w.cards.filter(c => (c.theme || "other") === t).map(c => wallCard(c, small)).join("")}</div></div>`).join("");
+  const row = c => {
+    const [vl, vc] = VIA[c.via] || [c.via, ""];
+    const met = c.withdrawn ? `<span class="met open">withdrawn</span>` : c.met ? `<span class="met ${c.met}">${METL[c.met] || c.met}</span>` : `<span class="met open">open</span>`;
+    return `<details class="wrow ${c.who === "A" ? "ra" : "rb"}${c.withdrawn ? " gone" : ""}"><summary><i></i><b>${esc(c.need)}<small>${esc(roleName(c.who))} · ${esc(vl)}${c.why ? " · " + esc(c.why.replace(/^hypothesis:\s*/i, "maybe: ")) : ""}</small></b>${met}</summary>
+      <div class="body"><q>${esc(c.quote)}</q>
+        ${c.keys.length || c.rulesOut.length ? `<p><b>checked against</b>${c.keys.map(k => FEATURES_TEXT[k] || k).join("; ")}${c.rulesOut.length ? " · not: " + c.rulesOut.map(k => FEATURES_TEXT[k] || k).join("; ") : ""}</p>` : `<p><b>checked against</b>nothing in the kit carries this</p>`}
+        ${c.concern ? `<p><b>concern</b>${esc(c.concern)}</p>` : ""}${c.when ? `<p><b>when</b>${esc(c.when)}</p>` : ""}
+        ${c.readings && c.readings.length ? `<p><b>readings</b>${c.readings.map(esc).join(" · ")}</p>` : ""}${c.hmw ? `<p><b>how might we</b>${esc(c.hmw)}</p>` : ""}
+        ${c.story ? `<p><b>job story</b>${esc(c.story)}</p>` : ""}${c.checked ? `<p><b>checked by</b>${esc(roleName(c.checked.by))} (${esc(c.checked.how)})</p>` : ""}
+        ${c.changes && c.changes.length ? `<p><b>later</b>${c.changes.map(x => esc(x.change)).join(" · ")}</p>` : ""}</div></details>`;
+  };
+  return themes.map(t => `<div class="wtheme"><h3>${esc(t)}</h3>${w.cards.filter(c => (c.theme || "other") === t).map(row).join("")}</div>`).join("");
 }
+// the keys' plain-language glosses, for the "checked against" line
+const FEATURES_TEXT = { water:"the ground between us is water", rock:"the ground between us is a drop in rock", minimal:"as little built as possible",
+  low:"level with where we stand", open:"nothing closing it in", light:"holds one person only", heavy:"takes loads and carts", guarded:"something at the hand",
+  steady:"does not move underfoot", exposed:"nothing at hand over the drop", sways:"moves in the wind", inGap:"something stands in the gap", high:"raised above where we stand",
+  many:"a great deal of material", grip:"does not go slick when wet", footed:"ends hold when banks go soft", sheltered:"weather kept off" };
 function wallPanel(h){
   const w = h.wall; if (!w) return "";
   const rec = w.record, byId = Object.fromEntries(w.cards.map(c => [c.id, c]));
@@ -1041,13 +1102,15 @@ function builderColumn(h){
       <div class="act${a.did ? "" : " none"} ${a.said.who === "A" ? "fa" : "fb"}">
         <span class="stamp">${esc(roleName(a.said.who))} ${a.said.upload ? "showed" : a.said.decision ? "confirmed" : "said"}</span>
         <p class="quote">${a.said.upload ? "their drawing" : esc(a.said.text.slice(0, 120)) + (a.said.text.length > 120 ? "…" : "")}</p>
-        ${a.said.taken && a.said.taken.length
+        ${a.said.cards && h.wall ? (() => { const cs = h.wall.cards.filter(c => a.said.cards.includes(c.id)); return cs.length
+            ? `<div class="needs" style="margin:0 0 7px">${cs.map(c => `<span class="needchip ${c.who === "A" ? "ra" : "rb"}${c.withdrawn ? " dim" : ""}"><i></i>${esc(c.need)}</span>`).join("")}</div>`
+            : `<p class="read"><span class="lbl">heard as</span><span class="key none">no need — an answer, or already on the wall</span></p>`; })()
+          : a.said.taken && a.said.taken.length
           ? `<p class="read"><span class="lbl">interpreted as</span>${[...(a.said.asks || a.said.taken), ...(a.said.refuses || []).map(k => "not: " + k)].map(k =>
                `<span class="key">${esc(k)}</span>`).join("")}</p>`
           : a.said.taken || a.did ? `<p class="read"><span class="lbl">interpreted as</span><span class="key none">nothing it could build from</span></p>` : ""}
         ${a.said.beyond ? `<p class="read"><span class="lbl">couldn't carry</span><span class="key none">${esc(a.said.beyond)}</span></p>` : ""}
-        ${a.said.cards ? `<p class="tools"><span class="lbl">on the wall</span>${a.said.cards.length ? `<span class="tool">${a.said.cards.length} card${a.said.cards.length === 1 ? "" : "s"}</span>` : `<span class="tool">no card</span>`}${(a.said.tools || []).map(t => `<span class="tool${t.facilitatorRun ? " fac" : ""}" title="${esc(t.why)}">${esc(t.tool)}${t.facilitatorRun ? " · facilitator-run" : ""}</span>`).join("")}</p>
-        ${a.said.memberCheck ? `<p class="mc">member check: ${esc(a.said.memberCheck)}</p>` : ""}` : ""}
+        ${a.said.tools && a.said.tools.length ? `<p class="tools">${a.said.tools.map(t => `<span class="tool${t.facilitatorRun ? " fac" : ""}" title="${esc(t.why)}">${esc(t.tool)}${t.facilitatorRun ? " · yours to run" : ""}</span>`).join("")}</p>` : ""}
         ${a.said.ask ? `<p class="asked">asked ${esc(roleName(a.said.who))}: ${esc(a.said.ask)}</p>` : ""}
         ${a.said.picture && a.said.picture.length
           ? `<p class="read"><span class="lbl">saw in their picture</span>${a.said.picture.map(k =>
@@ -1060,7 +1123,7 @@ function builderColumn(h){
                 ? `<p class="move"><span class="relayto">told ${esc(roleName(a.did.about === "A" ? "B" : "A"))}</span>${esc(a.did.text)}</p>`
                 : `<p class="move">${esc(a.did.text)}</p>
                  ${a.did.built ? `<span class="made">→ ${esc(a.did.built)}</span>` : ""}
-                 ${a.did.steps ? stepsStrip(h, { ...a.did.steps, tools: [] }) : ""}`)
+`)
           : a.held ? `<p class="move muted">Held — it builds once, after both of them have spoken.</p>`
           : a.heard ? `<p class="move muted">Heard — it builds when one of them confirms a decision.</p>`
           : `<p class="move muted">${a.said.phase === "confer"
@@ -1070,10 +1133,34 @@ function builderColumn(h){
   return `<div class="card tab mach did">
     <h2>What the agent did</h2>
     ${tabs}
-    <p class="muted" style="font-size:13.5px; margin:-2px 0 14px">Each thing said to it, what the Toolkit took it to mean, which tools it used, and what it did about it.</p>
-    ${body}
-    ${h.thinking ? `<p class="muted">Deciding…</p>` : ""}
-    ${wallInside(h)}</div>`;
+    ${processRail(h)}
+    ${wallInside(h)}
+    <details class="every"><summary>Every line, in order</summary>${body}</details>
+    ${h.thinking ? `<p class="muted" style="margin-top:10px">Deciding…</p>` : ""}</div>`;
+}
+
+// The toolkit's last turn as five steps on a rail: what it heard, which tools
+// fired, what it decided, what it built, and how each need came out.
+function processRail(h){
+  const w = h.wall, cards = w ? w.cards.filter(c => !c.withdrawn) : [];
+  const ai = [...h.lines].reverse().find(l => l.who === "builder" && !l.failed && !l.relay);
+  const st = ai && ai.steps, rec = w && w.record;
+  const lastHuman = [...h.lines].reverse().find(l => l.who !== "builder" && l.cards);
+  const heard = lastHuman ? cards.filter(c => lastHuman.cards.includes(c.id)) : [];
+  const tools = lastHuman ? (lastHuman.tools || []) : [];
+  const n = k => cards.filter(c => c.met === k).length;
+  const pend = (w && w.sheet || []).filter(p => !p.declined && !(p.accepted.A && p.accepted.B));
+  const chip = c => `<span class="needchip ${c.who === "A" ? "ra" : "rb"}" title="${esc(c.quote)}"><i></i>${esc(c.need)}</span>`;
+  const CHK = { nothingLost: "nothing lost", inferencesLabelled: "inferences labelled", noFalseConflicts: "no false conflicts", defaultsChecked: "defaults checked", buildNotConsent: "build ≠ consent", kindsDistinct: "parts / rules / proposals apart" };
+  if (!lastHuman) return `<p class="muted" style="margin:0 0 14px">Nothing yet. It answers once somebody has spoken to it.</p>`;
+  return `<p class="eyebrow" style="margin:0 0 10px">This turn — ${esc(roleName(lastHuman.who))}'s line</p>
+  <div class="proc">
+    <div class="node" data-n="1"><p class="nl">heard as needs</p><div class="nc">${heard.length ? `<div class="needs">${heard.map(chip).join("")}</div>` : `<span class="muted">nothing new — an answer, or already on the wall</span>`}</div></div>
+    <div class="node${tools.length ? "" : " off"}" data-n="2"><p class="nl">tools that fired</p><div class="nc">${tools.length ? `<div class="needs">${tools.map(t => `<span class="tool${t.facilitatorRun ? " fac" : ""}" title="${esc(t.why)}">${esc(t.tool)}${t.facilitatorRun ? " · yours to run" : ""}</span>`).join("")}</div>` : `<span class="muted">none needed</span>`}${lastHuman.memberCheck ? `<p class="mc">member check: ${esc(lastHuman.memberCheck)}</p>` : ""}${lastHuman.ask ? `<p class="asked">asked: ${esc(lastHuman.ask)}</p>` : ""}</div></div>
+    <div class="node${rec ? "" : " off"}" data-n="3"><p class="nl">decided, before building</p><div class="nc">${rec ? `<div class="counts">${[["part","from the kit","from the kit"],["rule","rule for the sheet","rules for the sheet"],["new","new part proposed","new parts proposed"],["none","with no answer","with no answer"]].map(([k, one, many]) => { const c = rec.decisions.filter(d => d.response === k).length; return c ? `<span><b>${c}</b> ${c > 1 ? many : one}</span>` : ""; }).filter(Boolean).join("") || "nothing to decide"}</div>${rec.checks ? `<p class="ticks">${Object.entries(rec.checks).map(([k, v]) => `<span class="${v ? "y" : "n"}">${v ? "✓" : "✗"} ${CHK[k] || k}</span>`).join(" · ")}</p>` : ""}` : `<span class="muted">waiting — it builds once it has heard enough</span>`}</div></div>
+    <div class="node${ai ? "" : " off"}" data-n="4"><p class="nl">built</p><div class="nc">${ai ? `<b>${esc(ai.built || "nothing")}</b>${ai.diff && (ai.diff.added.length || ai.diff.removed.length) ? `<p class="chg">${ai.diff.added.map(x => `<span class="plus">+ ${esc(x.text)}</span>`).join(" · ")}${ai.diff.added.length && ai.diff.removed.length ? " · " : ""}${ai.diff.removed.map(x => `<span class="minus">− ${esc(x.text)}</span>`).join(" · ")}</p>` : ""}` : `<span class="muted">not yet</span>`}</div></div>
+    <div class="node${ai ? "" : " off"}" data-n="5"><p class="nl">each need, against what stands</p><div class="nc"><div class="counts">${[["met","met"],["partial","partly"],["proposed","on the sheet"],["met-by-rule","met by a rule"],["met-by-new","met by a new part"],["no","not met"],["unsupported","no part for it"]].map(([k, l]) => n(k) ? `<span><b>${n(k)}</b> ${l}</span>` : "").filter(Boolean).join("") || `<span class="muted">nothing linked yet</span>`}</div>${pend.length ? `<p class="chg">waiting for both to accept: ${pend.map(p => esc(p.what)).join(" · ")}</p>` : ""}</div></div>
+  </div>`;
 }
 
 // The control agent's trace: the same lines, the keys-only reading, and what
@@ -1109,13 +1196,11 @@ function wallInside(h){
   const w = h.wall; if (!w) return "";
   const rec = w.record, byId = Object.fromEntries(w.cards.map(c => [c.id, c]));
   const retro = h.retro || {};
-  const CHK = { nothingLost: "nothing lost", inferencesLabelled: "inferences labelled", noFalseConflicts: "no false conflicts", defaultsChecked: "defaults checked", buildNotConsent: "build is not consent", kindsDistinct: "parts, rules, proposals distinct" };
-  return `<div class="wrec"><p class="eyebrow" style="margin-bottom:8px">The wall — one card per need</p>
-    ${w.cards.length ? wallCards(w, false) : `<p class="muted">Nothing on the wall yet.</p>`}</div>
-    ${rec ? `<div class="wrec"><p class="eyebrow" style="margin-bottom:4px">Before building — the decision record</p><ul>${rec.decisions.map(d =>
+  return `<div class="wrec" style="margin-top:0; border-top:0; padding-top:0"><p class="eyebrow" style="margin-bottom:2px">The wall — every need, whose, and how it came out</p>
+    ${w.cards.length ? wallCards(w, false) : `<p class="muted">Nothing on the wall yet.</p>`}
+    ${rec && rec.decisions.length ? `<details class="every" style="margin-top:10px"><summary>What it decided about each</summary><ul style="margin:8px 0 0; padding-left:18px; font-size:13px">${rec.decisions.map(d =>
         `<li><b>${esc(byId[d.id]?.need || d.id)}</b> → ${esc(d.response)}: ${esc(d.what)}${d.uncertainty ? ` <span class="muted">— unsure: ${esc(d.uncertainty)}</span>` : ""}</li>`).join("")}</ul>
-      ${rec.conflicts.length ? `<p style="margin:8px 0 0"><b>Conflicts:</b> ${rec.conflicts.map(c => `${esc(byId[c.a]?.need || c.a)} × ${esc(byId[c.b]?.need || c.b)} — ${esc(c.note)}`).join("; ")}</p>` : `<p class="muted" style="margin:8px 0 0">No conflicts — different needs are not conflicts.</p>`}
-      ${rec.checks ? `<p class="chk">${Object.entries(rec.checks).map(([k, v]) => `<span class="${v ? "y" : "n"}">${v ? "✓" : "✗"} ${esc(CHK[k] || k)}</span>`).join(" · ")}</p>` : ""}</div>` : ""}
+      ${rec.conflicts.length ? `<p style="margin:8px 0 0; font-size:13px"><b>Conflicts:</b> ${rec.conflicts.map(c => `${esc(byId[c.a]?.need || c.a)} × ${esc(byId[c.b]?.need || c.b)} — ${esc(c.note)}`).join("; ")}</p>` : ""}</details>` : ""}</div>
     ${w.sheet && w.sheet.length ? sheetList(h, w.sheet, false) : ""}
     ${retro.A || retro.B ? `<div class="wrec"><p class="eyebrow" style="margin-bottom:4px">After building — the retrospective walkthrough</p>${["A","B"].filter(r => retro[r]).map(r => `<p><b>${roleName(r)}:</b> ${esc(retro[r].text)}</p>`).join("")}</div>` : ""}`;
 }
