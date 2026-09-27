@@ -115,6 +115,14 @@ function view(room, role) {
     // always sees the wall; on condition B both people do — it is the thing they
     // respond to. On the other routes a person's page stays as it was.
     agent: "both",
+    control: room.control && (role === "host" || dev) ? {
+      standing: room.control.standing ? NAME(room.control.standing) : null,
+      shape: room.control.ctx.design ? room.control.ctx.design.shape : null,
+      world: { ...room.control.ctx.world },
+      provenance: role === "host" ? provenance(room.control.ctx).feats : null,
+      lines: room.control.lines,
+      score: room.finished ? (room.controlScore || null) : null,
+    } : null,
     wall: room.wall && (role === "host" || dev) ? room.wall : null,
     sheet: room.wall && (role === "host" || dev) ? room.wall.sheet || [] : null,
     retro: role === "host" ? (room.retro || {}) : room.retro && room.retro[role] ? { [role]: room.retro[role] } : {},
@@ -148,7 +156,7 @@ function view(room, role) {
         ...((role === "host" || dev) && e.keysRead ? { keysRead: e.keysRead } : {}),
         // The wall's trace for this line: which cards it made, which tools fired,
         // and the question it asked, if the route allowed one.
-        ...((role === "host" || dev) && e.cards ? { cards: e.cards, tools: e.tools || [], ask: e.ask || "" } : {}),
+        ...((role === "host" || dev) && e.cards ? { cards: e.cards, tools: e.tools || [], ask: e.ask || "", memberCheck: e.memberCheck || "" } : {}),
         ...((role === "host" || dev) && e.steps ? { steps: e.steps } : {}),
         // Condition B: the line's number (to answer or correct it), what it asked
         // for that no key carries, what it was about, what it built on, how it
@@ -179,6 +187,10 @@ function record(room) {
     room: room.id, argument: room.argument, title: arg.title,
     route: room.route, arrow: route.arrow, version: route.develop ? "B" : "A",
     agent: "both", wall: room.wall || null, retro: room.retro || {},
+    control: room.control ? { standingId: room.control.standing, lines: room.control.lines,
+                              standing: room.control.standing ? NAME(room.control.standing) : null,
+                              shape: room.control.ctx.design ? room.control.ctx.design.shape : null,
+                              world: { ...room.control.ctx.world }, score: room.controlScore || null } : null,
     createdAt: room.createdAt, updatedAt: new Date().toISOString(),
     finished: room.finished,
     // Enough to carry on from, not only to read back.
@@ -277,6 +289,12 @@ const body = req => new Promise((resolve, reject) => {
 // linked to what stands. The same tally and the same kit sit underneath, so a
 // room with the wall on builds from the same keys as one with it off.
 const newWall = () => ({ cards: [], log: [], record: null, sheet: [] });
+// The control agent: the keys-only reader, its own tally, the same chooser with
+// no record, the same speaker. It builds beside the toolkit agent from the same
+// words, so a room shows two bridges from two hearings. Participants hear the
+// toolkit agent; the control agent's lines are kept for the desk.
+const newControl = () => ({ ctx: mkCtx(), standing: null, lines: [], seenPicture: {} });
+const FACILITATOR_TOOLS = new Set(["dot-voting", "priority-check", "card-sort", "repertory-grid", "wizard-of-oz"]);
 // What is on the sheet and still waiting for both of them.
 const pending = room => (room.wall?.sheet || []).filter(p => !(p.accepted.A && p.accepted.B) && !p.declined);
 
@@ -296,6 +314,10 @@ async function hearLine(room, line) {
   const dev = !!ROUTES[room.route].develop;
   const base = dev ? await readLineB(line.text) : await readLine(line.text);
   line.keysRead = { asks: base.asks, refuses: base.refuses, ...(dev ? { beyond: base.beyond } : {}) };
+  room.control ||= newControl();
+  newTurn(room.control.ctx);
+  hear(room.control.ctx, line.who, "want", base.asks);
+  hear(room.control.ctx, line.who, "avoid", base.refuses);
   room.wall ||= newWall();
   const route = ROUTES[room.route];
   const heard = await wallHear({
@@ -317,13 +339,17 @@ async function hearLine(room, line) {
     const card = room.wall.cards.find(c => c.id === u.id);
     if (card) { card.changes.push({ at, line: index, change: u.change }); if (/withdr|no longer|drop/i.test(u.change)) card.withdrawn = true; }
   }
-  room.wall.log.push({ at, line: index, who: line.who, tools: heard.tools, cards: ids, ask: heard.ask });
+  const tools = heard.tools.map(t => ({ ...t, facilitatorRun: FACILITATOR_TOOLS.has(t.tool) }));
+  // The member check: offered where the person can hear and answer; otherwise
+  // the uncertainty is kept and said so.
+  const memberCheck = canAskOn(room, line.who) ? "offered — they can correct what was taken" : "not possible on this route — uncertainty kept";
+  room.wall.log.push({ at, line: index, who: line.who, tools, cards: ids, ask: heard.ask, memberCheck });
   const mine = room.wall.cards.filter(c => ids.includes(c.id));
   line.asks = [...new Set(mine.flatMap(c => c.keys))].slice(0, 3);
   line.refuses = [...new Set(mine.flatMap(c => c.rulesOut))].slice(0, 3);
   line.taken = [...line.asks, ...line.refuses];
   line.beyond = mine.filter(c => !c.keys.length).map(c => c.need).join("; ");
-  line.cards = ids; line.tools = heard.tools; line.ask = heard.ask;
+  line.cards = ids; line.tools = tools; line.ask = heard.ask; line.memberCheck = memberCheck;
 }
 
 // The decision record, before a build; rendered for the chooser as well.
@@ -415,6 +441,11 @@ async function builderTurn(room, line) {
         const text = room.wall
           ? await relayFromWall({ from, to, cards: room.wall.cards.filter(c => (line.cards || []).includes(c.id)) })
           : await relay({ from, to, said: line.text, asks: [...asks, ...(line.picture || [])], refuses });
+        if (room.control && line.keysRead) {
+          try { room.control.lines.push({ at: Date.now(), afterLine: room.transcript.indexOf(line), relay: true, about: line.who,
+            text: await relay({ from, to, said: line.text, asks: [...line.keysRead.asks, ...(line.picture || [])], refuses: line.keysRead.refuses }), built: null }); }
+          catch (e) { room.control.lines.push({ at: Date.now(), failed: e.message, text: "", relay: true, built: null }); }
+        }
         room.transcript.push({ who: "builder", text, phase: "main", relay: true, about: line.who,
                                built: null, at: Date.now() });
       }
@@ -467,6 +498,8 @@ async function lay(room, line, took) {
   linkWall(room);
   room.transcript.push({ who: "builder", text: say, phase: "main", built: NAME(after), at: Date.now(),
                          ...(room.wall ? { steps: stepsFor(room, line || {}) } : {}) });
+  try { await layControl(room, line, line && line.keysRead ? [...line.keysRead.asks, ...line.keysRead.refuses] : took); }
+  catch (e) { room.control?.lines.push({ at: Date.now(), failed: e.message, text: "", built: room.control.standing ? NAME(room.control.standing) : null }); }
 }
 
 // ── condition B: developing it together ──────────────────────────────────
@@ -587,6 +620,31 @@ async function layB(room, line, said) {
   room.transcript.push({ who: "builder", text, phase: "main", built: NAME(after), proposal: true,
                          diff: diffOf(room, beforeHas, afterHas), alt, at: Date.now(),
                          ...(room.wall ? { steps: stepsFor(room, line) } : {}) });
+  try { await layControl(room, line, line.keysRead ? [...line.keysRead.asks, ...line.keysRead.refuses] : []); }
+  catch (e) { room.control?.lines.push({ at: Date.now(), failed: e.message, text: "", built: room.control.standing ? NAME(room.control.standing) : null }); }
+}
+
+// The control agent's build: same chooser, same speaker, no wall, no record.
+async function layControl(room, line, took) {
+  const c = room.control; if (!c) return;
+  const before = c.standing;
+  build(c.ctx);
+  const said = room.transcript.filter(e => e.who !== "builder" && e.phase === "main")
+                              .map(e => ({ who: WHO[e.who], text: e.text }));
+  const pictures = Object.keys(room.seenPicture || {}).filter(r => room.uploads[r]?.needs)
+    .map(r => ({ who: WHO[r], needs: room.uploads[r].needs }));
+  const chose = await chooseBuild({ wants: [...c.ctx.wants.keys()], avoids: [...c.ctx.avoids.keys()],
+                                    standing: before ? NAME(before) : null, said, pictures });
+  if (chose.id) c.ctx.design = KIT.find(k => k.id === chose.id);
+  const after = c.ctx.design ? c.ctx.design.id : null;
+  c.standing = after;
+  const say = await speak({
+    said: line ? line.text : said.map(x => x.text).join(" "), took,
+    before: before ? NAME(before) : null, after: NAME(after), props: c.ctx.design ? c.ctx.design.has : [],
+    wants: [...c.ctx.wants.keys()], avoids: [...c.ctx.avoids.keys()], changed: before !== after,
+  });
+  c.lines.push({ at: Date.now(), afterLine: line ? room.transcript.indexOf(line) : room.transcript.length - 1,
+                 text: say, built: NAME(after), standingId: after });
 }
 
 // One line's worth of the agent's process, to show under its answer: what it
@@ -660,6 +718,12 @@ function restore() {
         finished: !!rec.finished, score: rec.finished ? rec.score : undefined,
         claimed: rec.claimed || {}, createdAt: rec.createdAt, seenPicture,
         wall: rec.wall || null, retro: rec.retro || {},
+        control: rec.control ? (() => { const c = newControl();
+          for (const e of rec.transcript) { if (e.who === "builder" || !e.keysRead) continue;
+            newTurn(c.ctx); hear(c.ctx, e.who, "want", e.keysRead.asks || []); hear(c.ctx, e.who, "avoid", e.keysRead.refuses || []); }
+          c.ctx.design = KIT.find(k => k.id === rec.control.standingId) || null; c.standing = rec.control.standingId || null;
+          c.lines = rec.control.lines || []; return c; })() : null,
+        controlScore: rec.control?.score || undefined,
         sketches: (rec.sketches || []).filter(k => fs.existsSync(path.join(pics, `${rec.room}-sketch-${k.n}.png`))) });
       streams.set(rec.room, new Set());
       n++;
@@ -695,7 +759,7 @@ const srv = http.createServer(async (req, res) => {
     let id = code();
     while (rooms.has(id) || fs.existsSync(path.join(SESSIONS, `${id}.json`))) id = code();
     const live = { id, argument, route, ctx: mkCtx(), turn: 0, transcript: [], uploads: {}, standing: null,
-      thinking: false, finished: false, sketches: [], wall: newWall(), retro: {},
+      thinking: false, finished: false, sketches: [], wall: newWall(), control: newControl(), retro: {},
       createdAt: new Date().toISOString() };
     try { record(live); } catch (e) {
       console.error(`could not save ${id}: ${e.message}`);
@@ -719,7 +783,7 @@ const srv = http.createServer(async (req, res) => {
     while (rooms.has(id) || fs.existsSync(path.join(SESSIONS, `${id}.json`))) id = code();
     rooms.set(id, { id, argument, route, ctx: mkCtx(), turn: 0, transcript: [],
                     uploads: {}, standing: null, thinking: false, finished: false,
-                    sketches: [], wall: newWall(), retro: {}, createdAt: new Date().toISOString() });
+                    sketches: [], wall: newWall(), control: newControl(), retro: {}, createdAt: new Date().toISOString() });
     streams.set(id, new Set());
     // Saved at once, so a room whose links are already out survives a restart
     // even before anybody has spoken in it.
@@ -993,6 +1057,7 @@ const srv = http.createServer(async (req, res) => {
           for (const c of r.wall.cards) if ((line.cards || []).includes(c.id)) { c.withdrawn = true; c.changes.push({ at: Date.now(), line: index, change: "corrected: " + meant }); }
           const said = line.text; line.text = `${said} — what I meant: ${meant}`;
           await hearLine(r, line); line.text = said;
+          for (const c of r.wall.cards) if ((line.cards || []).includes(c.id)) c.checked = { by: role, at: Date.now(), how: "correction" };
         } else {
           const read = await readLineB(line.text, meant);
           line.asks = read.asks; line.refuses = read.refuses; line.beyond = read.beyond;
@@ -1091,6 +1156,7 @@ const srv = http.createServer(async (req, res) => {
     if (!r) return json(res, 404, { error: "no such room" });
     r.finished = true;
     r.score = scoreRoom(r);
+    if (r.control) { const keep = r.ctx; r.ctx = r.control.ctx; r.controlScore = scoreRoom(r); r.ctx = keep; }
     push(id);                                          // which also saves it
     return json(res, 200, r.score);
   }

@@ -495,6 +495,10 @@ const HEAR = [
   `- hmw: no part in the kit matches. Put "How might we ...?" in "hmw", around the outcome they want.`,
   `- job-story: this need will have to be passed on to the other person. Put "When ..., I want ..., so I`,
   `  can ..." in "story", leaving a part unknown rather than inventing it.`,
+  `Some tools are run by the facilitator, not by you. When their trigger occurs, name them in "tools" with why,`,
+  `  and do nothing else: dot-voting (a verified constraint means not every need can be met at once — not merely`,
+  `  two different needs), priority-check (you cannot tell an essential from a welcome extra), card-sort (the`,
+  `  protocol asks whether people group needs as you do). Never infer their outcome.`,
   `Fields you did not use are "" or [].`,
   ``,
   `Rules:`,
@@ -552,8 +556,8 @@ const DECIDE_JSON = { type:"object", properties:{
     id:{type:"string"}, response:{type:"string"}, what:{type:"string"}, uncertainty:{type:"string"} },
     required:["id","response","what","uncertainty"] } },
   conflicts:{ type:"array", items:{ type:"object", properties:{ a:{type:"string"}, b:{type:"string"}, note:{type:"string"} }, required:["a","b","note"] } },
-  checks:{ type:"object", properties:{ nothingLost:{type:"boolean"}, inferencesLabelled:{type:"boolean"}, noFalseConflicts:{type:"boolean"}, defaultsChecked:{type:"boolean"} },
-    required:["nothingLost","inferencesLabelled","noFalseConflicts","defaultsChecked"] } },
+  checks:{ type:"object", properties:{ nothingLost:{type:"boolean"}, inferencesLabelled:{type:"boolean"}, noFalseConflicts:{type:"boolean"}, defaultsChecked:{type:"boolean"}, buildNotConsent:{type:"boolean"}, kindsDistinct:{type:"boolean"} },
+    required:["nothingLost","inferencesLabelled","noFalseConflicts","defaultsChecked","buildNotConsent","kindsDistinct"] } },
   required:["decisions","conflicts","checks"] };
 
 const DECIDE = [
@@ -576,6 +580,8 @@ const DECIDE = [
   `- noFalseConflicts: "conflicts" lists only a card asking for what another rules out; different needs are`,
   `  not conflicts.`,
   `- defaultsChecked: nothing the kit gives by default contradicts a card.`,
+  `- buildNotConsent: you have not taken a request to build as everyone accepting the design.`,
+  `- kindsDistinct: geometry (parts), operating rules, and proposals for later are kept distinct.`,
   `A request to build is not acceptance of the design. A need is not met because it is in this record.`,
   `Never use the word "user".`,
 ].join("\n");
@@ -602,7 +608,8 @@ export async function wallDecide({ wall, standing, props }) {
     conflicts: (Array.isArray(out.conflicts) ? out.conflicts : []).map(c => ({ a: str(c.a), b: str(c.b), note: str(c.note).slice(0, 140) })).filter(c => ids.has(c.a) && ids.has(c.b)),
     checks: out.checks && typeof out.checks === "object" ? {
       nothingLost: !!out.checks.nothingLost, inferencesLabelled: !!out.checks.inferencesLabelled,
-      noFalseConflicts: !!out.checks.noFalseConflicts, defaultsChecked: !!out.checks.defaultsChecked } : null,
+      noFalseConflicts: !!out.checks.noFalseConflicts, defaultsChecked: !!out.checks.defaultsChecked,
+      buildNotConsent: !!out.checks.buildNotConsent, kindsDistinct: !!out.checks.kindsDistinct } : null,
   };
 }
 

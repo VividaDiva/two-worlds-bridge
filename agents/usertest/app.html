@@ -398,7 +398,19 @@ textarea[disabled]{opacity:.5}
 .retro{margin-top:12px; padding-top:12px; border-top:1px solid var(--rule-2)}
 .retro textarea{min-height:70px; font-size:14.5px}
 .retro .said{font-family:var(--display); font-size:15px; margin:6px 0 0}
-.chip.agent[aria-pressed="true"]{background:var(--moss); border-color:var(--moss)}
+.tabs{display:flex; gap:4px; margin:0 0 12px; border-bottom:1px solid var(--rule)}
+.tab{font:600 12.5px/1 var(--body); padding:9px 12px; border:0; background:transparent; color:var(--soft); cursor:pointer;
+  border-bottom:2px solid transparent; margin-bottom:-1px; letter-spacing:.01em}
+.tab[aria-selected="true"]{color:var(--ink); border-bottom-color:var(--moss)}
+.tab small{display:block; font:500 10px/1.3 var(--mono); color:var(--faint); letter-spacing:.06em; text-transform:uppercase; margin-top:3px}
+.result .tabs{border-bottom-color:rgba(245,240,230,.2); margin-bottom:14px}
+.result .tab{color:rgba(245,240,230,.6)} .result .tab[aria-selected="true"]{color:var(--paper); border-bottom-color:#9ec6a3}
+.result .tab small{color:rgba(245,240,230,.45)}
+.tool.fac{border-style:dashed; color:var(--faint)}
+.mc{font-family:var(--mono); font-size:10.5px; color:var(--faint); margin:5px 0 0}
+.mc b{color:var(--moss); font-weight:500}
+.wrec .chk .y{color:var(--moss)} .wrec .chk .n{color:var(--rust)}
+.bridgecard .tabs{margin-top:6px}
 /* what the agent did, under its answer; the sheet; readings to tap */
 .steps{margin:7px 0 0; font-size:12.5px; color:var(--soft); line-height:1.6; border-top:1px dashed var(--rule); padding-top:6px}
 .steps b{font-family:var(--mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); font-weight:500; margin-right:4px}
@@ -462,6 +474,9 @@ let opts = null, seen = {}, drafts = {};
 // Condition B: what the next line is about or builds on, an open correction
 // and its draft, and the last state per seat so a handle can repaint.
 let tags = {}, corrOpen = {}, corrDrafts = {}, last = {};
+// Which agent the desk is looking at: the toolkit (what the room hears) or the
+// control (keys only, built beside it). One choice for the trace, one for the bridge.
+let agentTab = "toolkit", bridgeTab = "toolkit";
 const byName = (s, by) => by === "both" ? "both of you" : by === "none" ? "the AI's own choice" : by === s.role ? "you" : roleName(by);
 const partText = (s, key) => (s.props || []).find(p => p.key === key)?.text || key;
 const repaint = r => { if (ROLE === "both") bothView(); else if (last[r]) playerView(last[r]); };
@@ -608,8 +623,11 @@ function bridgeCard(s, compact){
   const un = s.unresolved || [];
   return `<div class="card bridgecard">
     <p class="eyebrow">The bridge, as it stands</p>
+    ${s.control ? `<div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-pbtab="toolkit" aria-selected="${bridgeTab !== "control"}">With the toolkit</button>
+      <button class="tab" role="tab" data-pbtab="control" aria-selected="${bridgeTab === "control"}">Keys only</button></div>` : ""}
     ${compact ? "" : `<canvas id="crossing-${r}" aria-label="the crossing as it stands"></canvas>`}
-    <p class="what ${s.standing ? "" : "none"}">${s.standing ? esc(s.standing)
+    <p class="what ${(bridgeTab === "control" && s.control ? s.control.standing : s.standing) ? "" : "none"}">${bridgeTab === "control" && s.control ? (s.control.standing ? esc(s.control.standing) : "nothing built yet") : s.standing ? esc(s.standing)
       : s.thinking ? "the AI is making the first version…"
       : s.bothSpoke ? "nothing yet" : "nothing yet — it makes a first version once you have both said something"}</p>
     ${s.props && s.props.length ? `<div class="propchips">${s.props.map(p =>
@@ -795,7 +813,9 @@ function wire(s){
   if (s.develop) {
     const scope = ROLE === "both" ? `#col-${r} ` : "";
     const cv = document.getElementById("crossing-" + r);
-    if (cv && window.drawCrossing) drawCrossing(cv, s.shape, s.world);
+    const shownP = bridgeTab === "control" && s.control ? s.control : s;
+    if (cv && window.drawCrossing) drawCrossing(cv, shownP.shape, shownP.world);
+    document.querySelectorAll(`${scope}[data-pbtab]`).forEach(t => t.onclick = () => { bridgeTab = t.dataset.pbtab; repaint(r); });
     const box = () => document.getElementById("say-" + r);
     const prefill = text => { const b = box(); if (b && !b.value.trim()) { b.value = text; drafts[r] = text; } if (b) { b.focus(); b.setSelectionRange(b.value.length, b.value.length); } };
     document.querySelectorAll(`${scope}[data-part]`).forEach(c => c.onclick = () => {
@@ -992,6 +1012,11 @@ function wallPanel(h){
 // for each thing said to it, what it READ out of that line, and then what it
 // DID about it. The gap between those two is the whole subject.
 function builderColumn(h){
+  const tabs = h.control ? `<div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-atab="toolkit" aria-selected="${agentTab === "toolkit"}">Toolkit<small>the wall, the tools, what it built</small></button>
+      <button class="tab" role="tab" data-atab="control" aria-selected="${agentTab === "control"}">Control<small>keys only, built beside it</small></button>
+    </div>` : "";
+  if (h.control && agentTab === "control") return controlColumn(h, tabs);
   const acts = [];
   // Only what reached the builder, or was kept from it by the route. Talk between
   // the two of them on the open routes is theirs, and would bury the trace. The
@@ -1016,14 +1041,13 @@ function builderColumn(h){
       <div class="act${a.did ? "" : " none"} ${a.said.who === "A" ? "fa" : "fb"}">
         <span class="stamp">${esc(roleName(a.said.who))} ${a.said.upload ? "showed" : a.said.decision ? "confirmed" : "said"}</span>
         <p class="quote">${a.said.upload ? "their drawing" : esc(a.said.text.slice(0, 120)) + (a.said.text.length > 120 ? "…" : "")}</p>
-        ${a.said.keysRead ? `<p class="read"><span class="lbl">keys alone heard</span>${[...a.said.keysRead.asks, ...a.said.keysRead.refuses.map(k => "not: " + k)].map(k =>
-               `<span class="key">${esc(k)}</span>`).join("") || `<span class="key none">nothing it could build from</span>`}${a.said.keysRead.beyond ? `<span class="key none">couldn't carry: ${esc(a.said.keysRead.beyond)}</span>` : ""}</p>` : ""}
         ${a.said.taken && a.said.taken.length
-          ? `<p class="read"><span class="lbl">${a.said.keysRead ? "the wall heard" : "interpreted as"}</span>${a.said.taken.map(k =>
+          ? `<p class="read"><span class="lbl">interpreted as</span>${a.said.taken.map(k =>
                `<span class="key">${esc(k)}</span>`).join("")}</p>`
-          : a.said.taken || a.did ? `<p class="read"><span class="lbl">${a.said.keysRead ? "the wall heard" : "interpreted as"}</span><span class="key none">nothing it could build from</span></p>` : ""}
+          : a.said.taken || a.did ? `<p class="read"><span class="lbl">interpreted as</span><span class="key none">nothing it could build from</span></p>` : ""}
         ${a.said.beyond ? `<p class="read"><span class="lbl">couldn't carry</span><span class="key none">${esc(a.said.beyond)}</span></p>` : ""}
-        ${a.said.cards ? `<p class="tools"><span class="lbl">on the wall</span>${a.said.cards.length ? `<span class="tool">${a.said.cards.length} card${a.said.cards.length === 1 ? "" : "s"}</span>` : `<span class="tool">no card</span>`}${(a.said.tools || []).map(t => `<span class="tool" title="${esc(t.why)}">${esc(t.tool)}</span>`).join("")}</p>` : ""}
+        ${a.said.cards ? `<p class="tools"><span class="lbl">on the wall</span>${a.said.cards.length ? `<span class="tool">${a.said.cards.length} card${a.said.cards.length === 1 ? "" : "s"}</span>` : `<span class="tool">no card</span>`}${(a.said.tools || []).map(t => `<span class="tool${t.facilitatorRun ? " fac" : ""}" title="${esc(t.why)}">${esc(t.tool)}${t.facilitatorRun ? " · facilitator-run" : ""}</span>`).join("")}</p>
+        ${a.said.memberCheck ? `<p class="mc">member check: ${esc(a.said.memberCheck)}</p>` : ""}` : ""}
         ${a.said.ask ? `<p class="asked">asked ${esc(roleName(a.said.who))}: ${esc(a.said.ask)}</p>` : ""}
         ${a.said.picture && a.said.picture.length
           ? `<p class="read"><span class="lbl">saw in their picture</span>${a.said.picture.map(k =>
@@ -1045,10 +1069,55 @@ function builderColumn(h){
       </div>`).join("");
   return `<div class="card tab mach did">
     <h2>What the agent did</h2>
-    <p class="muted" style="font-size:13.5px; margin:-2px 0 14px">Each thing said to it, what it took that to
-      mean, and what it did about it.</p>
+    ${tabs}
+    <p class="muted" style="font-size:13.5px; margin:-2px 0 14px">Each thing said to it, what the Toolkit took it to mean, which tools it used, and what it did about it.</p>
     ${body}
-    ${h.thinking ? `<p class="muted">Deciding…</p>` : ""}</div>`;
+    ${h.thinking ? `<p class="muted">Deciding…</p>` : ""}
+    ${wallInside(h)}</div>`;
+}
+
+// The control agent's trace: the same lines, the keys-only reading, and what
+// that agent said and built beside the toolkit — the room's baseline.
+function controlColumn(h, tabs){
+  const c = h.control, byAfter = {};
+  for (const l of c.lines) if (l.afterLine != null) (byAfter[l.afterLine] ||= []).push(l);
+  const rows = [];
+  h.lines.forEach(l => {
+    if (l.who === "builder" || (h.open && l.phase === "confer")) return;
+    const dids = byAfter[l.i] || [];
+    rows.push(`<div class="act${dids.length ? "" : " none"} ${l.who === "A" ? "fa" : "fb"}">
+      <span class="stamp">${esc(roleName(l.who))} ${l.upload ? "showed" : l.decision ? "confirmed" : "said"}</span>
+      <p class="quote">${l.upload ? "their drawing" : esc((l.text || "").slice(0, 120)) + ((l.text || "").length > 120 ? "…" : "")}</p>
+      ${l.keysRead ? `<p class="read"><span class="lbl">interpreted as</span>${[...l.keysRead.asks, ...l.keysRead.refuses.map(k => "not: " + k)].map(k => `<span class="key">${esc(k)}</span>`).join("") || `<span class="key none">nothing it could build from</span>`}</p>`
+        : l.taken ? "" : `<p class="move muted">This line was never given to it.</p>`}
+      ${dids.map(d => d.failed ? `<p class="move muted">It laid something and would not say why.</p>`
+        : d.relay ? `<p class="move"><span class="relayto">told ${esc(roleName(d.about === "A" ? "B" : "A"))}</span>${esc(d.text)}</p>`
+        : `<p class="move">${esc(d.text)}</p>${d.built ? `<span class="made">→ ${esc(d.built)}</span>` : ""}`).join("")}
+    </div>`);
+  });
+  return `<div class="card tab mach did">
+    <h2>What the agent did</h2>
+    ${tabs}
+    <p class="muted" style="font-size:13.5px; margin:-2px 0 14px">The control agent: each line read into keys alone, as in every recorded session, and what it said and built from that — beside the Toolkit, from the same words.</p>
+    ${rows.join("") || `<p class="muted">Nothing yet.</p>`}
+    ${c.standing ? `<p class="made" style="margin-top:6px">stands (control): ${esc(c.standing)}</p>` : ""}</div>`;
+}
+
+// The wall, the decision record, the sheet and the retrospectives — inside the
+// Toolkit tab, below the line-by-line trace.
+function wallInside(h){
+  const w = h.wall; if (!w) return "";
+  const rec = w.record, byId = Object.fromEntries(w.cards.map(c => [c.id, c]));
+  const retro = h.retro || {};
+  const CHK = { nothingLost: "nothing lost", inferencesLabelled: "inferences labelled", noFalseConflicts: "no false conflicts", defaultsChecked: "defaults checked", buildNotConsent: "build is not consent", kindsDistinct: "parts, rules, proposals distinct" };
+  return `<div class="wrec"><p class="eyebrow" style="margin-bottom:8px">The wall — one card per need</p>
+    ${w.cards.length ? wallCards(w, false) : `<p class="muted">Nothing on the wall yet.</p>`}</div>
+    ${rec ? `<div class="wrec"><p class="eyebrow" style="margin-bottom:4px">Before building — the decision record</p><ul>${rec.decisions.map(d =>
+        `<li><b>${esc(byId[d.id]?.need || d.id)}</b> → ${esc(d.response)}: ${esc(d.what)}${d.uncertainty ? ` <span class="muted">— unsure: ${esc(d.uncertainty)}</span>` : ""}</li>`).join("")}</ul>
+      ${rec.conflicts.length ? `<p style="margin:8px 0 0"><b>Conflicts:</b> ${rec.conflicts.map(c => `${esc(byId[c.a]?.need || c.a)} × ${esc(byId[c.b]?.need || c.b)} — ${esc(c.note)}`).join("; ")}</p>` : `<p class="muted" style="margin:8px 0 0">No conflicts — different needs are not conflicts.</p>`}
+      ${rec.checks ? `<p class="chk">${Object.entries(rec.checks).map(([k, v]) => `<span class="${v ? "y" : "n"}">${v ? "✓" : "✗"} ${esc(CHK[k] || k)}</span>`).join(" · ")}</p>` : ""}</div>` : ""}
+    ${w.sheet && w.sheet.length ? sheetList(h, w.sheet, false) : ""}
+    ${retro.A || retro.B ? `<div class="wrec"><p class="eyebrow" style="margin-bottom:4px">After building — the retrospective walkthrough</p>${["A","B"].filter(r => retro[r]).map(r => `<p><b>${roleName(r)}:</b> ${esc(retro[r].text)}</p>`).join("")}</div>` : ""}`;
 }
 
 // Whose meaning it acted on. An agent with one principal never needs this;
@@ -1070,14 +1139,20 @@ function attribution(h){
 }
 
 function resultBar(h){
-  const sc = h.score;
+  const ctl = h.control && bridgeTab === "control";
+  const v = ctl ? { ...h, standing: h.control.standing, shape: h.control.shape, world: h.control.world, provenance: h.control.provenance, score: h.control.score } : h;
+  const sc = v.score;
   return `<div class="result">
+    ${h.control ? `<div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-btab="toolkit" aria-selected="${!ctl}">Toolkit's bridge<small>${esc(h.standing || "nothing yet")}</small></button>
+      <button class="tab" role="tab" data-btab="control" aria-selected="${ctl}">Control's bridge<small>${esc(h.control.standing || "nothing yet")}</small></button>
+    </div>` : ""}
     <div class="artifact">
       <canvas id="crossing" aria-label="the crossing as it stands"></canvas>
       <div class="standing">
-        <p class="eyebrow">What stands</p>
-        <p class="what ${h.standing ? "" : "none"}">${h.standing ? esc(h.standing) : "nothing built yet"}</p>
-        ${attribution(h)}
+        <p class="eyebrow">What stands${h.control ? (ctl ? " — control, keys only" : " — toolkit") : ""}</p>
+        <p class="what ${v.standing ? "" : "none"}">${v.standing ? esc(v.standing) : "nothing built yet"}</p>
+        ${attribution(v)}
       </div>
     </div>
     ${sc ? `<div class="scores">${["A","B"].map(r => `
@@ -1141,13 +1216,15 @@ function bothView(){
       </div>
       ${builderColumn(h)}
     </div>
-    ${wallPanel(h)}
     ${resultBar(h)}`;
   wire(a); wire(b);
   // The artifact is a thing, not a name. Drawn after the markup exists, and
   // again on resize, because the canvas is sized from its own box.
   const cv = document.getElementById("crossing");
-  if (cv && window.drawCrossing) drawCrossing(cv, h.shape, h.world);
+  const shown = h.control && bridgeTab === "control" ? h.control : h;
+  if (cv && window.drawCrossing) drawCrossing(cv, shown.shape, shown.world);
+  app.querySelectorAll("[data-atab]").forEach(t => t.onclick = () => { agentTab = t.dataset.atab; bothView(); });
+  app.querySelectorAll("[data-btab]").forEach(t => t.onclick = () => { bridgeTab = t.dataset.btab; bothView(); });
   const f = document.getElementById("fin");
   if (f) f.onclick = () => post("/api/finish", { room: a.room });
   const sk = document.getElementById("sketch");
@@ -1400,7 +1477,8 @@ async function historyView(id){
   const h = { room: rec.room, role: "host", title: rec.title, arrow: rec.arrow, finished: rec.finished,
     lines: rec.transcript, standing: rec.standing, shape: rec.shape, world: rec.world || {},
     provenance: rec.provenance, score: rec.score, thinking: false, sketches: rec.sketches || [],
-    agent: rec.agent || "keys", wall: rec.wall || null, retro: rec.retro || {} };
+    agent: rec.agent || "keys", wall: rec.wall || null, retro: rec.retro || {},
+    control: rec.control ? { standing: rec.control.standing, shape: rec.control.shape, world: rec.control.world || {}, provenance: null, lines: rec.control.lines || [], score: rec.control.score || null } : null };
   const when = t => t ? new Date(t).toLocaleString([], { dateStyle: "full", timeStyle: "short" }) : "";
   app.classList.add("wide");
   app.innerHTML = `
@@ -1417,10 +1495,12 @@ async function historyView(id){
       <div class="card tab"><h2>What they said</h2>${conversation(h, "hist-chat", true, "chat")}</div>
       ${builderColumn(h)}
     </div>
-    ${wallPanel(h)}
     ${resultBar(h)}`;
   const cv = document.getElementById("crossing");
-  if (cv && window.drawCrossing) drawCrossing(cv, h.shape, h.world);
+  const shown = h.control && bridgeTab === "control" ? h.control : h;
+  if (cv && window.drawCrossing) drawCrossing(cv, shown.shape, shown.world);
+  app.querySelectorAll("[data-atab]").forEach(t => t.onclick = () => { agentTab = t.dataset.atab; historyView(id); });
+  app.querySelectorAll("[data-btab]").forEach(t => t.onclick = () => { bridgeTab = t.dataset.btab; historyView(id); });
 }
 
 (async () => {
