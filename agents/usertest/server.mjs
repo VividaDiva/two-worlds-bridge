@@ -114,7 +114,7 @@ function view(room, role) {
     // With the wall on, the builder keeps a card per need. The facilitator
     // always sees the wall; on condition B both people do — it is the thing they
     // respond to. On the other routes a person's page stays as it was.
-    agent: room.wall ? "wall" : "keys",
+    agent: "both",
     wall: room.wall && (role === "host" || dev) ? room.wall : null,
     sheet: room.wall && (role === "host" || dev) ? room.wall.sheet || [] : null,
     retro: role === "host" ? (room.retro || {}) : room.retro && room.retro[role] ? { [role]: room.retro[role] } : {},
@@ -144,6 +144,8 @@ function view(room, role) {
         // having. The dashboard draws its agent panels from the host stream, so
         // it loses nothing by this.
         ...((role === "host" || dev) && e.taken ? { taken: e.taken, asks: e.asks || [], refuses: e.refuses || [] } : {}),
+        // What keys alone heard in the same line, kept beside the wall's hearing.
+        ...((role === "host" || dev) && e.keysRead ? { keysRead: e.keysRead } : {}),
         // The wall's trace for this line: which cards it made, which tools fired,
         // and the question it asked, if the route allowed one.
         ...((role === "host" || dev) && e.cards ? { cards: e.cards, tools: e.tools || [], ask: e.ask || "" } : {}),
@@ -176,7 +178,7 @@ function record(room) {
   const rec = {
     room: room.id, argument: room.argument, title: arg.title,
     route: room.route, arrow: route.arrow, version: route.develop ? "B" : "A",
-    agent: room.wall ? "wall" : "keys", wall: room.wall || null, retro: room.retro || {},
+    agent: "both", wall: room.wall || null, retro: room.retro || {},
     createdAt: room.createdAt, updatedAt: new Date().toISOString(),
     finished: room.finished,
     // Enough to carry on from, not only to read back.
@@ -286,16 +288,15 @@ const canAskOn = (room, who) => {
   return !!(r.open && r.see[who] && r.see[who].echo);
 };
 
-// Hear one line: onto the wall with the wall on, into keys either way.
+// Hear one line, both ways. The keys-only reader — the one every recorded
+// session used — reads it first and its reading is kept on the line for
+// comparison; then the wall hears it, and the wall's keys are what feed the
+// tally and the build. Two hearings of the same words, side by side.
 async function hearLine(room, line) {
-  if (!room.wall) {
-    const dev = !!ROUTES[room.route].develop;
-    const read = dev ? await readLineB(line.text) : await readLine(line.text);
-    line.asks = read.asks; line.refuses = read.refuses;
-    if (dev) line.beyond = read.beyond;
-    line.taken = [...read.asks, ...read.refuses];
-    return;
-  }
+  const dev = !!ROUTES[room.route].develop;
+  const base = dev ? await readLineB(line.text) : await readLine(line.text);
+  line.keysRead = { asks: base.asks, refuses: base.refuses, ...(dev ? { beyond: base.beyond } : {}) };
+  room.wall ||= newWall();
   const route = ROUTES[room.route];
   const heard = await wallHear({
     routeNote: `${route.arrow}. ${route.note}`,
@@ -694,7 +695,7 @@ const srv = http.createServer(async (req, res) => {
     let id = code();
     while (rooms.has(id) || fs.existsSync(path.join(SESSIONS, `${id}.json`))) id = code();
     const live = { id, argument, route, ctx: mkCtx(), turn: 0, transcript: [], uploads: {}, standing: null,
-      thinking: false, finished: false, sketches: [], wall: last?.wall ? newWall() : null, retro: {},
+      thinking: false, finished: false, sketches: [], wall: newWall(), retro: {},
       createdAt: new Date().toISOString() };
     try { record(live); } catch (e) {
       console.error(`could not save ${id}: ${e.message}`);
@@ -711,14 +712,14 @@ const srv = http.createServer(async (req, res) => {
   });
 
   if (p === "/api/create" && req.method === "POST") {
-    const { argument, route, wall } = await body(req);
+    const { argument, route } = await body(req);
     if (!ARGUMENTS[argument] || !ROUTES[route]) return json(res, 400, { error: "unknown argument or route" });
     // Never reuse the name of a session already on disk, or its record goes.
     let id = code();
     while (rooms.has(id) || fs.existsSync(path.join(SESSIONS, `${id}.json`))) id = code();
     rooms.set(id, { id, argument, route, ctx: mkCtx(), turn: 0, transcript: [],
                     uploads: {}, standing: null, thinking: false, finished: false,
-                    sketches: [], wall: wall ? newWall() : null, retro: {}, createdAt: new Date().toISOString() });
+                    sketches: [], wall: newWall(), retro: {}, createdAt: new Date().toISOString() });
     streams.set(id, new Set());
     // Saved at once, so a room whose links are already out survives a restart
     // even before anybody has spoken in it.
