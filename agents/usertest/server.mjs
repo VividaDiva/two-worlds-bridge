@@ -116,6 +116,7 @@ function view(room, role) {
     // respond to. On the other routes a person's page stays as it was.
     agent: room.wall ? "wall" : "keys",
     wall: room.wall && (role === "host" || dev) ? room.wall : null,
+    sheet: room.wall && (role === "host" || dev) ? room.wall.sheet || [] : null,
     retro: role === "host" ? (room.retro || {}) : room.retro && room.retro[role] ? { [role]: room.retro[role] } : {},
     bothSpoke: dev ? bothSpoke(room) : null,
     props: dev && room.ctx.design ? room.ctx.design.has.map(f => ({ key: f, text: FEATURES[f] })) : [],
@@ -146,6 +147,7 @@ function view(room, role) {
         // The wall's trace for this line: which cards it made, which tools fired,
         // and the question it asked, if the route allowed one.
         ...((role === "host" || dev) && e.cards ? { cards: e.cards, tools: e.tools || [], ask: e.ask || "" } : {}),
+        ...((role === "host" || dev) && e.steps ? { steps: e.steps } : {}),
         // Condition B: the line's number (to answer or correct it), what it asked
         // for that no key carries, what it was about, what it built on, how it
         // was corrected, and for the AI's lines what changed and what else it offered.
@@ -158,7 +160,8 @@ function view(room, role) {
           ...(e.proposal ? { proposal: true } : {}),
           ...(e.diff ? { diff: e.diff } : {}),
           ...(e.alt ? { alt: e.alt, altTaken: e.altTaken || null } : {}),
-          ...(e.chosenBy ? { chosenBy: e.chosenBy } : {}) } : {}),
+          ...(e.chosenBy ? { chosenBy: e.chosenBy } : {}),
+          ...(e.sheet ? { sheet: e.sheet } : {}) } : {}),
         // What it saw in that person's picture, for the facilitator's trace.
         ...(role === "host" && e.picture ? { picture: e.picture } : {}) })),
   };
@@ -271,7 +274,9 @@ const body = req => new Promise((resolve, reject) => {
 // card and in the log; before a build a decision record; after it, every card
 // linked to what stands. The same tally and the same kit sit underneath, so a
 // room with the wall on builds from the same keys as one with it off.
-const newWall = () => ({ cards: [], log: [], record: null });
+const newWall = () => ({ cards: [], log: [], record: null, sheet: [] });
+// What is on the sheet and still waiting for both of them.
+const pending = room => (room.wall?.sheet || []).filter(p => !(p.accepted.A && p.accepted.B) && !p.declined);
 
 // Which of the route's people this speaker may be asked a question: only where
 // the route lets them hear the builder at all, and only where the conversation
@@ -322,7 +327,7 @@ async function hearLine(room, line) {
 
 // The decision record, before a build; rendered for the chooser as well.
 async function decideWall(room) {
-  if (!room.wall) return { record: "", unsupported: [] };
+  if (!room.wall) return { record: "", unsupported: [], proposals: [] };
   const rec = await wallDecide({ wall: room.wall, standing: room.standing ? NAME(room.standing) : null,
                                  props: room.ctx.design ? room.ctx.design.has : [] });
   // A card no key carries cannot be answered with a part, whatever the record
@@ -331,10 +336,23 @@ async function decideWall(room) {
   for (const d of rec.decisions) if (d.response === "part" && keyless.has(d.id)) d.response = "none";
   room.wall.record = { ...rec, at: Date.now() };
   const byId = Object.fromEntries(room.wall.cards.map(c => [c.id, c]));
+  // Rules and new parts go on the sheet, once per card, to be accepted by both.
+  // Nothing on the sheet counts as built until it is.
+  room.wall.sheet = room.wall.sheet || [];
+  for (const d of rec.decisions) {
+    if (d.response !== "rule" && d.response !== "new") continue;
+    // Declined once is declined: it is not put back on the sheet, and the
+    // record says "none" for that card until somebody raises it again.
+    if (room.wall.sheet.some(p => p.cardId === d.id && p.declined)) { d.response = "none"; continue; }
+    const had = room.wall.sheet.find(p => p.cardId === d.id && !p.declined);
+    if (had) { had.kind = d.response; had.what = d.what; continue; }
+    room.wall.sheet.push({ id: "s" + (room.wall.sheet.length + 1), cardId: d.id, kind: d.response, what: d.what,
+                           by: "AI", proposedAt: Date.now(), accepted: {}, declined: false });
+  }
   const record = rec.decisions.map(d => `  [${d.id}] ${byId[d.id].need} → ${d.response}: ${d.what}${d.uncertainty ? " (unsure: " + d.uncertainty + ")" : ""}`).join("\n")
     + (rec.conflicts.length ? "\n  conflicts: " + rec.conflicts.map(c => `${c.a}×${c.b} ${c.note}`).join("; ") : "");
   const unsupported = rec.decisions.filter(d => d.response === "none").map(d => byId[d.id].need);
-  return { record, unsupported };
+  return { record, unsupported, proposals: pending(room).map(p => ({ kind: p.kind, what: p.what })) };
 }
 
 // After a build: every card against what stands. Met only when every key it
@@ -344,6 +362,8 @@ function linkWall(room) {
   const has = room.ctx.design ? room.ctx.design.has : [];
   for (const c of room.wall.cards) {
     if (c.withdrawn) continue;
+    const item = (room.wall.sheet || []).find(p => p.cardId === c.id && !p.declined);
+    if (item) { c.met = item.accepted.A && item.accepted.B ? (item.kind === "rule" ? "met-by-rule" : "met-by-new") : "proposed"; continue; }
     // A card that only rules something out is met when that thing is absent.
     if (!c.keys.length && c.rulesOut.length) { c.met = c.rulesOut.some(k => has.includes(k)) ? "no" : "met"; continue; }
     if (!c.keys.length) { c.met = "unsupported"; continue; }
@@ -428,7 +448,7 @@ async function lay(room, line, took) {
   const pictures = Object.keys(room.seenPicture || {})
     .filter(r => room.uploads[r]?.needs)
     .map(r => ({ who: r === "A" ? "Role 1" : "Role 2", needs: room.uploads[r].needs }));
-  const { record, unsupported } = await decideWall(room);
+  const { record, unsupported, proposals } = await decideWall(room);
   const chose = await chooseBuild({
     wants: [...room.ctx.wants.keys()], avoids: [...room.ctx.avoids.keys()],
     standing: before ? NAME(before) : null, said, pictures, record,
@@ -441,10 +461,11 @@ async function lay(room, line, took) {
     took, before: before ? NAME(before) : null, after: NAME(after),
     props: room.ctx.design ? room.ctx.design.has : [],
     wants: [...room.ctx.wants.keys()], avoids: [...room.ctx.avoids.keys()],
-    changed: before !== after, unsupported,
+    changed: before !== after, unsupported, proposals,
   });
   linkWall(room);
-  room.transcript.push({ who: "builder", text: say, phase: "main", built: NAME(after), at: Date.now() });
+  room.transcript.push({ who: "builder", text: say, phase: "main", built: NAME(after), at: Date.now(),
+                         ...(room.wall ? { steps: stepsFor(room, line || {}) } : {}) });
 }
 
 // ── condition B: developing it together ──────────────────────────────────
@@ -502,7 +523,10 @@ function unresolved(room) {
     if (r && r.size) out.push({ kind: "conflict", key: f, text: FEATURES[f],
                                 wantedBy: [...w].map(x => WHO[x]), refusedBy: [...r].map(x => WHO[x]) });
   }
-  for (const b of openBeyond(room)) out.push({ kind: "beyond", who: b.who, text: b.text });
+  const settled = new Set((room.wall?.sheet || []).filter(p => p.accepted.A && p.accepted.B && !p.declined).map(p => p.cardId));
+  const answered = new Set(room.wall ? room.wall.cards.filter(c => settled.has(c.id)).map(c => c.need.toLowerCase()) : []);
+  for (const b of openBeyond(room)) if (!answered.has(b.text.toLowerCase())) out.push({ kind: "beyond", who: b.who, text: b.text });
+  for (const p of pending(room)) out.push({ kind: "pending", what: p.what, pkind: p.kind, accepted: Object.keys(p.accepted).filter(k => p.accepted[k]).map(k => WHO[k]) });
   return out;
 }
 
@@ -539,7 +563,7 @@ async function layB(room, line, said) {
     .map(e => ({ who: WHO[e.who], text: (e.part ? `[about ${FEATURES[e.part]}] ` : "") + e.text + (e.corrected ? ` — they clarified: "${e.corrected}"` : "") }));
   const pictures = Object.keys(room.seenPicture || {}).filter(r => room.uploads[r]?.needs)
     .map(r => ({ who: WHO[r], needs: room.uploads[r].needs }));
-  const { record } = await decideWall(room);
+  const { record, proposals } = await decideWall(room);
   const chose = await chooseBuildB({ wants: [...room.ctx.wants.keys()], avoids: [...room.ctx.avoids.keys()],
                                      standing: before ? NAME(before) : null, said: conv, pictures, record });
   if (chose.id) room.ctx.design = KIT.find(k => k.id === chose.id);
@@ -556,11 +580,28 @@ async function layB(room, line, said) {
     took: { asks: line.asks || [], refuses: line.refuses || [], beyond: line.beyond || "" },
     before: before ? NAME(before) : null, after: NAME(after), props: afterHas, changed: before !== after,
     alt, beyond: openBeyond(room), wants: [...room.ctx.wants.keys()], avoids: [...room.ctx.avoids.keys()],
-    question: line.ask || "",
+    question: line.ask || "", proposals,
   });
   linkWall(room);
   room.transcript.push({ who: "builder", text, phase: "main", built: NAME(after), proposal: true,
-                         diff: diffOf(room, beforeHas, afterHas), alt, at: Date.now() });
+                         diff: diffOf(room, beforeHas, afterHas), alt, at: Date.now(),
+                         ...(room.wall ? { steps: stepsFor(room, line) } : {}) });
+}
+
+// One line's worth of the agent's process, to show under its answer: what it
+// heard, which tools fired, what it decided, what it proposed, what it built,
+// and what still has no part.
+function stepsFor(room, line) {
+  if (!room.wall) return null;
+  const mine = room.wall.cards.filter(c => (line.cards || []).includes(c.id));
+  const rec = room.wall.record;
+  const count = k => rec ? rec.decisions.filter(d => d.response === k).length : 0;
+  return {
+    heard: mine.map(c => c.need), tools: (line.tools || []).map(t => t.tool), asked: line.ask || "",
+    decided: rec ? { part: count("part"), rule: count("rule"), new: count("new"), none: count("none") } : null,
+    proposed: pending(room).map(p => ({ id: p.id, kind: p.kind, what: p.what })),
+    unsupported: room.wall.cards.filter(c => !c.withdrawn && c.met === "unsupported").map(c => c.need),
+  };
 }
 
 // What each of them needed, and whether the thing that stands has it. Computed
@@ -1019,6 +1060,26 @@ const srv = http.createServer(async (req, res) => {
     const said = String(text || "").trim();
     if (!said) return json(res, 400, { error: "say something first" });
     r.retro = { ...(r.retro || {}), [role]: { text: said, at: Date.now() } };
+    push(id);
+    return json(res, 200, { ok: true });
+  }
+
+  // A rule or a new part on the sheet counts only once both have accepted it.
+  // A decline is recorded as a decline — not silence, not consent.
+  if (p === "/api/accept" && req.method === "POST") {
+    const { room: id, role, item, ok } = await body(req);
+    const r = rooms.get(id);
+    if (!r || !r.wall) return json(res, 404, { error: "no such room, or no wall" });
+    if (role !== "A" && role !== "B") return json(res, 400, { error: "unknown role" });
+    if (r.finished) return json(res, 409, { error: "this session is over" });
+    const it = (r.wall.sheet || []).find(p => p.id === item);
+    if (!it) return json(res, 404, { error: "nothing by that name on the sheet" });
+    if (ok === false) { it.declined = true; it.declinedBy = role; it.accepted = {}; }
+    else { it.accepted = { ...it.accepted, [role]: true }; }
+    it.decidedAt = Date.now();
+    r.transcript.push({ who: role, text: `${ok === false ? "No to" : "Yes to"} ${it.kind === "rule" ? "the rule" : "adding"}: ${it.what}.`,
+                        phase: "main", talk: true, sheet: it.id, at: Date.now() });
+    linkWall(r);
     push(id);
     return json(res, 200, { ok: true });
   }

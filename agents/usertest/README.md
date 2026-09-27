@@ -129,3 +129,22 @@ kept apart from the score, under `retro`).
 
 Not automated, by design: open card sort, dot voting, Kano, repertory grid,
 Wizard of Oz. Those are research activities the facilitator runs.
+
+### The sheet: every need gets a response
+
+With the wall on, the decision record answers every card one of four ways:
+a **part** from the kit; a **rule** — an operating rule written on the sheet,
+never a shape (hours, who goes first); a **new part** — a physical part the kit
+does not have but could be added for this room (a footway on one side, a
+kerb, a gate, a step), named from their words; or **none**. Rules and new
+parts go on the sheet, where either person can accept or decline them; one
+counts only once both have accepted, a decline is recorded as a decline (by
+whom), and a declined proposal is not put back. The card's status follows:
+*proposed*, *met by a rule*, *met by a new part*, or *no part for it*.
+
+Under each of the AI's answers on the `develop` route, and in the facilitator's
+trace on every route, is what it did that turn: what it heard as needs, which
+tools fired, what it decided (so many from the kit, so many rules, so many new
+parts, so many with no part), what it proposed, what still has no part, and
+what it asked. When the AI is unsure what someone meant it gives two or three
+readings; the speaker taps one and the line is read again with it.

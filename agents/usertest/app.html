@@ -399,6 +399,21 @@ textarea[disabled]{opacity:.5}
 .retro textarea{min-height:70px; font-size:14.5px}
 .retro .said{font-family:var(--display); font-size:15px; margin:6px 0 0}
 .chip.agent[aria-pressed="true"]{background:var(--moss); border-color:var(--moss)}
+/* what the agent did, under its answer; the sheet; readings to tap */
+.steps{margin:7px 0 0; font-size:12.5px; color:var(--soft); line-height:1.6; border-top:1px dashed var(--rule); padding-top:6px}
+.steps b{font-family:var(--mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); font-weight:500; margin-right:4px}
+.steps .tool{font-size:9.5px; padding:1px 7px}
+.sheet{margin-top:12px; border-top:1px solid var(--rule-2); padding-top:10px}
+.sitem{display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center; padding:8px 10px; border:1px dashed var(--rule); border-radius:3px; background:var(--paper-2); margin:0 0 6px; font-size:14px}
+.sitem.done{border-style:solid; border-color:var(--moss)}
+.sitem.off{opacity:.55; text-decoration:line-through}
+.sitem .kind{font-family:var(--mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--moss)}
+.sitem .state{font-family:var(--mono); font-size:10px; color:var(--faint); margin-left:auto}
+.sitem .acts{display:flex; gap:5px}
+.readings{margin:6px 0 0; display:flex; flex-wrap:wrap; gap:5px; align-items:center}
+.readings .lbl{font-family:var(--mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint)}
+.met.met-by-rule,.met.met-by-new{background:rgba(74,107,79,.14); color:var(--moss)}
+.met.proposed{background:transparent; border-color:var(--moss); color:var(--moss)}
 table{width:100%; border-collapse:collapse; font-size:14.5px; margin-top:8px}
 td{padding:7px 10px 7px 0; border-top:1px solid var(--rule-2)}
 td.y{color:var(--moss); font-weight:600} td.n{color:var(--rust)}
@@ -531,8 +546,10 @@ function devExtras(s, l){
       ${l.proposal ? (changes.length ? `<div class="diff">Changed: ${changes.join(" · ")}</div>` : `<div class="diff none">Changed: nothing</div>`) : ""}
       ${l.alt ? `<div class="alt"><span class="lbl">or</span><span>${esc(l.alt.name)}${l.alt.why ? ` — ${esc(l.alt.why)}` : ""}</span>
         ${l.altTaken ? `<span class="tag">taken by ${esc(byName(s, l.altTaken))}</span>`
-          : canAct ? `<button class="handle go" data-try="${esc(l.alt.id)}">Try this one</button>` : ""}</div>` : ""}`;
+          : canAct ? `<button class="handle go" data-try="${esc(l.alt.id)}">Try this one</button>` : ""}</div>` : ""}
+      ${l.steps ? stepsStrip(s, l.steps) : ""}`;
   }
+  if (l.sheet) return `<span class="tag">on the sheet</span>`;
   const tagsHtml = [
     l.part ? `<span class="tag">about: ${esc(partText(s, l.part))}</span>` : "",
     Number.isInteger(l.replyTo) ? `<span class="tag">building on ${esc(roleName((s.lines.find(x => x.i === l.replyTo) || {}).who))}</span>` : "",
@@ -544,13 +561,42 @@ function devExtras(s, l){
       !(l.asks || []).length && !(l.refuses || []).length ? `<span class="key none">nothing it can build from</span>` : ""}${
       l.beyond ? `<span class="key none">couldn't carry: ${esc(l.beyond)}</span>` : ""}
       <span class="guess${l.corrected ? " fixed" : ""}">${l.corrected ? "corrected" : "the AI's guess"}</span></p>` : "";
+  const cards = (s.wall && s.wall.cards || []).filter(c => (l.cards || []).includes(c.id) && !c.withdrawn);
+  const rd = cards.find(c => c.readings && c.readings.length);
+  const readings = canAct && l.who === me && rd && !l.corrected
+    ? `<div class="readings"><span class="lbl">did you mean</span>${rd.readings.map(x => `<button class="handle" data-rd="${l.i}" data-text="${esc(x)}">${esc(x)}</button>`).join("")}<button class="handle" data-nq="${l.i}">something else</button></div>` : "";
   const open = corrOpen[me] === l.i && l.who === me;
   const handles = !canAct ? "" : open
     ? `<div class="corr"><textarea id="corr-${me}" placeholder="What you meant by it, in a line.">${esc(corrDrafts[me] || "")}</textarea>
         <div class="row"><button class="handle go" id="corrsend-${me}">Send what I meant</button><button class="handle" id="corrcancel-${me}">Cancel</button></div></div>`
     : `<div class="handles">${l.who === me && l.taken ? `<button class="handle" data-nq="${l.i}">Not quite →</button>` : ""}${
         l.who !== me && !l.prefer ? `<button class="handle" data-on="${l.i}">Build on this</button>` : ""}</div>`;
-  return tagsHtml + read + handles;
+  return tagsHtml + read + readings + handles;
+}
+
+// The sheet: rules and new parts the AI proposed for this room. Each counts
+// only when both people have accepted it; a decline is a decline.
+function sheetList(s, items, canAct){
+  if (!items || !items.length) return "";
+  const me = s.role;
+  return `<div class="sheet"><p class="eyebrow">On the sheet — proposed by the AI, yours to accept</p>${items.map(p => {
+    const done = p.accepted.A && p.accepted.B, mineDone = me !== "host" && p.accepted[me];
+    const who = ["A","B"].filter(r => p.accepted[r]).map(r => r === me ? "you" : roleName(r));
+    const state = p.declined ? `declined by ${p.declinedBy === me ? "you" : roleName(p.declinedBy)}` : done ? "accepted by both" : who.length ? `accepted by ${who.join(" and ")} — waiting for ${["A","B"].filter(r => !p.accepted[r]).map(r => r === me ? "you" : roleName(r)).join(" and ")}` : "waiting for both";
+    return `<div class="sitem${done ? " done" : ""}${p.declined ? " off" : ""}"><span class="kind">${KINDL[p.kind] || p.kind}</span><span>${esc(p.what)}</span><span class="state">${esc(state)}</span>${
+      canAct && !p.declined && !mineDone ? `<span class="acts"><button class="handle go" data-acc="${p.id}">Accept</button><button class="handle" data-dec="${p.id}">Decline</button></span>` : ""}</div>`;
+  }).join("")}</div>`;
+}
+function stepsStrip(s, st){
+  if (!st) return "";
+  const d = st.decided;
+  return `<div class="steps">
+    <div><b>heard</b>${st.heard.length ? st.heard.map(esc).join(" · ") : "nothing new"}${st.tools.length ? " " + st.tools.map(t => `<span class="tool">${esc(t)}</span>`).join(" ") : ""}</div>
+    ${d ? `<div><b>decided</b>${[d.part ? `${d.part} from the kit` : "", d.rule ? `${d.rule} rule${d.rule > 1 ? "s" : ""} for the sheet` : "", d.new ? `${d.new} new part${d.new > 1 ? "s" : ""} proposed` : "", d.none ? `${d.none} with no part` : ""].filter(Boolean).join(" · ") || "nothing yet"}</div>` : ""}
+    ${st.proposed.length ? `<div><b>proposed</b>${st.proposed.map(p => esc(p.what)).join(" · ")}</div>` : ""}
+    ${st.unsupported.length ? `<div><b>no part</b>${st.unsupported.map(esc).join(" · ")}</div>` : ""}
+    ${st.asked ? `<div><b>asked</b>${esc(st.asked)}</div>` : ""}
+  </div>`;
 }
 
 // Condition B: the bridge, on the person's own screen. What stands, the parts
@@ -571,9 +617,11 @@ function bridgeCard(s, compact){
     ${s.finished ? `<p class="eyebrow" style="margin-top:14px">Finished — still open between you</p>${un.length
         ? `<ul class="unres">${un.map(u => u.kind === "conflict"
             ? `<li><b>${esc(u.text)}</b> — wanted by ${esc(u.wantedBy.join(" and "))}, ruled out by ${esc(u.refusedBy.join(" and "))}</li>`
+            : u.kind === "pending" ? `<li><b>${esc(u.what)}</b> — ${esc(KINDL[u.pkind] || u.pkind)} on the sheet, ${u.accepted.length ? "accepted by " + esc(u.accepted.join(" and ")) + " only" : "accepted by nobody"}</li>`
             : `<li><b>${esc(u.text)}</b> — ${esc(u.who)} asked for it; nothing in the kit can make it</li>`).join("")}</ul>`
         : `<p class="muted">Nothing left open between you.</p>`}`
       : `<div class="row"><button class="mini" id="finish-${r}" ${s.standing ? "" : "disabled"}>Finish — what is still open stays visible</button></div>`}
+    ${s.sheet && s.sheet.length ? sheetList(s, s.sheet, !s.finished && r !== "host") : ""}
     ${s.wall && s.wall.cards.length ? `<div class="wmini"><p class="eyebrow">The wall — what the AI has heard, as needs</p>${wallCards(s.wall, true)}</div>` : ""}
     ${s.finished && r !== "host" ? `<div class="retro">${(s.retro || {})[r]
         ? `<p class="eyebrow">What you saw in it</p><p class="said">${esc(s.retro[r].text)}</p>`
@@ -779,6 +827,16 @@ function wire(s){
     });
     const fin = document.getElementById("finish-" + r);
     if (fin) fin.onclick = () => { fin.disabled = true; post("/api/finish", { room: s.room }); };
+    document.querySelectorAll(`${scope}[data-acc], ${scope}[data-dec]`).forEach(b => b.onclick = async () => {
+      b.disabled = true;
+      const { ok, j } = await post("/api/accept", { room: s.room, role: r, item: b.dataset.acc || b.dataset.dec, ok: !!b.dataset.acc });
+      if (!ok) { const note = document.getElementById("err-" + r); if (note) note.innerHTML = `<div class="warn">${esc(j.error || "that did not send")}</div>`; b.disabled = false; }
+    });
+    document.querySelectorAll(`#chat-${r} [data-rd]`).forEach(b => b.onclick = async () => {
+      b.disabled = true;
+      const { ok } = await post("/api/correct", { room: s.room, role: r, index: Number(b.dataset.rd), text: b.dataset.text });
+      if (!ok) b.disabled = false;
+    });
     const rt = document.getElementById("retro-" + r);
     if (rt) rt.oninput = () => { corrDrafts["retro" + r] = rt.value; };
     const rs = document.getElementById("retrosend-" + r);
@@ -890,7 +948,8 @@ function filterBar(cur, pending){
 // whose it is, how it reached the builder, the words, the need, the reason or
 // the labelled guess, the keys, and whether what stands meets it.
 const VIA = { direct: ["said to it", ""], "reported-by-A": ["reported by Role 1", "rep"], "reported-by-B": ["reported by Role 2", "rep"], inferred: ["the AI's inference", "inf"] };
-const METL = { met: "met", partial: "partly met", no: "not met", unsupported: "no part for it" };
+const METL = { met: "met", partial: "partly met", no: "not met", unsupported: "no part for it", proposed: "on the sheet — awaiting both", "met-by-rule": "met by a rule", "met-by-new": "met by a new part" };
+const KINDL = { rule: "a rule", new: "a new part" };
 function wallCard(c, small){
   const [vl, vc] = VIA[c.via] || [c.via, ""];
   return `<div class="wcard ${c.who === "A" ? "ra" : "rb"}${c.withdrawn ? " gone" : ""}">
@@ -924,6 +983,7 @@ function wallPanel(h){
         `<li><b>${esc(byId[d.id]?.need || d.id)}</b> → ${esc(d.response)}: ${esc(d.what)}${d.uncertainty ? ` <span class="muted">— unsure: ${esc(d.uncertainty)}</span>` : ""}</li>`).join("")}</ul>
       ${rec.conflicts.length ? `<p style="margin:8px 0 0"><b>Conflicts:</b> ${rec.conflicts.map(c => `${esc(byId[c.a]?.need || c.a)} × ${esc(byId[c.b]?.need || c.b)} — ${esc(c.note)}`).join("; ")}</p>` : `<p class="muted" style="margin:8px 0 0">No conflicts — different needs are not conflicts.</p>`}
       ${rec.checks ? `<p class="chk">${Object.entries(rec.checks).map(([k, v]) => `<span class="${v ? "y" : "n"}">${v ? "✓" : "✗"} ${esc(k)}</span>`).join(" · ")}</p>` : ""}</div>` : ""}
+    ${w.sheet && w.sheet.length ? sheetList(h, w.sheet, false) : ""}
     ${retro.A || retro.B ? `<div class="wrec"><p class="eyebrow" style="margin-bottom:4px">Retrospective — what each saw in it</p>${["A","B"].filter(r => retro[r]).map(r => `<p><b>${roleName(r)}:</b> ${esc(retro[r].text)}</p>`).join("")}</div>` : ""}
   </div>`;
 }
@@ -973,7 +1033,8 @@ function builderColumn(h){
               : a.did.relay
                 ? `<p class="move"><span class="relayto">told ${esc(roleName(a.did.about === "A" ? "B" : "A"))}</span>${esc(a.did.text)}</p>`
                 : `<p class="move">${esc(a.did.text)}</p>
-                 ${a.did.built ? `<span class="made">→ ${esc(a.did.built)}</span>` : ""}`)
+                 ${a.did.built ? `<span class="made">→ ${esc(a.did.built)}</span>` : ""}
+                 ${a.did.steps ? stepsStrip(h, a.did.steps) : ""}`)
           : a.held ? `<p class="move muted">Held — it builds once, after both of them have spoken.</p>`
           : a.heard ? `<p class="move muted">Heard — it builds when one of them confirms a decision.</p>`
           : `<p class="move muted">${a.said.phase === "confer"

@@ -213,7 +213,7 @@ export async function chooseBuild({ wants, avoids, standing, said, pictures = []
   return { id: entry ? entry.id : null, why: out.why, unmatched: hit ? null : raw };
 }
 
-export async function speak({ said, took, before, after, props, wants, avoids, changed, unsupported = [] }) {
+export async function speak({ said, took, before, after, props, wants, avoids, changed, unsupported = [], proposals = [] }) {
   const list = ks => ks.length ? ks.map(f => FEATURES[f]).join("; ") : "nothing yet";
   const bits = [
     `They said: "${said}"`,
@@ -226,6 +226,7 @@ export async function speak({ said, took, before, after, props, wants, avoids, c
     `Asked of you so far: ${list(wants)}.`,
     `Refused so far: ${list(avoids)}.`,
     ...(unsupported.length ? [``, `Asked for, and nothing in your workshop makes it — say so, it is not met: ${unsupported.join("; ")}.`] : []),
+    ...(proposals.length ? [`You have written on the sheet, to be accepted before it counts: ${proposals.map(p => `${p.kind === "rule" ? "a rule" : "a new part"} — ${p.what}`).join("; ")}. Say so in one clause; it is not built.`] : []),
     ``,
     `Say your piece.`,
   ].join("\n");
@@ -376,7 +377,7 @@ const PROPOSE = [
   `- Report. Do not thank, apologise, or ask them to agree. Say only what is true of what stands.`,
 ].join("\n");
 
-export async function propose({ line, took, before, after, props, changed, alt, beyond, wants, avoids, question = "" }) {
+export async function propose({ line, took, before, after, props, changed, alt, beyond, wants, avoids, question = "", proposals = [] }) {
   const list = ks => ks.length ? ks.map(f => FEATURES[f]).join("; ") : "nothing";
   const bits = [
     `${line.who} just said: "${line.text}"`,
@@ -389,6 +390,7 @@ export async function propose({ line, took, before, after, props, changed, alt, 
     alt ? `An alternative you could offer: ${alt.name} — ${alt.why || "it serves the other side"}.` : ``,
     beyond.length ? `Still on the list, with no part for it: ${beyond.map(b => `${b.who}: ${b.text}`).join("; ")}.` : ``,
     question ? `From your wall, one question worth putting to ${line.who}, if it still is: "${question}" — ask it or nothing.` : ``,
+    proposals.length ? `You have written on the sheet, for both of them to accept or decline — say this before anything else, in one clause, and do not call it built: ${proposals.map(p => `${p.kind === "rule" ? "a rule" : "a new part"} — ${p.what}`).join("; ")}.` : ``,
     ``,
     `Asked of you so far: ${list(wants)}. Refused so far: ${list(avoids)}.`,
     ``,
@@ -496,7 +498,8 @@ const HEAR = [
   `Fields you did not use are "" or [].`,
   ``,
   `Rules:`,
-  `- A line may add 0, 1, 2 or 3 cards. Do not add a card for a need already on the wall: put its id in`,
+  `- A line may add 0, 1, 2 or 3 cards. Agreement, thanks or an acknowledgement is not a need and makes no`,
+  `  card; it goes in "updates" against the card it agrees with. Do not add a card for a need already on the wall: put its id in`,
   `  "updates" with what changed — a reason now given, a withdrawal, an objection, a correction, an agreement.`,
   `- Different needs are not conflicts. Fill "conflictsWith" (ids) only when this card asks for what another`,
   `  rules out.`,
@@ -560,7 +563,10 @@ const DECIDE = [
   `For each card, "response" is one of:`,
   `- "part": a part you can make delivers it — the card's keys name what.`,
   `- "rule": an operating rule written on the sheet, never a shape — hours, who goes first, what is allowed.`,
-  `- "none": nothing you can make delivers it. Say so; it stays on the wall.`,
+  `- "new": a physical part of a crossing that your kit does not have but could be added for this room — a`,
+  `  footway on one side, a kerb, a gate, a step, a sealed surface. Name it plainly in "what", from their words.`,
+  `  Only when nothing in the kit delivers the need. Both people must accept it before it counts.`,
+  `- "none": neither a part, a rule nor a new part can answer it. Say so; it stays on the wall.`,
   `"what": one clause. "uncertainty": "" or one clause — a hypothesis you are relying on, a reading you`,
   `could not check, a reported need you could not confirm with its owner.`,
   ``,
@@ -591,7 +597,7 @@ export async function wallDecide({ wall, standing, props }) {
   const ids = new Set(cards.map(c => c.id));
   return {
     decisions: (Array.isArray(out.decisions) ? out.decisions : []).map(d => ({
-      id: str(d.id), response: /rule/i.test(str(d.response)) ? "rule" : /none|no/i.test(str(d.response)) ? "none" : "part",
+      id: str(d.id), response: /rule/i.test(str(d.response)) ? "rule" : /new/i.test(str(d.response)) ? "new" : /none|^no/i.test(str(d.response)) ? "none" : "part",
       what: str(d.what).slice(0, 140), uncertainty: str(d.uncertainty).slice(0, 140) })).filter(d => ids.has(d.id)),
     conflicts: (Array.isArray(out.conflicts) ? out.conflicts : []).map(c => ({ a: str(c.a), b: str(c.b), note: str(c.note).slice(0, 140) })).filter(c => ids.has(c.a) && ids.has(c.b)),
     checks: out.checks && typeof out.checks === "object" ? {
