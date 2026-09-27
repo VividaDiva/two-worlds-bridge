@@ -34,6 +34,7 @@ test("new rooms are empty; both people's chat and AI replies survive in History 
     export const wallHear = async () => ({ cards: [], updates: [], tools: [], ask: "" });
     export const wallDecide = async () => ({ decisions: [], conflicts: [], checks: null });
     export const relayFromWall = async () => "Test relay";
+    export const chooseBuildT = async () => ({ id: null, why: "", alt: null });
   `;
   const hook = path.join(dir, "mock-builder.mjs");
   fs.writeFileSync(hook, `import { registerHooks } from "node:module";
