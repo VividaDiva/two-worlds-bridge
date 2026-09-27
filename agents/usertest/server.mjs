@@ -125,6 +125,9 @@ function view(room, role) {
     } : null,
     wall: room.wall && (role === "host" || dev) ? room.wall : null,
     sheet: room.wall && (role === "host" || dev) ? room.wall.sheet || [] : null,
+    // What both people accepted onto the sheet, sorted into what the drawing
+    // can show as an added layer and what it cannot (rules, mostly).
+    sheetDrawn: room.wall && (role === "host" || dev) ? sheetDrawn(room) : null,
     retro: role === "host" ? (room.retro || {}) : room.retro && room.retro[role] ? { [role]: room.retro[role] } : {},
     bothSpoke: dev ? bothSpoke(room) : null,
     props: dev && room.ctx.design ? room.ctx.design.has.map(f => ({ key: f, text: FEATURES[f] })) : [],
@@ -187,6 +190,7 @@ function record(room) {
     room: room.id, argument: room.argument, title: arg.title,
     route: room.route, arrow: route.arrow, version: route.develop ? "B" : "A",
     agent: "both", wall: room.wall || null, retro: room.retro || {},
+    sheetDrawn: room.wall ? sheetDrawn(room) : null,
     control: room.control ? { standingId: room.control.standing, lines: room.control.lines,
                               standing: room.control.standing ? NAME(room.control.standing) : null,
                               shape: room.control.ctx.design ? room.control.ctx.design.shape : null,
@@ -367,6 +371,21 @@ function wallProvenance(room) {
   });
 }
 const activeCards = room => room.wall ? room.wall.cards.filter(c => !c.withdrawn) : [];
+// Accepted sheet items the drawing can show: a footway, a gate, a kerb, a
+// sealed surface. Everything else accepted is listed as not drawable.
+function sheetDrawn(room) {
+  const out = { footway: false, gate: false, kerb: false, sealed: false, drawn: [], other: [] };
+  for (const p of room.wall?.sheet || []) {
+    if (p.declined || !(p.accepted.A && p.accepted.B)) continue;
+    const w = p.what.toLowerCase(); let hit = null;
+    if (p.kind === "new" && /footway|walkway|pavement|sidewalk|foot ?path|walking (side|lane|path)|pedestrian/.test(w)) hit = "footway";
+    else if (p.kind === "new" && /gate|barrier/.test(w)) hit = "gate";
+    else if (p.kind === "new" && /kerb|curb|step|raised edge/.test(w)) hit = "kerb";
+    else if (p.kind === "new" && /seal|smooth|even surface|paved|cement|asphalt/.test(w)) hit = "sealed";
+    if (hit) { out[hit] = true; out.drawn.push({ what: p.what, as: hit }); } else out.other.push({ what: p.what, kind: p.kind });
+  }
+  return out;
+}
 
 // The decision record, before a build; rendered for the chooser as well.
 async function decideWall(room) {

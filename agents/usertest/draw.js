@@ -54,63 +54,88 @@
     ctx.beginPath(); ctx.arc(head.x, head.y, HEAD, 0, Math.PI * 2); ctx.fill();
   }
 
-  function assemble(d, world) {
-    const list = [];
-    if (!d) return list;
+  // The crossing is drawn turned a little, so that its width — one abreast or
+  // two — and anything beside the walk can be seen. A side view could not show
+  // a footway at all; it drew two abreast as a second line below the first.
+  // z runs across the deck: 0 at the near edge, DW at the far one.
+  const AX = 0.55, AY = 0.32;                 // the oblique: right and up, per unit of z
+  const P = (x, y, z) => ({ x: x + z * AX, y: y - z * AY });
+  function lay3(list, x1, y1, z1, x2, y2, z2) {
+    const p = P(x1, y1, z1), q = P(x2, y2, z2);
+    lay(list, p.x, p.y, q.x, q.y);
+  }
+  // Extras come from the sheet: parts the kit does not have, proposed by the
+  // builder and accepted by both people. They are drawn as an added layer, in
+  // another colour, and change nothing about the kit, the choosing or the score.
+  function assemble(d, world, extras) {
+    const list = [], strokes = [];
+    if (!d) return { list, strokes };
     const deck = d.level === "raised" ? DECK_HIGH : DECK_LOW;
     const bed = bedOf(world);
     const MID = (GAP_L + GAP_R) / 2;
+    const DW = d.width === "two" ? 78 : 44;   // across the walk
+    const X = extras || {};
 
-    // the walk itself, and a second alongside where two may pass
-    lay(list, GAP_L, deck, GAP_R, deck);
-    if (d.width === "two") {
-      const off = 16;
-      lay(list, GAP_L, deck + off, GAP_R, deck + off);
-      [GAP_L + SPAN * 0.25, MID, GAP_R - SPAN * 0.25].forEach(x => lay(list, x, deck, x, deck + off));
-    }
-    // raised: it has to be got up to, and held up
-    if (d.level === "raised") [GAP_L, GAP_R].forEach(x => lay(list, x, GROUND_Y, x, deck));
-    // something at the hand
+    // the walk: two long edges and a few ties across
+    lay3(list, GAP_L, deck, 0, GAP_R, deck, 0);
+    lay3(list, GAP_L, deck, DW, GAP_R, deck, DW);
+    const ties = d.width === "two" ? 5 : 3;
+    for (let i = 0; i <= ties; i++) { const x = GAP_L + SPAN * i / ties; lay3(list, x, deck, 0, x, deck, DW); }
+    // raised: it has to be got up to, and held up — a post at each corner
+    if (d.level === "raised") for (const x of [GAP_L, GAP_R]) for (const z of [0, DW]) lay3(list, x, GROUND_Y, z, x, deck, z);
+    // something at the hand, along the near edge
     if (d.hand === "rail") {
       const rh = 52;
-      lay(list, GAP_L + 18, deck - rh, GAP_R - 18, deck - rh);
-      [GAP_L + 18, MID, GAP_R - 18].forEach(x => lay(list, x, deck, x, deck - rh));
+      lay3(list, GAP_L + 18, deck - rh, 0, GAP_R - 18, deck - rh, 0);
+      for (const x of [GAP_L + 18, MID, GAP_R - 18]) lay3(list, x, deck, 0, x, deck - rh, 0);
     }
-    // something set down in the gap
+    // something set down in the gap, under the middle of the walk
     if (d.middle === "post") {
-      lay(list, MID, deck, MID, bed);
+      lay3(list, MID, deck, DW / 2, MID, bed, DW / 2);
     } else if (d.middle === "tower") {
-      const l = MID - SPAN * 0.17, r = MID + SPAN * 0.17;
-      [l, r].forEach(x => lay(list, x, deck, x, bed));
-      lay(list, l, bed, r, deck); lay(list, r, bed, l, deck); lay(list, l, bed, r, bed);
+      const l = MID - SPAN * 0.17, r = MID + SPAN * 0.17, z = DW / 2;
+      for (const x of [l, r]) lay3(list, x, deck, z, x, bed, z);
+      lay3(list, l, bed, z, r, deck, z); lay3(list, r, bed, z, l, deck, z); lay3(list, l, bed, z, r, bed, z);
     }
-    // a coarse surface: short marks along the walk
+    // a coarse surface: short marks across the walk
     if (d.surface === "rough")
-      for (let i = 1; i < 8; i++) {
-        const x = GAP_L + SPAN * i / 8;
-        lay(list, x, deck - 5, x + 10, deck - 5);
-      }
+      for (let i = 1; i < 8; i++) { const x = GAP_L + SPAN * i / 8; lay3(list, x, deck - 4, DW * 0.2, x + 8, deck - 4, DW * 0.8); }
     // ends carried down past the banks to something firmer
-    if (d.ends === "footed") [GAP_L, GAP_R].forEach(x => lay(list, x, deck, x, GROUND_Y + 34));
-    // a roof over the whole length
+    if (d.ends === "footed") for (const x of [GAP_L, GAP_R]) for (const z of [0, DW]) lay3(list, x, deck, z, x, GROUND_Y + 34, z);
+    // a roof over the whole length: posts at the corners, eaves along both edges
     if (d.cover === "roof") {
       const rh = 74;
-      lay(list, GAP_L, deck - rh, GAP_R, deck - rh);
-      [GAP_L, MID, GAP_R].forEach(x => lay(list, x, deck - rh, x, deck - rh + 16));
+      for (const z of [0, DW]) { lay3(list, GAP_L, deck - rh, z, GAP_R, deck - rh, z); for (const x of [GAP_L, MID, GAP_R]) lay3(list, x, deck, z, x, deck - rh, z); }
     }
-    // struts driven back into the banks
-    if (d.bracing === "struts") {
-      lay(list, GAP_L, deck, GAP_L + SPAN * 0.34, deck + 70);
-      lay(list, GAP_R, deck, GAP_R - SPAN * 0.34, deck + 70);
-      lay(list, GAP_L + SPAN * 0.34, deck + 70, GAP_R - SPAN * 0.34, deck + 70);
+    // struts driven back into the banks, under both edges
+    if (d.bracing === "struts") for (const z of [0, DW]) {
+      lay3(list, GAP_L, deck, z, GAP_L + SPAN * 0.34, deck + 70, z);
+      lay3(list, GAP_R, deck, z, GAP_R - SPAN * 0.34, deck + 70, z);
+      lay3(list, GAP_L + SPAN * 0.34, deck + 70, z, GAP_R - SPAN * 0.34, deck + 70, z);
     }
-    return list;
+
+    // ── from the sheet, accepted by both ──
+    const seg = (x1, y1, z1, x2, y2, z2, o) => { const p = P(x1, y1, z1), q = P(x2, y2, z2); strokes.push({ x1: p.x, y1: p.y, x2: q.x, y2: q.y, ...o }); };
+    const poly = (pts, o) => strokes.push({ poly: pts.map(([x, y, z]) => P(x, y, z)), ...o });
+    // a sealed, even surface: a wash over the walk
+    if (X.sealed) poly([[GAP_L, deck, 0], [GAP_R, deck, 0], [GAP_R, deck, DW], [GAP_L, deck, DW]], { fill: "rgba(74,107,79,.18)" });
+    // a footway beside the walk, on the far side, kept clear of it
+    if (X.footway) {
+      const z0 = DW + 16, z1 = z0 + 26;
+      seg(GAP_L, deck, z0, GAP_R, deck, z0, { dash: [7, 6] }); seg(GAP_L, deck, z1, GAP_R, deck, z1, { dash: [7, 6] });
+      for (let i = 0; i <= 4; i++) { const x = GAP_L + SPAN * i / 4; seg(x, deck, z0, x, deck, z1, { dash: [4, 5] }); }
+      // a kerb: the footway's inner edge raised a step
+      if (X.kerb) seg(GAP_L, deck - 7, z0, GAP_R, deck - 7, z0, { width: 4 });
+    } else if (X.kerb) seg(GAP_L, deck - 7, DW, GAP_R, deck - 7, DW, { width: 4 });
+    // a gate at each end: an upright and a bar across the near edge
+    if (X.gate) for (const x of [GAP_L + 6, GAP_R - 6]) { seg(x, deck, 0, x, deck - 40, 0, { width: 4 }); seg(x, deck - 30, 0, x, deck - 30, DW, { width: 3 }); }
+    return { list, strokes };
   }
 
   // Draws into the canvas given, sized to its own box. `shape` may be null,
   // which draws the gap with nothing across it — which is the honest picture
   // before anybody has been understood.
-  global.drawCrossing = function (canvas, shape, world) {
+  global.drawCrossing = function (canvas, shape, world, extras) {
     const box = canvas.getBoundingClientRect();
     const dpr = global.devicePixelRatio || 1;
     const cw = Math.max(1, Math.round(box.width || 400));
@@ -120,6 +145,9 @@
     canvas.style.height = Math.round(H * scale) + "px";
     const ctx = canvas.getContext("2d");
     ctx.scale(scale * dpr, scale * dpr);
+    // Closer in on the gap: the turned view sits smaller in the scene than the
+    // side view did, and the banks are not what anybody is looking at.
+    ctx.translate(600, 370); ctx.scale(1.4, 1.4); ctx.translate(-600 - 40, -370 + 10);
     const bed = bedOf(world);
     ctx.fillStyle = C.paper; ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = C.land;
@@ -127,6 +155,15 @@
     ctx.fillRect(GAP_R, GROUND_Y, W - GAP_R, H - GROUND_Y);
     ctx.fillStyle = C.land2; ctx.fillRect(GAP_L, bed, SPAN, H - bed);
     if (world && world.water) { ctx.fillStyle = C.water; ctx.fillRect(GAP_L, WATER_Y, SPAN, bed - WATER_Y); }
-    assemble(shape, world).forEach((m, i) => drawMatch(ctx, m, i));
+    const { list, strokes } = assemble(shape, world, extras);
+    list.forEach((m, i) => drawMatch(ctx, m, i));
+    // what both people accepted onto the sheet, in the wall's colour
+    for (const st of strokes) {
+      ctx.save();
+      if (st.poly) { ctx.fillStyle = st.fill; ctx.beginPath(); st.poly.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.closePath(); ctx.fill(); }
+      else { ctx.strokeStyle = "#4a6b4f"; ctx.lineWidth = st.width || 2.5; ctx.lineCap = "round"; if (st.dash) ctx.setLineDash(st.dash);
+             ctx.beginPath(); ctx.moveTo(st.x1, st.y1); ctx.lineTo(st.x2, st.y2); ctx.stroke(); }
+      ctx.restore();
+    }
   };
 })(window);

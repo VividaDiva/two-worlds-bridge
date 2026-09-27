@@ -155,3 +155,14 @@ tools fired, what it decided (so many from the kit, so many rules, so many new
 parts, so many with no part), what it proposed, what still has no part, and
 what it asked. When the AI is unsure what someone meant it gives two or three
 readings; the speaker taps one and the line is read again with it.
+
+### The sheet, drawn
+
+The crossing is drawn turned a little (an oblique view), so its width and
+anything beside the walk can be seen. When both people have accepted a new
+part from the sheet, it is drawn as an added layer in the wall's colour — a
+footway as a dashed deck beside the walk, a gate as an upright at each end, a
+kerb as a raised edge, a sealed surface as a wash. Rules stay as text. The
+layer changes nothing about the kit, the choosing or the score; the control
+agent's bridge never carries it. Under the drawing, a legend says what was
+drawn from the sheet and what on the sheet cannot be drawn.

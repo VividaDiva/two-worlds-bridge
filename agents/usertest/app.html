@@ -660,6 +660,14 @@ function stepsStrip(s, st){
   </div>`;
 }
 
+// What the drawing shows from the sheet, and what it cannot.
+const DRAWN = { footway: "footway (dashed, beside the walk)", gate: "gate at each end", kerb: "kerb (raised edge)", sealed: "sealed surface (wash)" };
+function sheetLegend(sd, dark){
+  if (!sd || (!sd.drawn.length && !sd.other.length)) return "";
+  const c = dark ? "rgba(245,240,230,.7)" : "var(--soft)";
+  return `<p style="font-size:12.5px; color:${c}; margin:8px 0 0; line-height:1.5">${sd.drawn.length ? `<b style="color:#4a6b4f">Drawn from the sheet, accepted by both:</b> ${sd.drawn.map(d => esc(DRAWN[d.as] || d.what)).join(" · ")}` : ""}${sd.drawn.length && sd.other.length ? "<br>" : ""}${sd.other.length ? `<b>On the sheet, not drawable:</b> ${sd.other.map(o => esc(o.what)).join(" · ")}` : ""}</p>`;
+}
+
 // Condition B: the bridge, on the person's own screen. What stands, the parts
 // (tap one to talk about it), and Finish — which either person may press; what
 // is unresolved stays visible after.
@@ -675,6 +683,7 @@ function bridgeCard(s, compact){
     <p class="what ${(bridgeTab === "control" && s.control ? s.control.standing : s.standing) ? "" : "none"}">${bridgeTab === "control" && s.control ? (s.control.standing ? esc(s.control.standing) : "nothing built yet") : s.standing ? esc(s.standing)
       : s.thinking ? "the AI is making the first version…"
       : s.bothSpoke ? "nothing yet" : "nothing yet — it makes a first version once you have both said something"}</p>
+    ${bridgeTab === "control" ? "" : sheetLegend(s.sheetDrawn, false)}
     ${s.props && s.props.length ? `<div class="propchips">${s.props.map(p =>
         `<button class="chip" data-part="${esc(p.key)}" ${s.finished ? "disabled" : ""}>${esc(p.text)}</button>`).join("")}</div>
       ${s.finished ? "" : `<p class="foot muted">Tap a part to say something about it.</p>`}` : ""}
@@ -859,7 +868,7 @@ function wire(s){
     const scope = ROLE === "both" ? `#col-${r} ` : "";
     const cv = document.getElementById("crossing-" + r);
     const shownP = bridgeTab === "control" && s.control ? s.control : s;
-    if (cv && window.drawCrossing) drawCrossing(cv, shownP.shape, shownP.world);
+    if (cv && window.drawCrossing) drawCrossing(cv, shownP.shape, shownP.world, shownP === s ? s.sheetDrawn : null);
     document.querySelectorAll(`${scope}[data-pbtab]`).forEach(t => t.onclick = () => { bridgeTab = t.dataset.pbtab; repaint(r); });
     const box = () => document.getElementById("say-" + r);
     const prefill = text => { const b = box(); if (b && !b.value.trim()) { b.value = text; drafts[r] = text; } if (b) { b.focus(); b.setSelectionRange(b.value.length, b.value.length); } };
@@ -1237,6 +1246,7 @@ function resultBar(h){
       <div class="standing">
         <p class="eyebrow">What stands${h.control ? (ctl ? " — control, keys only" : " — toolkit") : ""}</p>
         <p class="what ${v.standing ? "" : "none"}">${v.standing ? esc(v.standing) : "nothing built yet"}</p>
+        ${ctl ? "" : sheetLegend(h.sheetDrawn, true)}
         ${attribution(v)}
       </div>
     </div>
@@ -1307,7 +1317,7 @@ function bothView(){
   // again on resize, because the canvas is sized from its own box.
   const cv = document.getElementById("crossing");
   const shown = h.control && bridgeTab === "control" ? h.control : h;
-  if (cv && window.drawCrossing) drawCrossing(cv, shown.shape, shown.world);
+  if (cv && window.drawCrossing) drawCrossing(cv, shown.shape, shown.world, shown === h ? h.sheetDrawn : null);
   app.querySelectorAll("[data-atab]").forEach(t => t.onclick = () => { agentTab = t.dataset.atab; bothView(); });
   app.querySelectorAll("[data-btab]").forEach(t => t.onclick = () => { bridgeTab = t.dataset.btab; bothView(); });
   const f = document.getElementById("fin");
@@ -1563,7 +1573,8 @@ async function historyView(id){
     lines: rec.transcript, standing: rec.standing, shape: rec.shape, world: rec.world || {},
     provenance: rec.provenance, score: rec.score, thinking: false, sketches: rec.sketches || [],
     agent: rec.agent || "keys", wall: rec.wall || null, retro: rec.retro || {},
-    control: rec.control ? { standing: rec.control.standing, shape: rec.control.shape, world: rec.control.world || {}, provenance: null, lines: rec.control.lines || [], score: rec.control.score || null } : null };
+    control: rec.control ? { standing: rec.control.standing, shape: rec.control.shape, world: rec.control.world || {}, provenance: null, lines: rec.control.lines || [], score: rec.control.score || null } : null,
+    sheetDrawn: rec.sheetDrawn || null };
   const when = t => t ? new Date(t).toLocaleString([], { dateStyle: "full", timeStyle: "short" }) : "";
   app.classList.add("wide");
   app.innerHTML = `
@@ -1583,7 +1594,7 @@ async function historyView(id){
     ${resultBar(h)}`;
   const cv = document.getElementById("crossing");
   const shown = h.control && bridgeTab === "control" ? h.control : h;
-  if (cv && window.drawCrossing) drawCrossing(cv, shown.shape, shown.world);
+  if (cv && window.drawCrossing) drawCrossing(cv, shown.shape, shown.world, shown === h ? h.sheetDrawn : null);
   app.querySelectorAll("[data-atab]").forEach(t => t.onclick = () => { agentTab = t.dataset.atab; historyView(id); });
   app.querySelectorAll("[data-btab]").forEach(t => t.onclick = () => { bridgeTab = t.dataset.btab; historyView(id); });
 }
