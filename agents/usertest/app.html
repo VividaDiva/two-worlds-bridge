@@ -348,6 +348,10 @@ const shareBase = () => (opts && opts.publicUrl) || location.origin;
 // participant only that it could not answer.
 const failNote = (l, host) => {
   const why = l.failed || "";
+  if (host && /denied access|PERMISSION_DENIED|"code":403/i.test(why))
+    return "The builder could not run: Google has denied this key's project access to Gemini (403). Nothing here can be built until the key is replaced — make a new key in Google AI Studio, in a new project if need be, and put it in agents/.env as GEMINI_API_KEY.";
+  if (host && /no longer available/i.test(why))
+    return "The builder could not run: the Gemini model it uses has been retired for this project. Set GEMINI_MODEL in agents/.env to a model the key can reach.";
   if (host && /credits|quota|billing|RESOURCE_EXHAUSTED/i.test(why))
     return "The builder could not run: the Gemini account is out of credits. Top it up in Google AI Studio.";
   if (host && /too long/i.test(why)) return "The builder took too long to answer.";
