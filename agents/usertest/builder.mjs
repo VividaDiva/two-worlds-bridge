@@ -226,7 +226,7 @@ export async function speak({ said, took, before, after, props, wants, avoids, c
     `Asked of you so far: ${list(wants)}.`,
     `Refused so far: ${list(avoids)}.`,
     ...(unsupported.length ? [``, `Asked for, and nothing in your workshop makes it — say so, it is not met: ${unsupported.join("; ")}.`] : []),
-    ...(proposals.length ? [`You have written on the sheet, to be accepted before it counts: ${proposals.map(p => `${p.kind === "rule" ? "a rule" : "a new part"} — ${p.what}`).join("; ")}. Say so in one clause; it is not built.`] : []),
+    ...(proposals.length ? [`Separately — NOT laid, NOT built, NOT part of what stands — you have written on the sheet for both of them to accept: ${proposals.map(p => `${p.kind === "rule" ? "a rule" : "a new part"} — ${p.what}`).join("; ")}. After saying what you laid, add one clause that it is on the sheet, waiting for them. Never say you laid it.`] : []),
     ``,
     `Say your piece.`,
   ].join("\n");

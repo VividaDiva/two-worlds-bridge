@@ -1042,7 +1042,7 @@ function builderColumn(h){
         <span class="stamp">${esc(roleName(a.said.who))} ${a.said.upload ? "showed" : a.said.decision ? "confirmed" : "said"}</span>
         <p class="quote">${a.said.upload ? "their drawing" : esc(a.said.text.slice(0, 120)) + (a.said.text.length > 120 ? "…" : "")}</p>
         ${a.said.taken && a.said.taken.length
-          ? `<p class="read"><span class="lbl">interpreted as</span>${a.said.taken.map(k =>
+          ? `<p class="read"><span class="lbl">interpreted as</span>${[...(a.said.asks || a.said.taken), ...(a.said.refuses || []).map(k => "not: " + k)].map(k =>
                `<span class="key">${esc(k)}</span>`).join("")}</p>`
           : a.said.taken || a.did ? `<p class="read"><span class="lbl">interpreted as</span><span class="key none">nothing it could build from</span></p>` : ""}
         ${a.said.beyond ? `<p class="read"><span class="lbl">couldn't carry</span><span class="key none">${esc(a.said.beyond)}</span></p>` : ""}

@@ -360,7 +360,11 @@ async function decideWall(room) {
   // A card no key carries cannot be answered with a part, whatever the record
   // says: the link to what stands is structural, and the record must agree.
   const keyless = new Set(room.wall.cards.filter(c => !c.keys.length).map(c => c.id));
-  for (const d of rec.decisions) if (d.response === "part" && keyless.has(d.id)) d.response = "none";
+  for (const d of rec.decisions) {
+    if (d.response === "part" && keyless.has(d.id)) d.response = "none";
+    // ...and a need the kit already carries is answered with the part, never a new one.
+    if (d.response === "new" && !keyless.has(d.id)) d.response = "part";
+  }
   room.wall.record = { ...rec, at: Date.now() };
   const byId = Object.fromEntries(room.wall.cards.map(c => [c.id, c]));
   // Rules and new parts go on the sheet, once per card, to be accepted by both.
