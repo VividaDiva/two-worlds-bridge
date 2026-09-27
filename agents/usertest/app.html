@@ -1036,7 +1036,7 @@ function builderColumn(h){
                 ? `<p class="move"><span class="relayto">told ${esc(roleName(a.did.about === "A" ? "B" : "A"))}</span>${esc(a.did.text)}</p>`
                 : `<p class="move">${esc(a.did.text)}</p>
                  ${a.did.built ? `<span class="made">→ ${esc(a.did.built)}</span>` : ""}
-                 ${a.did.steps ? stepsStrip(h, a.did.steps) : ""}`)
+                 ${a.did.steps ? stepsStrip(h, { ...a.did.steps, tools: [] }) : ""}`)
           : a.held ? `<p class="move muted">Held — it builds once, after both of them have spoken.</p>`
           : a.heard ? `<p class="move muted">Heard — it builds when one of them confirms a decision.</p>`
           : `<p class="move muted">${a.said.phase === "confer"
