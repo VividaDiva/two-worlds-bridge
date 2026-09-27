@@ -99,3 +99,33 @@ contribution, whether both could change the outcome, and what was left open.
 For a comparison, pair `develop` with `both` on the same argument: two
 separate contributions built once, against the same two people developing a
 first version together.
+
+## The Wall: hearing and thinking through the Toolmakers' Kit
+
+On any route the desk's bar has a third row — **AI hears: keys only** or
+**with the Wall**. With the wall on, the AI keeps one card per distinct need:
+whose it is; how it reached the AI (said to it, reported by the other person,
+or its own inference — on a route where it never hears Role 1, Role 1's needs
+are never "said to it"); the words; the need in their terms; the reason they
+gave or a hypothesis labelled as one; which keys carry it, or none; a theme.
+The kit's tools fire on their triggers and leave a trace on the card and in a
+log: laddering, three readings, empathy, journey, how-might-we, job story. A
+question is asked only where the route lets that speaker hear the AI.
+
+Before each build the AI writes a decision record — part, rule or none per
+card, with any uncertainty, conflicts only where one card asks for what
+another rules out, and four checks — which the chooser is handed as context.
+After each build every card is linked to what stands, computed from keys:
+met, partly met, not met, or no part for it. Nothing is met because it was
+planned, and the spoken line has to name what it could not carry. On the
+relay routes the message to the other person is composed from the cards.
+
+The same keys feed the same tally, so what is built is chosen the same way
+with the wall on or off; records carry `agent: "keys" | "wall"`. The
+facilitator sees the wall, the tool trace and the record on the desk and in
+history; on the `develop` route both people see it, and after Finish each is
+asked to describe the bridge as they see it (the retrospective walkthrough,
+kept apart from the score, under `retro`).
+
+Not automated, by design: open card sort, dot voting, Kano, repertory grid,
+Wizard of Oz. Those are research activities the facilitator runs.
