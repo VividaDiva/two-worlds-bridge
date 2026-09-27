@@ -524,7 +524,8 @@ export async function wallHear({ routeNote, canAsk, wall, line, speaker, pureToo
     `The route: ${routeNote}`,
     canAsk ? `You may ask ${speaker} one question; they will see it.` : `You may not ask anything on this route.`,
     ``,
-    `The wall so far:`, existing,
+    `The wall so far:`, pureToolkit ? JSON.stringify(live.map(({keys,rulesOut,versions,...c})=>c)) : existing,
+    ...(pureToolkit ? [`Pending clarification: ${JSON.stringify(wall.question || null)}`] : []),
     ``,
     `${speaker} said: "${line}"`,
     ``,
@@ -532,12 +533,17 @@ export async function wallHear({ routeNote, canAsk, wall, line, speaker, pureToo
   ].join("\n");
   const schema = structuredClone(HEAR_JSON);
   if (pureToolkit) {
+    schema.properties.updates.items={type:"object",properties:{id:{type:"string"},change:{type:"string"},action:{type:"string",enum:["revise","withdraw","note"]},explicit:{type:"boolean"},evidence:{type:"string"},need:{type:"string"},why:{type:"string"},concern:{type:"string"},when:{type:"string"}},required:["id","change","action","explicit","evidence","need","why","concern","when"]};
+    schema.properties.answeredQuestion={type:"boolean"};schema.properties.clarificationNeeded={type:"boolean"};schema.required.push("answeredQuestion","clarificationNeeded");
     delete schema.properties.cards.items.properties.keys;
     delete schema.properties.cards.items.properties.rulesOut;
     schema.properties.cards.items.required = schema.properties.cards.items.required.filter(k => !["keys","rulesOut"].includes(k));
   }
   const instruction = pureToolkit ? HEAR.replace(/- keys:[\s\S]*?(?=Tools\.)/, "Describe needs in natural language, including explicit prohibitions. Do not translate them into feature codes. Use theme to group related needs.\n\n") : HEAR;
-  const out = await ask(instruction, user, schema);
+  const updateRules = pureToolkit ? `
+For an existing need, use updates, not a duplicate card. action=revise only for an explicit replacement or clarification by its owner; return the COMPLETE updated need, why, concern and when, preserving unchanged details. action=withdraw only for an explicit owner withdrawal. evidence must be an exact substring of the NEW line. Never treat a teammate's report, a suggestion, acknowledgement, or your hypothesis as an owner revision: use action=note, explicit=false. Pending changes are unconfirmed, not active requirements. An explicit owner reply may confirm or reject an earlier pending proposal; express the resulting complete requirement in an owner revision.
+Set clarificationNeeded=true when the speaker leaves alternatives unresolved that would produce different builds (for example painted markings versus a physical barrier), or explicitly requests clarification about such uncertainty. Then provide one concrete question in ask when allowed. Do not treat unresolved alternatives as an agreed requirement. Set it false for mere stylistic preferences or already answered questions. Set answeredQuestion=true only if the NEW line is from the pending question's addressee and actually answers that question. Unrelated messages and another person's answer do not resolve it. Incorporate the answer into the relevant card using an update. Ask at most one question to the current speaker, only if the ambiguity changes a build. If a pending question exists, or you just received its answer, leave ask empty. Never assume consent to a design from a clarification.` : "";
+  const out = await ask(instruction + updateRules, user, schema);
   const clean = xs => (Array.isArray(xs) ? xs : []).filter(k => k in FEATURES).slice(0, 3);
   const str = x => typeof x === "string" ? x.trim() : "";
   const cards = (Array.isArray(out.cards) ? out.cards : []).slice(0, 3).map(c => ({
@@ -550,12 +556,14 @@ export async function wallHear({ routeNote, canAsk, wall, line, speaker, pureToo
     readings: (Array.isArray(c.readings) ? c.readings : []).map(str).filter(Boolean).slice(0, 3),
     hmw: str(c.hmw).slice(0, 140), story: str(c.story).slice(0, 200),
     conflictsWith: (Array.isArray(c.conflictsWith) ? c.conflictsWith : []).map(str).filter(Boolean),
-  }));
+  })).filter(c => c.need);
   return {
     cards,
-    updates: (Array.isArray(out.updates) ? out.updates : []).map(u => ({ id: str(u.id), change: str(u.change).slice(0, 160) })).filter(u => u.id && u.change),
+    updates: (Array.isArray(out.updates) ? out.updates : []).map(u => ({ id: str(u.id), change: str(u.change).slice(0, 160), ...(pureToolkit ? {action:["revise","withdraw"].includes(u.action)?u.action:"note",explicit:u.explicit===true,evidence:str(u.evidence),need:str(u.need).slice(0,500),why:str(u.why).slice(0,300),concern:str(u.concern).slice(0,300),when:str(u.when).slice(0,200)} : {}) })).filter(u => u.id && u.change),
     tools: (Array.isArray(out.tools) ? out.tools : []).map(t => ({ tool: str(t.tool).toLowerCase(), why: str(t.why).slice(0, 140) })).filter(t => t.tool),
-    ask: canAsk ? str(out.ask).slice(0, 160) : "",
+    clarificationNeeded: pureToolkit && out.clarificationNeeded===true,
+    answeredQuestion: pureToolkit && out.answeredQuestion===true,
+    ask: canAsk ? str(out.ask).slice(0, 300) : "",
   };
 }
 
@@ -604,6 +612,7 @@ export async function wallDecide({ wall, standing, props, pureToolkit = false })
     ``,
     standing ? `What stands now: ${standing} — ${list(props)}.` : `Nothing stands yet.`,
     ``,
+    ...(pureToolkit ? [`Current canonical needs and revision history (pending changes are NOT accepted): ${JSON.stringify(cards.map(({keys,rulesOut,versions,...c})=>c))}`, `Clarification status: ${JSON.stringify(wall.question || null)}. Unanswered means uncertain, not consent.`] : []),
     `Write the decision record.`,
   ].join("\n");
   const instruction = pureToolkit ? DECIDE.replace("a part you can make delivers it — the card's keys name what.", "a described part in the available workshop could address this need; cite the part and preserve uncertainty.") + "\nAvailable workshop:\n" + kitForChoosing().map(k=>k.id + ": " + k.props).join("\n") : DECIDE;
@@ -672,6 +681,7 @@ export async function chooseBuildT({ cards, record, standing, said, pictures = [
     `The wall:`,
     ...cards.map(c => `  [${c.id}] ${c.who}, ${via(c)}: "${c.quote}" → ${c.need}${c.why ? " — " + c.why : ""}${c.concern ? " · concern: " + c.concern : ""}${c.when ? " · when: " + c.when : ""}`),
     ``,
+    `Canonical needs and revision history (only current need is active; pending changes are unconfirmed): ${JSON.stringify(cards.map(({keys,rulesOut,versions,...c})=>c))}`,
     `Your decision record:`,
     record || "  (none yet)",
     ``,
@@ -703,6 +713,6 @@ export async function readPictureToolkit(base64, media) {
   return {description:String(out.description || ""),saw:String(out.description || "")};
 }
 export async function toolkitReply({cards,record,before,after,change,question,relayTo}) {
-  const out = await ask("You are an AI builder collaborating with two people using a design toolkit. Explain your contribution from their stated needs and the decision record. Preserve whose words they are, distinguish hypotheses, and name unresolved needs. Do not invent tool use or claim acceptance. Do not output feature keys. If relaying, pass on the needs to the named person without claiming a build. Otherwise briefly state what changed, why, and what remains open. Ask at most the supplied question. Return a short text.", JSON.stringify({needs:cards.map(({who,quote,need,why,concern,when,readings,story})=>({who,quote,need,why,concern,when,readings,story})),decisions:record,before,after,change,question,relayTo}), {type:"object",properties:{text:{type:"string"}},required:["text"]});
+  const out = await ask("You are an AI builder collaborating with two people using a design toolkit. Explain your contribution from their stated needs and the decision record. Preserve whose words they are, distinguish hypotheses, and name unresolved needs. Do not invent tool use or claim acceptance. Do not output feature keys. If relaying, pass on the needs to the named person without claiming a build. Otherwise briefly state what changed, why, and what remains open. A checked explicit revision confirms the person’s requirement, not approval of the design: do not relabel that requirement as a hypothesis. When not relaying, after is the actual base geometry already built; state it accurately. Rule and new-part decisions are proposals, not installed geometry. Ask at most the supplied question. Return a short text.", JSON.stringify({needs:cards.map(({who,quote,need,why,concern,when,readings,story,checked,changes})=>({who,quote,need,why,concern,when,readings,story,checked,changes})),decisions:record,before,after,change,question,relayTo}), {type:"object",properties:{text:{type:"string"}},required:["text"]});
   return String(out.text || "");
 }

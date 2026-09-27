@@ -24,6 +24,14 @@ test('exclusive pipelines: real prompts, corrections, images, restart, and legac
  else if(p.say)out={say:'KEY RESPONSE'};
  else if(p.text)out={text:'TOOLKIT RESPONSE'};
  else {for(const [k,v] of Object.entries(p))out[k]=v.enum?.[0]||'A crossing';}
+ if(p.cards && typeof req.contents==='string'){
+  const line=req.contents.split(' said: "').at(-1).split('"')[0];
+  if(line==='REV_START'){out.cards[0].need='Open all day';out.cards[0].quote='REV_START';out.ask='';out.clarificationNeeded=true;out.cards[0].concern='The exact opening hours are not specified';}
+  if(['REV_OTHER','REV_OWNER','REV_BUILD'].includes(line)){
+   out.cards=[];out.ask='';out.answeredQuestion=line==='REV_OWNER';
+   out.updates=line==='REV_BUILD'?[]:[{id:'n1',action:'revise',explicit:true,evidence:line,need:'Open 07:00–23:00',change:'Change hours',why:'',concern:'',when:'07:00–23:00'}];
+  }
+ }
  return {text:JSON.stringify(out)};
  }};}`;
  const hook=path.join(dir,'hook.mjs');fs.writeFileSync(hook,`import {registerHooks} from 'node:module';registerHooks({resolve(s,c,next){return s==='@google/genai'?{url:${JSON.stringify('data:text/javascript,'+encodeURIComponent(sdk))},shortCircuit:true}:next(s,c)}})`);
@@ -87,7 +95,21 @@ test('exclusive pipelines: real prompts, corrections, images, restart, and legac
   }
 
  }
+ const rev=await post('/api/create',{argument:'pairs',route:'all',agent:'toolkit'});
+ await post('/api/say',{room:rev.room,role:'A',text:'REV_START'});let rh=await settled(rev.room);
+ assert.ok(rh.lines.some(l=>l.clarification));assert.ok(!rh.shape);
+ const frozen=JSON.stringify(rh.lines[0].interpretations);
+ await post('/api/say',{room:rev.room,role:'B',text:'REV_OTHER'});rh=await settled(rev.room);
+ assert.equal(rh.wall.cards[0].need,'Open all day');assert.equal(rh.wall.question.status,'pending');
+ await post('/api/say',{room:rev.room,role:'A',text:'REV_OWNER'});rh=await settled(rev.room);
+ assert.equal(rh.wall.cards[0].need,'Open 07:00–23:00');assert.equal(rh.wall.question.status,'answered');assert.ok(!rh.shape);
+ assert.equal(JSON.stringify(rh.lines[0].interpretations),frozen);
+ const next=calls().length;
+ await post('/api/say',{room:rev.room,role:'A',text:'REV_BUILD',mode:'build'});rh=await settled(rev.room);assert.ok(rh.shape);
+ assert.ok(calls().slice(next).filter(c=>c.schema.properties.text).some(c=>JSON.stringify(c.contents).includes("explicit revision")));
+ for(const c of calls().slice(next).filter(c=>c.schema.properties.decisions || c.schema.properties.build))assert.ok(JSON.stringify(c.contents).includes('Open 07:00–23:00'));
  await stop();await start();
+ rh=await settled(rev.room);assert.equal(rh.wall.cards[0].need,'Open 07:00–23:00');assert.equal(rh.wall.question.status,'answered');
  for(let i=0;i<ids.length;i++){const h=await settled(ids[i]);assert.equal(h.agent,['toolkit','keys'][i]);assert.equal(h.control,null);assert.ok(h.lines.some(l=>l.corrected));assert.equal(h.lines[0].interpretations.length,2)}
  // A historical record without a mode stays explicitly legacy, never relabeled.
  await stop();const f=path.join(dir,'sessions',ids[0]+'.json');const old=JSON.parse(fs.readFileSync(f));delete old.agent;fs.writeFileSync(f,JSON.stringify(old));await start();assert.equal((await settled(ids[0])).agent,'both');

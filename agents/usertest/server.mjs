@@ -10,6 +10,7 @@
 //
 // The key lives in this process. Participants never hold it and never see it.
 import http from "node:http";
+import {applyNeedUpdates,publishClarification} from "./toolkit-state.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -171,6 +172,8 @@ function view(room, role) {
         ...(e.talk ? { talk: true } : {}),
         ...(e.upload ? { upload: true } : {}),
         ...(e.relay ? { relay: true, about: e.about } : {}),
+        ...(e.clarification ? {clarification:true,questionFor:e.questionFor,questionStatus:e.questionStatus} : {}),
+        ...(e.understandingUpdate ? {understandingUpdate:true} : {}),
         // It laid something and would not say why. Distinct from saying nothing,
         // and the trace should not show an empty bubble as though it had.
         ...(e.failed ? { failed: e.failed } : {}),
@@ -334,7 +337,7 @@ const pending = room => (room.wall?.sheet || []).filter(p => !(p.accepted.A && p
 // goes on afterwards.
 const canAskOn = (room, who) => {
   const r = ROUTES[room.route];
-  return !!(r.open && r.see[who] && r.see[who].echo);
+  return !!(!ARGUMENTS[room.argument].upload && r.open && r.see[who] && r.see[who].echo);
 };
 
 // Hear one line, both ways. The keys-only reader — the one every recorded
@@ -378,10 +381,17 @@ async function hearLine(room, line) {
     room.wall.cards.push({ ...c, id, via, line: index, at, met: null, changes: [], withdrawn: false });
     ids.push(id);
   }
-  for (const u of heard.updates) {
+  if(modeOf(room)==="toolkit" && heard.clarificationNeeded && !heard.ask && canAskOn(room,line.who)) {
+    const c=room.wall.cards.find(c=>ids.includes(c.id) && c.who===line.who && (c.readings?.length || c.concern)) || room.wall.cards.find(c=>ids.includes(c.id) && c.who===line.who);
+    if(c) heard.ask=`Could you clarify what you mean by “${c.need}”${c.readings?.length ? ` — ${c.readings.join(" or ")}` : c.concern ? `, particularly “${c.concern}”` : ""}?`;
+  }
+  const revision = modeOf(room) === "toolkit" ? applyNeedUpdates(room.wall,heard.updates,{who:line.who,text:line.text,line:index,at}) : null;
+  for (const u of revision ? [] : heard.updates) {
     const card = room.wall.cards.find(c => c.id === u.id);
     if (card) { card.changes.push({ at, line: index, change: u.change }); if (/withdr|no longer|drop/i.test(u.change)) card.withdrawn = true; }
   }
+  if(revision?.applied.length && ROUTES[room.route].open) room.transcript.push({who:"builder",phase:"main",understandingUpdate:true,text:"Updated " + WHO[line.who] + "’s needs: " + revision.applied.map(id=>{const c=room.wall.cards.find(c=>c.id===id);return c.withdrawn ? "withdrawn: " + c.need : c.need;}).join("; ") + ". This updates my understanding, not the bridge.",built:null,at});
+  if(modeOf(room)==="toolkit") publishClarification(room,line,heard,canAskOn(room,line.who));
   const tools = heard.tools.map(t => ({ ...t, facilitatorRun: FACILITATOR_TOOLS.has(t.tool) }));
   // The member check: offered where the person can hear and answer; otherwise
   // the uncertainty is kept and said so.
@@ -394,7 +404,7 @@ async function hearLine(room, line) {
   line.beyond = modeOf(room) === "toolkit" ? "" : mine.filter(c => !c.keys.length).map(c => c.need).join("; ");
   line.cards = ids; line.tools = tools; line.ask = heard.ask; line.memberCheck = memberCheck;
   const affected = new Set([...ids,...heard.updates.map(u=>u.id)]);
-  captureReading(room,line,{kind:"toolkit",cards:room.wall.cards.filter(c=>affected.has(c.id)),tools,updates:heard.updates,ask:heard.ask,memberCheck});
+  captureReading(room,line,{kind:"toolkit",cards:room.wall.cards.filter(c=>affected.has(c.id)),tools,updates:heard.updates.map(u=>({...u,...(revision ? {status:room.wall.cards.find(c=>c.id===u.id)?.changes.filter(x=>x.line===index).at(-1)?.status || "pending"} : {})})),ask:heard.ask,memberCheck});
 }
 
 // What the wall took from one line, in its own words — for the spoken line.
@@ -449,7 +459,7 @@ async function decideWall(room) {
     if (d.response !== "rule" && d.response !== "new") continue;
     // Declined once is declined: it is not put back on the sheet, and the
     // record says "none" for that card until somebody raises it again.
-    if (room.wall.sheet.some(p => p.cardId === d.id && p.declined)) { d.response = "none"; continue; }
+    if (room.wall.sheet.some(p => p.cardId === d.id && p.declined && !p.superseded)) { d.response = "none"; continue; }
     const had = room.wall.sheet.find(p => p.cardId === d.id && !p.declined);
     if (had) { had.kind = d.response; had.what = d.what; continue; }
     room.wall.sheet.push({ id: "s" + (room.wall.sheet.length + 1), cardId: d.id, kind: d.response, what: d.what,
@@ -572,7 +582,7 @@ async function layExclusive(room,line,develop,clarification) {
     : await chooseBuild({wants:[...room.ctx.wants.keys()],avoids:[...room.ctx.avoids.keys()],standing:before ? NAME(before):null,said,pictures:Object.entries(room.uploads).filter(([r])=>room.seenPicture?.[r]).map(([r,p])=>({who:WHO[r],needs:p.needs || []}))});
   if (choose.id) room.ctx.design = KIT.find(k=>k.id===choose.id) || room.ctx.design;
   room.standing = room.ctx.design?.id || null;
-  const text = toolkit ? await toolkitReply({cards:activeCards(room),record:room.wall.record,before:before ? NAME(before):null,after:room.standing ? NAME(room.standing):null,change:clarification || line?.text,question:line?.ask || ""})
+  const text = toolkit ? await toolkitReply({cards:activeCards(room),record:room.wall.record,before:before ? NAME(before):null,after:room.standing ? NAME(room.standing):null,change:clarification || line?.text,question:""})
     : await speak({said:clarification || line?.text || said.map(x=>x.text).join(" "),took:line?.taken || [],before:before ? NAME(before):null,after:room.standing ? NAME(room.standing):null,props:room.ctx.design?.has || [],wants:[...room.ctx.wants.keys()],avoids:[...room.ctx.avoids.keys()],changed:before!==room.standing});
   if (toolkit) linkWall(room);
   room.transcript.push({who:"builder",text,phase:"main",built:room.standing ? NAME(room.standing):null,proposal:develop,at:Date.now(),...(toolkit ? {decisionSnapshot:structuredClone({at:Date.now(),sourceLine:line ? room.transcript.indexOf(line):null,cards:room.wall.cards,record:room.wall.record,sheet:room.wall.sheet,before:before ? NAME(before):null,after:room.standing ? NAME(room.standing):null}),steps:stepsFor(room,line || {})} : {diff:diffOf(room,beforeHas,room.ctx.design?.has || [])})});
@@ -1103,7 +1113,7 @@ const srv = http.createServer(async (req, res) => {
       r.turn++;
       push(id);
       json(res, 200, { ok: true });
-      if (decide || hears) { await builderTurn(r, line); push(id); }
+      if (decide || hears) enqueue(r, async () => { await builderTurn(r, line); push(id); });
       return;
     }
 
@@ -1150,7 +1160,7 @@ const srv = http.createServer(async (req, res) => {
     try {
       const arg = ARGUMENTS[r.argument];
       const ground = r.ctx.world.water ? "water" : r.ctx.world.rock ? "a drop in rock" : "";
-      const out = await sketch({ title: arg.title, ground, lines, references, outcome:r.transcript.filter(e=>e.who==="builder"&&e.text).at(-1)?.text || "" });
+      const out = await sketch({ title: arg.title, ground, lines, references, outcome:r.transcript.filter(e=>e.who==="builder"&&e.text&&!e.clarification&&!e.understandingUpdate).at(-1)?.text || "" });
       const n = (r.sketches || []).length + 1;
       fs.writeFileSync(path.join(UPLOADS, `${id}-sketch-${n}.png`), Buffer.from(out.base64, "base64"));
       (r.sketches ||= []).push({ n, at: Date.now(), turn: r.turn, lines: lines.length, media: out.media, prompt: out.prompt, source:references.length ? "reference assets" : "conversation", references:references.length });
