@@ -423,7 +423,7 @@ td.y{color:var(--moss); font-weight:600} td.n{color:var(--rust)}
 </head>
 <body>
 <nav class="topnav" id="topnav" hidden>
-  <a class="navlink" href="/">New room</a>
+  <a class="navlink" id="new-room" href="/desk">New room</a>
   <a class="navlink" href="/history">History</a>
 </nav>
 <div class="wrap stack" id="app"><p class="muted" id="opening">Opening the room…</p></div>
@@ -910,13 +910,16 @@ const both = { A:null, B:null, host:null };
 // Watch one room on the dashboard. Switching tabs used to reload the whole page,
 // which through the tunnel meant a second or two of the browser's loading cursor
 // over tabs that looked dead. Now the old room's streams are closed and the new
-// room's opened in place; the old room stays on screen until the new one has
-// arrived, so there is never a blank page in between.
+// room's opened in place. Remove the previous conversation while loading so
+// neither stale messages nor old composers appear under the new room URL.
 let stopBoth = [];
 function watchBoth(room){
   stopBoth.forEach(stop => stop());
   both.A = both.B = both.host = null;
   seen = {}; drafts = {};
+  app.innerHTML = `<div class="card" role="status"><p>Opening the room…</p>
+    <p class="muted">Previous conversations are saved in History.</p></div>`;
+  document.getElementById("new-room").onclick = e => e.preventDefault();
   stopBoth = [
     listen(room, "A", s => { both.A = s; bothView(); }),
     listen(room, "B", s => { both.B = s; bothView(); }),
@@ -1151,6 +1154,13 @@ function bothView(){
   const sk = document.getElementById("sketch");
   if (sk) sk.onclick = () => { sk.disabled = true; sk.textContent = "Drawing…"; post("/api/sketch", { room: a.room }); };
   const base = { argument: a.argument, route: a.route, wall: h.agent === "wall" };
+  document.getElementById("new-room").onclick = e => {
+    e.preventDefault();
+    if (openRoom.busy) return;
+    clearTimeout(choose.timer);
+    picking = null;
+    openRoom(base.argument, base.route, base.wall);
+  };
   app.querySelectorAll("[data-fa]").forEach(x => x.onclick = () => choose(base, { argument: x.dataset.fa }));
   app.querySelectorAll("[data-fr]").forEach(x => x.onclick = () => choose(base, { route: x.dataset.fr }));
   app.querySelectorAll("[data-fw]").forEach(x => x.onclick = () => choose(base, { wall: x.dataset.fw === "wall" }));
@@ -1251,11 +1261,12 @@ async function openRoom(argument, route, wall){
   openRoom.busy = true;
   let want = { argument, route, wall: !!wall };
   for (;;) {
-    const { ok, j } = await post("/api/create", want);
+    const { ok, j } = await post("/api/create", want)
+      .catch(() => ({ ok: false, j: {} }));
     if (!ok) {
       openRoom.busy = false; picking = null;
       const note = document.getElementById("switching");
-      if (note) { note.hidden = false; note.textContent = "Could not open a room — try that tab again."; }
+      if (note) { note.hidden = false; note.textContent = "Could not open a new room. Your current conversation is kept; please try again."; }
       document.querySelector(".filters")?.classList.remove("busy");
       return;
     }

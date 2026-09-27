@@ -684,24 +684,24 @@ const srv = http.createServer(async (req, res) => {
     return res.end(fs.readFileSync(path.join(here, "app.html"), "utf8"));
   }
 
-  // One door for the facilitator: the newest desk that is still open, or a
-  // fresh one when there is none. The desk itself switches use case and route
-  // in place, so nobody has to carry room codes around.
+  // The public entry always starts a fresh session. Existing room-specific
+  // links still resume that room; its transcript remains available in History.
   if (req.method === "GET" && p === "/desk") {
-    let live = [...rooms.values()].filter(r => !r.finished)
-      .sort((x, y) => String(y.createdAt).localeCompare(String(x.createdAt)))[0];
-    if (!live) {
-      const last = [...rooms.values()].sort((x, y) => String(y.createdAt).localeCompare(String(x.createdAt)))[0];
-      const argument = last?.argument || Object.keys(ARGUMENTS)[0], route = last?.route || Object.keys(ROUTES)[0];
-      let id = code();
-      while (rooms.has(id) || fs.existsSync(path.join(SESSIONS, `${id}.json`))) id = code();
-      live = { id, argument, route, ctx: mkCtx(), turn: 0, transcript: [], uploads: {}, standing: null,
-               thinking: false, finished: false, sketches: [], wall: last?.wall ? newWall() : null, retro: {},
-               createdAt: new Date().toISOString() };
-      rooms.set(id, live); streams.set(id, new Set());
-      try { record(live); } catch (e) { console.error(`could not save ${id}: ${e.message}`); }
+    // A fresh room every time (the previous conversation stays in History), on
+    // the same use case, route and agent as the last one opened.
+    const last = [...rooms.values()].sort((x, y) => String(y.createdAt).localeCompare(String(x.createdAt)))[0];
+    const argument = last?.argument || Object.keys(ARGUMENTS)[0], route = last?.route || Object.keys(ROUTES)[0];
+    let id = code();
+    while (rooms.has(id) || fs.existsSync(path.join(SESSIONS, `${id}.json`))) id = code();
+    const live = { id, argument, route, ctx: mkCtx(), turn: 0, transcript: [], uploads: {}, standing: null,
+      thinking: false, finished: false, sketches: [], wall: last?.wall ? newWall() : null, retro: {},
+      createdAt: new Date().toISOString() };
+    try { record(live); } catch (e) {
+      console.error(`could not save ${id}: ${e.message}`);
+      return json(res, 500, { error: "Could not save a new room. Please try again." });
     }
-    res.writeHead(302, { location: `/j/${live.id}/both` }); return res.end();
+    rooms.set(id, live); streams.set(id, new Set());
+    res.writeHead(302, { location: `/j/${live.id}/both`, "cache-control": "no-store" }); return res.end();
   }
 
   if (p === "/api/options") return json(res, 200, {

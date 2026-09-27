@@ -22,6 +22,13 @@ Open **http://localhost:8780/**. Pick what they are arguing about and how their
 words are allowed to travel, then open a room. You get two links — send one to
 each person, on their own phone or laptop.
 
+Opening `/desk` (the public `live.html` entry) starts a fresh room with an empty
+chat. **New room** on the facilitator desk starts another room with the same
+scenario and route. Previous conversations stay in **History**, including both
+participants' messages and AI replies. Use a room-specific `/j/<room>/both`,
+`/A`, or `/B` link to resume or refresh an existing session. A new room has new
+participant links; existing participants remain in their original room.
+
 The key stays in this process. Participants never hold it and never see it.
 
 ## What each person sees
@@ -44,7 +51,7 @@ supplies one in the other four arguments.
 
 ## What is kept
 
-Ending a session writes `sessions/<room>.json`: who said what, in what order,
+Each change saves `sessions/<room>.json`: who said what, in what order,
 what the builder took each line to mean, what it built, and what each person
 needed. Uploaded pictures are written to `uploads/`.
 
@@ -58,8 +65,8 @@ said in it is theirs, not the repository's.
   `gemini-flash-lite-latest`, which is what sat in this chair for every
   published session of the machine experiment — `run.mjs` runs with
   `--machine gemini`, so Role 3 was never Claude.
-- Rooms live in memory. Restarting the server ends any session in progress —
-  finish a session before restarting.
+- Saved rooms are restored after a server restart. History remains available;
+  reopening the public entry still starts a fresh room.
 - A line naming a made thing is refused back to the person with the word named,
   so they can say it another way. That is the rule working, not an error.
 
