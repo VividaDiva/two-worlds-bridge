@@ -15,7 +15,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { mkCtx, hear, newTurn, build, provenance } from "../engine.mjs";
 import { ARGUMENTS, ROUTES, NAME, FEATURES, KIT, propsOf } from "./kit.mjs";
-import { readLine, chooseBuild, speak, readPicture, relay, sketch, readLineB, chooseBuildB, propose } from "./builder.mjs";
+import { readLine, chooseBuild, speak, readPicture, relay, sketch, readLineB, chooseBuildB, propose,
+         wallHear, wallDecide, relayFromWall } from "./builder.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 8780);
@@ -110,6 +111,12 @@ function view(room, role) {
     // AI's reading of every line (marked as its guess), and at the end what was
     // left unresolved. On every other route these stay with the facilitator.
     develop: dev,
+    // With the wall on, the builder keeps a card per need. The facilitator
+    // always sees the wall; on condition B both people do — it is the thing they
+    // respond to. On the other routes a person's page stays as it was.
+    agent: room.wall ? "wall" : "keys",
+    wall: room.wall && (role === "host" || dev) ? room.wall : null,
+    retro: role === "host" ? (room.retro || {}) : room.retro && room.retro[role] ? { [role]: room.retro[role] } : {},
     bothSpoke: dev ? bothSpoke(room) : null,
     props: dev && room.ctx.design ? room.ctx.design.has.map(f => ({ key: f, text: FEATURES[f] })) : [],
     unresolved: dev ? unresolved(room) : null,
@@ -136,6 +143,9 @@ function view(room, role) {
         // having. The dashboard draws its agent panels from the host stream, so
         // it loses nothing by this.
         ...((role === "host" || dev) && e.taken ? { taken: e.taken, asks: e.asks || [], refuses: e.refuses || [] } : {}),
+        // The wall's trace for this line: which cards it made, which tools fired,
+        // and the question it asked, if the route allowed one.
+        ...((role === "host" || dev) && e.cards ? { cards: e.cards, tools: e.tools || [], ask: e.ask || "" } : {}),
         // Condition B: the line's number (to answer or correct it), what it asked
         // for that no key carries, what it was about, what it built on, how it
         // was corrected, and for the AI's lines what changed and what else it offered.
@@ -163,6 +173,7 @@ function record(room) {
   const rec = {
     room: room.id, argument: room.argument, title: arg.title,
     route: room.route, arrow: route.arrow, version: route.develop ? "B" : "A",
+    agent: room.wall ? "wall" : "keys", wall: room.wall || null, retro: room.retro || {},
     createdAt: room.createdAt, updatedAt: new Date().toISOString(),
     finished: room.finished,
     // Enough to carry on from, not only to read back.
@@ -254,6 +265,94 @@ const body = req => new Promise((resolve, reject) => {
   req.on("end", () => { try { resolve(b ? JSON.parse(b) : {}); } catch (e) { reject(e); } });
 });
 
+// ── the wall ──────────────────────────────────────────────────────────────
+// The Toolmakers' Kit as the builder's hearing and thinking. One card per need,
+// kept for the room; the tools fire on their triggers and leave a trace on the
+// card and in the log; before a build a decision record; after it, every card
+// linked to what stands. The same tally and the same kit sit underneath, so a
+// room with the wall on builds from the same keys as one with it off.
+const newWall = () => ({ cards: [], log: [], record: null });
+
+// Which of the route's people this speaker may be asked a question: only where
+// the route lets them hear the builder at all, and only where the conversation
+// goes on afterwards.
+const canAskOn = (room, who) => {
+  const r = ROUTES[room.route];
+  return !!(r.open && r.see[who] && r.see[who].echo);
+};
+
+// Hear one line: onto the wall with the wall on, into keys either way.
+async function hearLine(room, line) {
+  if (!room.wall) {
+    const dev = !!ROUTES[room.route].develop;
+    const read = dev ? await readLineB(line.text) : await readLine(line.text);
+    line.asks = read.asks; line.refuses = read.refuses;
+    if (dev) line.beyond = read.beyond;
+    line.taken = [...read.asks, ...read.refuses];
+    return;
+  }
+  const route = ROUTES[room.route];
+  const heard = await wallHear({
+    routeNote: `${route.arrow}. ${route.note}`,
+    canAsk: canAskOn(room, line.who),
+    wall: room.wall, line: line.text, speaker: WHO[line.who],
+  });
+  const at = Date.now(), index = room.transcript.indexOf(line);
+  const ids = [];
+  for (const c of heard.cards) {
+    const id = "n" + (room.wall.cards.length + 1);
+    // On a route where this speaker cannot have heard the other, a card about
+    // the other person can only be reported or inferred — never direct.
+    const via = c.who !== line.who && c.via === "direct" ? `reported-by-${line.who}` : c.via;
+    room.wall.cards.push({ ...c, id, via, line: index, at, met: null, changes: [], withdrawn: false });
+    ids.push(id);
+  }
+  for (const u of heard.updates) {
+    const card = room.wall.cards.find(c => c.id === u.id);
+    if (card) { card.changes.push({ at, line: index, change: u.change }); if (/withdr|no longer|drop/i.test(u.change)) card.withdrawn = true; }
+  }
+  room.wall.log.push({ at, line: index, who: line.who, tools: heard.tools, cards: ids, ask: heard.ask });
+  const mine = room.wall.cards.filter(c => ids.includes(c.id));
+  line.asks = [...new Set(mine.flatMap(c => c.keys))].slice(0, 3);
+  line.refuses = [...new Set(mine.flatMap(c => c.rulesOut))].slice(0, 3);
+  line.taken = [...line.asks, ...line.refuses];
+  line.beyond = mine.filter(c => !c.keys.length).map(c => c.need).join("; ");
+  line.cards = ids; line.tools = heard.tools; line.ask = heard.ask;
+}
+
+// The decision record, before a build; rendered for the chooser as well.
+async function decideWall(room) {
+  if (!room.wall) return { record: "", unsupported: [] };
+  const rec = await wallDecide({ wall: room.wall, standing: room.standing ? NAME(room.standing) : null,
+                                 props: room.ctx.design ? room.ctx.design.has : [] });
+  // A card no key carries cannot be answered with a part, whatever the record
+  // says: the link to what stands is structural, and the record must agree.
+  const keyless = new Set(room.wall.cards.filter(c => !c.keys.length).map(c => c.id));
+  for (const d of rec.decisions) if (d.response === "part" && keyless.has(d.id)) d.response = "none";
+  room.wall.record = { ...rec, at: Date.now() };
+  const byId = Object.fromEntries(room.wall.cards.map(c => [c.id, c]));
+  const record = rec.decisions.map(d => `  [${d.id}] ${byId[d.id].need} → ${d.response}: ${d.what}${d.uncertainty ? " (unsure: " + d.uncertainty + ")" : ""}`).join("\n")
+    + (rec.conflicts.length ? "\n  conflicts: " + rec.conflicts.map(c => `${c.a}×${c.b} ${c.note}`).join("; ") : "");
+  const unsupported = rec.decisions.filter(d => d.response === "none").map(d => byId[d.id].need);
+  return { record, unsupported };
+}
+
+// After a build: every card against what stands. Met only when every key it
+// carries is there; never because it was planned.
+function linkWall(room) {
+  if (!room.wall) return;
+  const has = room.ctx.design ? room.ctx.design.has : [];
+  for (const c of room.wall.cards) {
+    if (c.withdrawn) continue;
+    // A card that only rules something out is met when that thing is absent.
+    if (!c.keys.length && c.rulesOut.length) { c.met = c.rulesOut.some(k => has.includes(k)) ? "no" : "met"; continue; }
+    if (!c.keys.length) { c.met = "unsupported"; continue; }
+    const hit = c.keys.filter(k => has.includes(k)).length;
+    c.met = hit === c.keys.length ? "met" : hit ? "partial" : "no";
+    if (c.met === "met" && c.rulesOut.some(k => has.includes(k))) c.met = "partial";
+  }
+}
+
 // ── the builder's turn ────────────────────────────────────────────────────
 // It reads the line, puts what it took into the context, builds, and says what
 // it did. Under `defer` it holds off until the script has run out and then does
@@ -266,11 +365,8 @@ async function builderTurn(room, line) {
   try {
     // A drawing carries no sentence to read; everything it asks for comes from
     // the picture itself, folded in below.
-    const { asks, refuses } = line.upload ? { asks: [], refuses: [] } : await readLine(line.text);
-    line.taken = [...asks, ...refuses];
-    // Kept apart as well, so a room can be heard again after a restart exactly
-    // as it was heard the first time.
-    line.asks = asks; line.refuses = refuses;
+    if (line.upload) { line.asks = []; line.refuses = []; line.taken = []; } else await hearLine(room, line);
+    const asks = line.asks, refuses = line.refuses;
     newTurn(room.ctx);
     hear(room.ctx, line.who, "want", asks);
     hear(room.ctx, line.who, "avoid", refuses);
@@ -295,8 +391,9 @@ async function builderTurn(room, line) {
     if (once && room.turn < route.script.length) {
       if (route.relay) {
         const to = line.who === "A" ? "Role 2" : "Role 1", from = line.who === "A" ? "Role 1" : "Role 2";
-        const text = await relay({ from, to, said: line.text,
-          asks: [...asks, ...(line.picture || [])], refuses });
+        const text = room.wall
+          ? await relayFromWall({ from, to, cards: room.wall.cards.filter(c => (line.cards || []).includes(c.id)) })
+          : await relay({ from, to, said: line.text, asks: [...asks, ...(line.picture || [])], refuses });
         room.transcript.push({ who: "builder", text, phase: "main", relay: true, about: line.who,
                                built: null, at: Date.now() });
       }
@@ -331,9 +428,10 @@ async function lay(room, line, took) {
   const pictures = Object.keys(room.seenPicture || {})
     .filter(r => room.uploads[r]?.needs)
     .map(r => ({ who: r === "A" ? "Role 1" : "Role 2", needs: room.uploads[r].needs }));
+  const { record, unsupported } = await decideWall(room);
   const chose = await chooseBuild({
     wants: [...room.ctx.wants.keys()], avoids: [...room.ctx.avoids.keys()],
-    standing: before ? NAME(before) : null, said, pictures,
+    standing: before ? NAME(before) : null, said, pictures, record,
   });
   if (chose.id) room.ctx.design = KIT.find(k => k.id === chose.id);
   const after = room.ctx.design ? room.ctx.design.id : null;
@@ -343,8 +441,9 @@ async function lay(room, line, took) {
     took, before: before ? NAME(before) : null, after: NAME(after),
     props: room.ctx.design ? room.ctx.design.has : [],
     wants: [...room.ctx.wants.keys()], avoids: [...room.ctx.avoids.keys()],
-    changed: before !== after,
+    changed: before !== after, unsupported,
   });
+  linkWall(room);
   room.transcript.push({ who: "builder", text: say, phase: "main", built: NAME(after), at: Date.now() });
 }
 
@@ -410,12 +509,10 @@ function unresolved(room) {
 async function developTurn(room, line) {
   room.thinking = true; push(room.id);
   try {
-    const read = await readLineB(line.text);
-    line.asks = read.asks; line.refuses = read.refuses; line.beyond = read.beyond;
-    line.taken = [...read.asks, ...read.refuses];
+    await hearLine(room, line);
     newTurn(room.ctx);
-    hear(room.ctx, line.who, "want", read.asks);
-    hear(room.ctx, line.who, "avoid", read.refuses);
+    hear(room.ctx, line.who, "want", line.asks);
+    hear(room.ctx, line.who, "avoid", line.refuses);
     const pic = room.uploads[line.who];
     if (pic && Array.isArray(pic.needs) && !room.seenPicture?.[line.who]) {
       room.seenPicture = { ...(room.seenPicture || {}), [line.who]: true };
@@ -442,8 +539,9 @@ async function layB(room, line, said) {
     .map(e => ({ who: WHO[e.who], text: (e.part ? `[about ${FEATURES[e.part]}] ` : "") + e.text + (e.corrected ? ` — they clarified: "${e.corrected}"` : "") }));
   const pictures = Object.keys(room.seenPicture || {}).filter(r => room.uploads[r]?.needs)
     .map(r => ({ who: WHO[r], needs: room.uploads[r].needs }));
+  const { record } = await decideWall(room);
   const chose = await chooseBuildB({ wants: [...room.ctx.wants.keys()], avoids: [...room.ctx.avoids.keys()],
-                                     standing: before ? NAME(before) : null, said: conv, pictures });
+                                     standing: before ? NAME(before) : null, said: conv, pictures, record });
   if (chose.id) room.ctx.design = KIT.find(k => k.id === chose.id);
   const after = room.ctx.design ? room.ctx.design.id : null;
   room.standing = after;
@@ -458,7 +556,9 @@ async function layB(room, line, said) {
     took: { asks: line.asks || [], refuses: line.refuses || [], beyond: line.beyond || "" },
     before: before ? NAME(before) : null, after: NAME(after), props: afterHas, changed: before !== after,
     alt, beyond: openBeyond(room), wants: [...room.ctx.wants.keys()], avoids: [...room.ctx.avoids.keys()],
+    question: line.ask || "",
   });
+  linkWall(room);
   room.transcript.push({ who: "builder", text, phase: "main", built: NAME(after), proposal: true,
                          diff: diffOf(room, beforeHas, afterHas), alt, at: Date.now() });
 }
@@ -517,6 +617,7 @@ function restore() {
         transcript: rec.transcript, uploads, standing: rec.standingId ?? null, thinking: false,
         finished: !!rec.finished, score: rec.finished ? rec.score : undefined,
         claimed: rec.claimed || {}, createdAt: rec.createdAt, seenPicture,
+        wall: rec.wall || null, retro: rec.retro || {},
         sketches: (rec.sketches || []).filter(k => fs.existsSync(path.join(pics, `${rec.room}-sketch-${k.n}.png`))) });
       streams.set(rec.room, new Set());
       n++;
@@ -554,7 +655,8 @@ const srv = http.createServer(async (req, res) => {
       let id = code();
       while (rooms.has(id) || fs.existsSync(path.join(SESSIONS, `${id}.json`))) id = code();
       live = { id, argument, route, ctx: mkCtx(), turn: 0, transcript: [], uploads: {}, standing: null,
-               thinking: false, finished: false, sketches: [], createdAt: new Date().toISOString() };
+               thinking: false, finished: false, sketches: [], wall: last?.wall ? newWall() : null, retro: {},
+               createdAt: new Date().toISOString() };
       rooms.set(id, live); streams.set(id, new Set());
       try { record(live); } catch (e) { console.error(`could not save ${id}: ${e.message}`); }
     }
@@ -568,14 +670,14 @@ const srv = http.createServer(async (req, res) => {
   });
 
   if (p === "/api/create" && req.method === "POST") {
-    const { argument, route } = await body(req);
+    const { argument, route, wall } = await body(req);
     if (!ARGUMENTS[argument] || !ROUTES[route]) return json(res, 400, { error: "unknown argument or route" });
     // Never reuse the name of a session already on disk, or its record goes.
     let id = code();
     while (rooms.has(id) || fs.existsSync(path.join(SESSIONS, `${id}.json`))) id = code();
     rooms.set(id, { id, argument, route, ctx: mkCtx(), turn: 0, transcript: [],
                     uploads: {}, standing: null, thinking: false, finished: false,
-                    sketches: [], createdAt: new Date().toISOString() });
+                    sketches: [], wall: wall ? newWall() : null, retro: {}, createdAt: new Date().toISOString() });
     streams.set(id, new Set());
     // Saved at once, so a room whose links are already out survives a restart
     // even before anybody has spoken in it.
@@ -843,10 +945,17 @@ const srv = http.createServer(async (req, res) => {
     enqueue(r, async () => {
       r.thinking = true; push(id);
       try {
-        const read = await readLineB(line.text, meant);
         line.was = { asks: line.asks || [], refuses: line.refuses || [], beyond: line.beyond || "" };
-        line.asks = read.asks; line.refuses = read.refuses; line.beyond = read.beyond;
-        line.taken = [...read.asks, ...read.refuses];
+        if (r.wall) {
+          // The cards this line made are withdrawn in favour of what they meant.
+          for (const c of r.wall.cards) if ((line.cards || []).includes(c.id)) { c.withdrawn = true; c.changes.push({ at: Date.now(), line: index, change: "corrected: " + meant }); }
+          const said = line.text; line.text = `${said} — what I meant: ${meant}`;
+          await hearLine(r, line); line.text = said;
+        } else {
+          const read = await readLineB(line.text, meant);
+          line.asks = read.asks; line.refuses = read.refuses; line.beyond = read.beyond;
+          line.taken = [...read.asks, ...read.refuses];
+        }
         line.corrected = meant;
         replay(r);
         push(id);
@@ -887,6 +996,7 @@ const srv = http.createServer(async (req, res) => {
           before: before ? NAME(before) : null, after: NAME(pick), props: entry.has, changed: before !== pick,
           alt: null, beyond: openBeyond(r), wants: [...r.ctx.wants.keys()], avoids: [...r.ctx.avoids.keys()],
         });
+        linkWall(r);
         r.transcript.push({ who: "builder", text, phase: "main", built: NAME(pick), proposal: true,
                             diff: diffOf(r, beforeHas, entry.has), alt: null, chosenBy: role, at: Date.now() });
       } catch (e) {
@@ -895,6 +1005,22 @@ const srv = http.createServer(async (req, res) => {
       } finally { r.thinking = false; push(id); }
     });
     return;
+  }
+
+  // The retrospective walkthrough: after the session, each person says what
+  // they see in the bridge and whether their needs are met — in their words,
+  // kept apart from the score.
+  if (p === "/api/retro" && req.method === "POST") {
+    const { room: id, role, text } = await body(req);
+    const r = rooms.get(id);
+    if (!r) return json(res, 404, { error: "no such room" });
+    if (role !== "A" && role !== "B") return json(res, 400, { error: "unknown role" });
+    if (!r.finished) return json(res, 409, { error: "not finished yet" });
+    const said = String(text || "").trim();
+    if (!said) return json(res, 400, { error: "say something first" });
+    r.retro = { ...(r.retro || {}), [role]: { text: said, at: Date.now() } };
+    push(id);
+    return json(res, 200, { ok: true });
   }
 
   if (p === "/api/finish" && req.method === "POST") {

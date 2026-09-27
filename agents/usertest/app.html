@@ -359,6 +359,46 @@ textarea[disabled]{opacity:.5}
 .unres{margin:8px 0 0; padding-left:18px; font-size:14px}
 .unres li{margin-bottom:5px}
 .unres b{font-weight:600}
+/* the wall: one card per need, grouped by theme; on the desk, in history, and
+   compact on a participant's page on condition B */
+.wtheme{margin:14px 0 0}
+.wtheme:first-child{margin-top:0}
+.wtheme h3{font-family:var(--display); font-weight:600; font-size:16px; margin:0 0 8px; letter-spacing:-.01em}
+.wcards{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:10px}
+.wcard{background:var(--paper-2); border:1px solid var(--rule); border-radius:3px; padding:10px 12px; font-size:13.5px; line-height:1.45}
+.wcard.ra{border-left:3px solid var(--rust)} .wcard.rb{border-left:3px solid var(--blue)}
+.wcard.gone{opacity:.55}
+.wcard .top{display:flex; flex-wrap:wrap; gap:5px; align-items:center; margin:0 0 6px}
+.wcard q{font-family:var(--display); font-size:14.5px; display:block; margin:0 0 5px; color:var(--ink)}
+.wcard q::before,.wcard q::after{content:""}
+.wcard .need{margin:0; font-weight:600}
+.wcard .why{margin:2px 0 0; color:var(--soft); font-size:13px}
+.wcard .why.hyp{font-style:italic}
+.wcard .extra{margin:6px 0 0; font-size:12.5px; color:var(--soft)}
+.wcard .extra b{font-family:var(--mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; font-weight:500; color:var(--faint); margin-right:4px}
+.wcard .keys{margin:6px 0 0; display:flex; flex-wrap:wrap; gap:4px}
+.via,.met{font-family:var(--mono); font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; padding:2px 6px; border-radius:2px}
+.via{background:var(--card); border:1px solid var(--rule); color:var(--soft)}
+.via.rep{border-style:dashed} .via.inf{color:var(--rust); border-color:var(--rust)}
+.met{border:1px solid transparent}
+.met.met{background:rgba(74,107,79,.14); color:var(--moss)} .met.partial{background:rgba(180,68,31,.10); color:var(--rust)}
+.met.no{background:transparent; border-color:var(--rust); color:var(--rust)} .met.unsupported{background:transparent; border-color:var(--rule); color:var(--faint)}
+.met.open{background:transparent; border-color:var(--rule); color:var(--faint)}
+.wrec{margin-top:14px; padding-top:12px; border-top:1px solid var(--rule-2); font-size:13.5px}
+.wrec ul{margin:6px 0 0; padding-left:18px} .wrec li{margin-bottom:4px}
+.wrec .chk{font-family:var(--mono); font-size:11px; color:var(--soft); margin-top:8px}
+.wrec .chk .y{color:var(--moss)} .wrec .chk .n{color:var(--rust)}
+.tools{margin:6px 0 0; display:flex; flex-wrap:wrap; gap:4px; align-items:center}
+.tool{font-family:var(--mono); font-size:10px; letter-spacing:.06em; text-transform:uppercase; background:var(--card); border:1px solid var(--rule); border-radius:99px; padding:2px 8px; color:var(--soft)}
+.asked{margin:6px 0 0; font-size:13px; color:var(--ink); border-left:2px solid var(--moss); padding-left:8px}
+.wmini{margin-top:12px; border-top:1px solid var(--rule-2); padding-top:10px}
+.wmini .wtheme h3{font-size:14.5px}
+.wmini .wcards{grid-template-columns:1fr; gap:6px}
+.wmini .wcard{padding:7px 10px; font-size:13px}
+.retro{margin-top:12px; padding-top:12px; border-top:1px solid var(--rule-2)}
+.retro textarea{min-height:70px; font-size:14.5px}
+.retro .said{font-family:var(--display); font-size:15px; margin:6px 0 0}
+.chip.agent[aria-pressed="true"]{background:var(--moss); border-color:var(--moss)}
 table{width:100%; border-collapse:collapse; font-size:14.5px; margin-top:8px}
 td{padding:7px 10px 7px 0; border-top:1px solid var(--rule-2)}
 td.y{color:var(--moss); font-weight:600} td.n{color:var(--rust)}
@@ -534,6 +574,12 @@ function bridgeCard(s, compact){
             : `<li><b>${esc(u.text)}</b> — ${esc(u.who)} asked for it; nothing in the kit can make it</li>`).join("")}</ul>`
         : `<p class="muted">Nothing left open between you.</p>`}`
       : `<div class="row"><button class="mini" id="finish-${r}" ${s.standing ? "" : "disabled"}>Finish — what is still open stays visible</button></div>`}
+    ${s.wall && s.wall.cards.length ? `<div class="wmini"><p class="eyebrow">The wall — what the AI has heard, as needs</p>${wallCards(s.wall, true)}</div>` : ""}
+    ${s.finished && r !== "host" ? `<div class="retro">${(s.retro || {})[r]
+        ? `<p class="eyebrow">What you saw in it</p><p class="said">${esc(s.retro[r].text)}</p>`
+        : `<p class="eyebrow">One last thing</p><p class="muted" style="font-size:14px; margin:0 0 6px">Describe the bridge as you see it, as if to someone who can't — and say whether it does what you needed.</p>
+           <textarea id="retro-${r}" placeholder="What I see, and whether it does what I needed…">${esc(corrDrafts["retro" + r] || "")}</textarea>
+           <div class="row"><button class="handle go" id="retrosend-${r}">Send</button></div>`}</div>` : ""}
   </div>`;
 }
 
@@ -733,6 +779,15 @@ function wire(s){
     });
     const fin = document.getElementById("finish-" + r);
     if (fin) fin.onclick = () => { fin.disabled = true; post("/api/finish", { room: s.room }); };
+    const rt = document.getElementById("retro-" + r);
+    if (rt) rt.oninput = () => { corrDrafts["retro" + r] = rt.value; };
+    const rs = document.getElementById("retrosend-" + r);
+    if (rs) rs.onclick = async () => {
+      const text = (document.getElementById("retro-" + r)?.value || "").trim(); if (!text) return;
+      rs.disabled = true;
+      const { ok } = await post("/api/retro", { room: s.room, role: r, text });
+      if (ok) corrDrafts["retro" + r] = ""; else rs.disabled = false;
+    };
   }
   // pin to the newest line when the count grows, but not on every repaint
   const chat = document.getElementById("chat-" + r);
@@ -824,6 +879,52 @@ function filterBar(cur, pending){
     <div class="chips">${opts.routes.map(r => `
       <button class="chip route" data-fr="${r.id}" aria-pressed="${r.id === cur.route}"
         title="${esc(r.note)}">${esc(r.arrow)}</button>`).join("")}</div>
+    <div class="chips">
+      <button class="chip agent" data-fw="keys" aria-pressed="${!cur.wall}" title="The AI reads each line into keys and builds. As every recorded session did.">AI hears: keys only</button>
+      <button class="chip agent" data-fw="wall" aria-pressed="${!!cur.wall}" title="The AI keeps a wall — one card per need, with its source, its words, a labelled guess at why, and which tools it used — and writes a decision record before each build.">AI hears: with the Wall</button>
+    </div>
+  </div>`;
+}
+
+// The wall, for the facilitator and for history: cards by theme, each with
+// whose it is, how it reached the builder, the words, the need, the reason or
+// the labelled guess, the keys, and whether what stands meets it.
+const VIA = { direct: ["said to it", ""], "reported-by-A": ["reported by Role 1", "rep"], "reported-by-B": ["reported by Role 2", "rep"], inferred: ["the AI's inference", "inf"] };
+const METL = { met: "met", partial: "partly met", no: "not met", unsupported: "no part for it" };
+function wallCard(c, small){
+  const [vl, vc] = VIA[c.via] || [c.via, ""];
+  return `<div class="wcard ${c.who === "A" ? "ra" : "rb"}${c.withdrawn ? " gone" : ""}">
+    <p class="top"><span class="who" style="margin:0">${esc(roleName(c.who))}</span><span class="via ${vc}">${esc(vl)}</span>${
+      c.withdrawn ? `<span class="met open">withdrawn</span>` : c.met ? `<span class="met ${c.met}">${METL[c.met] || c.met}</span>` : `<span class="met open">open</span>`}</p>
+    ${small ? "" : `<q>${esc(c.quote)}</q>`}
+    <p class="need">${esc(c.need)}</p>
+    ${c.why ? `<p class="why${/^hypothesis/i.test(c.why) ? " hyp" : ""}">${esc(c.why)}</p>` : ""}
+    ${small ? "" : `<div class="keys">${c.keys.map(k => `<span class="key">${esc(k)}</span>`).join("")}${c.rulesOut.map(k => `<span class="key">not: ${esc(k)}</span>`).join("")}${!c.keys.length && !c.rulesOut.length ? `<span class="key none">no key carries it</span>` : ""}</div>`}
+    ${c.concern ? `<p class="extra"><b>concern</b>${esc(c.concern)}</p>` : ""}
+    ${c.when ? `<p class="extra"><b>when</b>${esc(c.when)}</p>` : ""}
+    ${c.readings && c.readings.length ? `<p class="extra"><b>readings</b>${c.readings.map(esc).join(" · ")}</p>` : ""}
+    ${c.hmw ? `<p class="extra"><b>how might we</b>${esc(c.hmw)}</p>` : ""}
+    ${!small && c.story ? `<p class="extra"><b>job story</b>${esc(c.story)}</p>` : ""}
+    ${!small && c.changes && c.changes.length ? `<p class="extra"><b>later</b>${c.changes.map(x => esc(x.change)).join(" · ")}</p>` : ""}
+  </div>`;
+}
+function wallCards(w, small){
+  const themes = [...new Set(w.cards.map(c => c.theme || "other"))];
+  return themes.map(t => `<div class="wtheme"><h3>${esc(t)}</h3><div class="wcards">${w.cards.filter(c => (c.theme || "other") === t).map(c => wallCard(c, small)).join("")}</div></div>`).join("");
+}
+function wallPanel(h){
+  const w = h.wall; if (!w) return "";
+  const rec = w.record, byId = Object.fromEntries(w.cards.map(c => [c.id, c]));
+  const retro = h.retro || {};
+  return `<div class="card tab mach">
+    <h2>The wall</h2>
+    <p class="muted" style="font-size:13.5px; margin:-2px 0 14px">One card per need the AI heard: whose, how it reached it, their words, the need, the reason or its labelled guess, and whether what stands meets it. Nothing here is met because it was planned.</p>
+    ${w.cards.length ? wallCards(w, false) : `<p class="muted">Nothing on the wall yet.</p>`}
+    ${rec ? `<div class="wrec"><p class="eyebrow" style="margin-bottom:4px">Decision record, before the last build</p><ul>${rec.decisions.map(d =>
+        `<li><b>${esc(byId[d.id]?.need || d.id)}</b> → ${esc(d.response)}: ${esc(d.what)}${d.uncertainty ? ` <span class="muted">— unsure: ${esc(d.uncertainty)}</span>` : ""}</li>`).join("")}</ul>
+      ${rec.conflicts.length ? `<p style="margin:8px 0 0"><b>Conflicts:</b> ${rec.conflicts.map(c => `${esc(byId[c.a]?.need || c.a)} × ${esc(byId[c.b]?.need || c.b)} — ${esc(c.note)}`).join("; ")}</p>` : `<p class="muted" style="margin:8px 0 0">No conflicts — different needs are not conflicts.</p>`}
+      ${rec.checks ? `<p class="chk">${Object.entries(rec.checks).map(([k, v]) => `<span class="${v ? "y" : "n"}">${v ? "✓" : "✗"} ${esc(k)}</span>`).join(" · ")}</p>` : ""}</div>` : ""}
+    ${retro.A || retro.B ? `<div class="wrec"><p class="eyebrow" style="margin-bottom:4px">Retrospective — what each saw in it</p>${["A","B"].filter(r => retro[r]).map(r => `<p><b>${roleName(r)}:</b> ${esc(retro[r].text)}</p>`).join("")}</div>` : ""}
   </div>`;
 }
 
@@ -860,6 +961,8 @@ function builderColumn(h){
                `<span class="key">${esc(k)}</span>`).join("")}</p>`
           : a.said.taken || a.did ? `<p class="read"><span class="lbl">interpreted as</span><span class="key none">nothing it could build from</span></p>` : ""}
         ${a.said.beyond ? `<p class="read"><span class="lbl">couldn't carry</span><span class="key none">${esc(a.said.beyond)}</span></p>` : ""}
+        ${a.said.cards ? `<p class="tools"><span class="lbl">on the wall</span>${a.said.cards.length ? `<span class="tool">${a.said.cards.length} card${a.said.cards.length === 1 ? "" : "s"}</span>` : `<span class="tool">no card</span>`}${(a.said.tools || []).map(t => `<span class="tool" title="${esc(t.why)}">${esc(t.tool)}</span>`).join("")}</p>` : ""}
+        ${a.said.ask ? `<p class="asked">asked ${esc(roleName(a.said.who))}: ${esc(a.said.ask)}</p>` : ""}
         ${a.said.picture && a.said.picture.length
           ? `<p class="read"><span class="lbl">saw in their picture</span>${a.said.picture.map(k =>
                `<span class="key">${esc(k)}</span>`).join("")}</p>` : ""}
@@ -966,7 +1069,7 @@ function bothView(){
       <h1>${esc(a.arrow)}</h1>
       <p class="lede">${esc(a.note)}</p>
     </div>
-    ${filterBar(picking || { argument: a.argument, route: a.route }, !!picking)}
+    ${filterBar(picking || { argument: a.argument, route: a.route, wall: h.agent === "wall" }, !!picking)}
     ${invite(a.room)}
     <div class="desk">
       <div class="pair">
@@ -975,6 +1078,7 @@ function bothView(){
       </div>
       ${builderColumn(h)}
     </div>
+    ${wallPanel(h)}
     ${resultBar(h)}`;
   wire(a); wire(b);
   // The artifact is a thing, not a name. Drawn after the markup exists, and
@@ -985,9 +1089,10 @@ function bothView(){
   if (f) f.onclick = () => post("/api/finish", { room: a.room });
   const sk = document.getElementById("sketch");
   if (sk) sk.onclick = () => { sk.disabled = true; sk.textContent = "Drawing…"; post("/api/sketch", { room: a.room }); };
-  const base = { argument: a.argument, route: a.route };
+  const base = { argument: a.argument, route: a.route, wall: h.agent === "wall" };
   app.querySelectorAll("[data-fa]").forEach(x => x.onclick = () => choose(base, { argument: x.dataset.fa }));
   app.querySelectorAll("[data-fr]").forEach(x => x.onclick = () => choose(base, { route: x.dataset.fr }));
+  app.querySelectorAll("[data-fw]").forEach(x => x.onclick = () => choose(base, { wall: x.dataset.fw === "wall" }));
   app.querySelectorAll("[data-copy]").forEach(b => b.onclick = async () => {
     try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = "Copied"; }
     catch { b.textContent = "Select the link above"; }
@@ -1040,7 +1145,7 @@ function gone(room){
     return;
   }
   // The facilitator's link should never be a dead end: pick again, get a room.
-  const pick = { argument: opts.arguments[0].id, route: "all" };
+  const pick = { argument: opts.arguments[0].id, route: "all", wall: false };
   const paint = () => {
     app.innerHTML = `
       <div>
@@ -1053,7 +1158,8 @@ function gone(room){
       <div class="row"><button class="go" id="open">Open this room</button></div>`;
     app.querySelectorAll("[data-fa]").forEach(x => x.onclick = () => { pick.argument = x.dataset.fa; paint(); });
     app.querySelectorAll("[data-fr]").forEach(x => x.onclick = () => { pick.route = x.dataset.fr; paint(); });
-    document.getElementById("open").onclick = () => openRoom(pick.argument, pick.route);
+    app.querySelectorAll("[data-fw]").forEach(x => x.onclick = () => { pick.wall = x.dataset.fw === "wall"; paint(); });
+    document.getElementById("open").onclick = () => openRoom(pick.argument, pick.route, pick.wall);
   };
   paint();
 }
@@ -1069,19 +1175,20 @@ function choose(base, change) {
   picking = { ...(picking || base), ...change };
   for (const x of app.querySelectorAll("[data-fa]")) x.setAttribute("aria-pressed", String(x.dataset.fa === picking.argument));
   for (const x of app.querySelectorAll("[data-fr]")) x.setAttribute("aria-pressed", String(x.dataset.fr === picking.route));
+  for (const x of app.querySelectorAll("[data-fw]")) x.setAttribute("aria-pressed", String((x.dataset.fw === "wall") === !!picking.wall));
   const note = document.getElementById("switching");
   if (note) { note.hidden = false; note.textContent = "Opening a new room…"; }
   document.querySelector(".filters")?.classList.add("busy");
   clearTimeout(choose.timer);
-  choose.timer = setTimeout(() => openRoom(picking.argument, picking.route), 500);
+  choose.timer = setTimeout(() => openRoom(picking.argument, picking.route, picking.wall), 500);
 }
 
-async function openRoom(argument, route){
+async function openRoom(argument, route, wall){
   // One room at a time. A pick made while one is being opened is not dropped:
   // when it comes back, if the choice has moved on, open the latest instead.
   if (openRoom.busy) return;
   openRoom.busy = true;
-  let want = { argument, route };
+  let want = { argument, route, wall: !!wall };
   for (;;) {
     const { ok, j } = await post("/api/create", want);
     if (!ok) {
@@ -1092,14 +1199,14 @@ async function openRoom(argument, route){
       return;
     }
     const latest = picking || want;
-    if (latest.argument === want.argument && latest.route === want.route) {
+    if (latest.argument === want.argument && latest.route === want.route && !!latest.wall === want.wall) {
       picking = null; openRoom.busy = false;
       history.pushState(null, "", `/j/${j.room}/both`);
       delete app.dataset.gone;
       watchBoth(j.room);
       return;
     }
-    want = { argument: latest.argument, route: latest.route };
+    want = { argument: latest.argument, route: latest.route, wall: !!latest.wall };
   }
 }
 
@@ -1224,7 +1331,8 @@ async function historyView(id){
   }
   const h = { room: rec.room, role: "host", title: rec.title, arrow: rec.arrow, finished: rec.finished,
     lines: rec.transcript, standing: rec.standing, shape: rec.shape, world: rec.world || {},
-    provenance: rec.provenance, score: rec.score, thinking: false, sketches: rec.sketches || [] };
+    provenance: rec.provenance, score: rec.score, thinking: false, sketches: rec.sketches || [],
+    agent: rec.agent || "keys", wall: rec.wall || null, retro: rec.retro || {} };
   const when = t => t ? new Date(t).toLocaleString([], { dateStyle: "full", timeStyle: "short" }) : "";
   app.classList.add("wide");
   app.innerHTML = `
@@ -1241,6 +1349,7 @@ async function historyView(id){
       <div class="card tab"><h2>What they said</h2>${conversation(h, "hist-chat", true, "chat")}</div>
       ${builderColumn(h)}
     </div>
+    ${wallPanel(h)}
     ${resultBar(h)}`;
   const cv = document.getElementById("crossing");
   if (cv && window.drawCrossing) drawCrossing(cv, h.shape, h.world);

@@ -187,7 +187,7 @@ export async function readLine(text) {
   return { asks: clean(out.asks), refuses: clean(out.refuses) };
 }
 
-export async function chooseBuild({ wants, avoids, standing, said, pictures = [] }) {
+export async function chooseBuild({ wants, avoids, standing, said, pictures = [], record = "" }) {
   const kit = kitForChoosing();
   const list = ks => ks.length ? ks.map(f => FEATURES[f]).join("; ") : "nothing yet";
   const user = [
@@ -200,6 +200,7 @@ export async function chooseBuild({ wants, avoids, standing, said, pictures = []
     // Two references: the crossing each of them showed you, as it was read.
     ...(pictures.length ? [``, `The crossings they showed you, each in a picture of their own:`,
       ...pictures.map(p => `  ${p.who}'s picture: ${list(p.needs)}.`)] : []),
+    ...(record ? [``, `Your decision record, from the wall:`, record] : []),
     ``,
     `What do you build?`,
   ].join("\n");
@@ -212,7 +213,7 @@ export async function chooseBuild({ wants, avoids, standing, said, pictures = []
   return { id: entry ? entry.id : null, why: out.why, unmatched: hit ? null : raw };
 }
 
-export async function speak({ said, took, before, after, props, wants, avoids, changed }) {
+export async function speak({ said, took, before, after, props, wants, avoids, changed, unsupported = [] }) {
   const list = ks => ks.length ? ks.map(f => FEATURES[f]).join("; ") : "nothing yet";
   const bits = [
     `They said: "${said}"`,
@@ -224,6 +225,7 @@ export async function speak({ said, took, before, after, props, wants, avoids, c
     ``,
     `Asked of you so far: ${list(wants)}.`,
     `Refused so far: ${list(avoids)}.`,
+    ...(unsupported.length ? [``, `Asked for, and nothing in your workshop makes it — say so, it is not met: ${unsupported.join("; ")}.`] : []),
     ``,
     `Say your piece.`,
   ].join("\n");
@@ -326,7 +328,7 @@ const CHOOSE_B = kit => CHOOSE(kit) + "\n" + [
   `  "alt" and "altWhy" empty. Never offer an alternative that nobody's words point to.`,
 ].join("\n");
 
-export async function chooseBuildB({ wants, avoids, standing, said, pictures = [] }) {
+export async function chooseBuildB({ wants, avoids, standing, said, pictures = [], record = "" }) {
   const kit = kitForChoosing();
   const list = ks => ks.length ? ks.map(f => FEATURES[f]).join("; ") : "nothing yet";
   const user = [
@@ -338,6 +340,7 @@ export async function chooseBuildB({ wants, avoids, standing, said, pictures = [
     ...said.map(s => `  ${s.who}: ${s.text}`),
     ...(pictures.length ? [``, `The crossings they showed you, each in a picture of their own:`,
       ...pictures.map(p => `  ${p.who}'s picture: ${list(p.needs)}.`)] : []),
+    ...(record ? [``, `Your decision record, from the wall:`, record] : []),
     ``,
     `What do you build?`,
   ].join("\n");
@@ -373,7 +376,7 @@ const PROPOSE = [
   `- Report. Do not thank, apologise, or ask them to agree. Say only what is true of what stands.`,
 ].join("\n");
 
-export async function propose({ line, took, before, after, props, changed, alt, beyond, wants, avoids }) {
+export async function propose({ line, took, before, after, props, changed, alt, beyond, wants, avoids, question = "" }) {
   const list = ks => ks.length ? ks.map(f => FEATURES[f]).join("; ") : "nothing";
   const bits = [
     `${line.who} just said: "${line.text}"`,
@@ -385,6 +388,7 @@ export async function propose({ line, took, before, after, props, changed, alt, 
     `What ${after} actually is: ${list(props)}.`,
     alt ? `An alternative you could offer: ${alt.name} — ${alt.why || "it serves the other side"}.` : ``,
     beyond.length ? `Still on the list, with no part for it: ${beyond.map(b => `${b.who}: ${b.text}`).join("; ")}.` : ``,
+    question ? `From your wall, one question worth putting to ${line.who}, if it still is: "${question}" — ask it or nothing.` : ``,
     ``,
     `Asked of you so far: ${list(wants)}. Refused so far: ${list(avoids)}.`,
     ``,
@@ -432,4 +436,180 @@ export async function sketch({ title, ground, lines }) {
     throw new Error("no drawing came back" + (why ? `: ${why}` : ""));
   }
   return { base64: img.inlineData.data, media: img.inlineData.mimeType, prompt };
+}
+
+// ── the Wall: the Toolmakers' Kit as the builder's hearing and thinking ───
+// With the wall on, the builder does not read a line into keys and forget the
+// line. It keeps one card per distinct need — whose it is, how it reached the
+// builder (said to it, reported by the other person, or supposed), the words,
+// the need, the reason or a labelled guess, and which keys carry it, if any.
+// The other tools in the kit fire on their triggers and leave their trace on
+// the card. Before building it writes a decision record; after building each
+// card is linked to what stands and never marked met because it was planned.
+const KEYLIST = Object.entries(FEATURES).map(([k, v]) => `  ${k} — ${v}`).join("\n");
+
+const HEAR_JSON = { type:"object", properties:{
+  cards:{ type:"array", items:{ type:"object", properties:{
+    who:{type:"string"}, via:{type:"string"}, quote:{type:"string"}, need:{type:"string"}, why:{type:"string"},
+    keys:{type:"array", items:{type:"string"}}, rulesOut:{type:"array", items:{type:"string"}}, theme:{type:"string"},
+    concern:{type:"string"}, when:{type:"string"}, readings:{type:"array", items:{type:"string"}},
+    hmw:{type:"string"}, story:{type:"string"}, conflictsWith:{type:"array", items:{type:"string"}} },
+    required:["who","via","quote","need","why","keys","rulesOut","theme","concern","when","readings","hmw","story","conflictsWith"] } },
+  updates:{ type:"array", items:{ type:"object", properties:{ id:{type:"string"}, change:{type:"string"} }, required:["id","change"] } },
+  tools:{ type:"array", items:{ type:"object", properties:{ tool:{type:"string"}, why:{type:"string"} }, required:["tool","why"] } },
+  ask:{type:"string"} }, required:["cards","updates","tools","ask"] };
+
+const HEAR = [
+  `You build crossings out of matchsticks for two people, and you keep a wall: one card per distinct need, so`,
+  `that nothing anyone said is lost, guessed at without saying so, or quietly merged with something else.`,
+  `You are given the route their words travel, the wall so far, and one new line. Return the cards this line`,
+  `adds, the cards it changes, the tools you used, and a question if one is allowed and worth asking.`,
+  ``,
+  `A card:`,
+  `- who: whose need it is — "Role 1" or "Role 2".`,
+  `- via: "direct" if that person said it to you; "reported by Role 1" or "reported by Role 2" if the other`,
+  `  person told you what they need; "inferred" if you are supposing it. On a route where you never hear a`,
+  `  person, that person's needs are never "direct".`,
+  `- quote: the exact words, from the line. For a reported need, the reporter's words.`,
+  `- need: the need in one plain clause, in their terms.`,
+  `- why: the reason they gave; or "hypothesis: ..." if you are guessing why; or "" if none and no guess.`,
+  `- keys: which of these carry it — none, one, two or three, the key exactly:`,
+  KEYLIST,
+  `  Leave keys empty when nothing in the kit carries the need: a material, a surface, a time of day, a`,
+  `  separate path, a step. A part of the crossing (an edge, a side, a lane) is not the whole crossing: a`,
+  `  raised edge for walkers is not "high"; a side for walkers is not "many".`,
+  `- rulesOut: keys the need rules OUT — the thing named as not wanted, not its opposite. "I do not want to`,
+  `  climb up to it" rules out "high". Usually empty.`,
+  `- theme: two or three words that group this with related cards, in plain language.`,
+  ``,
+  `Tools. Use one only when its trigger is in the line; say which and why in "tools", one line each.`,
+  `- laddering: the line names a feature; you separate it from what it is for. Put the purpose in "why",`,
+  `  marked "hypothesis:" unless they said it. Never replace a named feature with your guess at its purpose.`,
+  `- three-readings: two or more readings would build different things. Put 2 or 3 plain readings in`,
+  `  "readings". Only the speaker's answer settles it; nobody else's.`,
+  `- empathy: an objection, hesitation or reluctant compromise. Keep it in "concern", in their words.`,
+  `- journey: an occasion, a time, a sequence of use. Keep it in "when". Never invent times. Needing it at`,
+  `  one time does not mean not needing it at others.`,
+  `- hmw: no part in the kit matches. Put "How might we ...?" in "hmw", around the outcome they want.`,
+  `- job-story: this need will have to be passed on to the other person. Put "When ..., I want ..., so I`,
+  `  can ..." in "story", leaving a part unknown rather than inventing it.`,
+  `Fields you did not use are "" or [].`,
+  ``,
+  `Rules:`,
+  `- A line may add 0, 1, 2 or 3 cards. Do not add a card for a need already on the wall: put its id in`,
+  `  "updates" with what changed — a reason now given, a withdrawal, an objection, a correction, an agreement.`,
+  `- Different needs are not conflicts. Fill "conflictsWith" (ids) only when this card asks for what another`,
+  `  rules out.`,
+  `- "ask": one short question to the speaker, only if the route allows it and the answer would change what`,
+  `  you build; otherwise "". Never ask what is already answered.`,
+  `- Never use the word "user".`,
+].join("\n");
+
+export async function wallHear({ routeNote, canAsk, wall, line, speaker }) {
+  // Withdrawn cards are not shown: after a correction the line is heard again,
+  // and a card listed as already there would be "updated" instead of re-made.
+  const live = wall.cards.filter(c => !c.withdrawn);
+  const existing = live.length
+    ? live.map(c => `  [${c.id}] ${c.who} (${c.via}): "${c.quote}" → ${c.need}${c.keys.length ? " {" + c.keys.join(",") + "}" : " {no key}"}`).join("\n")
+    : "  (empty)";
+  const user = [
+    `The route: ${routeNote}`,
+    canAsk ? `You may ask ${speaker} one question; they will see it.` : `You may not ask anything on this route.`,
+    ``,
+    `The wall so far:`, existing,
+    ``,
+    `${speaker} said: "${line}"`,
+    ``,
+    `What does this add to the wall, what does it change, which tools did you use, and is there a question?`,
+  ].join("\n");
+  const out = await ask(HEAR, user, HEAR_JSON);
+  const clean = xs => (Array.isArray(xs) ? xs : []).filter(k => k in FEATURES).slice(0, 3);
+  const str = x => typeof x === "string" ? x.trim() : "";
+  const cards = (Array.isArray(out.cards) ? out.cards : []).slice(0, 3).map(c => ({
+    who: /2/.test(str(c.who)) ? "B" : "A",
+    via: /reported by role 1/i.test(str(c.via)) ? "reported-by-A" : /reported by role 2/i.test(str(c.via)) ? "reported-by-B"
+       : /infer/i.test(str(c.via)) ? "inferred" : "direct",
+    quote: str(c.quote).slice(0, 200), need: str(c.need).slice(0, 140), why: str(c.why).slice(0, 160),
+    keys: clean(c.keys), rulesOut: clean(c.rulesOut), theme: str(c.theme).slice(0, 40) || "other",
+    concern: str(c.concern).slice(0, 160), when: str(c.when).slice(0, 120),
+    readings: (Array.isArray(c.readings) ? c.readings : []).map(str).filter(Boolean).slice(0, 3),
+    hmw: str(c.hmw).slice(0, 140), story: str(c.story).slice(0, 200),
+    conflictsWith: (Array.isArray(c.conflictsWith) ? c.conflictsWith : []).map(str).filter(Boolean),
+  }));
+  return {
+    cards,
+    updates: (Array.isArray(out.updates) ? out.updates : []).map(u => ({ id: str(u.id), change: str(u.change).slice(0, 160) })).filter(u => u.id && u.change),
+    tools: (Array.isArray(out.tools) ? out.tools : []).map(t => ({ tool: str(t.tool).toLowerCase(), why: str(t.why).slice(0, 140) })).filter(t => t.tool),
+    ask: canAsk ? str(out.ask).slice(0, 160) : "",
+  };
+}
+
+const DECIDE_JSON = { type:"object", properties:{
+  decisions:{ type:"array", items:{ type:"object", properties:{
+    id:{type:"string"}, response:{type:"string"}, what:{type:"string"}, uncertainty:{type:"string"} },
+    required:["id","response","what","uncertainty"] } },
+  conflicts:{ type:"array", items:{ type:"object", properties:{ a:{type:"string"}, b:{type:"string"}, note:{type:"string"} }, required:["a","b","note"] } },
+  checks:{ type:"object", properties:{ nothingLost:{type:"boolean"}, inferencesLabelled:{type:"boolean"}, noFalseConflicts:{type:"boolean"}, defaultsChecked:{type:"boolean"} },
+    required:["nothingLost","inferencesLabelled","noFalseConflicts","defaultsChecked"] } },
+  required:["decisions","conflicts","checks"] };
+
+const DECIDE = [
+  `You build crossings out of matchsticks for two people. Before you build, you write a decision record from`,
+  `the wall: for every open card, what you will do about it, and what you are unsure of.`,
+  ``,
+  `For each card, "response" is one of:`,
+  `- "part": a part you can make delivers it — the card's keys name what.`,
+  `- "rule": an operating rule written on the sheet, never a shape — hours, who goes first, what is allowed.`,
+  `- "none": nothing you can make delivers it. Say so; it stays on the wall.`,
+  `"what": one clause. "uncertainty": "" or one clause — a hypothesis you are relying on, a reading you`,
+  `could not check, a reported need you could not confirm with its owner.`,
+  ``,
+  `Then check, honestly:`,
+  `- nothingLost: every card on the wall has a decision.`,
+  `- inferencesLabelled: no hypothesis is treated as something they said.`,
+  `- noFalseConflicts: "conflicts" lists only a card asking for what another rules out; different needs are`,
+  `  not conflicts.`,
+  `- defaultsChecked: nothing the kit gives by default contradicts a card.`,
+  `A request to build is not acceptance of the design. A need is not met because it is in this record.`,
+  `Never use the word "user".`,
+].join("\n");
+
+export async function wallDecide({ wall, standing, props }) {
+  const list = ks => ks.length ? ks.map(f => FEATURES[f]).join("; ") : "nothing";
+  const cards = wall.cards.filter(c => !c.withdrawn);
+  if (!cards.length) return { decisions: [], conflicts: [], checks: null };
+  const user = [
+    `The wall:`,
+    ...cards.map(c => `  [${c.id}] ${c.who} (${c.via}): "${c.quote}" → ${c.need}${c.why ? " — " + c.why : ""}${c.keys.length ? " {" + c.keys.join(",") + "}" : " {no key}"}${c.concern ? " · concern: " + c.concern : ""}${c.when ? " · when: " + c.when : ""}${c.conflictsWith.length ? " · conflicts with " + c.conflictsWith.join(",") : ""}`),
+    ``,
+    standing ? `What stands now: ${standing} — ${list(props)}.` : `Nothing stands yet.`,
+    ``,
+    `Write the decision record.`,
+  ].join("\n");
+  const out = await ask(DECIDE, user, DECIDE_JSON);
+  const str = x => typeof x === "string" ? x.trim() : "";
+  const ids = new Set(cards.map(c => c.id));
+  return {
+    decisions: (Array.isArray(out.decisions) ? out.decisions : []).map(d => ({
+      id: str(d.id), response: /rule/i.test(str(d.response)) ? "rule" : /none|no/i.test(str(d.response)) ? "none" : "part",
+      what: str(d.what).slice(0, 140), uncertainty: str(d.uncertainty).slice(0, 140) })).filter(d => ids.has(d.id)),
+    conflicts: (Array.isArray(out.conflicts) ? out.conflicts : []).map(c => ({ a: str(c.a), b: str(c.b), note: str(c.note).slice(0, 140) })).filter(c => ids.has(c.a) && ids.has(c.b)),
+    checks: out.checks && typeof out.checks === "object" ? {
+      nothingLost: !!out.checks.nothingLost, inferencesLabelled: !!out.checks.inferencesLabelled,
+      noFalseConflicts: !!out.checks.noFalseConflicts, defaultsChecked: !!out.checks.defaultsChecked } : null,
+  };
+}
+
+// The relay routes, with the wall on: what the other person is told is composed
+// from the cards, so a need travels with its situation and outcome, and a
+// reported need stays reported.
+export async function relayFromWall({ from, to, cards }) {
+  const user = [
+    `${from} has spoken to you. ${to} could not hear it. From your wall, ${from}'s needs are:`,
+    ...cards.map(c => `  - ${c.story || c.need}${c.why ? " (" + c.why + ")" : ""}${c.keys.length ? "" : " — nothing in your kit makes this"}`),
+    ``,
+    `Tell ${to} what ${from} needs, as you understood it.`,
+  ].join("\n");
+  const out = await ask(RELAY, user, SAY_JSON);
+  return typeof out.say === "string" ? out.say.trim() : "";
 }
