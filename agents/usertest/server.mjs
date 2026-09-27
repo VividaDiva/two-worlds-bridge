@@ -38,6 +38,10 @@ if (!process.env.ANTHROPIC_API_KEY) {
 // tunnel's log on every request, because a quick tunnel gets a new address each
 // time it starts.
 const TUNNEL_LOG = process.env.TUNNEL_LOG || "/tmp/tunnel2.log";
+// The use cases the desk offers. The others stay in the code, and every room
+// already run on them still opens — they are just not offered for new rooms.
+// STUDY_ARGUMENTS=places,loads,agreed,pairs,refs puts them all back.
+const STUDY = (process.env.STUDY_ARGUMENTS || "pairs,refs").split(",").map(x => x.trim()).filter(x => x in ARGUMENTS);
 function publicUrl() {
   if (process.env.PUBLIC_URL) return process.env.PUBLIC_URL.replace(/\/$/, "");
   try {
@@ -788,7 +792,7 @@ const srv = http.createServer(async (req, res) => {
     // A fresh room every time (the previous conversation stays in History), on
     // the same use case, route and agent as the last one opened.
     const last = [...rooms.values()].sort((x, y) => String(y.createdAt).localeCompare(String(x.createdAt)))[0];
-    const argument = last?.argument || Object.keys(ARGUMENTS)[0], route = last?.route || Object.keys(ROUTES)[0];
+    const argument = last && STUDY.includes(last.argument) ? last.argument : STUDY[0], route = last?.route || Object.keys(ROUTES)[0];
     let id = code();
     while (rooms.has(id) || fs.existsSync(path.join(SESSIONS, `${id}.json`))) id = code();
     const live = { id, argument, route, ctx: mkCtx(), turn: 0, transcript: [], uploads: {}, standing: null,
@@ -804,7 +808,7 @@ const srv = http.createServer(async (req, res) => {
 
   if (p === "/api/options") return json(res, 200, {
     publicUrl: publicUrl(),
-    arguments: Object.entries(ARGUMENTS).map(([k, v]) => ({ id: k, title: v.title, blurb: v.blurb, upload: !!v.upload })),
+    arguments: Object.entries(ARGUMENTS).filter(([k]) => STUDY.includes(k)).map(([k, v]) => ({ id: k, title: v.title, blurb: v.blurb, upload: !!v.upload })),
     routes: Object.entries(ROUTES).map(([k, v]) => ({ id: k, arrow: v.arrow, note: v.note })),
   });
 
