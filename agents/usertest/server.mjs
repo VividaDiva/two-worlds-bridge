@@ -331,7 +331,8 @@ async function hearLine(room, line) {
     const id = "n" + (room.wall.cards.length + 1);
     // On a route where this speaker cannot have heard the other, a card about
     // the other person can only be reported or inferred — never direct.
-    const via = c.who !== line.who && c.via === "direct" ? `reported-by-${line.who}` : c.via;
+    // ...and nobody reports their own need: what the speaker says of themselves is direct.
+    const via = c.who === line.who ? "direct" : c.via === "direct" ? `reported-by-${line.who}` : c.via;
     room.wall.cards.push({ ...c, id, via, line: index, at, met: null, changes: [], withdrawn: false });
     ids.push(id);
   }
