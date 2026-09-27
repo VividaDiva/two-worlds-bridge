@@ -27,6 +27,13 @@ test("new rooms are empty; both people's chat and AI replies survive in History 
     export const readPicture = async () => { throw Error("unexpected image call"); };
     export const relay = async () => "Test relay";
     export const sketch = async () => { throw Error("unexpected sketch call"); };
+    // Condition B and the Wall, stubbed the same way.
+    export const readLineB = async () => ({ asks: [], refuses: [], beyond: "" });
+    export const chooseBuildB = async () => ({ id: null, why: "", alt: null });
+    export const propose = async () => "Test AI proposal";
+    export const wallHear = async () => ({ cards: [], updates: [], tools: [], ask: "" });
+    export const wallDecide = async () => ({ decisions: [], conflicts: [], checks: null });
+    export const relayFromWall = async () => "Test relay";
   `;
   const hook = path.join(dir, "mock-builder.mjs");
   fs.writeFileSync(hook, `import { registerHooks } from "node:module";
