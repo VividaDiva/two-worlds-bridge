@@ -522,6 +522,7 @@ body{background:var(--paper);background-image:none}body::before{display:none}
 @media(max-width:430px){.study-controls{grid-template-columns:1fr}.scenario-top .scenario-card>span{display:none}.pair-caption{font-size:8px}.topnav .brand{max-width:110px}.topnav .navlink{padding:5px}}
 .understanding-wall{margin:20px 0}.understanding-wall h3{font-size:20px;margin:0 0 6px}.people-wall{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:20px}.person-wall{padding:18px;border-radius:14px;background:#eef4ef;border:1px solid #d6e3d8}.person-b{background:#f8f0e7;border-color:#e9dbcb}.person-wall h4,.wall-decisions h4{margin:0 0 14px;font-size:14px}.need-note{padding:16px;background:#fff;border-radius:9px;margin:10px 0;box-shadow:0 2px 5px #20352608;overflow-wrap:anywhere}.need-note small{font-size:11px;color:var(--soft);text-transform:none;letter-spacing:normal}.need-note p{font-size:15px;margin:10px 0}.need-note blockquote,.reading-version blockquote,.timeline-step blockquote{font-size:13px;border-left:2px solid #b7c6b7;margin:10px 0;padding-left:10px;color:var(--soft)}.need-methods{border-top:1px dashed var(--rule);margin-top:12px;padding-top:10px}.need-methods p{font-size:12px}.need-methods small{display:block;margin-top:5px}.need-note.withdrawn{opacity:.6}.wall-arrow{text-align:center;font-size:28px;color:#708570;padding:8px}.wall-decisions{border:1px solid var(--rule);border-radius:14px;padding:20px}.decision-link{display:grid;grid-template-columns:1fr 28px 1fr;gap:12px;align-items:center;border-bottom:1px solid var(--rule);padding:12px 0}.decision-link small,.build-destination small{font-size:10px;color:var(--soft)}.decision-link p{font-size:13px;margin:6px 0}.build-destination{background:#edf2e9;border-radius:9px;padding:15px;margin-top:14px}.build-destination p{margin:6px 0;font-size:16px}.step-timeline{border-left:2px solid #d7e1d4;margin:20px 0 0 12px;padding-left:18px}.timeline-step{padding:12px 0;border-bottom:1px solid var(--rule)}.timeline-step>summary{font-size:13px;cursor:pointer}.step-number{display:inline-block;background:#e7eee3;border-radius:50%;padding:4px 9px;margin-right:7px}.reading-version{margin:10px 0}.tk-inline{max-width:100%}@media(max-width:650px){.people-wall{grid-template-columns:1fr}.decision-link{grid-template-columns:1fr}.decision-link>span{transform:rotate(90deg);text-align:center}}
 .path-guide{border:1px solid var(--rule);border-radius:12px;background:#f5f7f2;padding:18px;margin:0 0 24px}.path-guide-head{display:flex;justify-content:space-between;gap:14px;align-items:center}.path-guide-head h2{font:500 18px var(--body);margin:0}.path-guide-head>span{font-size:12px;color:var(--soft)}.path-guide-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-top:16px}.path-guide-grid b{font-size:12px}.path-guide-grid p{font-size:13px;line-height:1.6;margin:6px 0}.path-guide>.tk-caption{margin-bottom:0}.latest-heard h3{font-size:15px;margin:0}.control-reading .key{display:inline-block;white-space:normal;margin:4px 6px 0 0}@media(max-width:700px){.path-guide-grid{grid-template-columns:1fr;gap:10px}.path-guide-head{align-items:start;flex-direction:column}}
+.communication-fields{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px}.fixed-timing{display:flex;align-items:center;min-height:43px;border:1px solid var(--rule);border-radius:8px;padding:9px 12px;background:#f0f3ed;font-size:12px;box-sizing:border-box}.communication-bar .control-help{font-size:11px;color:var(--soft);margin:8px 0 0}.study-controls{align-items:start}.process-control .process-switch{margin-top:0}.path-headline{font-size:16px;line-height:1.5;margin:14px 0 0;color:var(--ink)}.path-guide-head h2{font-size:14px;color:var(--soft)}.path-guide-grid{gap:16px;margin-top:14px}.path-guide-grid p{font-size:12px}.communication-bar select{width:100%;min-width:0}@media(max-width:900px){.study-controls{grid-template-columns:1fr}.process-control{max-width:280px}.communication-fields{grid-template-columns:1fr 1fr}}@media(max-width:600px){.communication-fields{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -1066,10 +1067,24 @@ function sessionSetup(current){
   if(!opts) return "";
   return `<div class="setup-form"><fieldset><legend>Starting point</legend><div class="scenario-grid">${opts.arguments.map(a=>`<button class="scenario-card" data-sa="${esc(a.id)}" aria-pressed="${a.id===current.argument}"><b>${esc(a.id==='pairs'?'Two lives':a.id==='refs'?'Two references':a.title)}</b><span>${a.upload ? "Build from two reference images" : "Build from two people's needs"}</span></button>`).join("")}</div></fieldset><p class="setup-help">Each starting point keeps its own Control and Toolkit conversations. Switching brings back your saved work.</p></div>`;
 }
+const COMMUNICATION_CHOICES = [
+ ['all','Discuss together · AI listens to both'],
+ ['confer','Discuss privately · send a decision to AI'],
+ ['both','Tell AI separately'],
+ ['chain','Role 1 tells Role 2 · Role 2 tells AI'],
+ ['via-1','AI relays Role 1’s needs to Role 2'],
+ ['via-2','AI relays Role 2’s needs to Role 1']
+];
+function communicationRoute(value,current){
+ return value === 'all' && current === 'develop' ? 'develop' : value;
+}
 function communicationBar(a){
-  const order=['all','develop','confer','both','chain','via-1','via-2','only-1','only-2'];
-  const routes=[...(opts?.routes||[])].sort((x,y)=>order.indexOf(x.id)-order.indexOf(y.id));
-  return `<section class="communication-bar" aria-label="Communication path"><label for="setup-route">Communication path</label><select id="setup-route">${routes.map(r=>`<option value="${esc(r.id)}" ${r.id===a.route?'selected':''}>${esc(r.arrow)} · ${esc(ROUTE_NAMES[r.id]||r.id)}${r.id==='all'?' (default)':''}</option>`).join('')}</select></section>`;
+ const shared=a.route === 'all' || a.route === 'develop';
+ const selected=shared ? 'all' : a.route;
+ const choice=(id,label)=>`<option value="${id}" ${selected===id?'selected':''}>${esc(label)}</option>`;
+ const images=a.argument === 'refs';
+ const timing=images ? 'When reference images are submitted' : a.route === 'confer' ? 'When someone confirms a decision' : a.route.startsWith('only-') ? 'After the participant contributes' : a.route === 'chain' ? 'After Role 2 passes on the needs' : 'After both contributions';
+ return `<section class="communication-bar" aria-label="Communication settings"><div class="communication-fields"><div><label for="setup-route">1 · How you communicate</label><select id="setup-route">${COMMUNICATION_CHOICES.map(([id,label])=>choice(id,label)).join('')}<optgroup label="Research comparisons · single participant">${choice('only-1','Role 1 only')}${choice('only-2','Role 2 only')}</optgroup></select></div><div><label for="setup-timing">2 · When AI builds</label>${shared && !images ? `<select id="setup-timing"><option value="all" ${a.route==='all'?'selected':''}>On confirmation · recommended</option><option value="develop" ${a.route==='develop'?'selected':''}>Automatically after messages</option></select>` : `<div class="fixed-timing" id="setup-timing">${esc(timing)}</div>`}</div></div><p class="control-help">Changing either setting opens its separate saved conversation.</p></section>`;
 }
 const PATH_GUIDES = {
  all:['Both people see each other’s messages and the AI reply.','Either person can speak at any time.','AI reads each message. It builds only when someone presses Confirm to build.'],
@@ -1085,8 +1100,9 @@ const PATH_GUIDES = {
 function pathGuide(a,h){
  let g=PATH_GUIDES[a.route]; if(!g)return '';
  if(a.argument === 'refs' && (a.open || a.develop)) g=['Each participant has their own reference image. The facilitator sees the combined result.','Each person uploads a reference image; there is no typed discussion on this starting point.','An image submission goes directly to the builder. The text-chat Confirm button is not used here.'];
+ const headline=a.argument === 'refs' ? 'AI builds from submitted reference images.' : a.route === 'all' ? 'AI hears both people throughout. The bridge changes only when someone confirms.' : a.route === 'develop' ? 'AI hears both people throughout. After both contribute, new messages update the bridge automatically.' : a.route === 'confer' ? 'Your discussion stays between you. AI receives only the message you confirm.' : g[0];
  const status=h.archived || h.finished ? 'Saved conversation · read only' : h.thinking ? 'AI is processing a contribution' : a.open || a.develop ? 'Either person can speak' : a.turn ? `${roleName(a.turn)} contributes next` : 'All contributions received';
- return `<section class="path-guide" aria-label="How this conversation works"><div class="path-guide-head"><h2>${esc(a.arrow)}</h2><span>${esc(status)}</span></div><div class="path-guide-grid">${['Who sees / hears what','Speaking order','When AI builds'].map((label,i)=>`<div><b>${label}</b><p>${esc(g[i])}</p></div>`).join('')}</div>${a.argument === 'refs' ? '<p class="tk-caption">Two references: each contribution is an uploaded image, not typed chat. On open paths an image submission is sent directly to AI.</p>' : ''}<p class="tk-caption">Role tabs switch whose view you are looking at. Each communication path keeps its own conversation and result; switching paths opens that path’s record.</p></section>`;
+ return `<section class="path-guide" aria-label="How this conversation works"><div class="path-guide-head"><h2>${esc(a.arrow)}</h2><span>${esc(status)}</span></div><p class="path-headline">${esc(headline)}</p><div class="path-guide-grid">${['Who sees / hears what','Speaking order','When AI builds'].map((label,i)=>`<div><b>${label}</b><p>${esc(g[i])}</p></div>`).join('')}</div>${a.argument === 'refs' ? '<p class="tk-caption">Two references: each contribution is an uploaded image, not typed chat. On open paths an image submission is sent directly to AI.</p>' : ''}<p class="tk-caption">Role tabs show different views of the same session. Each communication path keeps its own conversation and result.</p></section>`;
 }
 let users=[], selectedUser=null, selectedProcess="keys", switchBusy=false;
 const roomDrafts=new Map();
@@ -1124,7 +1140,7 @@ async function switchProcess(agent,argument=both.A?.argument||"pairs",user=selec
   }catch(e){alert(e.message);}finally{switchBusy=false;}
 }
 function processTabs(a){
-  return `<section class="process-control" aria-label="AI approach"><span class="control-label">AI approach</span><div class="process-switch" role="tablist" aria-label="AI process">${['keys','toolkit'].map(m=>`<button role="tab" aria-selected="${selectedProcess===m}" data-process="${m}">${m==='keys'?'Control':'Toolkit'}</button>`).join('')}</div></section>`;
+  return `<section class="process-control" aria-label="AI approach"><span class="control-label">3 · How AI interprets</span><div class="process-switch" role="tablist" aria-label="AI process">${['keys','toolkit'].map(m=>`<button role="tab" aria-selected="${selectedProcess===m}" data-process="${m}">${m==='keys'?'Control':'Toolkit'}</button>`).join('')}</div></section>`;
 }
 function sessionDetails(a,h){
   const records=users.find(u=>u.id===selectedUser)?.sessions || [];
@@ -1585,7 +1601,9 @@ function bothView(){
   app.querySelectorAll("[data-process]").forEach(x=>x.onclick=()=>switchProcess(x.dataset.process));
   app.querySelectorAll("[data-sa]").forEach(x=>x.onclick=()=>switchProcess(selectedProcess,x.dataset.sa));
   const routePicker=document.getElementById("setup-route");
-  if(routePicker) routePicker.onchange=()=>switchProcess(selectedProcess,a.argument,selectedUser,undefined,routePicker.value);
+  if(routePicker) routePicker.onchange=()=>switchProcess(selectedProcess,a.argument,selectedUser,undefined,communicationRoute(routePicker.value,a.route));
+  const timingPicker=document.getElementById("setup-timing");
+  if(timingPicker?.tagName === "SELECT") timingPicker.onchange=()=>switchProcess(selectedProcess,a.argument,selectedUser,undefined,timingPicker.value);
   const saved=document.getElementById("saved-run");
   if(saved) saved.onchange=()=>switchProcess(selectedProcess,a.argument,selectedUser,saved.value);
   app.querySelectorAll("[data-copy]").forEach(b => b.onclick = async () => {
