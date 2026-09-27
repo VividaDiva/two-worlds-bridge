@@ -15,7 +15,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { mkCtx, hear, newTurn, build, provenance } from "../engine.mjs";
 import { ARGUMENTS, ROUTES, NAME, FEATURES, KIT, propsOf } from "./kit.mjs";
-import { readLine, chooseBuild, speak, readPicture, relay, sketch } from "./builder.mjs";
+import { readLine, chooseBuild, speak, readPicture, relay, sketch, readLineB, chooseBuildB, propose } from "./builder.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 8780);
@@ -69,7 +69,7 @@ function view(room, role) {
   const script = route.script;
   // On the open routes nobody waits for a turn: both talk as they like and
   // confirm a decision to the builder when they have one.
-  const open = !!route.open;
+  const open = !!route.open, dev = !!route.develop;
   const turn = open ? null : (room.turn < script.length ? script[room.turn] : null);
   return {
     room: room.id, argument: room.argument, route: room.route,
@@ -106,6 +106,13 @@ function view(room, role) {
     // showing: it is the only place you can see whose meaning it acted on.
     provenance: role === "host" ? provenance(room.ctx).feats : null,
     thinking: room.thinking,
+    // Condition B. Both people see the bridge, what it has, what changed, the
+    // AI's reading of every line (marked as its guess), and at the end what was
+    // left unresolved. On every other route these stay with the facilitator.
+    develop: dev,
+    bothSpoke: dev ? bothSpoke(room) : null,
+    props: dev && room.ctx.design ? room.ctx.design.has.map(f => ({ key: f, text: FEATURES[f] })) : [],
+    unresolved: dev ? unresolved(room) : null,
     // A drawing made from the words alone, beside the crossing made from the
     // keys. Facilitator only, like the keys: it is a check on the pipeline, not
     // part of the conversation.
@@ -114,8 +121,8 @@ function view(room, role) {
     sketches: role === "host" ? (room.sketches || []).map(k => ({ n: k.n, at: k.at, turn: k.turn, lines: k.lines })) : null,
     finished: room.finished,
     score: room.finished ? room.score : null,
-    lines: room.transcript.filter(e => visible(room, e, role))
-      .map(e => ({ who: e.who, text: e.text, phase: e.phase, built: e.built || null,
+    lines: room.transcript.map((e, i) => ({ e, i })).filter(({ e }) => visible(room, e, role))
+      .map(({ e, i }) => ({ who: e.who, text: e.text, phase: e.phase, built: e.built || null,
         ...(e.decision ? { decision: true } : {}),
         ...(e.talk ? { talk: true } : {}),
         ...(e.upload ? { upload: true } : {}),
@@ -128,7 +135,20 @@ function view(room, role) {
         // scored against would teach them the words the study is about them not
         // having. The dashboard draws its agent panels from the host stream, so
         // it loses nothing by this.
-        ...(role === "host" && e.taken ? { taken: e.taken } : {}),
+        ...((role === "host" || dev) && e.taken ? { taken: e.taken, asks: e.asks || [], refuses: e.refuses || [] } : {}),
+        // Condition B: the line's number (to answer or correct it), what it asked
+        // for that no key carries, what it was about, what it built on, how it
+        // was corrected, and for the AI's lines what changed and what else it offered.
+        ...(dev ? { i,
+          ...(e.beyond ? { beyond: e.beyond } : {}),
+          ...(e.part ? { part: e.part } : {}),
+          ...(Number.isInteger(e.replyTo) ? { replyTo: e.replyTo } : {}),
+          ...(e.corrected ? { corrected: e.corrected, was: e.was || null } : {}),
+          ...(e.prefer ? { prefer: e.prefer } : {}),
+          ...(e.proposal ? { proposal: true } : {}),
+          ...(e.diff ? { diff: e.diff } : {}),
+          ...(e.alt ? { alt: e.alt, altTaken: e.altTaken || null } : {}),
+          ...(e.chosenBy ? { chosenBy: e.chosenBy } : {}) } : {}),
         // What it saw in that person's picture, for the facilitator's trace.
         ...(role === "host" && e.picture ? { picture: e.picture } : {}) })),
   };
@@ -142,7 +162,7 @@ function record(room) {
   const arg = ARGUMENTS[room.argument], route = ROUTES[room.route];
   const rec = {
     room: room.id, argument: room.argument, title: arg.title,
-    route: room.route, arrow: route.arrow,
+    route: room.route, arrow: route.arrow, version: route.develop ? "B" : "A",
     createdAt: room.createdAt, updatedAt: new Date().toISOString(),
     finished: room.finished,
     // Enough to carry on from, not only to read back.
@@ -213,6 +233,10 @@ function toMarkdown(s) {
   }
   return out.join("\n");
 }
+
+// One room, one line at a time. Two people typing at once on condition B would
+// otherwise read and build in parallel over the same tally.
+const enqueue = (room, fn) => (room.queue = (room.queue || Promise.resolve()).then(fn, fn));
 
 function push(roomId) {
   const room = rooms.get(roomId);
@@ -322,6 +346,121 @@ async function lay(room, line, took) {
     changed: before !== after,
   });
   room.transcript.push({ who: "builder", text: say, phase: "main", built: NAME(after), at: Date.now() });
+}
+
+// ── condition B: developing it together ──────────────────────────────────
+const bothSpoke = room => ["A", "B"].every(r => room.transcript.some(e => e.who === r && e.taken));
+
+// The tally, rebuilt from the transcript in order — after a correction changes
+// what an earlier line was taken to mean. What stands is kept, so the tie rule
+// still favours it.
+function replay(room) {
+  const ctx = mkCtx(), seen = {};
+  for (const e of room.transcript) {
+    if (e.who === "builder" || !(e.asks || e.refuses)) continue;
+    newTurn(ctx);
+    hear(ctx, e.who, "want", e.asks || []);
+    hear(ctx, e.who, "avoid", e.refuses || []);
+    if (e.picture) { hear(ctx, e.who, "want", e.picture); seen[e.who] = true; }
+  }
+  ctx.design = room.ctx.design;
+  room.ctx = ctx; room.seenPicture = seen;
+}
+
+// What changed between two builds, and who had named each thing. "none" is a
+// property nobody asked for — the kit's doing, not theirs.
+function diffOf(room, beforeHas, afterHas) {
+  const named = f => { const s = room.ctx.namedBy.get(f); return !s || !s.size ? "none" : s.has("A") && s.has("B") ? "both" : s.has("A") ? "A" : "B"; };
+  const refused = f => { const rs = new Set(room.transcript.filter(e => (e.refuses || []).includes(f)).map(e => e.who));
+                         return !rs.size ? "none" : rs.size === 2 ? "both" : [...rs][0]; };
+  return {
+    added:   afterHas.filter(f => !beforeHas.includes(f)).map(f => ({ key: f, text: FEATURES[f], by: named(f) })),
+    removed: beforeHas.filter(f => !afterHas.includes(f)).map(f => ({ key: f, text: FEATURES[f], by: refused(f) })),
+  };
+}
+
+// Everything asked for that no key can carry, in their words, once each.
+function openBeyond(room) {
+  const seen = new Set(), out = [];
+  for (const e of room.transcript)
+    if (e.who !== "builder" && e.beyond && !seen.has(e.beyond.toLowerCase())) { seen.add(e.beyond.toLowerCase()); out.push({ who: WHO[e.who], text: e.beyond }); }
+  return out;
+}
+
+// What is still open between them: a thing one asked for and the other ruled
+// out, and anything asked for that nothing in the kit can make. Shown to both
+// at the end. Silence is not agreement, so nothing here is closed by default.
+function unresolved(room) {
+  const want = new Map(), refuse = new Map();
+  for (const e of room.transcript) {
+    if (e.who === "builder") continue;
+    for (const f of e.asks || []) (want.get(f) || want.set(f, new Set()).get(f)).add(e.who);
+    for (const f of e.refuses || []) (refuse.get(f) || refuse.set(f, new Set()).get(f)).add(e.who);
+  }
+  const out = [];
+  for (const [f, w] of want) {
+    const r = refuse.get(f);
+    if (r && r.size) out.push({ kind: "conflict", key: f, text: FEATURES[f],
+                                wantedBy: [...w].map(x => WHO[x]), refusedBy: [...r].map(x => WHO[x]) });
+  }
+  for (const b of openBeyond(room)) out.push({ kind: "beyond", who: b.who, text: b.text });
+  return out;
+}
+
+async function developTurn(room, line) {
+  room.thinking = true; push(room.id);
+  try {
+    const read = await readLineB(line.text);
+    line.asks = read.asks; line.refuses = read.refuses; line.beyond = read.beyond;
+    line.taken = [...read.asks, ...read.refuses];
+    newTurn(room.ctx);
+    hear(room.ctx, line.who, "want", read.asks);
+    hear(room.ctx, line.who, "avoid", read.refuses);
+    const pic = room.uploads[line.who];
+    if (pic && Array.isArray(pic.needs) && !room.seenPicture?.[line.who]) {
+      room.seenPicture = { ...(room.seenPicture || {}), [line.who]: true };
+      line.picture = pic.needs.filter(f => f in FEATURES);
+      hear(room.ctx, line.who, "want", line.picture);
+    }
+    push(room.id);
+    // The first version waits until both have said something; after that every
+    // message gets a revision — or a reason why nothing changed.
+    if (!bothSpoke(room)) return;
+    await layB(room, line);
+  } catch (e) {
+    room.transcript.push({ who: "builder", failed: e.message, text: "",
+                           built: room.standing ? NAME(room.standing) : null, phase: "main", at: Date.now() });
+  } finally { room.thinking = false; push(room.id); }
+}
+
+// Choose (with one alternative when they pull apart), then say what was done
+// with what was just said — to both of them, in relation to what each said.
+async function layB(room, line, said) {
+  const before = room.standing, beforeHas = room.ctx.design ? room.ctx.design.has.slice() : [];
+  build(room.ctx);
+  const conv = room.transcript.filter(e => e.who !== "builder" && e.phase === "main")
+    .map(e => ({ who: WHO[e.who], text: (e.part ? `[about ${FEATURES[e.part]}] ` : "") + e.text + (e.corrected ? ` — they clarified: "${e.corrected}"` : "") }));
+  const pictures = Object.keys(room.seenPicture || {}).filter(r => room.uploads[r]?.needs)
+    .map(r => ({ who: WHO[r], needs: room.uploads[r].needs }));
+  const chose = await chooseBuildB({ wants: [...room.ctx.wants.keys()], avoids: [...room.ctx.avoids.keys()],
+                                     standing: before ? NAME(before) : null, said: conv, pictures });
+  if (chose.id) room.ctx.design = KIT.find(k => k.id === chose.id);
+  const after = room.ctx.design ? room.ctx.design.id : null;
+  room.standing = after;
+  const afterHas = room.ctx.design ? room.ctx.design.has.slice() : [];
+  // An alternative is offered only when the two of them actually pull apart —
+  // something one asked for and the other ruled out. The chooser was offering
+  // one on the first build "which neither speaker requested".
+  const apart = unresolved(room).some(u => u.kind === "conflict");
+  const alt = chose.alt && apart ? { id: chose.alt.id, name: NAME(chose.alt.id), why: chose.alt.why } : null;
+  const text = await propose({
+    line: { who: WHO[line.who], text: said || line.text },
+    took: { asks: line.asks || [], refuses: line.refuses || [], beyond: line.beyond || "" },
+    before: before ? NAME(before) : null, after: NAME(after), props: afterHas, changed: before !== after,
+    alt, beyond: openBeyond(room), wants: [...room.ctx.wants.keys()], avoids: [...room.ctx.avoids.keys()],
+  });
+  room.transcript.push({ who: "builder", text, phase: "main", built: NAME(after), proposal: true,
+                         diff: diffOf(room, beforeHas, afterHas), alt, at: Date.now() });
 }
 
 // What each of them needed, and whether the thing that stands has it. Computed
@@ -569,10 +708,29 @@ const srv = http.createServer(async (req, res) => {
   }
 
   if (p === "/api/say" && req.method === "POST") {
-    const { room: id, role, text, mode } = await body(req);
+    const { room: id, role, text, mode, part, replyTo } = await body(req);
     const r = rooms.get(id);
     if (!r) return json(res, 404, { error: "no such room" });
     if (r.finished) return json(res, 409, { error: "this session is over" });
+
+    // Condition B. No turns and no Confirm: every line goes to everyone and is
+    // read at once; the AI revises after each, once both have spoken. A line may
+    // be about a part of what stands, or build on the other person's line.
+    if (ROUTES[r.route].develop) {
+      if (role !== "A" && role !== "B") return json(res, 400, { error: "unknown role" });
+      const said = String(text || "").trim();
+      if (!said) return json(res, 400, { error: "say something first" });
+      const on = Number.isInteger(replyTo) && r.transcript[replyTo];
+      const line = { who: role, text: said, phase: "main", talk: true, at: Date.now(),
+                     ...(part && part in FEATURES ? { part } : {}),
+                     ...(on && on.who !== "builder" && on.who !== role ? { replyTo } : {}) };
+      r.transcript.push(line);
+      r.turn++;
+      push(id);
+      json(res, 200, { ok: true });
+      enqueue(r, () => developTurn(r, line));
+      return;
+    }
     // Drawings only: the page shows no box here, and the server does not take a
     // typed line either, so the two cannot disagree.
     if (ARGUMENTS[r.argument].upload)
@@ -666,6 +824,77 @@ const srv = http.createServer(async (req, res) => {
     if (!fs.existsSync(file)) { res.writeHead(404); return res.end("no such sketch"); }
     res.writeHead(200, { "content-type": "image/png", "cache-control": "private, max-age=31536000" });
     return res.end(fs.readFileSync(file));
+  }
+
+  // Condition B: a person says what they meant by one of their own lines. It is
+  // read again with the clarification, the tally is rebuilt in order, and the
+  // AI revises. What it was taken to mean before is kept on the line.
+  if (p === "/api/correct" && req.method === "POST") {
+    const { room: id, role, index, text } = await body(req);
+    const r = rooms.get(id);
+    if (!r) return json(res, 404, { error: "no such room" });
+    if (!ROUTES[r.route].develop) return json(res, 409, { error: "not on this route" });
+    if (r.finished) return json(res, 409, { error: "this session is over" });
+    const line = r.transcript[index];
+    if (!line || line.who !== role) return json(res, 400, { error: "you can only correct your own line" });
+    const meant = String(text || "").trim();
+    if (!meant) return json(res, 400, { error: "say what you meant first" });
+    json(res, 200, { ok: true });
+    enqueue(r, async () => {
+      r.thinking = true; push(id);
+      try {
+        const read = await readLineB(line.text, meant);
+        line.was = { asks: line.asks || [], refuses: line.refuses || [], beyond: line.beyond || "" };
+        line.asks = read.asks; line.refuses = read.refuses; line.beyond = read.beyond;
+        line.taken = [...read.asks, ...read.refuses];
+        line.corrected = meant;
+        replay(r);
+        push(id);
+        if (bothSpoke(r)) await layB(r, line, `what I meant by "${line.text}" is: ${meant}`);
+      } catch (e) {
+        r.transcript.push({ who: "builder", failed: e.message, text: "",
+                            built: r.standing ? NAME(r.standing) : null, phase: "main", at: Date.now() });
+      } finally { r.thinking = false; push(id); }
+    });
+    return;
+  }
+
+  // Condition B: a person takes the alternative the AI offered. A human
+  // decision, so nothing is chosen for them; the AI only says what now stands.
+  if (p === "/api/prefer" && req.method === "POST") {
+    const { room: id, role, build: pick } = await body(req);
+    const r = rooms.get(id);
+    if (!r) return json(res, 404, { error: "no such room" });
+    if (!ROUTES[r.route].develop) return json(res, 409, { error: "not on this route" });
+    if (r.finished) return json(res, 409, { error: "this session is over" });
+    if (role !== "A" && role !== "B") return json(res, 400, { error: "unknown role" });
+    const entry = KIT.find(k => k.id === pick);
+    const offered = [...r.transcript].reverse().find(e => e.who === "builder" && e.alt && e.alt.id === pick && !e.altTaken);
+    if (!entry || !offered) return json(res, 409, { error: "that was not offered" });
+    const line = { who: role, text: `I'd rather try ${NAME(pick)}.`, phase: "main", talk: true, prefer: pick, at: Date.now() };
+    r.transcript.push(line);
+    r.turn++;
+    push(id);
+    json(res, 200, { ok: true });
+    enqueue(r, async () => {
+      r.thinking = true; push(id);
+      try {
+        offered.altTaken = role;
+        const before = r.standing, beforeHas = r.ctx.design ? r.ctx.design.has.slice() : [];
+        r.ctx.design = entry; r.standing = pick;
+        const text = await propose({
+          line: { who: WHO[role], text: line.text }, took: { asks: [], refuses: [], beyond: "" },
+          before: before ? NAME(before) : null, after: NAME(pick), props: entry.has, changed: before !== pick,
+          alt: null, beyond: openBeyond(r), wants: [...r.ctx.wants.keys()], avoids: [...r.ctx.avoids.keys()],
+        });
+        r.transcript.push({ who: "builder", text, phase: "main", built: NAME(pick), proposal: true,
+                            diff: diffOf(r, beforeHas, entry.has), alt: null, chosenBy: role, at: Date.now() });
+      } catch (e) {
+        r.transcript.push({ who: "builder", failed: e.message, text: "",
+                            built: r.standing ? NAME(r.standing) : null, phase: "main", at: Date.now() });
+      } finally { r.thinking = false; push(id); }
+    });
+    return;
   }
 
   if (p === "/api/finish" && req.method === "POST") {

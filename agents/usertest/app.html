@@ -100,6 +100,8 @@ button.go[disabled]{opacity:.35; cursor:not-allowed; transform:none}
 .sbody .acts{display:flex; flex-wrap:wrap; gap:7px; margin-top:9px}
 .eyebrow a{color:inherit}
 .topnav{display:flex; justify-content:flex-end; gap:8px; padding:14px 24px 0; max-width:1500px; margin:0 auto}
+/* hidden must win over display:flex, or participants see New room and History */
+.topnav[hidden]{display:none}
 .navlink{font-size:14px; padding:7px 15px; border:1px solid var(--rule); border-radius:99px;
   background:var(--card); color:inherit; text-decoration:none}
 .navlink:hover{border-color:var(--soft)}
@@ -318,6 +320,45 @@ textarea[disabled]{opacity:.5}
 .scores ul{margin:0; padding:0}
 .scores .y{color:#9ec6a3} .scores .n{color:#e39a80}
 
+/* condition B: the bridge on both people's screens, the AI's guesses on every
+   line, and the small handles for answering, pointing, and correcting */
+.bridgecard canvas{width:100%; display:block; border-radius:3px; background:#eee8dc}
+.bridgecard .what{font-family:var(--display); font-size:19px; line-height:1.3; margin:9px 0 0}
+.bridgecard .what.none{color:var(--soft); font-style:italic; font-size:16px}
+.propchips{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px}
+.propchips .chip{font-size:12.5px; padding:6px 11px}
+.bridgecard .foot{padding:6px 0 0}
+.guess{font-family:var(--mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint)}
+.guess.fixed{color:var(--moss)}
+.line .read{margin:7px 0 0}
+.line.mine .read, .line.b .read{justify-content:flex-end}
+.handles{display:flex; flex-wrap:wrap; gap:6px; margin-top:6px}
+.line.mine .handles, .line.b .handles{justify-content:flex-end}
+.handle{font:inherit; font-size:12.5px; padding:3px 10px; border:1px solid var(--rule); border-radius:99px;
+  background:var(--card); color:var(--soft); cursor:pointer}
+.handle:hover{border-color:var(--rust); color:var(--rust)}
+.handle.go{background:var(--ink); color:var(--paper); border-color:var(--ink)}
+.handle[disabled]{opacity:.4; cursor:not-allowed}
+.tag{font-family:var(--mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--soft);
+  border:1px solid var(--rule); border-radius:2px; padding:1px 6px; display:inline-block; margin:0 0 5px}
+.corr{margin-top:8px; display:flex; flex-direction:column; gap:6px; align-self:stretch}
+.corr textarea{min-height:56px; font-size:14.5px; padding:9px 12px}
+.corr .row{margin-top:0}
+.diff{font-size:13px; color:var(--moss); margin-top:7px; line-height:1.5}
+.diff i{color:var(--faint); font-style:normal}
+.diff.none{color:var(--faint)}
+.alt{margin-top:8px; font-size:14px; padding:8px 11px; border:1px dashed var(--rule); border-radius:3px;
+  background:var(--card); display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center; text-align:left}
+.alt .lbl{font-family:var(--mono); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--faint)}
+.line.m.propline{align-items:stretch; text-align:left}
+.line.m.propline .said{font-family:var(--body); font-size:14.5px; color:var(--ink); background:var(--card);
+  border:1px solid var(--rule); border-left:2px solid var(--moss); border-radius:10px; padding:10px 13px; max-width:100%}
+.tagrow{display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:9px 11px 0; background:var(--paper-2);
+  border-top:1px solid var(--rule-2); font-size:12.5px; color:var(--soft)}
+.tagrow .tag{margin:0; cursor:pointer}
+.unres{margin:8px 0 0; padding-left:18px; font-size:14px}
+.unres li{margin-bottom:5px}
+.unres b{font-weight:600}
 table{width:100%; border-collapse:collapse; font-size:14.5px; margin-top:8px}
 td{padding:7px 10px 7px 0; border-top:1px solid var(--rule-2)}
 td.y{color:var(--moss); font-weight:600} td.n{color:var(--rust)}
@@ -363,6 +404,12 @@ const post = (u, b) => fetch(u, {method:"POST", headers:{"content-type":"applica
 
 // What each person was halfway through typing, kept across repaints.
 let opts = null, seen = {}, drafts = {};
+// Condition B: what the next line is about or builds on, an open correction
+// and its draft, and the last state per seat so a handle can repaint.
+let tags = {}, corrOpen = {}, corrDrafts = {}, last = {};
+const byName = (s, by) => by === "both" ? "both of you" : by === "none" ? "the AI's own choice" : by === s.role ? "you" : roleName(by);
+const partText = (s, key) => (s.props || []).find(p => p.key === key)?.text || key;
+const repaint = r => { if (ROLE === "both") bothView(); else if (last[r]) playerView(last[r]); };
 
 /* ── the facilitator, before a room exists ─────────────────────────────── */
 async function setup(){
@@ -416,7 +463,7 @@ function conversation(s, id, people, cls){
   return `<div class="${box}" id="${id}">` + lines.map(l => {
     const cls = l.who === "A" ? "a" : l.who === "B" ? "b" : "m";
     const mine = l.who === s.role ? " mine" : "";
-    return `<div class="line ${cls}${mine}">
+    return `<div class="line ${cls}${mine}${s.develop && l.proposal ? " propline" : ""}">
       <span class="who">${esc(l.who === s.role ? "You" : roleName(l.who))}${
         l.relay ? `<span class="private">passing on ${esc(roleName(l.about))}</span>`
         : l.decision ? `<span class="private decided">confirmed to the builder</span>`
@@ -424,9 +471,70 @@ function conversation(s, id, people, cls){
       <p class="said${l.failed || l.upload ? " muted" : ""}">${l.failed ? esc(failNote(l, s.role === "host"))
         : l.upload ? (l.who === s.role ? "You showed your drawing." : `${esc(roleName(l.who))} showed their drawing.`)
         : esc(l.text)}</p>
-      ${l.built ? `<span class="built">it now stands as ${esc(l.built)}</span>` : ""}
+      ${l.built && !(s.develop && l.proposal) ? `<span class="built">it now stands as ${esc(l.built)}</span>` : ""}
+      ${s.develop ? devExtras(s, l) : ""}
     </div>`;
   }).join("") + `</div>`;
+}
+
+// Condition B, under each line. A person's line shows what the AI took it to
+// mean, marked as its guess, and — for their own lines — a way to say what
+// they meant; the other person's line can be built on. The AI's line shows
+// what changed, who had asked for it, and the alternative it offered.
+function devExtras(s, l){
+  const me = s.role, canAct = me !== "host" && !s.finished;
+  if (l.who === "builder") {
+    if (l.failed) return "";
+    const d = l.diff, changes = d ? [...d.added.map(x => `+ ${esc(x.text)} <i>(${byName(s, x.by)})</i>`),
+                                     ...d.removed.map(x => `− ${esc(x.text)} <i>(${x.by === "none" ? "no longer" : "ruled out by " + byName(s, x.by)})</i>`)] : [];
+    return `${l.built ? `<span class="built">it now stands as ${esc(l.built)}${l.chosenBy ? ` — chosen by ${esc(byName(s, l.chosenBy))}` : ""}</span>` : ""}
+      ${l.proposal ? (changes.length ? `<div class="diff">Changed: ${changes.join(" · ")}</div>` : `<div class="diff none">Changed: nothing</div>`) : ""}
+      ${l.alt ? `<div class="alt"><span class="lbl">or</span><span>${esc(l.alt.name)}${l.alt.why ? ` — ${esc(l.alt.why)}` : ""}</span>
+        ${l.altTaken ? `<span class="tag">taken by ${esc(byName(s, l.altTaken))}</span>`
+          : canAct ? `<button class="handle go" data-try="${esc(l.alt.id)}">Try this one</button>` : ""}</div>` : ""}`;
+  }
+  const tagsHtml = [
+    l.part ? `<span class="tag">about: ${esc(partText(s, l.part))}</span>` : "",
+    Number.isInteger(l.replyTo) ? `<span class="tag">building on ${esc(roleName((s.lines.find(x => x.i === l.replyTo) || {}).who))}</span>` : "",
+    l.prefer ? `<span class="tag">took the alternative</span>` : "",
+  ].join("");
+  const read = l.taken ? `<p class="read"><span class="lbl">${l.corrected ? "now heard as" : "heard as"}</span>${
+      (l.asks || []).map(k => `<span class="key">${esc(k)}</span>`).join("")}${
+      (l.refuses || []).map(k => `<span class="key">not: ${esc(k)}</span>`).join("")}${
+      !(l.asks || []).length && !(l.refuses || []).length ? `<span class="key none">nothing it can build from</span>` : ""}${
+      l.beyond ? `<span class="key none">couldn't carry: ${esc(l.beyond)}</span>` : ""}
+      <span class="guess${l.corrected ? " fixed" : ""}">${l.corrected ? "corrected" : "the AI's guess"}</span></p>` : "";
+  const open = corrOpen[me] === l.i && l.who === me;
+  const handles = !canAct ? "" : open
+    ? `<div class="corr"><textarea id="corr-${me}" placeholder="What you meant by it, in a line.">${esc(corrDrafts[me] || "")}</textarea>
+        <div class="row"><button class="handle go" id="corrsend-${me}">Send what I meant</button><button class="handle" id="corrcancel-${me}">Cancel</button></div></div>`
+    : `<div class="handles">${l.who === me && l.taken ? `<button class="handle" data-nq="${l.i}">Not quite →</button>` : ""}${
+        l.who !== me && !l.prefer ? `<button class="handle" data-on="${l.i}">Build on this</button>` : ""}</div>`;
+  return tagsHtml + read + handles;
+}
+
+// Condition B: the bridge, on the person's own screen. What stands, the parts
+// (tap one to talk about it), and Finish — which either person may press; what
+// is unresolved stays visible after.
+function bridgeCard(s, compact){
+  const r = s.role;
+  const un = s.unresolved || [];
+  return `<div class="card bridgecard">
+    <p class="eyebrow">The bridge, as it stands</p>
+    ${compact ? "" : `<canvas id="crossing-${r}" aria-label="the crossing as it stands"></canvas>`}
+    <p class="what ${s.standing ? "" : "none"}">${s.standing ? esc(s.standing)
+      : s.thinking ? "the AI is making the first version…"
+      : s.bothSpoke ? "nothing yet" : "nothing yet — it makes a first version once you have both said something"}</p>
+    ${s.props && s.props.length ? `<div class="propchips">${s.props.map(p =>
+        `<button class="chip" data-part="${esc(p.key)}" ${s.finished ? "disabled" : ""}>${esc(p.text)}</button>`).join("")}</div>
+      ${s.finished ? "" : `<p class="foot muted">Tap a part to say something about it.</p>`}` : ""}
+    ${s.finished ? `<p class="eyebrow" style="margin-top:14px">Finished — still open between you</p>${un.length
+        ? `<ul class="unres">${un.map(u => u.kind === "conflict"
+            ? `<li><b>${esc(u.text)}</b> — wanted by ${esc(u.wantedBy.join(" and "))}, ruled out by ${esc(u.refusedBy.join(" and "))}</li>`
+            : `<li><b>${esc(u.text)}</b> — ${esc(u.who)} asked for it; nothing in the kit can make it</li>`).join("")}</ul>`
+        : `<p class="muted">Nothing left open between you.</p>`}`
+      : `<div class="row"><button class="mini" id="finish-${r}" ${s.standing ? "" : "disabled"}>Finish — what is still open stays visible</button></div>`}
+  </div>`;
 }
 
 // One person's column. Every id is suffixed with the role, because the combined
@@ -437,6 +545,7 @@ function panel(s, people){
   // On the open routes the two of them can keep talking while the builder works;
   // only confirming another decision has to wait for it.
   const r = s.role, mine = s.yourTurn && !s.finished && !s.needsUpload && (s.open || !s.thinking);
+  const dev = !!s.develop;
   // When the script has run out there is no next speaker, and roleName(null)
   // was falling through to "The builder" — so both panels sat waiting on a turn
   // that was never coming. Say what is actually true: everyone has spoken.
@@ -446,6 +555,8 @@ function panel(s, people){
   const absent = s.speaks === 0;
   const other = roleName(r === "A" ? "B" : "A");
   const pill = s.finished ? `<span class="pill wait">over</span>`
+    : dev && s.thinking ? `<span class="pill think">${s.bothSpoke ? "it is revising" : "it is reading"}</span>`
+    : dev ? `<span class="pill now">talk any time</span>`
     : absent ? `<span class="pill wait">not in this one</span>`
     : s.thinking ? `<span class="pill think">it is deciding</span>`
     : spent ? `<span class="pill wait">all said</span>`
@@ -455,6 +566,8 @@ function panel(s, people){
     : mine ? `<span class="pill now">${s.open ? "talk freely" : "your turn"}</span>`
     : `<span class="pill wait">${esc(roleName(s.turn))}&rsquo;s turn</span>`;
   const ph = s.finished ? "The session is over."
+    : dev && !s.bothSpoke ? "Say what you need from it. Once you have both said something, the AI makes a first version."
+    : dev ? `Answer ${other}, point at a part of the bridge, or say what to change.`
     : absent ? `${roleName(r)} has no part in this route. Only ${other} speaks.`
     : spent ? "Everyone has had their say. Nothing more to add."
     : s.needsUpload ? "Add your picture first."
@@ -487,12 +600,15 @@ function panel(s, people){
       </div>` : ""}
       ${conversation(s, "chat-" + r, people)}
       ${s.upload ? `<p class="foot">A drawing is the whole turn here. Nobody types.</p><div id="err-${r}"></div>` : ""}
+      ${dev && !s.finished && tags[r] && (tags[r].part || Number.isInteger(tags[r].replyTo)) ? `<div class="tagrow" id="tags-${r}">this line is
+        ${tags[r].part ? `<span class="tag" data-untag="part" title="remove">about: ${esc(partText(s, tags[r].part))} ×</span>` : ""}
+        ${Number.isInteger(tags[r].replyTo) ? `<span class="tag" data-untag="replyTo" title="remove">building on ${esc(roleName((s.lines.find(x => x.i === tags[r].replyTo) || {}).who))} ×</span>` : ""}</div>` : ""}
       ${s.finished || s.upload ? "" : `
         <div class="composer">
           <textarea id="say-${r}" ${mine ? "" : "disabled"} placeholder="${esc(ph)}">${esc(drafts[r] || "")}</textarea>
           <button class="send" id="send-${r}" ${mine ? "" : "disabled"}
-            aria-label="${s.open ? `Send to ${other}` : "Send"}" title="${s.open ? `Send to ${other} (the builder does not hear it)` : "Send"}">&uarr;</button>
-          ${s.open ? `<button class="confirm" id="confirm-${r}" ${mine && !s.thinking ? "" : "disabled"}
+            aria-label="${dev ? "Send to everyone" : s.open ? `Send to ${other}` : "Send"}" title="${dev ? "Send — everyone hears it, and the AI revises" : s.open ? `Send to ${other} (the builder does not hear it)` : "Send"}">&uarr;</button>
+          ${s.open && !dev ? `<button class="confirm" id="confirm-${r}" ${mine && !s.thinking ? "" : "disabled"}
             title="Hand this message to the builder as your decision">Confirm to build</button>` : ""}
         </div>
         <div id="err-${r}"></div>`}
@@ -532,7 +648,9 @@ function wire(s){
     // first, and whatever box is on screen when the answer comes is the one
     // cleared or refilled.
     drafts[r] = "";
-    const { ok, j } = await post("/api/say", { room: s.room, role: r, text, mode });
+    const t = tags[r] || {};
+    const { ok, j } = await post("/api/say", { room: s.room, role: r, text, mode, part: t.part, replyTo: t.replyTo });
+    if (ok) tags[r] = {};
     const box = document.getElementById("say-" + r), note = document.getElementById("err-" + r);
     if (ok) { if (box && box.value.trim() === text) box.value = ""; if (note) note.innerHTML = ""; return; }
     drafts[r] = text;
@@ -575,6 +693,46 @@ function wire(s){
     if (document.activeElement === document.body && drafts[r]) {
       ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
     }
+  }
+  // Condition B: draw the bridge, and wire the handles — a part to talk about,
+  // a line to build on, a correction, an alternative, and Finish. On the desk
+  // the two seats share one page, so each handle is scoped to its own column.
+  if (s.develop) {
+    const scope = ROLE === "both" ? `#col-${r} ` : "";
+    const cv = document.getElementById("crossing-" + r);
+    if (cv && window.drawCrossing) drawCrossing(cv, s.shape, s.world);
+    const box = () => document.getElementById("say-" + r);
+    const prefill = text => { const b = box(); if (b && !b.value.trim()) { b.value = text; drafts[r] = text; } if (b) { b.focus(); b.setSelectionRange(b.value.length, b.value.length); } };
+    document.querySelectorAll(`${scope}[data-part]`).forEach(c => c.onclick = () => {
+      tags[r] = { ...(tags[r] || {}), part: c.dataset.part };
+      prefill(`About ${partText(s, c.dataset.part)}: `); repaint(r);
+    });
+    document.querySelectorAll(`#chat-${r} [data-on]`).forEach(b => b.onclick = () => {
+      const i = Number(b.dataset.on), who = (s.lines.find(x => x.i === i) || {}).who;
+      tags[r] = { ...(tags[r] || {}), replyTo: i };
+      prefill(`Building on what ${roleName(who)} said — `); repaint(r);
+    });
+    document.querySelectorAll(`#chat-${r} [data-nq]`).forEach(b => b.onclick = () => { corrOpen[r] = Number(b.dataset.nq); repaint(r); });
+    document.querySelectorAll(`#tags-${r} [data-untag]`).forEach(t => t.onclick = () => { delete tags[r][t.dataset.untag]; repaint(r); });
+    const ct = document.getElementById("corr-" + r);
+    if (ct) { ct.oninput = () => { corrDrafts[r] = ct.value; }; if (document.activeElement === document.body) ct.focus(); }
+    const cs = document.getElementById("corrsend-" + r);
+    if (cs) cs.onclick = async () => {
+      const text = (document.getElementById("corr-" + r)?.value || "").trim(); if (!text) return;
+      cs.disabled = true;
+      const { ok, j } = await post("/api/correct", { room: s.room, role: r, index: corrOpen[r], text });
+      if (ok) { corrOpen[r] = null; corrDrafts[r] = ""; }
+      else { const note = document.getElementById("err-" + r); if (note) note.innerHTML = `<div class="warn">${esc(j.error || "that did not send")}</div>`; cs.disabled = false; }
+    };
+    const cc = document.getElementById("corrcancel-" + r);
+    if (cc) cc.onclick = () => { corrOpen[r] = null; corrDrafts[r] = ""; repaint(r); };
+    document.querySelectorAll(`#chat-${r} [data-try]`).forEach(b => b.onclick = async () => {
+      b.disabled = true;
+      const { ok, j } = await post("/api/prefer", { room: s.room, role: r, build: b.dataset.try });
+      if (!ok) { const note = document.getElementById("err-" + r); if (note) note.innerHTML = `<div class="warn">${esc(j.error || "that did not send")}</div>`; b.disabled = false; }
+    });
+    const fin = document.getElementById("finish-" + r);
+    if (fin) fin.onclick = () => { fin.disabled = true; post("/api/finish", { room: s.room }); };
   }
   // pin to the newest line when the count grows, but not on every repaint
   const chat = document.getElementById("chat-" + r);
@@ -629,7 +787,7 @@ function hostView(s){
   if (chat && s.lines.length !== seen.host) { chat.scrollTop = chat.scrollHeight; seen.host = s.lines.length; }
 }
 
-function playerView(s){ app.innerHTML = panel(s); wire(s); }
+function playerView(s){ last[s.role] = s; app.innerHTML = (s.develop ? bridgeCard(s) : "") + panel(s); wire(s); }
 
 // Both of them on one screen. Two streams, two columns, and each column still
 // shows only what its own role is allowed to see — so putting them side by side
@@ -701,6 +859,7 @@ function builderColumn(h){
           ? `<p class="read"><span class="lbl">interpreted as</span>${a.said.taken.map(k =>
                `<span class="key">${esc(k)}</span>`).join("")}</p>`
           : a.said.taken || a.did ? `<p class="read"><span class="lbl">interpreted as</span><span class="key none">nothing it could build from</span></p>` : ""}
+        ${a.said.beyond ? `<p class="read"><span class="lbl">couldn't carry</span><span class="key none">${esc(a.said.beyond)}</span></p>` : ""}
         ${a.said.picture && a.said.picture.length
           ? `<p class="read"><span class="lbl">saw in their picture</span>${a.said.picture.map(k =>
                `<span class="key">${esc(k)}</span>`).join("")}</p>` : ""}
@@ -799,6 +958,7 @@ function sketchPanel(h){
 function bothView(){
   const a = both.A, b = both.B, h = both.host;
   if (!a || !b || !h) return;
+  last.A = a; last.B = b;
   app.classList.add("wide");
   app.innerHTML = `
     <div>
@@ -810,8 +970,8 @@ function bothView(){
     ${invite(a.room)}
     <div class="desk">
       <div class="pair">
-        <div class="col" id="col-A">${panel(a, false)}</div>
-        <div class="col" id="col-B">${panel(b, false)}</div>
+        <div class="col" id="col-A">${a.develop ? bridgeCard(a, true) : ""}${panel(a, false)}</div>
+        <div class="col" id="col-B">${b.develop ? bridgeCard(b, true) : ""}${panel(b, false)}</div>
       </div>
       ${builderColumn(h)}
     </div>

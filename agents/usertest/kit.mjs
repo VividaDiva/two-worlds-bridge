@@ -123,6 +123,20 @@ export const ROUTES = {
     note: "All three of you in one conversation. The AI hears everything both of you say; whenever either of you confirms a decision, it builds from all of it, in front of you both.",
     script: ["A", "B", "A", "B"], see: { A: BOTH, B: BOTH }, open: true, hearsTalk: true,
   },
+  // `develop`: condition B. All three in one conversation, with the bridge in
+  // front of both people. Nobody waits for a turn. Once both have said something
+  // the AI makes a first version; after that it revises after every message and
+  // says what it took from each of them, what it could not carry, and — when the
+  // two of them pull apart — one other way. Either person can answer the other,
+  // point at a part of what stands, correct what the AI took them to mean, or
+  // take an alternative it offered. Either can finish; differences stay visible.
+  // The kit, the reader's rules and the chooser's rules are the same as on every
+  // other route, so what is built stays comparable.
+  develop: {
+    arrow: "Role 1 ↔ Role 2 ↔ AI ⇄ Build",
+    note: "Both of you and the AI, with the bridge in front of you. Once you have both said something it makes a first version; after that it revises after every message and says what it took from each of you, what it could not, and sometimes another way. Answer each other, point at a part, or correct what it took you to mean. Either of you can finish.",
+    script: ["A", "B", "A", "B"], see: { A: BOTH, B: BOTH }, open: true, hearsTalk: true, develop: true,
+  },
 };
 
 // What the builder is offered, in the shape CHOOSE_SYSTEM wants.

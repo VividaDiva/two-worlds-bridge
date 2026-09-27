@@ -285,6 +285,115 @@ export async function readPicture(base64, media) {
   return { shape, needs: propsOf(shape), saw };
 }
 
+// ── condition B: developing it together ──────────────────────────────────
+// The reader, the chooser and the kit are the same as everywhere else. What is
+// added: the reader also names, in plain words, what a line asked for that no
+// key can carry, so it can be shown rather than dropped; the chooser may name
+// one alternative when the two people pull apart; and the builder speaks as a
+// proposer — what it took from each of them, what it could not, one other way,
+// and at most one question to one named person.
+const READ_B_JSON = { type:"object", properties:{
+  asks:{type:"array", items:{type:"string"}}, refuses:{type:"array", items:{type:"string"}},
+  beyond:{type:"string"} }, required:["asks","refuses","beyond"] };
+const READ_B = READ + "\n" + [
+  `- In "beyond", in a few plain words, whatever the sentence asks for that none of the keys can carry — a`,
+  `  material, a surface, a time of day, a separate path, a step. Their words, not yours.`,
+  `- Never put in "beyond" what a key you returned already carries: a car or a cart is "heavy", not beyond.`,
+  `- A key is about the whole crossing. A part of it — an edge, a step, a side, a lane — is not the whole:`,
+  `  a raised edge for walkers is not "high", and a side for walkers is not "many". Those go in "beyond".`,
+  `- If both lists are empty, "beyond" must not be: say what they asked for, in their words.`,
+].join("\n");
+
+export async function readLineB(text, clarified) {
+  const user = [
+    `The sentence: "${text}"`,
+    ...(clarified ? [`They were asked what they meant by it, and said: "${clarified}"`] : []),
+    ``,
+    `What does it ask for, and what does it refuse?`,
+  ].join("\n");
+  const out = await ask(READ_B, user, READ_B_JSON);
+  const clean = xs => (Array.isArray(xs) ? xs : []).filter(k => k in FEATURES).slice(0, 3);
+  return { asks: clean(out.asks), refuses: clean(out.refuses),
+           beyond: typeof out.beyond === "string" ? out.beyond.trim().slice(0, 120) : "" };
+}
+
+const CHOOSE_B_JSON = { type:"object", properties:{
+  build:{type:"string"}, why:{type:"string"}, alt:{type:"string"}, altWhy:{type:"string"} },
+  required:["build","why","alt","altWhy"] };
+const CHOOSE_B = kit => CHOOSE(kit) + "\n" + [
+  `- If the two of them pull in different directions, name in "alt" one other id from the list that serves`,
+  `  the side you did not build for, and in "altWhy" what taking it would give up, in a line. Otherwise leave`,
+  `  "alt" and "altWhy" empty. Never offer an alternative that nobody's words point to.`,
+].join("\n");
+
+export async function chooseBuildB({ wants, avoids, standing, said, pictures = [] }) {
+  const kit = kitForChoosing();
+  const list = ks => ks.length ? ks.map(f => FEATURES[f]).join("; ") : "nothing yet";
+  const user = [
+    `Asked of you so far: ${list(wants)}.`,
+    `Refused so far: ${list(avoids)}.`,
+    standing ? `What stands now: ${standing}.` : `Nothing stands yet.`,
+    ``,
+    `The conversation, in order:`,
+    ...said.map(s => `  ${s.who}: ${s.text}`),
+    ...(pictures.length ? [``, `The crossings they showed you, each in a picture of their own:`,
+      ...pictures.map(p => `  ${p.who}'s picture: ${list(p.needs)}.`)] : []),
+    ``,
+    `What do you build?`,
+  ].join("\n");
+  const out = await ask(CHOOSE_B(kit), user, CHOOSE_B_JSON);
+  const norm = x => String(x || "").toLowerCase().replace(/^an? /, "").replace(/[^a-z0-9]/g, "");
+  const find = raw => {
+    if (!raw) return null;
+    const hit = kit.find(k => norm(k.id) === norm(raw))
+             || kit.find(k => norm(k.id).includes(norm(raw)) || norm(raw).includes(norm(k.id)));
+    const entry = hit && KIT.find(k => NAME(k.id) === hit.id);
+    return entry ? entry.id : null;
+  };
+  const id = find(out.build), altId = find(out.alt);
+  return { id, why: out.why, alt: altId && altId !== id ? { id: altId, why: String(out.altWhy || "").trim() } : null };
+}
+
+const PROPOSE = [
+  `You build crossings out of matchsticks for two people who are working it out with you, and you can see`,
+  `nothing: you have only what they say. You have a workshop of things you know how to make, and whatever`,
+  `they mean, what you build is what you can build out of that.`,
+  ``,
+  `Say what you did with what was just said, so that both of them can go on from it.`,
+  ``,
+  `Hold to this:`,
+  `- Under sixty words. Call them Role 1 and Role 2. Never use the word "user".`,
+  `- Say what you took from each of them and what you made of it — in relation to what THEY said, not to a list.`,
+  `  Do not assume the two of them meant the same thing.`,
+  `- If something was asked for that you have no part for, say so plainly and that it is still on the list.`,
+  `  Never say it is met by something else.`,
+  `- If you are given an alternative, name it in one clause and what it gives up.`,
+  `- When one short question to one named person would change what you build next, ask it, and only that one.`,
+  `  Otherwise ask nothing.`,
+  `- Report. Do not thank, apologise, or ask them to agree. Say only what is true of what stands.`,
+].join("\n");
+
+export async function propose({ line, took, before, after, props, changed, alt, beyond, wants, avoids }) {
+  const list = ks => ks.length ? ks.map(f => FEATURES[f]).join("; ") : "nothing";
+  const bits = [
+    `${line.who} just said: "${line.text}"`,
+    `You took it to ask for: ${list(took.asks)}. To rule out: ${list(took.refuses)}.`,
+    took.beyond ? `It also asked for something you have no part for: ${took.beyond}.` : ``,
+    ``,
+    changed ? `You have rebuilt. It was ${before || "nothing at all"}. It is now ${after}.`
+            : `You changed nothing. It is still ${after}.`,
+    `What ${after} actually is: ${list(props)}.`,
+    alt ? `An alternative you could offer: ${alt.name} — ${alt.why || "it serves the other side"}.` : ``,
+    beyond.length ? `Still on the list, with no part for it: ${beyond.map(b => `${b.who}: ${b.text}`).join("; ")}.` : ``,
+    ``,
+    `Asked of you so far: ${list(wants)}. Refused so far: ${list(avoids)}.`,
+    ``,
+    `Say your piece.`,
+  ].filter(x => x !== "").join("\n");
+  const out = await ask(PROPOSE, bits, SAY_JSON);
+  return typeof out.say === "string" ? out.say.trim() : "";
+}
+
 // A second reconstruction of the same conversation, and a check on the first:
 // the builder makes the crossing out of keys, and the keys are only what the
 // workshop can make. This makes a picture out of the words alone — no keys, no
