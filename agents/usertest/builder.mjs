@@ -213,18 +213,18 @@ export async function chooseBuild({ wants, avoids, standing, said, pictures = []
   return { id: entry ? entry.id : null, why: out.why, unmatched: hit ? null : raw };
 }
 
-export async function speak({ said, took, before, after, props, wants, avoids, changed, unsupported = [], proposals = [] }) {
+export async function speak({ said, took, before, after, props, wants, avoids, changed, unsupported = [], proposals = [], wallTook = null }) {
   const list = ks => ks.length ? ks.map(f => FEATURES[f]).join("; ") : "nothing yet";
   const bits = [
     `They said: "${said}"`,
-    `You took it to be about: ${took.length ? list(took) : "nothing you can build from"}.`,
+    wallTook !== null ? `You took it to be about: ${wallTook || "nothing you can build from"}.`
+                      : `You took it to be about: ${took.length ? list(took) : "nothing you can build from"}.`,
     ``,
     changed ? `You have rebuilt. It was ${before || "nothing at all"}. It is now ${after}.`
             : `You changed nothing, and why is the only thing worth saying.`,
     `What ${after} actually is: ${list(props)}.`,
     ``,
-    `Asked of you so far: ${list(wants)}.`,
-    `Refused so far: ${list(avoids)}.`,
+    ...(wallTook !== null ? [] : [`Asked of you so far: ${list(wants)}.`, `Refused so far: ${list(avoids)}.`]),
     ...(unsupported.length ? [``, `Asked for, and nothing in your workshop makes it — say so, it is not met: ${unsupported.join("; ")}.`] : []),
     ...(proposals.length ? [`Separately — NOT laid, NOT built, NOT part of what stands — you have written on the sheet for both of them to accept: ${proposals.map(p => `${p.kind === "rule" ? "a rule" : "a new part"} — ${p.what}`).join("; ")}. After saying what you laid, add one clause that it is on the sheet, waiting for them. Never say you laid it.`] : []),
     ``,
@@ -377,11 +377,12 @@ const PROPOSE = [
   `- Report. Do not thank, apologise, or ask them to agree. Say only what is true of what stands.`,
 ].join("\n");
 
-export async function propose({ line, took, before, after, props, changed, alt, beyond, wants, avoids, question = "", proposals = [] }) {
+export async function propose({ line, took, before, after, props, changed, alt, beyond, wants, avoids, question = "", proposals = [], wallTook = null }) {
   const list = ks => ks.length ? ks.map(f => FEATURES[f]).join("; ") : "nothing";
   const bits = [
     `${line.who} just said: "${line.text}"`,
-    `You took it to ask for: ${list(took.asks)}. To rule out: ${list(took.refuses)}.`,
+    wallTook !== null ? `You took it to be about: ${wallTook || "nothing you can build from"}.`
+                      : `You took it to ask for: ${list(took.asks)}. To rule out: ${list(took.refuses)}.`,
     took.beyond ? `It also asked for something you have no part for: ${took.beyond}.` : ``,
     ``,
     changed ? `You have rebuilt. It was ${before || "nothing at all"}. It is now ${after}.`
@@ -392,7 +393,7 @@ export async function propose({ line, took, before, after, props, changed, alt, 
     question ? `From your wall, one question worth putting to ${line.who}, if it still is: "${question}" — ask it or nothing.` : ``,
     proposals.length ? `You have written on the sheet, for both of them to accept or decline — say this before anything else, in one clause, and do not call it built: ${proposals.map(p => `${p.kind === "rule" ? "a rule" : "a new part"} — ${p.what}`).join("; ")}.` : ``,
     ``,
-    `Asked of you so far: ${list(wants)}. Refused so far: ${list(avoids)}.`,
+    wallTook !== null ? `` : `Asked of you so far: ${list(wants)}. Refused so far: ${list(avoids)}.`,
     ``,
     `Say your piece.`,
   ].filter(x => x !== "").join("\n");
@@ -625,4 +626,65 @@ export async function relayFromWall({ from, to, cards }) {
   ].join("\n");
   const out = await ask(RELAY, user, SAY_JSON);
   return typeof out.say === "string" ? out.say.trim() : "";
+}
+
+// ── the toolkit's chooser ─────────────────────────────────────────────────
+// It is handed the wall in plain language and its own decision record, and
+// picks from the same workshop. No tally of keys, no "asked for so far": what it
+// builds follows from what it heard as needs and what it decided to do about
+// each. The keys on a card are used afterwards, to check what stands against
+// the need — never here.
+const CHOOSE_T_JSON = CHOOSE_B_JSON;
+const CHOOSE_T = kit => [
+  `You build crossings out of matchsticks, and you have a workshop of things you know how to make.`,
+  `Two people have been describing what they need, and you have kept a wall — one card per need — and`,
+  `written a decision record saying what you will do about each. You cannot ask anything now and you`,
+  `cannot see where they are standing. Build from the wall and the record.`,
+  ``,
+  `What you can make, and what each one is actually like:`,
+  ...kit.map(k => `  ${k.id} — ${k.props}`),
+  ``,
+  `Rules:`,
+  `- Pick exactly one id from that list. Use the id exactly as written.`,
+  `- Follow your record: every card you answered with a part must be delivered by what you pick, as far as`,
+  `  one crossing can. A card answered with a rule or a new part is on the sheet, not in the shape.`,
+  `- A need said to you directly outweighs one reported by the other person, which outweighs your own`,
+  `  inference. A concern someone voiced is not overridden by convenience.`,
+  `- Something ruled out is a stronger signal than something asked for.`,
+  `- If nothing on the wall favours a change, keep what is already standing.`,
+  `- If the record lists a conflict, name in "alt" one other id that serves the other side, and in "altWhy"`,
+  `  what it gives up. Otherwise leave both empty.`,
+  `- You are choosing what to build, not describing it. One id, and why in a line, in terms of the cards.`,
+].join("\n");
+
+export async function chooseBuildT({ cards, record, standing, said, pictures = [] }) {
+  const kit = kitForChoosing();
+  const via = c => c.via === "direct" ? "said to you" : c.via.startsWith("reported") ? "reported by the other" : "your inference";
+  const user = [
+    `The wall:`,
+    ...cards.map(c => `  [${c.id}] ${c.who}, ${via(c)}: "${c.quote}" → ${c.need}${c.why ? " — " + c.why : ""}${c.concern ? " · concern: " + c.concern : ""}${c.when ? " · when: " + c.when : ""}`),
+    ``,
+    `Your decision record:`,
+    record || "  (none yet)",
+    ``,
+    standing ? `What stands now: ${standing}.` : `Nothing stands yet.`,
+    ``,
+    `The conversation, in order:`,
+    ...said.map(x => `  ${x.who}: ${x.text}`),
+    ...(pictures.length ? [``, `The crossings they showed you, each in a picture of their own:`,
+      ...pictures.map(p => `  ${p.who}'s picture: ${p.needs.map(f => FEATURES[f]).join("; ")}.`)] : []),
+    ``,
+    `What do you build?`,
+  ].join("\n");
+  const out = await ask(CHOOSE_T(kit), user, CHOOSE_T_JSON);
+  const norm = x => String(x || "").toLowerCase().replace(/^an? /, "").replace(/[^a-z0-9]/g, "");
+  const find = raw => {
+    if (!raw) return null;
+    const hit = kit.find(k => norm(k.id) === norm(raw))
+             || kit.find(k => norm(k.id).includes(norm(raw)) || norm(raw).includes(norm(k.id)));
+    const entry = hit && KIT.find(k => NAME(k.id) === hit.id);
+    return entry ? entry.id : null;
+  };
+  const id = find(out.build), altId = find(out.alt);
+  return { id, why: out.why, alt: altId && altId !== id ? { id: altId, why: String(out.altWhy || "").trim() } : null };
 }

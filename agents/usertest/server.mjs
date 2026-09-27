@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 import { mkCtx, hear, newTurn, build, provenance } from "../engine.mjs";
 import { ARGUMENTS, ROUTES, NAME, FEATURES, KIT, propsOf } from "./kit.mjs";
 import { readLine, chooseBuild, speak, readPicture, relay, sketch, readLineB, chooseBuildB, propose,
-         wallHear, wallDecide, relayFromWall } from "./builder.mjs";
+         wallHear, wallDecide, relayFromWall, chooseBuildT } from "./builder.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 8780);
@@ -105,7 +105,7 @@ function view(room, role) {
     // Which of them asked for each property of what stands. This is the whole
     // question when an agent has two principals instead of one, so it is worth
     // showing: it is the only place you can see whose meaning it acted on.
-    provenance: role === "host" ? provenance(room.ctx).feats : null,
+    provenance: role === "host" ? (room.wall ? wallProvenance(room) : provenance(room.ctx).feats) : null,
     thinking: room.thinking,
     // Condition B. Both people see the bridge, what it has, what changed, the
     // AI's reading of every line (marked as its guess), and at the end what was
@@ -205,7 +205,7 @@ function record(room) {
     shape: room.ctx.design ? room.ctx.design.shape : null,
     // The ground under it, so the crossing can be drawn again from the record.
     world: { ...room.ctx.world },
-    provenance: provenance(room.ctx).feats,
+    provenance: room.wall ? wallProvenance(room) : provenance(room.ctx).feats,
     // Needs met so far, even before End is pressed; `finished` says which.
     score: room.score || scoreRoom(room),
     // The sketches are files beside the pictures; the record keeps when and
@@ -352,6 +352,21 @@ async function hearLine(room, line) {
   line.cards = ids; line.tools = tools; line.ask = heard.ask; line.memberCheck = memberCheck;
 }
 
+// What the wall took from one line, in its own words — for the spoken line.
+function wallTookOf(room, line) {
+  const mine = room.wall ? room.wall.cards.filter(c => (line.cards || []).includes(c.id) && !c.withdrawn) : [];
+  return mine.map(c => c.need + (c.rulesOut.length ? " (ruling out " + c.rulesOut.map(k => FEATURES[k]).join("; ") + ")" : "")).join("; ");
+}
+// Whose need each feature of the toolkit's bridge answers, read off the wall.
+function wallProvenance(room) {
+  if (!room.ctx.design) return [];
+  return room.ctx.design.has.map(f => {
+    const who = new Set(room.wall ? room.wall.cards.filter(c => !c.withdrawn && c.keys.includes(f)).map(c => c.who) : []);
+    return { feature: f, description: FEATURES[f], byA: who.has("A"), byB: who.has("B") };
+  });
+}
+const activeCards = room => room.wall ? room.wall.cards.filter(c => !c.withdrawn) : [];
+
 // The decision record, before a build; rendered for the chooser as well.
 async function decideWall(room) {
   if (!room.wall) return { record: "", unsupported: [], proposals: [] };
@@ -478,17 +493,13 @@ async function builderTurn(room, line) {
 
 async function lay(room, line, took) {
   const before = room.standing;
-  build(room.ctx);                                   // the scoring rule, to compare against
   const said = room.transcript.filter(e => e.who !== "builder" && e.phase === "main")
                               .map(e => ({ who: e.who === "A" ? "Role 1" : "Role 2", text: e.text }));
   const pictures = Object.keys(room.seenPicture || {})
     .filter(r => room.uploads[r]?.needs)
     .map(r => ({ who: r === "A" ? "Role 1" : "Role 2", needs: room.uploads[r].needs }));
   const { record, unsupported, proposals } = await decideWall(room);
-  const chose = await chooseBuild({
-    wants: [...room.ctx.wants.keys()], avoids: [...room.ctx.avoids.keys()],
-    standing: before ? NAME(before) : null, said, pictures, record,
-  });
+  const chose = await chooseBuildT({ cards: activeCards(room), record, standing: before ? NAME(before) : null, said, pictures });
   if (chose.id) room.ctx.design = KIT.find(k => k.id === chose.id);
   const after = room.ctx.design ? room.ctx.design.id : null;
   room.standing = after;
@@ -496,8 +507,8 @@ async function lay(room, line, took) {
     said: line ? line.text : said.map(s => s.text).join(" "),
     took, before: before ? NAME(before) : null, after: NAME(after),
     props: room.ctx.design ? room.ctx.design.has : [],
-    wants: [...room.ctx.wants.keys()], avoids: [...room.ctx.avoids.keys()],
-    changed: before !== after, unsupported, proposals,
+    wants: [], avoids: [], changed: before !== after, unsupported, proposals,
+    wallTook: line ? wallTookOf(room, line) : activeCards(room).map(c => c.need).join("; "),
   });
   linkWall(room);
   room.transcript.push({ who: "builder", text: say, phase: "main", built: NAME(after), at: Date.now(),
@@ -528,7 +539,7 @@ function replay(room) {
 // What changed between two builds, and who had named each thing. "none" is a
 // property nobody asked for — the kit's doing, not theirs.
 function diffOf(room, beforeHas, afterHas) {
-  const named = f => { const s = room.ctx.namedBy.get(f); return !s || !s.size ? "none" : s.has("A") && s.has("B") ? "both" : s.has("A") ? "A" : "B"; };
+  const named = f => { const s = new Set(activeCards(room).filter(c => c.keys.includes(f)).map(c => c.who)); return !s.size ? "none" : s.has("A") && s.has("B") ? "both" : s.has("A") ? "A" : "B"; };
   const refused = f => { const rs = new Set(room.transcript.filter(e => (e.refuses || []).includes(f)).map(e => e.who));
                          return !rs.size ? "none" : rs.size === 2 ? "both" : [...rs][0]; };
   return {
@@ -596,14 +607,12 @@ async function developTurn(room, line) {
 // with what was just said — to both of them, in relation to what each said.
 async function layB(room, line, said) {
   const before = room.standing, beforeHas = room.ctx.design ? room.ctx.design.has.slice() : [];
-  build(room.ctx);
   const conv = room.transcript.filter(e => e.who !== "builder" && e.phase === "main")
     .map(e => ({ who: WHO[e.who], text: (e.part ? `[about ${FEATURES[e.part]}] ` : "") + e.text + (e.corrected ? ` — they clarified: "${e.corrected}"` : "") }));
   const pictures = Object.keys(room.seenPicture || {}).filter(r => room.uploads[r]?.needs)
     .map(r => ({ who: WHO[r], needs: room.uploads[r].needs }));
   const { record, proposals } = await decideWall(room);
-  const chose = await chooseBuildB({ wants: [...room.ctx.wants.keys()], avoids: [...room.ctx.avoids.keys()],
-                                     standing: before ? NAME(before) : null, said: conv, pictures, record });
+  const chose = await chooseBuildT({ cards: activeCards(room), record, standing: before ? NAME(before) : null, said: conv, pictures });
   if (chose.id) room.ctx.design = KIT.find(k => k.id === chose.id);
   const after = room.ctx.design ? room.ctx.design.id : null;
   room.standing = after;
@@ -611,14 +620,14 @@ async function layB(room, line, said) {
   // An alternative is offered only when the two of them actually pull apart —
   // something one asked for and the other ruled out. The chooser was offering
   // one on the first build "which neither speaker requested".
-  const apart = unresolved(room).some(u => u.kind === "conflict");
+  const apart = unresolved(room).some(u => u.kind === "conflict") || !!(room.wall?.record?.conflicts?.length);
   const alt = chose.alt && apart ? { id: chose.alt.id, name: NAME(chose.alt.id), why: chose.alt.why } : null;
   const text = await propose({
     line: { who: WHO[line.who], text: said || line.text },
     took: { asks: line.asks || [], refuses: line.refuses || [], beyond: line.beyond || "" },
     before: before ? NAME(before) : null, after: NAME(after), props: afterHas, changed: before !== after,
-    alt, beyond: openBeyond(room), wants: [...room.ctx.wants.keys()], avoids: [...room.ctx.avoids.keys()],
-    question: line.ask || "", proposals,
+    alt, beyond: openBeyond(room), wants: [], avoids: [],
+    question: line.ask || "", proposals, wallTook: wallTookOf(room, line),
   });
   linkWall(room);
   room.transcript.push({ who: "builder", text, phase: "main", built: NAME(after), proposal: true,
@@ -1105,7 +1114,7 @@ const srv = http.createServer(async (req, res) => {
         const text = await propose({
           line: { who: WHO[role], text: line.text }, took: { asks: [], refuses: [], beyond: "" },
           before: before ? NAME(before) : null, after: NAME(pick), props: entry.has, changed: before !== pick,
-          alt: null, beyond: openBeyond(r), wants: [...r.ctx.wants.keys()], avoids: [...r.ctx.avoids.keys()],
+          alt: null, beyond: openBeyond(r), wants: [], avoids: [], wallTook: "",
         });
         linkWall(r);
         r.transcript.push({ who: "builder", text, phase: "main", built: NAME(pick), proposal: true,
