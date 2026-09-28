@@ -169,12 +169,14 @@ test("switching rooms removes old chat and drafts while all three new views load
   const both = { A: {}, B: {}, host: {} };
   const listeners = [];
   let closed = 0;
+  const feedbackHost={hidden:false,setAttribute(){this.hidden=true;}};
   const context = vm.createContext({ app, both, seen: { A: 3 }, drafts: { A: "old draft" },
-    roomDrafts:new Map(), draftRoom:null, document: { getElementById: () => ({}) }, bothView() {},
+    roomDrafts:new Map(), draftRoom:null, document: { getElementById: () => feedbackHost }, bothView() {},
     listen(room, role, callback) { listeners.push({ room, role, callback }); return () => closed++; },
   });
   vm.runInContext(source + '\nwatchBoth("first"); watchBoth("second");', context);
   assert.equal(closed, 3);
+  assert.equal(feedbackHost.hidden,true);
   assert.equal(both.A, null);
   assert.equal(both.B, null);
   assert.equal(both.host, null);
@@ -188,7 +190,7 @@ test("switching rooms removes old chat and drafts while all three new views load
 test("drafts return to their own room after switching tabs",()=>{
   const html=fs.readFileSync(path.join(here,"app.html"),"utf8");
   const source=html.slice(html.indexOf("let stopBoth = [];"),html.indexOf("// Every use case, always switchable."));
-  const context=vm.createContext({app:{},both:{},seen:{},drafts:{},roomDrafts:new Map(),draftRoom:null,bothView(){},listen(){return ()=>{};}});
+  const context=vm.createContext({app:{},both:{},seen:{},drafts:{},roomDrafts:new Map(),draftRoom:null,document:{getElementById:()=>null},bothView(){},listen(){return ()=>{};}});
   vm.runInContext(source+'\nwatchBoth("control"); drafts.A="Keep my draft"; watchBoth("toolkit");',context);
   assert.equal(context.drafts.A,undefined);
   vm.runInContext('watchBoth("control");',context);

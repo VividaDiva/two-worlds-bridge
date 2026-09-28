@@ -1,6 +1,8 @@
 (async()=>{
 'use strict';
 const $=id=>document.getElementById(id), room=new URLSearchParams(location.search).get('room'),variant=new URLSearchParams(location.search).get('variant');
+const embedded=new URLSearchParams(location.search).get('embedded')==='1';
+if(embedded){document.body.classList.add('embedded');const seat=new URLSearchParams(location.search).get('role');if(['A','B'].includes(seat))$('role').value=seat;}
 const colors={red:'#e75e65',neutral:'#f3ccd9',some:'#a8d8f0',blue:'#2672cb'};
 const labels={red:'Dissatisfied',neutral:'Neutral',some:'Somewhat satisfied',blue:'Satisfied',none:'Unrated / erase'};
 let step=0,color='red',mode='grid',brush=22,draft,matches,background,sketch=null,dirty=false,pointer=null,preview=null;
