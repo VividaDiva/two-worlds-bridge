@@ -13,13 +13,35 @@ const v=variant==='control'&&h.control?{...h,...h.control,sheetDrawn:null}:h;
 const last=h.sketches?.at(-1);
 // A legacy side-by-side control has no separate sketch: never label the Toolkit image as Control.
 const sketchUrl=last&&variant!=='control'?`/sketch/${encodeURIComponent(room)}/${last.n}.png`:null;
-const source={shape:v.shape,world:v.world,extras:v.sheetDrawn,standing:v.standing,sketchUrl,sketch:last||null,variant:variant||'main',agent:variant==='control'?'keys':h.agent,capturedAt:new Date().toISOString()};
+const source={shape:v.shape,world:v.world,extras:v.sheetDrawn,standing:v.standing,sketchUrl,sketch:last||null,variant:variant||'main',agent:variant==='control'?'keys':h.agent,capturedAt:new Date().toISOString(),conversation:{room,argument:h.argument,route:h.route,arrow:h.arrow,note:h.note,lines:(h.lines||[]).filter(l=>variant!=='control'||l.who!=='builder').map(l=>({who:l.who,text:l.text,phase:l.phase,upload:l.upload,decision:l.decision,relay:l.relay,about:l.about,clarification:l.clarification,understandingUpdate:l.understandingUpdate,built:l.built,failed:!!l.failed}))}};
 $('back').href=`/j/${encodeURIComponent(room)}/both`;
 $('context').textContent=`${h.argument||''} · ${h.route||''} · ${source.agent} · session ${room}`;
 try{const us=await fetch('/api/users').then(r=>r.json());const arr=Array.isArray(us)?us:us.users||us.profiles||[];const pair=arr.find(u=>u.sessions?.some(s=>s.room===room));if(pair?.participants)$('role').options[1].textContent=`Role ${pair.participants[1]}`;}catch{}
+function showConversation(){
+ const context=draft.source.conversation||source.conversation;
+ if(!draft.source.conversation)$('chat-help').textContent='Conversation loaded when this page opened. This older drawing draft has no saved chat snapshot; the conversation may include later messages.';
+ const roleName=r=>r==='A'?$('role').options[0].textContent:r==='B'?$('role').options[1].textContent:r==='builder'?'AI':r||'Unknown speaker';
+ const rename=s=>(s||'').replace(/Role 2/g,roleName('B')).replace(/Role 1/g,roleName('A'));
+ $('route-condition').textContent=draft.source.agent==='keys'?'Control':draft.source.agent==='toolkit'?'Toolkit':'Control · historical';
+ $('route-arrow').textContent=rename(context?.arrow)||context?.route||'Route unavailable';
+ $('route-note').textContent=rename(context?.note)||'No route description saved.';
+ $('feedback-chat').replaceChildren();
+ if(!context){$('feedback-chat').textContent='This older feedback draft has no conversation snapshot. Open the session to review its record.';return;}
+ for(const l of context.lines){
+  const message=document.createElement('div');message.className='chat-message';message.dataset.speaker=l.who;
+  const who=document.createElement('strong');who.textContent=roleName(l.who);message.append(who);
+  const tag=l.failed?'AI response failed':l.clarification?'Clarification question':l.understandingUpdate?'Understanding updated':l.relay?`Relaying ${roleName(l.about)}’s needs`:l.decision?'Confirmed to AI':l.phase==='confer'?'Between participants · not sent to AI':null;
+  if(tag){const label=document.createElement('small');label.textContent=tag;message.append(label);}
+  const text=document.createElement('p');text.textContent=l.upload?'Shared a reference image.':l.text||'(No text recorded)';message.append(text);
+  if(l.built){const build=document.createElement('p');build.className='chat-build';build.textContent=`Built: ${l.built}`;message.append(build);}
+  $('feedback-chat').append(message);
+ }
+ if(!context.lines.length)$('feedback-chat').textContent='No conversation recorded for this result.';
+ if(variant==='control')$('chat-help').textContent='Original participant messages for the Control comparison. Toolkit AI replies are excluded.';
+}
 function fresh(){return {version:1,palette:{...colors},ratingLabels:{...labels},coordinateSpace:{width:1200,height:700},role:$('role').value,participantLabel:$('role').selectedOptions[0].textContent,source:clone(source),ratings:{},added:[],strokes:[],notes:['','',''],visited:[true,false,false]};}
 function localSave(){dirty=true;try{localStorage.setItem(localKey(),JSON.stringify(draft));}catch{status('Local draft storage unavailable. Use Save feedback to keep your work.');}}
-async function load(){draft=fresh();try{const saved=JSON.parse(localStorage.getItem(localKey()));if(saved?.version===1)draft=saved;}catch{}undo=[[],[],[]];step=0;sketch=null;
+async function load(){draft=fresh();try{const saved=JSON.parse(localStorage.getItem(localKey()));if(saved?.version===1)draft=saved;}catch{}undo=[[],[],[]];step=0;sketch=null;showConversation();
 if(draft.source.sketchUrl){try{sketch=await new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=reject;img.src=draft.source.sketchUrl;});}catch{status('Saved sketch could not load. Matchstick feedback is still available.');}}
 matches=crossingMatches(draft.source.shape,draft.source.world,draft.source.extras);$('workspace').hidden=false;render();}
 const palette=()=>Object.keys(labels).map(k=>`<button class="swatch" style="--color:${colors[k]||'#eee8dc'}" data-color="${k}" aria-pressed="${k===color}">${labels[k]}</button>`).join('');
