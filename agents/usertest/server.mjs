@@ -10,6 +10,7 @@
 //
 // The key lives in this process. Participants never hold it and never see it.
 import http from "node:http";
+import {feedbackHandler} from "./feedback.mjs";
 import {applyNeedUpdates,publishClarification} from "./toolkit-state.mjs";
 import fs from "node:fs";
 import path from "node:path";
@@ -850,11 +851,13 @@ const srv = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   if(req.method === "POST") {
     let data; try { data=await body(req); } catch { return json(res,400,{error:"Invalid request"}); }
-    if(data.room && profiles.some(u=>u.sessions.some(x=>x.room===data.room && x.historical)) && !["/api/switch"].includes(url.pathname))
+    if(data.room && profiles.some(u=>u.sessions.some(x=>x.room===data.room && x.historical)) && !["/api/switch","/api/feedback"].includes(url.pathname))
       return json(res,409,{error:"This historical record is read-only. Switch to Toolkit to start the comparison."});
   }
 
   const p = url.pathname;
+  if (await feedbackHandler({req,res,url,here,sessions:SESSIONS,rooms,body,view,json})) return;
+
 
   if (req.method === "GET" && p === "/draw.js") {
     res.writeHead(200, { "content-type": "text/javascript; charset=utf-8" });

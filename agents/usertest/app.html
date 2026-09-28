@@ -1481,6 +1481,7 @@ function resultBar(h){
         ${v.provenance?.length ? `<details class="trace-fold" data-fold="attribution"><summary>Whose needs are reflected in this build?</summary>${attribution(v)}</details>` : ""}
       </div>
     </div>`}
+    ${v.shape ? `<div class="saved"><a class="mini" href="/feedback?room=${encodeURIComponent(h.room)}${ctl?'&variant=control':''}" target="_blank" rel="noopener">Give visual feedback · Color, rebuild & sketch ↗</a></div>` : ""}
     <details class="fold" data-fold="outputs"><summary>Session outputs & reflection <small>Evaluation & finish</small></summary><div class="fold-body">
     ${sc?.unavailable ? `<p class="muted">${esc(sc.reason)}</p>` : sc ? `<div class="scores">${["A","B"].map(r => `
         <div><h3>${roleName(r)} — ${sc.per[r].met} of ${sc.per[r].of}</h3><ul>

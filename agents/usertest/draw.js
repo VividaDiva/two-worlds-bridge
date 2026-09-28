@@ -135,7 +135,15 @@
   // Draws into the canvas given, sized to its own box. `shape` may be null,
   // which draws the gap with nothing across it — which is the honest picture
   // before anybody has been understood.
-  global.drawCrossing = function (canvas, shape, world, extras) {
+  global.crossingMatches = function(shape, world, extras) {
+    return assemble(shape, world, extras).list.map((m,i) => {
+      const cx=(m.x1+m.x2)/2, cy=(m.y1+m.y2)/2, a=wob(i);
+      const pt=(x,y)=>({x:600+1.4*(cx+(x-cx)*Math.cos(a)-(y-cy)*Math.sin(a)-640),y:370+1.4*(cy+(x-cx)*Math.sin(a)+(y-cy)*Math.cos(a)-360)});
+      const a1=pt(m.x1,m.y1), b1=pt(m.x2,m.y2);
+      return {id:String(i),x1:a1.x,y1:a1.y,x2:b1.x,y2:b1.y};
+    });
+  };
+  global.drawCrossing = function (canvas, shape, world, extras, feedback) {
     const box = canvas.getBoundingClientRect();
     const dpr = global.devicePixelRatio || 1;
     const cw = Math.max(1, Math.round(box.width || 400));
@@ -156,7 +164,12 @@
     ctx.fillStyle = C.land2; ctx.fillRect(GAP_L, bed, SPAN, H - bed);
     if (world && world.water) { ctx.fillStyle = C.water; ctx.fillRect(GAP_L, WATER_Y, SPAN, bed - WATER_Y); }
     const { list, strokes } = assemble(shape, world, extras);
-    list.forEach((m, i) => drawMatch(ctx, m, i));
+    list.forEach((m, i) => {
+      if(feedback?.removed?.includes(String(i))) return;
+      drawMatch(ctx,m,i);
+      const color=feedback?.colors?.[String(i)];
+      if(color){ const old={...C}; C.wood=color;C.woodDark=color;C.head=color;drawMatch(ctx,m,i);Object.assign(C,old); }
+    });
     // what both people accepted onto the sheet, in the wall's colour
     for (const st of strokes) {
       ctx.save();
