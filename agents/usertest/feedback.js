@@ -100,6 +100,7 @@ matches=crossingMatches(draft.source.shape,draft.source.world,draft.source.extra
 function removedIds(){return [...new Set(draft.rebuildRemoved||[])];}
 const palette=()=>['red','neutral','some','blue'].map(k=>`<button class="swatch" style="--color:${colors[k]}" data-color="${k}" aria-pressed="${k===color}"><span class="color-chip" aria-hidden="true"></span><span>${labels[k]}<small>${({red:'Red',neutral:'Light pink',some:'Light blue',blue:'Blue'})[k]}</small></span></button>`).join('');
 function render(){
+ $('workspace').classList.toggle('sketch-step',step===2);
  document.querySelectorAll('[data-step]').forEach(b=>{b.classList.toggle('active',+b.dataset.step===step);b.setAttribute('aria-current',+b.dataset.step===step?'step':'false');});
  $('title').textContent=['Which parts meet your needs?','How would you change this bridge?','Which areas meet your needs?'][step];
  const removing=mode==='erase'||mode==='restore';
@@ -127,9 +128,18 @@ function render(){
  $('compare').textContent=original?'Back to my changes':'Compare with original';$('compare').setAttribute('aria-pressed',String(original));
  $('canvas').hidden=step===2&&!sketch;$('download').disabled=step===2&&!sketch;
  draw($('canvas'),step,true);
- $('zoom-label').textContent=Math.round(zoom*100)+'%';$('canvas').style.width=(zoom*100)+'%';
+ applyCanvasZoom();
  const values=Object.values(draft.ratings);$('counts').textContent=step===0?`${values.length} / ${matches.length} sticks rated · ${values.filter(c=>c==='red').length} dissatisfied · ${matches.length-values.length} not rated`:step===1?`${removedIds().length} original sticks removed · ${draft.added.length} blue sticks added`:sketch?`${draft.strokes.length} color marks · the original sketch is unchanged`:'No saved sketch for this result. You can still save feedback on the matchsticks.';
 }
+function applyCanvasZoom(){
+ const viewport=document.querySelector('.canvas-viewport'),canvas=$('canvas');
+ viewport.classList.toggle('sketch-view',step===2);
+ let scale=1;
+ if(step===2&&sketch){const controlsHeight=viewport.getBoundingClientRect().top-$('workspace').getBoundingClientRect().top;const maxHeight=Math.min(420,window.innerHeight*.52,Math.max(160,window.innerHeight-controlsHeight-80));scale=Math.min(1,(maxHeight-2)*canvas.width/(canvas.height*Math.max(1,viewport.clientWidth)));}
+ canvas.style.width=(scale*zoom*100)+'%';canvas.style.marginInline=zoom===1?'auto':'0';
+ $('zoom-label').textContent=step===2&&zoom===1?'Fit':Math.round(scale*zoom*100)+'%';
+}
+window.addEventListener('resize',()=>{if(draft)applyCanvasZoom();});
 function draw(canvas,n,editing=false){
  const ctx=canvas.getContext('2d'), showOriginal=editing&&original;
  if(n===2){canvas.width=1200;canvas.height=sketch?Math.round(1200*sketch.height/sketch.width):700;ctx.fillStyle='white';ctx.fillRect(0,0,canvas.width,canvas.height);if(sketch)ctx.drawImage(sketch,0,0,canvas.width,canvas.height);
@@ -175,7 +185,7 @@ $('canvas').onpointerleave=()=>{if(!pointer){hover=null;preview=null;cursorPoint
 function end(e){if(!pointer||pointer.id!==e.pointerId)return;if(step===2)paint(point(e));if(step===1&&mode==='grid'){const m=stamp(point(e));if(m&&!draft.added.some(a=>['x1','y1','x2','y2'].every(k=>a[k]===m[k])))draft.added.push(m);}else if(step===1&&mode==='free'){const p=point(e),a=pointer.start,len=Math.hypot(p.x-a.x,p.y-a.y),n=Math.max(1,Math.round(len/100));if(len>8)for(let i=0;i<n;i++)draft.added.push({x1:a.x+(p.x-a.x)*i/n,y1:a.y+(p.y-a.y)*i/n,x2:a.x+(p.x-a.x)*(i+1)/n,y2:a.y+(p.y-a.y)*(i+1)/n});}pointer=null;preview=null;commitAction(step===0?'stick rating':step===1?mode==='erase'?'stick removal':mode==='restore'?'stick restoration':'blue stick placement':color==='none'?'color erasure':'sketch color');render();}
 $('canvas').onpointerup=end;$('canvas').onpointercancel=()=>{if(beforeAction!==null)applyAction(beforeAction);beforeAction=null;pointer=null;preview=null;render();};
 function showStepStart(){const viewport=document.querySelector('.canvas-viewport');viewport.scrollTop=0;viewport.scrollLeft=0;$('workspace').scrollIntoView({block:'start'});}
-function changeStep(n){if(n===1&&step!==1)mode='erase';step=n;draft.visited[step]=true;original=false;preview=null;hover=null;render();showStepStart();}
+function changeStep(n){if(n!==step)zoom=1;if(n===1&&step!==1)mode='erase';step=n;draft.visited[step]=true;original=false;preview=null;hover=null;render();showStepStart();}
  document.querySelector('nav').onclick=e=>{const b=e.target.closest('[data-step]');if(b)changeStep(+b.dataset.step);};
  $('palette').onclick=e=>{const b=e.target.closest('[data-color]');if(b){color=b.dataset.color;original=false;render();}};
  $('tools').onclick=e=>{const size=e.target.closest('[data-brush]');if(size){setBrushSize(size.dataset.brush);return;}const eraser=e.target.closest('[data-color]');if(eraser){color=eraser.dataset.color;original=false;render();return;}const sketchButton=e.target.closest('[data-sketch]');if(sketchButton){sketchTool=sketchButton.dataset.sketch;render();return;}const piece=e.target.closest('[data-piece]'),b=e.target.closest('[data-mode]');if(piece){orientation=piece.dataset.piece;mode='grid';}else if(b)mode=b.dataset.mode;else return;original=false;preview=null;hover=null;render();};
