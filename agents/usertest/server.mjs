@@ -849,6 +849,16 @@ function restore() {
 
 const srv = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
+  // The GitHub Pages feedback client reads the same public study data and posts feedback.
+  // Other experiment mutation endpoints are deliberately not enabled cross-origin.
+  const feedbackOrigin = req.headers.origin === 'https://vividadiva.github.io';
+  const feedbackRead = ['/api/state','/api/users','/api/feedback'].includes(url.pathname) || /^\/sketch\/[a-z0-9]+\/\d+\.png$/.test(url.pathname);
+  const feedbackWrite = url.pathname === '/api/feedback';
+  if(feedbackOrigin && feedbackRead && (req.method==='GET'||req.method==='HEAD'||req.method==='OPTIONS'||(req.method==='POST'&&feedbackWrite))){
+    res.setHeader('Access-Control-Allow-Origin','https://vividadiva.github.io');res.setHeader('Vary','Origin');
+    if(req.method==='OPTIONS'){res.setHeader('Access-Control-Allow-Methods',feedbackWrite?'GET, POST, OPTIONS':'GET, OPTIONS');res.setHeader('Access-Control-Allow-Headers','Content-Type');res.writeHead(204);res.end();return;}
+  }
+
   if(req.method === "POST") {
     let data; try { data=await body(req); } catch { return json(res,400,{error:"Invalid request"}); }
     if(data.room && profiles.some(u=>u.sessions.some(x=>x.room===data.room && x.historical)) && !["/api/switch","/api/feedback"].includes(url.pathname))

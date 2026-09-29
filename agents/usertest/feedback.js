@@ -1,6 +1,11 @@
 (async()=>{
 'use strict';
 const $=id=>document.getElementById(id);
+const connection=window.bridgeFeedbackConnection;
+const apiFetch=(path,options)=>connection?connection.fetch(path,options):fetch(path,options);
+const assetURL=path=>connection?connection.url(path):path;
+function connectionError(message){$('context').textContent='The feedback page is open, but the study server could not be reached.';$('receipt').textContent=message+' Please ask the facilitator to check the server, then reload this page.';document.querySelector('nav').hidden=true;}
+if(connection){try{await connection.ready;}catch(e){connectionError(e.message);return;}}
 let room=new URLSearchParams(location.search).get('room');
 const variant=new URLSearchParams(location.search).get('variant');
 const embedded=new URLSearchParams(location.search).get('embedded')==='1';
@@ -24,19 +29,19 @@ let h,source,pair=null,switching=false,saving=false;
 let pathItems=[],pathProgress=new Map(),pendingRooms=new Set();
 const routeLabels={all:'Discuss together',develop:'Discuss together · auto-build',confer:'Discuss privately, then tell AI',both:'Tell AI separately',chain:'Role 1 → Role 2 → AI','via-1':'Role 1 → AI → Role 2','via-2':'Role 2 → AI → Role 1','only-1':'Role 1 only','only-2':'Role 2 only'};
 const routeOrder=Object.keys(routeLabels);
-async function fetchState(id){const r=await fetch(`/api/state?room=${encodeURIComponent(id)}&role=host`);if(!r.ok)throw Error('Session is unavailable');return r.json();}
+async function fetchState(id){const r=await apiFetch(`/api/state?room=${encodeURIComponent(id)}&role=host`);if(!r.ok)throw Error('Session is unavailable');return r.json();}
 function setSource(){
 const v=variant==='control'&&h.control?{...h,...h.control,sheetDrawn:null}:h;
 const last=h.sketches?.at(-1);
 // A legacy side-by-side control has no separate sketch: never label the Toolkit image as Control.
 const sketchUrl=last&&variant!=='control'?`/sketch/${encodeURIComponent(room)}/${last.n}.png`:null;
 source={shape:v.shape,world:v.world,extras:v.sheetDrawn,standing:v.standing,sketchUrl,sketch:last||null,variant:variant||'main',agent:variant==='control'?'keys':h.agent,capturedAt:new Date().toISOString(),conversation:{room,argument:h.argument,route:h.route,arrow:h.arrow,note:h.note,lines:(h.lines||[]).filter(l=>variant!=='control'||l.who!=='builder').map(l=>({who:l.who,text:l.text,phase:l.phase,upload:l.upload,decision:l.decision,relay:l.relay,about:l.about,clarification:l.clarification,understandingUpdate:l.understandingUpdate,built:l.built,failed:!!l.failed}))}};
-$('feedback-history').href=`/history/${encodeURIComponent(room)}#submitted-feedback`;
-$('back').href=`/j/${encodeURIComponent(room)}/both`;
+$('feedback-history').href=assetURL(`/history/${encodeURIComponent(room)}#submitted-feedback`);
+$('back').href=assetURL(`/j/${encodeURIComponent(room)}/both`);
 $('context').textContent=`${h.argument==='refs'?'Two references':h.argument==='pairs'?'Two lives':h.argument||'Bridge study'} · ${source.agent==='toolkit'?'Toolkit':'Control'} · Session ${room}`;
 }
-try{h=await fetchState(room);setSource();}catch(e){status(e.message);return;}
-try{const us=await fetch('/api/users').then(r=>r.json());const arr=Array.isArray(us)?us:us.users||us.profiles||[];pair=arr.find(u=>u.sessions?.some(s=>s.room===room));if(pair?.participants)$('role').options[1].textContent=`Role ${pair.participants[1]}`;}catch{}
+try{h=await fetchState(room);setSource();}catch(e){status(e.message);connectionError(e.message);return;}
+try{const us=await apiFetch('/api/users').then(r=>r.json());const arr=Array.isArray(us)?us:us.users||us.profiles||[];pair=arr.find(u=>u.sessions?.some(s=>s.room===room));if(pair?.participants)$('role').options[1].textContent=`Role ${pair.participants[1]}`;}catch{}
 if(participant){$('participant-badge').hidden=false;$('participant-badge').textContent=$('role').selectedOptions[0].textContent+' · Your feedback';}
 function feedbackPaths(sessions){const seen=new Set();return sessions.filter(s=>s.agent==='toolkit'&&!s.historical&&s.hasContent&&['pairs','refs'].includes(s.argument)).filter(s=>{const key=s.argument+':'+s.route;if(seen.has(key))return false;seen.add(key);return true;}).sort((a,b)=>a.argument.localeCompare(b.argument)||routeOrder.indexOf(a.route)-routeOrder.indexOf(b.route));}
 function completedSummary(r){return r.role==='B'&&r.complete===true;}
@@ -57,7 +62,7 @@ function renderPaths(){
  const pending=nextPath();$('continue-path').disabled=!pending||switching||saving;$('continue-path').textContent=pending?'Continue to next unsubmitted path →':'All paths submitted ✓';
 }
 function nextPath(){const i=pathItems.findIndex(p=>p.room===room);return [...pathItems.slice(i+1),...pathItems.slice(0,i)].find(p=>pathProgress.get(p.room)!==true);}
-async function loadPathProgress(){await Promise.all(pathItems.map(async p=>{try{const r=await fetch(`/api/feedback?room=${encodeURIComponent(p.room)}&summary=1`,{cache:'no-store'});if(!r.ok)throw Error();const out=await r.json();pathProgress.set(p.room,(out.summaries||[]).some(completedSummary));}catch{pathProgress.set(p.room,null);}}));renderPaths();}
+async function loadPathProgress(){await Promise.all(pathItems.map(async p=>{try{const r=await apiFetch(`/api/feedback?room=${encodeURIComponent(p.room)}&summary=1`,{cache:'no-store'});if(!r.ok)throw Error();const out=await r.json();pathProgress.set(p.room,(out.summaries||[]).some(completedSummary));}catch{pathProgress.set(p.room,null);}}));renderPaths();}
 async function switchPath(id){
  finishComment();
  if(id===room||switching||saving||!pathItems.some(p=>p.room===id))return;
@@ -96,7 +101,7 @@ function fresh(){return {version:1,rebuildBasis:'original-independent-of-ratings
 let editRevision=0;
 function localSave(){dirty=true;pendingRooms.add(room);editRevision++;pageDrafts.set(localKey(),clone(draft));renderPaths();$('receipt').textContent='Not submitted yet. Your work will be sent to History when you click Submit feedback. Refreshing this page starts over.';}
 async function load(){editRevision++;$('receipt').textContent='Your original result is safe. Work through the three steps, then submit your feedback to History.';draft=pageDrafts.has(localKey())?clone(pageDrafts.get(localKey())):fresh();if(pageDrafts.has(localKey()))$('receipt').textContent='Unsaved draft from this open page. Refreshing or opening a new page starts over.';draft.annotations ||= [];commentEdit=null;$('comment-bubble').hidden=true;undo=[[],[],[]];redo=[[],[],[]];pointer=null;preview=null;hover=null;original=false;beforeAction=null;step=0;color=null;mode='erase';sketch=null;showConversation();
-if(draft.source.sketchUrl){try{sketch=await new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=reject;img.src=draft.source.sketchUrl;});}catch{status('Saved sketch could not load. Matchstick feedback is still available.');}}
+if(draft.source.sketchUrl){try{sketch=await new Promise((resolve,reject)=>{const img=new Image();img.crossOrigin='anonymous';img.onload=()=>resolve(img);img.onerror=reject;img.src=assetURL(draft.source.sketchUrl);});}catch{status('Saved sketch could not load. Matchstick feedback is still available.');}}
 matches=crossingMatches(draft.source.shape,draft.source.world,draft.source.extras);$('workspace').hidden=false;render();}
 let commentEdit=null;
 function openComment(p,index=null){
@@ -277,10 +282,10 @@ function changeStep(n){finishComment();if(n!==step)zoom=1;if(n===1&&step!==1)mod
    const payload=clone(draft);
    payload.removed=removedIds();payload.originalMatches=clone(matches);payload.sketchSize=sketch?{width:1200,height:Math.round(1200*sketch.height/sketch.width)}:null;
    const images=[0,1,2].map(n=>{if(n===2&&!sketch)return null;const c=document.createElement('canvas');draw(c,n);return c.toDataURL('image/png');});
-   const r=await fetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({room,draft:payload,images})});
+   const r=await apiFetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({room,draft:payload,images})});
    const out=await r.json();if(!r.ok)throw Error(out.error||'Save failed');
    // Confirm the saved record is retrievable, not merely that the POST returned.
-   const check=await fetch(`/api/feedback?room=${encodeURIComponent(room)}`,{cache:'no-store'});if(!check.ok)throw Error('Server receipt could not be verified. Check Saved feedback before retrying.');
+   const check=await apiFetch(`/api/feedback?room=${encodeURIComponent(room)}`,{cache:'no-store'});if(!check.ok)throw Error('Server receipt could not be verified. Check Saved feedback before retrying.');
    const saved=(await check.json()).records?.find(x=>x.id===out.id);
    if(!saved||saved.draft.role!==submittedRole||JSON.stringify(saved.draft)!==JSON.stringify(payload)||JSON.stringify(saved.images)!==JSON.stringify(images))throw Error('Saved feedback could not be verified. Check Saved feedback before retrying.');
    const count=images.filter(Boolean).length;
@@ -291,7 +296,7 @@ function changeStep(n){finishComment();if(n!==step)zoom=1;if(n===1&&step!==1)mod
   }catch(e){$('receipt').textContent=`Submission not confirmed: ${e.message} Your edits remain on this open page. Retry before closing or refreshing.`;status('Please check the receipt above and retry if needed.');}
   finally{button.disabled=false;saving=false;renderPaths();$('receipt').scrollIntoView({block:'nearest',behavior:'smooth'});}
  };
- async function records(){try{const r=await fetch(`/api/feedback?room=${encodeURIComponent(room)}`).then(r=>r.json());$('record-list').replaceChildren();for(const rec of (r.records||[]).filter(rec=>!participant||rec.draft.role==='B')){const a=document.createElement('article'),title=document.createElement('p');title.textContent=`${rec.draft.participantLabel||rec.draft.role} · ${rec.draft.source.agent} · ${new Date(rec.at).toLocaleString()}`;a.append(title);rec.images.forEach((src,i)=>{if(!src)return;const link=document.createElement('a'),img=new Image();link.href=src;link.download=`${room}-${rec.draft.role}-${rec.id}-step${i+1}.png`;img.src=src;img.alt=['Rated original matchsticks','Rebuilt bridge','Sketch comments'][i];link.append(img);a.append(link);});const details=document.createElement('p');details.textContent=rec.draft.notes.filter(Boolean).join(' · ');a.append(details);for(const [i,n] of (rec.draft.annotations||[]).entries()){const text=document.createElement('p');text.textContent=`${i+1}. ${labels[n.color]} — ${n.text}`;a.append(text);}const exportLink=document.createElement('a');exportLink.textContent='Download full record (JSON)';exportLink.href=URL.createObjectURL(new Blob([JSON.stringify(rec,null,2)],{type:'application/json'}));exportLink.download=`feedback-${rec.id}.json`;a.append(exportLink);$('record-list').append(a);}if(!$('record-list').children.length)$('record-list').textContent='No feedback saved yet.';}catch{status('Could not load saved feedback.');}}
+ async function records(){try{const r=await apiFetch(`/api/feedback?room=${encodeURIComponent(room)}`).then(r=>r.json());$('record-list').replaceChildren();for(const rec of (r.records||[]).filter(rec=>!participant||rec.draft.role==='B')){const a=document.createElement('article'),title=document.createElement('p');title.textContent=`${rec.draft.participantLabel||rec.draft.role} · ${rec.draft.source.agent} · ${new Date(rec.at).toLocaleString()}`;a.append(title);rec.images.forEach((src,i)=>{if(!src)return;const link=document.createElement('a'),img=new Image();link.href=src;link.download=`${room}-${rec.draft.role}-${rec.id}-step${i+1}.png`;img.src=src;img.alt=['Rated original matchsticks','Rebuilt bridge','Sketch comments'][i];link.append(img);a.append(link);});const details=document.createElement('p');details.textContent=rec.draft.notes.filter(Boolean).join(' · ');a.append(details);for(const [i,n] of (rec.draft.annotations||[]).entries()){const text=document.createElement('p');text.textContent=`${i+1}. ${labels[n.color]} — ${n.text}`;a.append(text);}const exportLink=document.createElement('a');exportLink.textContent='Download full record (JSON)';exportLink.href=URL.createObjectURL(new Blob([JSON.stringify(rec,null,2)],{type:'application/json'}));exportLink.download=`feedback-${rec.id}.json`;a.append(exportLink);$('record-list').append(a);}if(!$('record-list').children.length)$('record-list').textContent='No feedback saved yet.';}catch{status('Could not load saved feedback.');}}
 
  await load();await records();if(pathItems.length)await loadPathProgress();
 })().catch(e=>{document.getElementById('status').textContent=`Unable to open feedback: ${e.message}`;});
