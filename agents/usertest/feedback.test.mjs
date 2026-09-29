@@ -36,3 +36,14 @@ test('disk errors return a failure receipt rather than reporting a successful su
  const temp=fs.mkdtempSync(path.join(os.tmpdir(),'feedback-failure-'));const sessions=path.join(temp,'not-a-directory');fs.writeFileSync(sessions,'test');let code;
  try{await feedbackHandler({req:{method:'POST'},res:{},url:new URL('http://local/api/feedback'),here:'.',sessions,rooms:new Map([['abc',{}]]),body:async()=>({room:'abc',draft:{role:'A',source:{},added:[],strokes:[]},images:[null,null,null]}),json:(_r,c)=>{code=c;}});assert.equal(code,500);}finally{fs.rmSync(temp,{recursive:true,force:true});}
 });
+
+test('path progress counts reviewed steps by participant and sends no images',async()=>{
+ const sessions=fs.mkdtempSync(path.join(os.tmpdir(),'feedback-progress-'));
+ const rooms=new Map([['test',{argument:'pairs',route:'all',agent:'toolkit'}]]);let out;
+ const call=async(method,data,query='')=>feedbackHandler({req:{method},res:{},url:new URL('http://local/api/feedback?room=test'+query),here:'.',sessions,rooms,body:async()=>data,json:(_r,_c,d)=>out=d});
+ try{for(const [role,visited] of [['A',[true,true,true]],['B',[true,false,true]],['B',[true,true,true]]]){
+ await call('POST',{room:'test',draft:{role,source:{},ratings:{},added:[],strokes:[],visited},images:[null,null,null]});
+ }
+ await call('GET',null,'&summary=1');assert.equal(out.summaries.length,3);assert.equal(out.summaries.filter(x=>x.role==='B'&&x.complete).length,1);assert.equal(out.summaries.some(x=>'images' in x||'draft' in x),false);
+ }finally{fs.rmSync(sessions,{recursive:true,force:true});}
+});

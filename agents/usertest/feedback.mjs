@@ -22,6 +22,7 @@ export async function feedbackHandler({req,res,url,here,sessions,rooms,body,view
   const dir=path.join(sessions,'feedback',data.room);
   if(req.method==='GET') {
     const records=readFeedback(sessions,data.room);
+    if(data.summary==='1'){json(res,200,{summaries:records.map(r=>({id:r.id,role:r.draft.role,complete:r.draft.visited?.length===3&&r.draft.visited.every(Boolean)}))});return true;}
     json(res,200,{records});return true;
   }
   if(req.method!=='POST'){json(res,405,{error:'Method not allowed'});return true;}
