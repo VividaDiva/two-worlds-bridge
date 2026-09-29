@@ -136,7 +136,7 @@ function applyCanvasZoom(){
  viewport.classList.toggle('sketch-view',step===2);
  let scale=1;
  if(step===2&&sketch){const controlsHeight=viewport.getBoundingClientRect().top-$('workspace').getBoundingClientRect().top;const maxHeight=Math.min(420,window.innerHeight*.52,Math.max(160,window.innerHeight-controlsHeight-80));scale=Math.min(1,(maxHeight-2)*canvas.width/(canvas.height*Math.max(1,viewport.clientWidth)));}
- canvas.style.width=(scale*zoom*100)+'%';canvas.style.marginInline=zoom===1?'auto':'0';
+ canvas.style.width=(scale*zoom*100)+'%';canvas.style.marginInline='auto';
  $('zoom-label').textContent=step===2&&zoom===1?'Fit':Math.round(scale*zoom*100)+'%';
 }
 window.addEventListener('resize',()=>{if(draft)applyCanvasZoom();});
@@ -214,7 +214,18 @@ function changeStep(n){if(n!==step)zoom=1;if(n===1&&step!==1)mode='erase';step=n
  $('tools').oninput=e=>{if(e.target.id==='brush')setBrushSize(e.target.value);if(e.target.id==='piece-length'){pieceLength=+e.target.value;preview=null;}};
  $('note').oninput=()=>{draft.notes[step]=$('note').value;localSave();};
  $('undo').onclick=()=>historyAction('undo');$('redo').onclick=()=>historyAction('redo');
- document.querySelectorAll('[data-zoom]').forEach(b=>b.onclick=()=>{if(b.dataset.zoom==='fit'){const viewport=document.querySelector('.canvas-viewport');viewport.scrollLeft=0;viewport.scrollTop=0;}zoom=b.dataset.zoom==='fit'?1:Math.max(1,Math.min(3,zoom+Number(b.dataset.zoom)));hover=null;preview=null;render();});
+ function zoomAtCenter(value){
+  const viewport=document.querySelector('.canvas-viewport'),canvas=$('canvas');
+  const before=canvas.getBoundingClientRect(),box=viewport.getBoundingClientRect();
+  const anchorX=Math.max(0,Math.min(1,(box.left+viewport.clientLeft+viewport.clientWidth/2-before.left)/before.width));
+  const anchorY=Math.max(0,Math.min(1,(box.top+viewport.clientTop+viewport.clientHeight/2-before.top)/before.height));
+  zoom=value==='fit'?1:Math.max(1,Math.min(3,zoom+Number(value)));hover=null;preview=null;cursorPoint=null;render();
+  if(value==='fit'){viewport.scrollLeft=0;viewport.scrollTop=0;return;}
+  const after=canvas.getBoundingClientRect(),newBox=viewport.getBoundingClientRect();
+  viewport.scrollLeft+=after.left+anchorX*after.width-(newBox.left+viewport.clientLeft+viewport.clientWidth/2);
+  viewport.scrollTop+=after.top+anchorY*after.height-(newBox.top+viewport.clientTop+viewport.clientHeight/2);
+ }
+ document.querySelectorAll('[data-zoom]').forEach(b=>b.onclick=()=>zoomAtCenter(b.dataset.zoom));
  $('compare').onclick=()=>{original=!original;hover=null;preview=null;render();};
  $('next').onclick=()=>{if(step===1&&(mode==='erase'||mode==='restore')){mode='grid';preview=null;hover=null;original=false;render();showStepStart();}else changeStep(Math.min(2,step+1));};$('previous').onclick=()=>changeStep(Math.max(0,step-1));
  document.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select,[contenteditable=true]')||pointer)return;const key=e.key.toLowerCase();if((e.metaKey||e.ctrlKey)&&!e.altKey&&(key==='z'||key==='y')){e.preventDefault();historyAction(key==='y'||e.shiftKey?'redo':'undo');return;}if(e.metaKey||e.ctrlKey||e.altKey)return;if(step!==1&&(['1','2','3','4','e'].includes(key))){e.preventDefault();color=({1:'red',2:'neutral',3:'some',4:'blue',e:'none'})[key];original=false;render();}else if(step===1&&(mode==='grid'||mode==='free')&&key==='r'){e.preventDefault();const keys=Object.keys(pieces);orientation=keys[(keys.indexOf(orientation)+1)%keys.length];mode='grid';original=false;preview=null;render();}});
