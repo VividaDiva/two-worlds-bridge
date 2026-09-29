@@ -1,0 +1,6 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import vm from 'node:vm';
+const source=fs.readFileSync(new URL('./feedback.js',import.meta.url),'utf8');const c=vm.createContext({});vm.runInContext(source.slice(source.indexOf('function enclosedRegion('),source.indexOf('function fillSketchAt(')),c);
+function picture(){const p=new Uint8ClampedArray(40*40*4).fill(255);for(let y=8;y<=31;y++)for(let x=8;x<=31;x++)if(x===8||x===31||y===8||y===31)for(let k=0;k<3;k++)p[(y*40+x)*4+k]=0;return p;}
+test('fills a bounded interior, excluding pencil boundary and background',()=>{const r=c.enclosedRegion(picture(),40,40,20,20);assert.ok(r.runs.length);for(const [x,y,w,h] of r.runs){assert.ok(x>8&&x+w<32&&y>8&&y<31);assert.equal(h,1);}});
+test('rejects an open background and clicks on pencil lines',()=>{assert.ok(c.enclosedRegion(picture(),40,40,2,2).error);assert.ok(c.enclosedRegion(picture(),40,40,8,20).error);assert.ok(c.enclosedRegion(new Uint8ClampedArray(6400).fill(255),40,40,20,20).error);});
+test('small gaps are bridged but large broken outlines never flood the page',()=>{const p=picture();for(let k=0;k<3;k++)p[(8*40+20)*4+k]=255;assert.ok(c.enclosedRegion(p,40,40,20,20).runs);for(let x=15;x<25;x++)for(let k=0;k<3;k++)p[(8*40+x)*4+k]=255;assert.ok(c.enclosedRegion(p,40,40,20,20).error);});
