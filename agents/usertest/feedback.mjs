@@ -1,6 +1,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {randomUUID} from 'node:crypto';
+export function feedbackFiles(sessions,room){
+  if(!/^[a-z0-9]+$/.test(room))return [];
+  const dir=path.join(sessions,'feedback',room);
+  return fs.existsSync(dir)?fs.readdirSync(dir).filter(f=>f.endsWith('.json')).map(f=>path.join(dir,f)):[];
+}
+export function readFeedback(sessions,room){
+  return feedbackFiles(sessions,room).map(f=>JSON.parse(fs.readFileSync(f,'utf8'))).sort((a,b)=>b.at.localeCompare(a.at));
+}
 export async function feedbackHandler({req,res,url,here,sessions,rooms,body,view,json}) {
   const p=url.pathname;
   if(p==='/feedback' || p==='/feedback.js') {
@@ -13,7 +21,7 @@ export async function feedbackHandler({req,res,url,here,sessions,rooms,body,view
   if(!room){json(res,404,{error:'Session not found'});return true;}
   const dir=path.join(sessions,'feedback',data.room);
   if(req.method==='GET') {
-    const records=fs.existsSync(dir)?fs.readdirSync(dir).filter(x=>x.endsWith('.json')).map(x=>JSON.parse(fs.readFileSync(path.join(dir,x),'utf8'))).sort((a,b)=>b.at.localeCompare(a.at)):[];
+    const records=readFeedback(sessions,data.room);
     json(res,200,{records});return true;
   }
   if(req.method!=='POST'){json(res,405,{error:'Method not allowed'});return true;}

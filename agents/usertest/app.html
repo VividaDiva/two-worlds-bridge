@@ -525,6 +525,7 @@ body{background:var(--paper);background-image:none}body::before{display:none}
 .communication-fields{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px}.fixed-timing{display:flex;align-items:center;min-height:43px;border:1px solid var(--rule);border-radius:8px;padding:9px 12px;background:#f0f3ed;font-size:12px;box-sizing:border-box}.communication-bar .control-help{font-size:11px;color:var(--soft);margin:8px 0 0}.study-controls{align-items:start}.process-control .process-switch{margin-top:0}.path-headline{font-size:16px;line-height:1.5;margin:14px 0 0;color:var(--ink)}.path-guide-head h2{font-size:14px;color:var(--soft)}.path-guide-grid{gap:16px;margin-top:14px}.path-guide-grid p{font-size:12px}.communication-bar select{width:100%;min-width:0}@media(max-width:900px){.study-controls{grid-template-columns:1fr}.process-control{max-width:280px}.communication-fields{grid-template-columns:1fr 1fr}}@media(max-width:600px){.communication-fields{grid-template-columns:1fr}}
 
 .study-mode{display:flex;gap:8px;align-items:center;margin:0 0 18px}.study-mode button{font:500 14px var(--body);padding:10px 20px;border:1px solid var(--rule);border-radius:8px;background:white;color:var(--ink);cursor:pointer}.study-mode button[aria-pressed=true]{background:#2f5142;color:white}.study-mode small{color:var(--soft);font-size:12px;margin-left:8px}#app.feedback-mode{padding-bottom:0}#app.feedback-mode>.studio-grid,#app.feedback-mode>.path-guide,#app.feedback-mode>.session-details,#app.feedback-mode>.research-fold,#app.feedback-mode>.studio-foot{display:none}#integrated-feedback{max-width:1480px;padding:0 42px 40px;margin:0 auto}#integrated-feedback iframe{width:100%;height:85vh;min-height:720px;border:1px solid var(--rule);border-radius:14px;background:#f4f6f2;display:block}#integrated-feedback[hidden],#integrated-feedback iframe[hidden]{display:none}@media(max-width:760px){#integrated-feedback{padding:0 16px 24px}.study-mode{flex-wrap:wrap}.study-mode small{margin-left:0}}
+.feedback-history-card{border-top:1px solid var(--rule);padding:20px 0}.feedback-history-card h3{margin:0 0 8px}.feedback-image-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.feedback-image-grid figure{margin:0}.feedback-image-grid figcaption{font-size:13px;font-weight:600;margin-bottom:8px}.feedback-image-grid img{width:100%;border-radius:8px;border:1px solid var(--rule)}.feedback-history-card pre{overflow:auto;max-height:280px;font-size:12px}.feedback-history-card>p{font-size:12px;line-height:1.6}.feedback-history-card>.mini{display:inline-block;margin-top:12px}@media(max-width:760px){.feedback-image-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -1815,7 +1816,7 @@ async function sessionsView(){
   // Every tab clicked on the dashboard opens a room, so most rooms are empty.
   // They are kept and can be shown, but the ones somebody spoke in come first.
   const showEmpty = location.hash === "#all";
-  const list = showEmpty ? all : all.filter(s => s.lines > 0);
+  const list = showEmpty ? all : all.filter(s => s.lines > 0 || s.feedbackCount > 0);
   const hidden = all.length - list.length;
   const started = s => new Date(s.createdAt || s.updatedAt);
   const day = d => d.toLocaleDateString([], { weekday: "long", year: "numeric", month: "long", day: "numeric" });
@@ -1849,6 +1850,7 @@ async function sessionsView(){
             <p class="sstands">Stands as <b>${esc(s.standing || "nothing built")}</b></p>
             <div class="acts">
               <a class="mini" href="/history/${esc(s.room)}">Open</a>
+              ${s.feedbackCount ? `<a class="mini" href="/history/${esc(s.room)}#submitted-feedback">Feedback · ${s.feedbackCount}</a>` : ""}
               ${s.live ? `<a class="mini" href="/j/${esc(s.room)}/both">Watch live</a>` : ""}
               <a class="mini" href="/api/export?room=${esc(s.room)}&format=md" download>Chat</a>
               <a class="mini" href="/api/export?room=${esc(s.room)}&format=json" download>Data</a>
@@ -1859,6 +1861,26 @@ async function sessionsView(){
       : `<div class="card"><p class="muted">${hidden
           ? "Rooms have been opened, but nothing has been said in any of them yet."
           : "Nothing saved yet. A room is kept from the moment it is opened."}</p></div>`}`;
+}
+
+function renderHistoryFeedback(target,records){
+ if(!records.length){target.textContent='No feedback submitted for this session yet.';return;}
+ const labels=['1 · Matchstick ratings','2 · Rebuilt bridge','3 · Sketch annotations'];
+ const ratingNames={red:'Dissatisfied',neutral:'Neutral',some:'Somewhat satisfied',blue:'Satisfied'};
+ for(const record of records){
+  const d=record.draft,card=document.createElement('article');card.className='feedback-history-card';
+  const heading=document.createElement('h3');heading.textContent=`${d.participantLabel||({A:'Role 1',B:'Role 2'}[d.role])||d.role} · ${d.source?.agent==='toolkit'?'Toolkit':'Control'} · ${new Date(record.at).toLocaleString()}`;card.append(heading);
+  const meta=document.createElement('p');meta.className='muted';meta.textContent=`${record.argument} · ${record.route} · receipt ${record.id.slice(0,8)}`;card.append(meta);
+  const grid=document.createElement('div');grid.className='feedback-image-grid';
+  labels.forEach((label,i)=>{const figure=document.createElement('figure'),caption=document.createElement('figcaption');caption.textContent=label;figure.append(caption);
+   const src=record.images?.[i];
+   if(typeof src==='string'&&/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(src)){const link=document.createElement('a'),img=document.createElement('img');img.src=src;img.alt=label;link.href=src;link.download=`${record.room}-${d.role}-${record.id}-step${i+1}.png`;link.title='Download image';link.append(img);figure.append(link);}else{const missing=document.createElement('p');missing.textContent='No image submitted for this step.';figure.append(missing);}
+   if(d.notes?.[i]){const note=document.createElement('p');note.textContent=d.notes[i];figure.append(note);}grid.append(figure);
+  });card.append(grid);
+  const summary=document.createElement('p');const ratings=Object.values(d.ratings||{});summary.textContent=Object.entries(ratingNames).map(([key,label])=>`${label}: ${ratings.filter(v=>v===key).length}`).join(' · ')+` · Removed: ${(d.removed||[]).length} · Added: ${(d.added||[]).length} · Sketch marks: ${(d.strokes||[]).length}`;card.append(summary);
+  const details=document.createElement('details'),title=document.createElement('summary'),data=document.createElement('pre');title.textContent='View rating and edit data';data.textContent=JSON.stringify({ratings:d.ratings,removed:d.removed,added:d.added,strokes:d.strokes},null,2);details.append(title,data);card.append(details);
+  const download=document.createElement('a');download.className='mini';download.textContent='Download feedback data';download.href=URL.createObjectURL(new Blob([JSON.stringify(record,null,2)],{type:'application/json'}));download.download=`feedback-${record.id}.json`;card.append(download);target.append(card);
+ }
 }
 
 // One past session, read back from its record: the same trace, drawing and
@@ -1893,7 +1915,10 @@ async function historyView(id){
       <div class="card tab"><h2>What they said</h2>${conversation(h, "hist-chat", true, "chat")}</div>
       ${builderColumn(h)}
     </div>
-    ${resultBar(h)}`;
+    ${resultBar(h)}
+    <section class="card" id="submitted-feedback"><h2>Submitted feedback</h2><div id="feedback-records"></div></section>`;
+  renderHistoryFeedback(document.getElementById("feedback-records"),rec.feedback||[]);
+  if(location.hash === "#submitted-feedback")document.getElementById("submitted-feedback").scrollIntoView();
   const cv = document.getElementById("crossing");
   const shown = h.control && bridgeTab === "control" ? h.control : h;
   if (cv && window.drawCrossing) drawCrossing(cv, shown.shape, shown.world, shown === h ? h.sheetDrawn : null);

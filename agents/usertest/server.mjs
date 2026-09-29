@@ -10,7 +10,7 @@
 //
 // The key lives in this process. Participants never hold it and never see it.
 import http from "node:http";
-import {feedbackHandler} from "./feedback.mjs";
+import {feedbackHandler,feedbackFiles,readFeedback} from "./feedback.mjs";
 import {applyNeedUpdates,publishClarification} from "./toolkit-state.mjs";
 import fs from "node:fs";
 import path from "node:path";
@@ -951,6 +951,7 @@ const srv = http.createServer(async (req, res) => {
       .map(s => ({ room: s.room, title: s.title, arrow: s.arrow, createdAt: s.createdAt,
                    updatedAt: s.updatedAt, finished: s.finished, standing: s.standing,
                    lines: s.transcript.filter(e => e.who !== "builder").length,
+                   feedbackCount:feedbackFiles(SESSIONS,s.room).length,
                    live: rooms.has(s.room) && !s.finished }))
       .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
     return json(res, 200, list);
@@ -964,6 +965,7 @@ const srv = http.createServer(async (req, res) => {
       return json(res, 404, { error: "nothing saved for that room yet" });
     const rec = JSON.parse(fs.readFileSync(file, "utf8"));
     const md = url.searchParams.get("format") !== "json";
+    if(!md)rec.feedback=readFeedback(SESSIONS,id);
     res.writeHead(200, {
       "content-type": md ? "text/markdown; charset=utf-8" : "application/json; charset=utf-8",
       "content-disposition": `attachment; filename="session-${id}.${md ? "md" : "json"}"`,
