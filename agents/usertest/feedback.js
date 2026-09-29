@@ -2,7 +2,10 @@
 'use strict';
 const $=id=>document.getElementById(id), room=new URLSearchParams(location.search).get('room'),variant=new URLSearchParams(location.search).get('variant');
 const embedded=new URLSearchParams(location.search).get('embedded')==='1';
-if(embedded){document.body.classList.add('embedded');const seat=new URLSearchParams(location.search).get('role');if(['A','B'].includes(seat))$('role').value=seat;}
+const params=new URLSearchParams(location.search), participant=params.get('participant')==='1', seat=params.get('role');
+if(embedded)document.body.classList.add('embedded');
+if(['A','B'].includes(seat))$('role').value=seat;
+if(participant){$('role').value='B';$('role').disabled=true;$('identity-picker').hidden=true;$('back').hidden=true;document.title='Role 2 · Bridge feedback';}
 const colors={red:'#e75e65',neutral:'#f3ccd9',some:'#a8d8f0',blue:'#2672cb'};
 const labels={red:'Dissatisfied',neutral:'Neutral',some:'Somewhat satisfied',blue:'Satisfied',none:'Erase color'};
 let step=0,color=null,mode='erase',brush=22,draft,matches,background,sketch=null,dirty=false,pointer=null,preview=null;
@@ -23,8 +26,9 @@ const sketchUrl=last&&variant!=='control'?`/sketch/${encodeURIComponent(room)}/$
 const source={shape:v.shape,world:v.world,extras:v.sheetDrawn,standing:v.standing,sketchUrl,sketch:last||null,variant:variant||'main',agent:variant==='control'?'keys':h.agent,capturedAt:new Date().toISOString(),conversation:{room,argument:h.argument,route:h.route,arrow:h.arrow,note:h.note,lines:(h.lines||[]).filter(l=>variant!=='control'||l.who!=='builder').map(l=>({who:l.who,text:l.text,phase:l.phase,upload:l.upload,decision:l.decision,relay:l.relay,about:l.about,clarification:l.clarification,understandingUpdate:l.understandingUpdate,built:l.built,failed:!!l.failed}))}};
 $('feedback-history').href=`/history/${encodeURIComponent(room)}#submitted-feedback`;
 $('back').href=`/j/${encodeURIComponent(room)}/both`;
-$('context').textContent=`${h.argument||''} · ${h.route||''} · ${source.agent} · session ${room}`;
+$('context').textContent=`${h.argument==='refs'?'Two references':h.argument==='pairs'?'Two lives':h.argument||'Bridge study'} · ${source.agent==='toolkit'?'Toolkit':'Control'} · Session ${room}`;
 try{const us=await fetch('/api/users').then(r=>r.json());const arr=Array.isArray(us)?us:us.users||us.profiles||[];const pair=arr.find(u=>u.sessions?.some(s=>s.room===room));if(pair?.participants)$('role').options[1].textContent=`Role ${pair.participants[1]}`;}catch{}
+if(participant){$('participant-badge').hidden=false;$('participant-badge').textContent=$('role').selectedOptions[0].textContent+' · Your feedback';}
 function showConversation(){
  const context=draft.source.conversation||source.conversation;
  $('chat-help').textContent='Read-only review of this session, in original order. Some messages may not have been visible to both people during the experiment.';
@@ -62,17 +66,19 @@ function render(){
  const removing=mode==='erase'||mode==='restore';
  $('step-position').textContent=`STEP ${step+1} OF 3`;
  $('instruction').textContent=[
-  'Choose a color below. Then click a stick in the picture to rate it. You do not need to rate every stick.',
-  mode==='restore'?'The dashed outlines show sticks that were taken away. Click one to bring it back.':removing?'Start with the complete original bridge. Click the sticks you want to take away, then continue to put new blue sticks in. Your earlier color ratings do not change this bridge.':'Now choose a stick direction below. Click a grid point in the picture to place a new blue stick. You do not need to draw it.',
+  'Choose a color, then click individual sticks. Leave anything you cannot judge uncolored.',
+  mode==='restore'?'The dashed outlines show sticks that were taken away. Click one to bring it back.':removing?'Start fresh from the original bridge. Click unwanted sticks to remove them. Your ratings from step 1 stay separate.':'Choose a direction and length, then click the grid to add a blue stick. No drawing needed.',
   sketchTool==='area'?'Choose a color, then drag from one corner of an area to the opposite corner. Release to color that rectangle.':'Choose a color below. Hold the mouse button and move over the picture to color an area. Leave areas you cannot judge uncolored.'
  ][step];
  $('palette').innerHTML=step===1?'':palette();
  $('tools').innerHTML=step===1?`<p class="rebuild-progress"><span class="${removing?'current':''}">A · Take sticks away</span><span aria-hidden="true">→</span><span class="${!removing?'current':''}">B · Put new sticks in</span></p>${removing?`<div class="row"><button data-mode="${mode==='restore'?'erase':'restore'}">${mode==='restore'?'Back to taking sticks away':'Bring a stick back'}</button><span class="tool-explanation">You can also use Undo after a mistake.</span></div>`:`<div class="row piece-picker" aria-label="Choose the direction of the new stick">${Object.entries({horizontal:['━','Across'],vertical:['┃','Up / down'],rising:['╱','Slant up'],falling:['╲','Slant down']}).map(([k,[icon,name]])=>`<button data-piece="${k}" aria-pressed="${orientation===k}"><span class="piece-icon" aria-hidden="true">${icon}</span>${name}</button>`).join('')}<label>Stick length <select id="piece-length"><option value="50" ${pieceLength===50?'selected':''}>Short</option><option value="100" ${pieceLength===100?'selected':''}>Long</option></select></label></div><div class="row"><button data-mode="erase">← Take more sticks away</button><span class="tool-explanation">Blue sticks are your additions, not a rating.</span></div>`}`:`<div class="row"><button data-color="none" aria-pressed="${color==='none'}">Erase color</button><span class="tool-explanation">${step===0?'Click a colored stick to remove its color. The stick stays.':'Move over colored areas to erase only the color.'}</span></div>${step===2?`<details class="painting-options"><summary>Change how you color</summary><div class="row"><button data-sketch="brush" aria-pressed="${sketchTool==='brush'}">Paint with a brush</button><button data-sketch="area" aria-pressed="${sketchTool==='area'}">Color a rectangle</button><label>Brush size <input id="brush" ${sketchTool==='area'?'disabled':''} type="range" min="6" max="70" value="${brush}"></label></div></details>`:''}`;
 
- $('note').value=draft.notes[step];$('next').hidden=step===2;$('next').disabled=false;$('previous').disabled=step===0;
+ $('note').value=draft.notes[step];$('next').hidden=step===2;$('next').disabled=false;$('previous').disabled=step===0;$('previous').hidden=step===0;
  $('next').textContent=step===0?'Next: change the bridge →':removing?'Finished taking sticks away →':'Next: color the sketch →';
- $('advance-build').hidden=step!==1||!removing;$('advance-build').onclick=()=>{mode='grid';preview=null;hover=null;original=false;render();showStepStart();};
- $('next').className='primary';$('save').className=step===2?'primary':'';$('save').textContent=step===2?'Submit feedback':'Submit what I have so far';
+ $('advance-build').hidden=true;$('advance-build').onclick=()=>{mode='grid';preview=null;hover=null;original=false;render();showStepStart();};
+ $('next').className='primary';$('save').className=step===2?'primary':'';$('save').textContent='Submit my feedback';$('save').hidden=step!==2;
+ $('submission-review').hidden=step!==2;
+ if(step===2){$('submission-review').replaceChildren();const title=document.createElement('h3');title.textContent='Ready to submit?';const list=document.createElement('ul');for(const text of [`Bridge ratings: ${Object.keys(draft.ratings).length} sticks marked`,`Bridge changes: ${removedIds().length} removed · ${draft.added.length} added`,sketch?`Sketch: ${draft.strokes.length} color marks`:'Sketch unavailable · bridge feedback will still be saved']){const li=document.createElement('li');li.textContent=text;list.append(li);}const help=document.createElement('p');help.textContent='You can go back to any step. Submit saves all three steps and your notes to History.';$('submission-review').append(title,list,help);}
  $('note').placeholder=['Optional: why did you choose these colors?','Optional: what do your changes make better?','Optional: what do you want us to notice?'][step];
  $('undo').disabled=original||!undo[step].length;$('redo').disabled=original||!redo[step].length;
  $('undo').title=undo[step].length?`Undo ${undo[step].at(-1).label} (⌘/Ctrl Z)`:'Nothing to undo in this step';
@@ -159,9 +165,9 @@ function changeStep(n){if(n===1&&step!==1)mode='erase';step=n;draft.visited[step
    else $('receipt').textContent=receipt+' · Newer edits or the currently selected participant are not included in this submission.';
    status(receipt);await records();
   }catch(e){$('receipt').textContent=`Submission not confirmed: ${e.message} Your edits remain on this open page. Retry before closing or refreshing.`;status('Please check the receipt above and retry if needed.');}
-  finally{button.disabled=false;}
+  finally{button.disabled=false;$('receipt').scrollIntoView({block:'nearest',behavior:'smooth'});}
  };
- async function records(){try{const r=await fetch(`/api/feedback?room=${encodeURIComponent(room)}`).then(r=>r.json());$('record-list').replaceChildren();for(const rec of r.records||[]){const a=document.createElement('article'),title=document.createElement('p');title.textContent=`${rec.draft.participantLabel||rec.draft.role} · ${rec.draft.source.agent} · ${new Date(rec.at).toLocaleString()}`;a.append(title);rec.images.forEach((src,i)=>{if(!src)return;const link=document.createElement('a'),img=new Image();link.href=src;link.download=`${room}-${rec.draft.role}-${rec.id}-step${i+1}.png`;img.src=src;img.alt=['Rated original matchsticks','Rebuilt bridge','Colored sketch'][i];link.append(img);a.append(link);});const details=document.createElement('p');details.textContent=rec.draft.notes.filter(Boolean).join(' · ');a.append(details);const exportLink=document.createElement('a');exportLink.textContent='Download full record (JSON)';exportLink.href=URL.createObjectURL(new Blob([JSON.stringify(rec,null,2)],{type:'application/json'}));exportLink.download=`feedback-${rec.id}.json`;a.append(exportLink);$('record-list').append(a);}if(!r.records?.length)$('record-list').textContent='No feedback saved yet.';}catch{status('Could not load saved feedback.');}}
+ async function records(){try{const r=await fetch(`/api/feedback?room=${encodeURIComponent(room)}`).then(r=>r.json());$('record-list').replaceChildren();for(const rec of (r.records||[]).filter(rec=>!participant||rec.draft.role==='B')){const a=document.createElement('article'),title=document.createElement('p');title.textContent=`${rec.draft.participantLabel||rec.draft.role} · ${rec.draft.source.agent} · ${new Date(rec.at).toLocaleString()}`;a.append(title);rec.images.forEach((src,i)=>{if(!src)return;const link=document.createElement('a'),img=new Image();link.href=src;link.download=`${room}-${rec.draft.role}-${rec.id}-step${i+1}.png`;img.src=src;img.alt=['Rated original matchsticks','Rebuilt bridge','Colored sketch'][i];link.append(img);a.append(link);});const details=document.createElement('p');details.textContent=rec.draft.notes.filter(Boolean).join(' · ');a.append(details);const exportLink=document.createElement('a');exportLink.textContent='Download full record (JSON)';exportLink.href=URL.createObjectURL(new Blob([JSON.stringify(rec,null,2)],{type:'application/json'}));exportLink.download=`feedback-${rec.id}.json`;a.append(exportLink);$('record-list').append(a);}if(!$('record-list').children.length)$('record-list').textContent='No feedback saved yet.';}catch{status('Could not load saved feedback.');}}
 
  await load();await records();
 })().catch(e=>{document.getElementById('status').textContent=`Unable to open feedback: ${e.message}`;});
