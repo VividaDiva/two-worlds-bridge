@@ -46,8 +46,9 @@ function showConversation(){
  if(variant==='control')$('chat-help').textContent='Original participant messages for the Control comparison. Toolkit AI replies are excluded.';
 }
 function fresh(){return {version:1,palette:{...colors},ratingLabels:{...labels},coordinateSpace:{width:1200,height:700},role:$('role').value,participantLabel:$('role').selectedOptions[0].textContent,source:clone(source),ratings:{},added:[],strokes:[],notes:['','',''],visited:[true,false,false]};}
-function localSave(){dirty=true;try{localStorage.setItem(localKey(),JSON.stringify(draft));}catch{status('Local draft storage unavailable. Use Save feedback to keep your work.');}}
-async function load(){draft=fresh();try{const saved=JSON.parse(localStorage.getItem(localKey()));if(saved?.version===1)draft=saved;}catch{}undo=[[],[],[]];redo=[[],[],[]];pointer=null;preview=null;hover=null;original=false;beforeAction=null;step=0;sketch=null;showConversation();
+let editRevision=0;
+function localSave(){dirty=true;editRevision++;$('receipt').textContent='Unsaved changes · kept in this browser only. Click Save feedback & images to send them to the server.';try{localStorage.setItem(localKey(),JSON.stringify(draft));}catch{status('Local draft storage unavailable. Use Save feedback to keep your work.');}}
+async function load(){editRevision++;$('receipt').textContent='Browser draft · click Save feedback & images to submit. Previously submitted images are listed under Saved feedback.';draft=fresh();try{const saved=JSON.parse(localStorage.getItem(localKey()));if(saved?.version===1)draft=saved;}catch{}undo=[[],[],[]];redo=[[],[],[]];pointer=null;preview=null;hover=null;original=false;beforeAction=null;step=0;sketch=null;showConversation();
 if(draft.source.sketchUrl){try{sketch=await new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=reject;img.src=draft.source.sketchUrl;});}catch{status('Saved sketch could not load. Matchstick feedback is still available.');}}
 matches=crossingMatches(draft.source.shape,draft.source.world,draft.source.extras);$('workspace').hidden=false;render();}
 const palette=()=>Object.keys(labels).map((k,i)=>`<button class="swatch" style="--color:${colors[k]||'#eee8dc'}" data-color="${k}" aria-pressed="${k===color}" title="${labels[k]} · ${i<4?i+1:'E'}"><span class="color-chip" aria-hidden="true"></span><span>${k==='none'&&step===2?'Erase color':labels[k]}<small>${i<4?`Key ${i+1}`:'Key E'}</small></span></button>`).join('');
@@ -114,7 +115,27 @@ function changeStep(n){step=n;draft.visited[step]=true;original=false;preview=nu
  document.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select,[contenteditable=true]')||pointer)return;const key=e.key.toLowerCase();if((e.metaKey||e.ctrlKey)&&!e.altKey&&(key==='z'||key==='y')){e.preventDefault();historyAction(key==='y'||e.shiftKey?'redo':'undo');return;}if(e.metaKey||e.ctrlKey||e.altKey)return;if(step!==1&&(['1','2','3','4','e'].includes(key))){e.preventDefault();color=({1:'red',2:'neutral',3:'some',4:'blue',e:'none'})[key];original=false;render();}else if(step===1&&key==='r'){e.preventDefault();const keys=Object.keys(pieces);orientation=keys[(keys.indexOf(orientation)+1)%keys.length];mode='grid';original=false;preview=null;render();}});
  $('role').onchange=()=>{dirty=false;load();};
  $('download').onclick=()=>{const c=document.createElement('canvas');draw(c,step);const a=document.createElement('a');a.href=c.toDataURL();a.download=`${room}-${draft.role}-step${step+1}.png`;a.click();};
- $('save').onclick=async()=>{const button=$('save');button.disabled=true;status('Saving all three steps…');try{draft.removed=Object.keys(draft.ratings).filter(id=>draft.ratings[id]==='red');draft.originalMatches=clone(matches);draft.sketchSize=sketch?{width:1200,height:Math.round(1200*sketch.height/sketch.width)}:null;const images=[0,1,2].map(n=>{if(n===2&&!sketch)return null;const c=document.createElement('canvas');draw(c,n);return c.toDataURL('image/png');});const r=await fetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({room,draft,images})});const out=await r.json();if(!r.ok)throw Error(out.error||'Save failed');dirty=false;status(`Saved ${new Date(out.at).toLocaleString()}. Original results unchanged.`);await records();}catch(e){status(`Not saved to server: ${e.message}. Your draft remains in this browser; retry Save.`);}finally{button.disabled=false;}};
+ $('save').onclick=async()=>{
+  const button=$('save');button.disabled=true;const revision=editRevision,submittedRole=draft.role;
+  $('receipt').textContent='Sending images and ratings… Please wait for the server receipt.';status('Saving feedback…');
+  try{
+   const payload=clone(draft);
+   payload.removed=Object.keys(payload.ratings).filter(id=>payload.ratings[id]==='red');payload.originalMatches=clone(matches);payload.sketchSize=sketch?{width:1200,height:Math.round(1200*sketch.height/sketch.width)}:null;
+   const images=[0,1,2].map(n=>{if(n===2&&!sketch)return null;const c=document.createElement('canvas');draw(c,n);return c.toDataURL('image/png');});
+   const r=await fetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({room,draft:payload,images})});
+   const out=await r.json();if(!r.ok)throw Error(out.error||'Save failed');
+   // Confirm the saved record is retrievable, not merely that the POST returned.
+   const check=await fetch(`/api/feedback?room=${encodeURIComponent(room)}`,{cache:'no-store'});if(!check.ok)throw Error('Server receipt could not be verified. Check Saved feedback before retrying.');
+   const saved=(await check.json()).records?.find(x=>x.id===out.id);
+   if(!saved||saved.draft.role!==submittedRole||JSON.stringify(saved.draft)!==JSON.stringify(payload)||JSON.stringify(saved.images)!==JSON.stringify(images))throw Error('Saved feedback could not be verified. Check Saved feedback before retrying.');
+   const count=images.filter(Boolean).length;
+   const receipt=`Received by server · ${payload.participantLabel||submittedRole} · ${count}/3 images${count<3?' (no sketch available)':''} · receipt ${out.id.slice(0,8)} · ${new Date(out.at).toLocaleString()}`;
+   if(editRevision===revision){dirty=false;$('receipt').textContent=receipt;}
+   else $('receipt').textContent=receipt+' · Newer edits or the currently selected participant are not included in this submission.';
+   status(receipt);await records();
+  }catch(e){$('receipt').textContent=`Submission not confirmed: ${e.message} Your browser draft is retained.`;status('Please check the receipt above and retry if needed.');}
+  finally{button.disabled=false;}
+ };
  async function records(){try{const r=await fetch(`/api/feedback?room=${encodeURIComponent(room)}`).then(r=>r.json());$('record-list').replaceChildren();for(const rec of r.records||[]){const a=document.createElement('article'),title=document.createElement('p');title.textContent=`${rec.draft.participantLabel||rec.draft.role} · ${rec.draft.source.agent} · ${new Date(rec.at).toLocaleString()}`;a.append(title);rec.images.forEach((src,i)=>{if(!src)return;const link=document.createElement('a'),img=new Image();link.href=src;link.download=`${room}-${rec.draft.role}-${rec.id}-step${i+1}.png`;img.src=src;img.alt=['Rated original matchsticks','Rebuilt bridge','Colored sketch'][i];link.append(img);a.append(link);});const details=document.createElement('p');details.textContent=rec.draft.notes.filter(Boolean).join(' · ');a.append(details);const exportLink=document.createElement('a');exportLink.textContent='Download full record (JSON)';exportLink.href=URL.createObjectURL(new Blob([JSON.stringify(rec,null,2)],{type:'application/json'}));exportLink.download=`feedback-${rec.id}.json`;a.append(exportLink);$('record-list').append(a);}if(!r.records?.length)$('record-list').textContent='No feedback saved yet.';}catch{status('Could not load saved feedback.');}}
  window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
  await load();await records();

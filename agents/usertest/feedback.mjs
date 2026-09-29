@@ -22,7 +22,12 @@ export async function feedbackHandler({req,res,url,here,sessions,rooms,body,view
     json(res,400,{error:'Invalid feedback record'});return true;
   }
   const record={id:randomUUID(),at:new Date().toISOString(),room:data.room,argument:room.argument,route:room.route,agent:room.agent||'legacy',draft:d,images:data.images};
-  fs.mkdirSync(dir,{recursive:true});
-  fs.writeFileSync(path.join(dir,record.id+'.json'),JSON.stringify(record));
-  json(res,200,{id:record.id,at:record.at});return true;
+  try {
+    fs.mkdirSync(dir,{recursive:true});
+    const dest=path.join(dir,record.id+'.json');
+    fs.writeFileSync(dest+'.tmp',JSON.stringify(record));
+    fs.renameSync(dest+'.tmp',dest);
+    json(res,200,{id:record.id,at:record.at,imagesReceived:record.images.filter(Boolean).length,role:d.role,room:data.room});
+  } catch { json(res,500,{error:'Could not store feedback. Your submission was not confirmed; please retry.'}); }
+  return true;
 }
