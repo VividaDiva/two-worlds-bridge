@@ -48,13 +48,13 @@ function showConversation(){
  if(!context.lines.length)$('feedback-chat').textContent='No conversation recorded for this result.';
  if(variant==='control')$('chat-help').textContent='Original participant messages for the Control comparison. Toolkit AI replies are excluded.';
 }
-function fresh(){return {version:1,palette:{...colors},ratingLabels:{...labels},coordinateSpace:{width:1200,height:700},role:$('role').value,participantLabel:$('role').selectedOptions[0].textContent,source:clone(source),ratings:{},added:[],strokes:[],notes:['','',''],visited:[true,false,false]};}
+function fresh(){return {version:1,rebuildBasis:'original-independent-of-ratings',palette:{...colors},ratingLabels:{...labels},coordinateSpace:{width:1200,height:700},role:$('role').value,participantLabel:$('role').selectedOptions[0].textContent,source:clone(source),ratings:{},added:[],strokes:[],notes:['','',''],visited:[true,false,false]};}
 let editRevision=0;
 function localSave(){dirty=true;editRevision++;pageDrafts.set(localKey(),clone(draft));$('receipt').textContent='Not submitted yet. Your work will be sent to History when you click Submit feedback. Refreshing this page starts over.';}
 async function load(){editRevision++;$('receipt').textContent='Your original result is safe. Work through the three steps, then submit your feedback to History.';draft=pageDrafts.has(localKey())?clone(pageDrafts.get(localKey())):fresh();if(pageDrafts.has(localKey()))$('receipt').textContent='Unsaved draft from this open page. Refreshing or opening a new page starts over.';undo=[[],[],[]];redo=[[],[],[]];pointer=null;preview=null;hover=null;original=false;beforeAction=null;step=0;color=null;mode='erase';sketch=null;showConversation();
 if(draft.source.sketchUrl){try{sketch=await new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=reject;img.src=draft.source.sketchUrl;});}catch{status('Saved sketch could not load. Matchstick feedback is still available.');}}
 matches=crossingMatches(draft.source.shape,draft.source.world,draft.source.extras);$('workspace').hidden=false;render();}
-function removedIds(){return [...new Set([...Object.keys(draft.ratings).filter(id=>draft.ratings[id]==='red'&&!(draft.rebuildRestored||[]).includes(id)),...(draft.rebuildRemoved||[])])];}
+function removedIds(){return [...new Set(draft.rebuildRemoved||[])];}
 const palette=()=>['red','neutral','some','blue'].map(k=>`<button class="swatch" style="--color:${colors[k]}" data-color="${k}" aria-pressed="${k===color}"><span class="color-chip" aria-hidden="true"></span><span>${labels[k]}<small>${({red:'Red',neutral:'Light pink',some:'Light blue',blue:'Blue'})[k]}</small></span></button>`).join('');
 function render(){
  document.querySelectorAll('[data-step]').forEach(b=>{b.classList.toggle('active',+b.dataset.step===step);b.setAttribute('aria-current',+b.dataset.step===step?'step':'false');});
@@ -63,7 +63,7 @@ function render(){
  $('step-position').textContent=`STEP ${step+1} OF 3`;
  $('instruction').textContent=[
   'Choose a color below. Then click a stick in the picture to rate it. You do not need to rate every stick.',
-  mode==='restore'?'The dashed outlines show sticks that were taken away. Click one to bring it back.':removing?'First, click any stick you want to take away. Sticks you rated red are already taken away. When you are ready, continue to put new sticks in.':'Now choose a stick direction below. Click a grid point in the picture to place a new blue stick. You do not need to draw it.',
+  mode==='restore'?'The dashed outlines show sticks that were taken away. Click one to bring it back.':removing?'Start with the complete original bridge. Click the sticks you want to take away, then continue to put new blue sticks in. Your earlier color ratings do not change this bridge.':'Now choose a stick direction below. Click a grid point in the picture to place a new blue stick. You do not need to draw it.',
   sketchTool==='area'?'Choose a color, then drag from one corner of an area to the opposite corner. Release to color that rectangle.':'Choose a color below. Hold the mouse button and move over the picture to color an area. Leave areas you cannot judge uncolored.'
  ][step];
  $('palette').innerHTML=step===1?'':palette();
@@ -97,7 +97,7 @@ function draw(canvas,n,editing=false){
  const ratingColors=Object.fromEntries(Object.entries(draft.ratings).map(([id,c])=>[id,colors[c]]));
  // Draw at a fixed resolution, independent of the screen's device pixel ratio.
  const base=document.createElement('canvas');base.getBoundingClientRect=()=>({width:1200});
- drawCrossing(base,draft.source.shape,draft.source.world,draft.source.extras,{colors:showOriginal?{}:ratingColors,removed:n===1&&!showOriginal?removedIds():[]});
+ drawCrossing(base,draft.source.shape,draft.source.world,draft.source.extras,{colors:showOriginal||n===1?{}:ratingColors,removed:n===1&&!showOriginal?removedIds():[]});
  canvas.width=1200;canvas.height=700;ctx.drawImage(base,0,0,1200,700);
  if(n===1&&!showOriginal){if(editing&&mode==='grid'){ctx.strokeStyle='rgba(39,76,67,.13)';ctx.fillStyle='rgba(39,76,67,.3)';ctx.lineWidth=1;ctx.beginPath();for(let x=0;x<=1200;x+=50){ctx.moveTo(x,0);ctx.lineTo(x,700);}for(let y=0;y<=700;y+=50){ctx.moveTo(0,y);ctx.lineTo(1200,y);}ctx.stroke();for(let x=0;x<=1200;x+=50)for(let y=0;y<=700;y+=50){ctx.beginPath();ctx.arc(x,y,2,0,Math.PI*2);ctx.fill();}}
  if(editing&&mode==='restore'){ctx.save();ctx.setLineDash([6,6]);ctx.globalAlpha=.6;for(const m of matches.filter(m=>removedIds().includes(m.id))){ctx.strokeStyle='#b84950';ctx.lineWidth=9;ctx.beginPath();ctx.moveTo(m.x1,m.y1);ctx.lineTo(m.x2,m.y2);ctx.stroke();}ctx.restore();}
