@@ -13,6 +13,7 @@ const fields=['ratings','added','strokes'];
 const pieces={horizontal:[1,0],vertical:[0,1],rising:[1,-1],falling:[1,1]};
 const status=t=>$('status').textContent=t;
 const clone=x=>JSON.parse(JSON.stringify(x));
+const pageDrafts=new Map();
 const localKey=()=>`bridge-feedback-v1:${room}:${variant||'main'}:${$('role').value}`;
 const h=await fetch(`/api/state?room=${encodeURIComponent(room)}&role=host`).then(r=>{if(!r.ok)throw Error('Session is unavailable');return r.json()}).catch(e=>{status(e.message);return null});if(!h)return;
 const v=variant==='control'&&h.control?{...h,...h.control,sheetDrawn:null}:h;
@@ -48,8 +49,8 @@ function showConversation(){
 }
 function fresh(){return {version:1,palette:{...colors},ratingLabels:{...labels},coordinateSpace:{width:1200,height:700},role:$('role').value,participantLabel:$('role').selectedOptions[0].textContent,source:clone(source),ratings:{},added:[],strokes:[],notes:['','',''],visited:[true,false,false]};}
 let editRevision=0;
-function localSave(){dirty=true;editRevision++;$('receipt').textContent='Unsaved changes · kept in this browser only. Click Save feedback & images to send them to the server.';try{localStorage.setItem(localKey(),JSON.stringify(draft));}catch{status('Local draft storage unavailable. Use Save feedback to keep your work.');}}
-async function load(){editRevision++;$('receipt').textContent='Browser draft · click Save feedback & images to submit. Previously submitted images are listed under Saved feedback.';draft=fresh();try{const saved=JSON.parse(localStorage.getItem(localKey()));if(saved?.version===1)draft=saved;}catch{}undo=[[],[],[]];redo=[[],[],[]];pointer=null;preview=null;hover=null;original=false;beforeAction=null;step=0;sketch=null;showConversation();
+function localSave(){dirty=true;editRevision++;pageDrafts.set(localKey(),clone(draft));$('receipt').textContent='Unsaved changes · this page only. A new page or refresh starts over. Save feedback & images to submit.';}
+async function load(){editRevision++;$('receipt').textContent='Fresh feedback · this page starts from the original result. Submitted records remain under Saved feedback.';draft=pageDrafts.has(localKey())?clone(pageDrafts.get(localKey())):fresh();if(pageDrafts.has(localKey()))$('receipt').textContent='Unsaved draft from this open page. Refreshing or opening a new page starts over.';undo=[[],[],[]];redo=[[],[],[]];pointer=null;preview=null;hover=null;original=false;beforeAction=null;step=0;sketch=null;showConversation();
 if(draft.source.sketchUrl){try{sketch=await new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=reject;img.src=draft.source.sketchUrl;});}catch{status('Saved sketch could not load. Matchstick feedback is still available.');}}
 matches=crossingMatches(draft.source.shape,draft.source.world,draft.source.extras);$('workspace').hidden=false;render();}
 function removedIds(){return [...new Set([...Object.keys(draft.ratings).filter(id=>draft.ratings[id]==='red'&&!(draft.rebuildRestored||[]).includes(id)),...(draft.rebuildRemoved||[])])];}
@@ -145,10 +146,10 @@ function changeStep(n){if(n===1&&step!==1)mode='erase';step=n;draft.visited[step
    if(editRevision===revision){dirty=false;$('receipt').textContent=receipt;}
    else $('receipt').textContent=receipt+' · Newer edits or the currently selected participant are not included in this submission.';
    status(receipt);await records();
-  }catch(e){$('receipt').textContent=`Submission not confirmed: ${e.message} Your browser draft is retained.`;status('Please check the receipt above and retry if needed.');}
+  }catch(e){$('receipt').textContent=`Submission not confirmed: ${e.message} Your edits remain on this open page. Retry before closing or refreshing.`;status('Please check the receipt above and retry if needed.');}
   finally{button.disabled=false;}
  };
  async function records(){try{const r=await fetch(`/api/feedback?room=${encodeURIComponent(room)}`).then(r=>r.json());$('record-list').replaceChildren();for(const rec of r.records||[]){const a=document.createElement('article'),title=document.createElement('p');title.textContent=`${rec.draft.participantLabel||rec.draft.role} · ${rec.draft.source.agent} · ${new Date(rec.at).toLocaleString()}`;a.append(title);rec.images.forEach((src,i)=>{if(!src)return;const link=document.createElement('a'),img=new Image();link.href=src;link.download=`${room}-${rec.draft.role}-${rec.id}-step${i+1}.png`;img.src=src;img.alt=['Rated original matchsticks','Rebuilt bridge','Colored sketch'][i];link.append(img);a.append(link);});const details=document.createElement('p');details.textContent=rec.draft.notes.filter(Boolean).join(' · ');a.append(details);const exportLink=document.createElement('a');exportLink.textContent='Download full record (JSON)';exportLink.href=URL.createObjectURL(new Blob([JSON.stringify(rec,null,2)],{type:'application/json'}));exportLink.download=`feedback-${rec.id}.json`;a.append(exportLink);$('record-list').append(a);}if(!r.records?.length)$('record-list').textContent='No feedback saved yet.';}catch{status('Could not load saved feedback.');}}
- window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
+
  await load();await records();
 })().catch(e=>{document.getElementById('status').textContent=`Unable to open feedback: ${e.message}`;});
