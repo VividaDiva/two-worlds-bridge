@@ -24,7 +24,7 @@ test('all images and rating geometry are retrieved exactly from disk by room and
  const rooms=new Map([['control',{argument:'pairs',route:'both',agent:'keys'}],['toolkit',{argument:'pairs',route:'both',agent:'toolkit'}]]);
  const run=async(method,room,data)=>{let code,out;await feedbackHandler({req:{method},res:{},url:new URL('http://local/api/feedback?room='+room),here:'.',sessions,rooms:new Map(rooms),body:async()=>data,json:(_r,c,d)=>{code=c;out=d;}});return {code,out};};
  try{for(const room of rooms.keys())for(const role of ['A','B']){
-  const draft={role,source:{agent:rooms.get(room).agent},ratings:{'1':'red','2':'blue'},removed:['1'],added:[{x1:50,y1:50,x2:150,y2:50}],strokes:[{color:'blue',width:22,points:[{x:1,y:2},{x:3,y:4}]}],notes:['rating','rebuild','sketch']};
+  const draft={role,source:{agent:rooms.get(room).agent},ratings:{'1':'veryRed','2':'veryBlue'},ratingScale:{id:'bridge-satisfaction-5-v1',scores:{veryRed:1,red:2,neutral:3,blue:4,veryBlue:5}},annotations:[{id:'pin1',x:250,y:310,color:'blue',text:'这里的围栏让我感觉安全。'}],visited:[true,true,true],removed:['1'],added:[{x1:50,y1:50,x2:150,y2:50}],strokes:[{color:'blue',width:22,points:[{x:1,y:2},{x:3,y:4}]}],notes:['rating','rebuild','sketch']};
   const images=[image,image,image];const saved=await run('POST',room,{room,draft,images});assert.equal(saved.code,200);assert.equal(saved.out.imagesReceived,3);
   const fetched=await run('GET',room);const record=fetched.out.records.find(r=>r.id===saved.out.id);assert.deepEqual(record.draft,draft);assert.deepEqual(record.images,images);assert.equal(record.agent,rooms.get(room).agent);assert.equal(record.route,'both');
  }
