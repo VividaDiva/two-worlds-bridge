@@ -7,7 +7,7 @@ const assetURL=path=>connection?connection.url(path):path;
 function connectionError(message){$('context').textContent='The feedback page is open, but the study server could not be reached.';$('receipt').textContent=message+' Please ask the facilitator to check the server, then reload this page.';document.querySelector('nav').hidden=true;}
 if(connection){try{await connection.ready;}catch(e){connectionError(e.message);return;}}
 let room=new URLSearchParams(location.search).get('room');
-const variant=new URLSearchParams(location.search).get('variant');
+let variant=new URLSearchParams(location.search).get('variant');
 const embedded=new URLSearchParams(location.search).get('embedded')==='1';
 const params=new URLSearchParams(location.search), participant=params.get('participant')==='1', seat=params.get('role');
 if(embedded)document.body.classList.add('embedded');
@@ -37,7 +37,7 @@ const v=variant==='control'&&h.control?{...h,...h.control,sheetDrawn:null}:h;
 const last=h.sketches?.at(-1);
 // A legacy side-by-side control has no separate sketch: never label the Toolkit image as Control.
 const sketchUrl=last&&variant!=='control'?`/sketch/${encodeURIComponent(room)}/${last.n}.png`:null;
-source={shape:v.shape,world:v.world,extras:v.sheetDrawn,standing:v.standing,sketchUrl,sketch:last||null,variant:variant||'main',agent:variant==='control'?'keys':h.agent,capturedAt:new Date().toISOString(),conversation:{room,argument:h.argument,route:h.route,arrow:h.arrow,note:h.note,lines:(h.lines||[]).filter(l=>variant!=='control'||l.who!=='builder').map(l=>({who:l.who,text:l.text,phase:l.phase,upload:l.upload,decision:l.decision,relay:l.relay,about:l.about,clarification:l.clarification,understandingUpdate:l.understandingUpdate,built:l.built,failed:!!l.failed}))}};
+source={shape:v.shape,world:v.world,extras:v.sheetDrawn,standing:v.standing,sketchUrl,sketch:last||null,variant:variant||'main',agent:variant==='control'?'keys':(h.agent||'keys'),capturedAt:new Date().toISOString(),conversation:{room,argument:h.argument,route:h.route,arrow:h.arrow,note:h.note,lines:(h.lines||[]).filter(l=>variant!=='control'||l.who!=='builder').map(l=>({who:l.who,text:l.text,phase:l.phase,upload:l.upload,decision:l.decision,relay:l.relay,about:l.about,clarification:l.clarification,understandingUpdate:l.understandingUpdate,built:l.built,failed:!!l.failed}))}};
 $('feedback-history').href=assetURL(`/history/${encodeURIComponent(room)}#submitted-feedback`);
 $('back').href=assetURL(`/j/${encodeURIComponent(room)}/both`);
 $('context').textContent=`${h.argument==='refs'?'Two references':h.argument==='pairs'?'Two lives':h.argument||'Bridge study'} · ${source.agent==='toolkit'?'Toolkit':'Control'} · Session ${room}`;
@@ -45,7 +45,7 @@ $('context').textContent=`${h.argument==='refs'?'Two references':h.argument==='p
 try{h=await fetchState(room);setSource();}catch(e){status(e.message);connectionError(e.message);return;}
 try{const us=await apiFetch('/api/users').then(r=>r.json());const arr=Array.isArray(us)?us:us.users||us.profiles||[];pair=arr.find(u=>u.sessions?.some(s=>s.room===room));if(pair?.participants)$('role').options[1].textContent=`Role ${pair.participants[1]}`;}catch{}
 if(participant){$('participant-badge').hidden=false;$('participant-badge').textContent=$('role').selectedOptions[0].textContent+' · Your feedback';}
-function feedbackPaths(sessions){const seen=new Set();return sessions.filter(s=>s.agent==='toolkit'&&!s.historical&&s.hasContent&&['pairs','refs'].includes(s.argument)).filter(s=>{const key=s.argument+':'+s.route;if(seen.has(key))return false;seen.add(key);return true;}).sort((a,b)=>a.argument.localeCompare(b.argument)||routeOrder.indexOf(a.route)-routeOrder.indexOf(b.route));}
+function feedbackPaths(sessions){const seen=new Set();const replaySources=new Set(sessions.filter(s=>s.agent==='toolkit'&&!s.historical).map(s=>s.replay?.sourceRoom).filter(Boolean));return sessions.filter(s=>['keys','toolkit'].includes(s.agent)&&(s.agent==='keys'||!s.historical)&&s.hasContent&&['pairs','refs'].includes(s.argument)).sort((a,b)=>Number(replaySources.has(b.room))-Number(replaySources.has(a.room))).filter(s=>{const key=s.agent+':'+s.argument+':'+s.route;if(seen.has(key))return false;seen.add(key);return true;}).sort((a,b)=>a.agent.localeCompare(b.agent)||a.argument.localeCompare(b.argument)||routeOrder.indexOf(a.route)-routeOrder.indexOf(b.route));}
 function completedSummary(r){return r.role==='B'&&r.complete===true;}
 function renderPaths(){
  if(!pathItems.length)return;
@@ -53,15 +53,20 @@ function renderPaths(){
  const done=pathItems.filter(p=>pathProgress.get(p.room)===true).length;
  $('path-progress').textContent=`${done} of ${pathItems.length} paths submitted`;
  $('path-progress-bar').max=pathItems.length;$('path-progress-bar').value=done;
+ const active=source.agent==='toolkit'?'toolkit':'keys';
+ const visible=pathItems.filter(p=>p.agent===active);
+ const conditions=$('condition-switch');conditions.replaceChildren();
+ for(const [agent,name] of [['keys','Control'],['toolkit','Toolkit']]){const items=pathItems.filter(p=>p.agent===agent),count=items.filter(p=>pathProgress.get(p.room)===true).length;const b=document.createElement('button');b.type='button';b.dataset.condition=agent;b.setAttribute('aria-pressed',String(active===agent));b.disabled=switching||saving||!items.length;b.textContent=`${name} · ${count} / ${items.length} submitted`;conditions.append(b);}
+ $('condition-label').textContent=`${active==='keys'?'CONTROL':'TOOLKIT'} · ONE PATH AT A TIME`;
  const list=$('path-list');list.replaceChildren();
- pathItems.forEach((p,i)=>{const b=document.createElement('button');b.type='button';b.dataset.room=p.room;b.setAttribute('aria-current',p.room===room?'page':'false');b.disabled=switching||saving;
+ visible.forEach((p,i)=>{const b=document.createElement('button');b.type='button';b.dataset.room=p.room;b.setAttribute('aria-current',p.room===room?'page':'false');b.disabled=switching||saving;
  const label=document.createElement('span');label.textContent=`${i+1}. ${p.argument==='refs'?'Two references':'Two lives'} · ${routeLabels[p.route]||p.route}`;
  const tag=document.createElement('small');const submitted=pathProgress.get(p.room)===true;const hasDraft=pendingRooms.has(p.room);
  tag.textContent=submitted?(hasDraft?'Submitted · open-page draft':'Submitted'):hasDraft?'Draft in this page':pathProgress.get(p.room)===null?'Status unavailable':'Not submitted';b.append(label,tag);list.append(b);});
- const current=pathItems.findIndex(p=>p.room===room);
- $('current-path').textContent=current>=0?`Path ${current+1} of ${pathItems.length} · ${routeLabels[pathItems[current].route]||h.route}`:'Choose a path';
+ const current=visible.findIndex(p=>p.room===room);
+ $('current-path').textContent=current>=0?`Path ${current+1} of ${visible.length} · ${routeLabels[visible[current].route]||h.route}`:'Choose a path';
  $('continue-path').hidden=pathProgress.get(room)!==true;
- const pending=nextPath();$('continue-path').disabled=!pending||switching||saving;$('continue-path').textContent=pending?'Continue to next unsubmitted path →':'All paths submitted ✓';
+ const pending=nextPath();$('continue-path').disabled=!pending||switching||saving;$('continue-path').textContent=pending?`Continue: ${pending.agent==='keys'?'Control':'Toolkit'} · ${routeLabels[pending.route]||pending.route} →`:'Control and Toolkit submitted ✓';
 }
 function nextPath(){const i=pathItems.findIndex(p=>p.room===room);return [...pathItems.slice(i+1),...pathItems.slice(0,i)].find(p=>pathProgress.get(p.room)!==true);}
 async function loadPathProgress(){await Promise.all(pathItems.map(async p=>{try{const r=await apiFetch(`/api/feedback?room=${encodeURIComponent(p.room)}&summary=1`,{cache:'no-store'});if(!r.ok)throw Error();const out=await r.json();pathProgress.set(p.room,(out.summaries||[]).some(completedSummary));}catch{pathProgress.set(p.room,null);}}));renderPaths();}
@@ -69,13 +74,14 @@ async function switchPath(id){
  finishComment();
  if(id===room||switching||saving||!pathItems.some(p=>p.room===id))return;
  switching=true;renderPaths();status('Opening this path…');
- try{const next=await fetchState(id);if(draft)pageDrafts.set(localKey(),clone(draft));room=id;h=next;setSource();dirty=false;zoom=1;await load();await records();const url=new URL(location.href);url.searchParams.set('room',room);history.replaceState(null,'',url);status('');$('path-tour').scrollIntoView({block:'start'});}
+ try{const next=await fetchState(id);if(draft)pageDrafts.set(localKey(),clone(draft));room=id;variant=null;h=next;setSource();dirty=false;zoom=1;await load();await records();const url=new URL(location.href);url.searchParams.set('room',room);url.searchParams.delete('variant');history.replaceState(null,'',url);status('');$('path-tour').scrollIntoView({block:'start'});}
  catch(e){status(`Could not open this path: ${e.message}. Please try again.`);}
  finally{switching=false;renderPaths();}
 }
 $('path-list').onclick=e=>{const b=e.target.closest('[data-room]');if(b)switchPath(b.dataset.room);};
 $('continue-path').onclick=()=>{const next=nextPath();if(next)switchPath(next.room);};
-if(participant&&h.agent==='toolkit'&&pair){pathItems=feedbackPaths(pair.sessions||[]);renderPaths();}
+$('condition-switch').onclick=e=>{const b=e.target.closest('[data-condition]');if(!b)return;const options=pathItems.filter(p=>p.agent===b.dataset.condition);const target=options.find(p=>p.argument===h.argument&&p.route===h.route)||options.find(p=>pathProgress.get(p.room)!==true)||options[0];if(target)switchPath(target.room);};
+if(participant&&!variant&&pair){pathItems=feedbackPaths(pair.sessions||[]);renderPaths();}
 function showConversation(){
  const context=draft.source.conversation||source.conversation;
  $('chat-help').textContent='Read-only review of this session, in original order. Some messages may not have been visible to both people during the experiment.';
