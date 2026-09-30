@@ -45,7 +45,7 @@ $('context').textContent=`${h.argument==='refs'?'Two references':h.argument==='p
 try{h=await fetchState(room);setSource();}catch(e){status(e.message);connectionError(e.message);return;}
 try{const us=await apiFetch('/api/users').then(r=>r.json());const arr=Array.isArray(us)?us:us.users||us.profiles||[];pair=arr.find(u=>u.sessions?.some(s=>s.room===room));if(pair?.participants)$('role').options[1].textContent=`Role ${pair.participants[1]}`;}catch{}
 if(participant){$('participant-badge').hidden=false;$('participant-badge').textContent=$('role').selectedOptions[0].textContent+' · Your feedback';}
-function feedbackPaths(sessions){const seen=new Set();const replaySources=new Set(sessions.filter(s=>s.agent==='toolkit'&&!s.historical).map(s=>s.replay?.sourceRoom).filter(Boolean));return sessions.filter(s=>['keys','toolkit'].includes(s.agent)&&(s.agent==='keys'||!s.historical)&&s.hasContent&&['pairs','refs'].includes(s.argument)).sort((a,b)=>Number(replaySources.has(b.room))-Number(replaySources.has(a.room))).filter(s=>{const key=s.agent+':'+s.argument+':'+s.route;if(seen.has(key))return false;seen.add(key);return true;}).sort((a,b)=>a.agent.localeCompare(b.agent)||a.argument.localeCompare(b.argument)||routeOrder.indexOf(a.route)-routeOrder.indexOf(b.route));}
+function feedbackPaths(sessions){const seen=new Set();const replaySources=new Set(sessions.filter(s=>s.agent==='toolkit'&&!s.historical).map(s=>s.replay?.sourceRoom).filter(Boolean));return sessions.filter(s=>['keys','toolkit'].includes(s.agent)&&(s.agent==='keys'||!s.historical)&&s.hasContent&&s.argument==='pairs').sort((a,b)=>Number(replaySources.has(b.room))-Number(replaySources.has(a.room))).filter(s=>{const key=s.agent+':'+s.argument+':'+s.route;if(seen.has(key))return false;seen.add(key);return true;}).sort((a,b)=>a.agent.localeCompare(b.agent)||a.argument.localeCompare(b.argument)||routeOrder.indexOf(a.route)-routeOrder.indexOf(b.route));}
 function completedSummary(r){return r.role==='B'&&r.complete===true;}
 function renderPaths(){
  if(!pathItems.length)return;
@@ -81,6 +81,14 @@ async function switchPath(id){
 $('path-list').onclick=e=>{const b=e.target.closest('[data-room]');if(b)switchPath(b.dataset.room);};
 $('continue-path').onclick=()=>{const next=nextPath();if(next)switchPath(next.room);};
 $('condition-switch').onclick=e=>{const b=e.target.closest('[data-condition]');if(!b)return;const options=pathItems.filter(p=>p.agent===b.dataset.condition);const target=options.find(p=>p.argument===h.argument&&p.route===h.route)||options.find(p=>pathProgress.get(p.room)!==true)||options[0];if(target)switchPath(target.room);};
+// Two references is paused for feedback; preserve its sessions and submissions.
+if(h.argument==='refs'){
+ const available=feedbackPaths(pair?.sessions||[]),agent=source.agent==='toolkit'?'toolkit':'keys';
+ const target=available.find(p=>p.agent===agent&&p.route===h.route)||available.find(p=>p.agent===agent)||available[0];
+ if(!target){$('context').textContent='Two references feedback is paused.';$('receipt').textContent='Please ask the facilitator for a Two lives feedback link. Existing records are preserved.';document.querySelector('nav').hidden=true;return;}
+ try{const next=await fetchState(target.room);room=target.room;variant=null;h=next;setSource();const url=new URL(location.href);url.searchParams.set('room',room);url.searchParams.delete('variant');history.replaceState(null,'',url);}
+ catch(e){connectionError(e.message);return;}
+}
 if(participant&&!variant&&pair){pathItems=feedbackPaths(pair.sessions||[]);renderPaths();}
 function showConversation(){
  const context=draft.source.conversation||source.conversation;
