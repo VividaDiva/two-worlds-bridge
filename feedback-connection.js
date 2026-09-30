@@ -14,7 +14,12 @@
   await ready;const method=(options.method||'GET').toUpperCase();
   if(method==='POST')await discover();
   const send=()=>fetch(new URL(path,base+'/'),{...options,mode:'cors',credentials:'omit',cache:'no-store',signal:AbortSignal.timeout(method==='POST'?60000:20000)});
-  try{const r=await send();if(r.status>=500&&method==='GET')throw Error('Study server unavailable');return r;}
-  catch(e){if(method==='GET'){const previous=base;try{await discover();if(base!==previous)return await send();}catch{}}throw Error(method==='POST'?'The submission could not be confirmed. Your edits are still on this page.':'Unable to connect to the study server. It may be offline or unreachable from this network.');}
+  // Retry only reads: a dropped POST may already have saved feedback.
+  const attempts=method==='GET'?3:1;
+  for(let attempt=0;attempt<attempts;attempt++){
+   try{const r=await send();if(r.status>=500&&method==='GET')throw Error('Study server unavailable');return r;}
+   catch(e){if(attempt+1<attempts){await new Promise(resolve=>setTimeout(resolve,1000*(attempt+1)));try{await discover();}catch{}continue;}
+    throw Error(method==='POST'?'The submission could not be confirmed. Your edits are still on this page.':'Unable to connect to the study server. Please try again, or ask the facilitator to check the connection.');}
+  }
  }};
 })();

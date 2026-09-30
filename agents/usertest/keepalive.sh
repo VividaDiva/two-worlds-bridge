@@ -28,7 +28,7 @@ start_tunnel() {
   pkill -f "cloudflared tunnel --url http://localhost:$PORT" 2>/dev/null
   rm -f "$LOG"
   say "starting tunnel"
-  nohup cloudflared tunnel --url "http://localhost:$PORT" --logfile "$LOG" > /tmp/tunnel2.out 2>&1 &
+  TUNNEL_TRANSPORT_PROTOCOL=http2 nohup cloudflared tunnel --url "http://localhost:$PORT" --logfile "$LOG" > /tmp/tunnel2.out 2>&1 &
   for i in {1..30}; do
     u=$(grep -ho 'https://[a-z0-9-]*\.trycloudflare\.com' "$LOG" /tmp/tunnel2.out 2>/dev/null | tail -1)
     [ -n "$u" ] && { say "tunnel up: $u"; publish "$u"; return; }
@@ -37,6 +37,7 @@ start_tunnel() {
   say "tunnel gave no address"
 }
 
+public_failures=0
 while true; do
   if ! curl -s -o /dev/null --max-time 3 "http://localhost:$PORT/"; then
     start_server
@@ -47,6 +48,22 @@ while true; do
   elif [ "$(tail -n 20 "$LOG" 2>/dev/null | grep -c 'Tunnel not found')" -ge 3 ]; then
     say "tunnel expired"
     start_tunnel
+  fi
+  # A running cloudflared process can have no usable connection.
+  u=$(grep -ho 'https://[a-z0-9-]*\.trycloudflare\.com' "$LOG" /tmp/tunnel2.out 2>/dev/null | tail -1)
+  if [ -n "$u" ]; then
+    http_code=$(curl -s -o /dev/null --max-time 12 -w '%{http_code}' "$u/api/options")
+    if [ "$http_code" = 200 ]; then
+      public_failures=0
+    else
+      (( public_failures++ ))
+      say "public health check failed ($http_code), attempt $public_failures"
+      if [ "$public_failures" -ge 3 ]; then
+        say "public connection unavailable; replacing tunnel"
+        start_tunnel
+        public_failures=0
+      fi
+    fi
   fi
   sleep 20
 done

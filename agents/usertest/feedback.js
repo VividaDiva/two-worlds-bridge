@@ -4,7 +4,7 @@ const $=id=>document.getElementById(id);
 const connection=window.bridgeFeedbackConnection;
 const apiFetch=(path,options)=>connection?connection.fetch(path,options):fetch(path,options);
 const assetURL=path=>connection?connection.url(path):path;
-function connectionError(message){$('context').textContent='The feedback page is open, but the study server could not be reached.';$('receipt').textContent=message+' Please ask the facilitator to check the server, then reload this page.';document.querySelector('nav').hidden=true;}
+function connectionError(message){$('context').textContent='We could not load the saved experiment.';$('receipt').replaceChildren();const text=document.createElement('p');text.textContent=message;const retry=document.createElement('button');retry.type='button';retry.className='primary';retry.textContent='Try connecting again';retry.onclick=()=>location.reload();$('receipt').append(text,retry);$('status').textContent='';document.querySelector('nav').hidden=true;document.querySelector('.context-sidebar').hidden=true;$('records').hidden=true;}
 if(connection){try{await connection.ready;}catch(e){connectionError(e.message);return;}}
 let room=new URLSearchParams(location.search).get('room');
 let variant=new URLSearchParams(location.search).get('variant');
