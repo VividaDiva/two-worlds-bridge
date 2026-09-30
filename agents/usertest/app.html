@@ -526,6 +526,9 @@ body{background:var(--paper);background-image:none}body::before{display:none}
 
 .study-mode{display:flex;gap:8px;align-items:center;margin:0 0 18px}.study-mode button{font:500 14px var(--body);padding:10px 20px;border:1px solid var(--rule);border-radius:8px;background:white;color:var(--ink);cursor:pointer}.study-mode button[aria-pressed=true]{background:#2f5142;color:white}.study-mode small{color:var(--soft);font-size:12px;margin-left:8px}#app.feedback-mode{padding-bottom:0}#app.feedback-mode>.studio-grid,#app.feedback-mode>.path-guide,#app.feedback-mode>.session-details,#app.feedback-mode>.research-fold,#app.feedback-mode>.studio-foot{display:none}#integrated-feedback{max-width:1480px;padding:0 42px 40px;margin:0 auto}#integrated-feedback iframe{width:100%;height:85vh;min-height:720px;border:1px solid var(--rule);border-radius:14px;background:#f4f6f2;display:block}#integrated-feedback[hidden],#integrated-feedback iframe[hidden]{display:none}@media(max-width:760px){#integrated-feedback{padding:0 16px 24px}.study-mode{flex-wrap:wrap}.study-mode small{margin-left:0}}
 .feedback-history-card{border-top:1px solid var(--rule);padding:20px 0}.feedback-history-card h3{margin:0 0 8px}.feedback-image-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.feedback-image-grid figure{margin:0}.feedback-image-grid figcaption{font-size:13px;font-weight:600;margin-bottom:8px}.feedback-image-grid img{width:100%;border-radius:8px;border:1px solid var(--rule)}.feedback-history-card pre{overflow:auto;max-height:280px;font-size:12px}.feedback-history-card>p{font-size:12px;line-height:1.6}.feedback-history-card>.mini{display:inline-block;margin-top:12px}@media(max-width:760px){.feedback-image-grid{grid-template-columns:1fr}}
+
+/* Read-only feedback review */
+.fh-section{margin:24px 0;padding:28px!important}.fh-section>h2{font-size:28px;margin:4px 0}.fh-kicker{font-size:11px;letter-spacing:1.5px;font-weight:700;color:#5d786a;margin:0 0 7px}.fh-muted{font-size:13px;color:#65776d;line-height:1.6}.fh-record{padding-top:24px;margin-top:24px;border-top:1px solid #dce4dc}.fh-record-head{display:flex;justify-content:space-between;align-items:start;gap:16px}.fh-record h3{font-size:21px;margin:0}.fh-record h4{font-size:14px;margin:0 0 12px}.fh-counts{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:22px 0}.fh-counts>div{background:#f1f5f1;border-radius:10px;padding:14px}.fh-counts strong{display:block;font-size:24px}.fh-counts span{font-size:12px;color:#63756b}.fh-tabs{display:flex;gap:6px;border-bottom:1px solid #d8e1da;margin-bottom:20px}.fh-tabs button{flex:1;border:0;border-radius:6px 6px 0 0;background:transparent;font-size:14px;padding:14px 8px;color:#62766a}.fh-tabs button[aria-selected=true]{background:#e6eee7;color:#203f32;box-shadow:inset 0 -3px #345b46;font-weight:700}.fh-panel[hidden]{display:none!important}.fh-layout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(230px,1fr);gap:26px}.fh-visual{background:#f5f6f2;border:1px solid #e0e5dd;border-radius:12px;padding:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:220px}.fh-visual img{display:block;max-width:100%;max-height:480px;object-fit:contain}.fh-visual a{font-size:12px;margin-top:12px}.fh-rating{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid #e3e8e1;font-size:13px}.fh-details h4:not(:first-child){margin-top:24px}.fh-note,.fh-comment p{white-space:pre-wrap;font-size:14px;line-height:1.65}.fh-comment{border-left:3px solid #8ab8d8;padding:10px 14px;background:#f5f7f4;margin-bottom:12px}.fh-comment strong{font-size:12px}.fh-test{padding:12px 16px;background:#fff4db;border-radius:8px;color:#735827;font-size:13px}.fh-data{border-top:1px solid #e0e6de;margin-top:24px;padding-top:15px}.fh-data summary{font-size:12px;color:#65766b;cursor:pointer}.fh-data pre{max-height:260px;overflow:auto;font-size:11px}.fh-context>summary{cursor:pointer;font-size:15px;font-weight:650;padding:8px}.fh-context>.card{margin-top:18px}.fh-tabs button:focus-visible{outline:3px solid #2672cb;outline-offset:2px}@media(max-width:760px){.fh-layout{grid-template-columns:1fr}.fh-counts{grid-template-columns:repeat(2,1fr)}.fh-section{padding:16px!important}.fh-record-head{flex-wrap:wrap}.fh-tabs button{font-size:12px}}
 </style>
 </head>
 <body>
@@ -1865,23 +1868,33 @@ async function sessionsView(){
 }
 
 function renderHistoryFeedback(target,records){
- if(!records.length){target.textContent='No feedback submitted for this session yet.';return;}
- const labels=['1 · Matchstick ratings','2 · Rebuilt bridge','3 · Sketch annotations'];
- const ratingNames={veryRed:'Very dissatisfied',veryBlue:'Very satisfied',red:'Dissatisfied',neutral:'Neutral',some:'Somewhat satisfied',blue:'Satisfied'};
- for(const record of records){
-  const d=record.draft,card=document.createElement('article');card.className='feedback-history-card';
-  const heading=document.createElement('h3');heading.textContent=`${d.participantLabel||({A:'Role 1',B:'Role 2'}[d.role])||d.role} · ${d.source?.agent==='toolkit'?'Toolkit':'Control'} · ${new Date(record.at).toLocaleString()}`;card.append(heading);
-  const meta=document.createElement('p');meta.className='muted';meta.textContent=`${record.argument} · ${record.route} · receipt ${record.id.slice(0,8)}`;card.append(meta);
-  const grid=document.createElement('div');grid.className='feedback-image-grid';
-  labels.forEach((label,i)=>{const figure=document.createElement('figure'),caption=document.createElement('figcaption');caption.textContent=label;figure.append(caption);
-   const src=record.images?.[i];
-   if(typeof src==='string'&&/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(src)){const link=document.createElement('a'),img=document.createElement('img');img.src=src;img.alt=label;link.href=src;link.download=`${record.room}-${d.role}-${record.id}-step${i+1}.png`;link.title='Download image';link.append(img);figure.append(link);}else{const missing=document.createElement('p');missing.textContent='No image submitted for this step.';figure.append(missing);}
-   if(d.notes?.[i]){const note=document.createElement('p');note.textContent=d.notes[i];figure.append(note);}grid.append(figure);
-  });card.append(grid);
-  const summary=document.createElement('p');const ratings=Object.values(d.ratings||{});summary.textContent=Object.entries(ratingNames).map(([key,label])=>`${label}: ${ratings.filter(v=>v===key).length}`).join(' · ')+` · Removed: ${(d.removed||[]).length} · Added: ${(d.added||[]).length} · Sketch marks: ${(d.strokes||[]).length} · Comments: ${(d.annotations||[]).length}`;card.append(summary);
-  for(const [i,n] of (d.annotations||[]).entries()){const text=document.createElement('p');text.textContent=`Comment ${i+1} · ${ratingNames[n.color]||n.color}: ${n.text}`;card.append(text);}
-  const details=document.createElement('details'),title=document.createElement('summary'),data=document.createElement('pre');title.textContent='View rating and edit data';data.textContent=JSON.stringify({ratings:d.ratings,removed:d.removed,added:d.added,strokes:d.strokes,annotations:d.annotations},null,2);details.append(title,data);card.append(details);
-  const download=document.createElement('a');download.className='mini';download.textContent='Download feedback data';download.href=URL.createObjectURL(new Blob([JSON.stringify(record,null,2)],{type:'application/json'}));download.download=`feedback-${record.id}.json`;card.append(download);target.append(card);
+ const make=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
+ if(!records.length){target.append(make('p','No feedback submitted for this session yet.','fh-muted'));return;}
+ const names=['Bridge ratings','Bridge changes','Sketch comments'];
+ const ratingNames={veryRed:'Very dissatisfied',red:'Dissatisfied',neutral:'Neutral',some:'Somewhat satisfied',blue:'Satisfied',veryBlue:'Very satisfied'};
+ for(const [index,record] of records.entries()){
+  const d=record.draft,card=make('article',undefined,'fh-record');
+  const header=make('header',undefined,'fh-record-head'),person=make('div');
+  person.append(make('p',`${d.source?.agent==='toolkit'?'TOOLKIT':'CONTROL'} · ${index===0?'LATEST SUBMISSION':'EARLIER SUBMISSION'}`,'fh-kicker'),make('h3',d.source?.testOnly?'System save check':d.participantLabel||({A:'Role 1',B:'Role 2'}[d.role])||d.role),make('p',new Date(record.at).toLocaleString(),'fh-muted'));
+  const download=make('a','Download record','mini');download.href=URL.createObjectURL(new Blob([JSON.stringify(record,null,2)],{type:'application/json'}));download.download=`feedback-${record.id}.json`;header.append(person,download);card.append(header);
+  if(d.source?.testOnly)card.append(make('p','SYSTEM TEST · This checks that saving works. It is not participant feedback; its images are placeholders.','fh-test'));
+  const counts=make('div',undefined,'fh-counts');for(const [n,label] of [[Object.keys(d.ratings||{}).length,'sticks rated'],[(d.removed||[]).length,'sticks removed'],[(d.added||[]).length,'sticks added'],[(d.annotations||[]).length,'sketch comments']]){const item=make('div');item.append(make('strong',String(n)),make('span',label));counts.append(item);}card.append(counts);
+  const tabs=make('div',undefined,'fh-tabs');tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Submitted result format');const panels=[];const buttons=[];
+  names.forEach((label,i)=>{
+   const button=make('button',`${i+1} · ${label}`);button.type='button';button.id=`fh-tab-${record.id}-${i}`;button.setAttribute('role','tab');button.setAttribute('aria-controls',`fh-panel-${record.id}-${i}`);buttons.push(button);tabs.append(button);
+   const panel=make('section',undefined,'fh-panel');panel.id=`fh-panel-${record.id}-${i}`;panel.setAttribute('role','tabpanel');panel.setAttribute('aria-labelledby',button.id);panels.push(panel);
+   const layout=make('div',undefined,'fh-layout'),visual=make('div',undefined,'fh-visual'),aside=make('div',undefined,'fh-details');const src=record.images?.[i];
+   if(d.source?.testOnly){visual.append(make('p','Placeholder image · system verification only','fh-muted'));}
+   else if(typeof src==='string'&&/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(src)){const img=make('img');img.src=src;img.alt=label;visual.append(img);const link=make('a','Download image');link.href=src;link.download=`feedback-${record.id}-step${i+1}.png`;visual.append(link);}else visual.append(make('p','No image was included in this submission.','fh-muted'));
+   if(i===0){aside.append(make('h4','Ratings by stick'));const keys=d.ratingScale?['veryRed','red','neutral','blue','veryBlue']:['red','neutral','some','blue'];const values=Object.values(d.ratings||{});for(const key of keys){const row=make('div',undefined,'fh-rating');row.append(make('span',`${d.ratingScale?.scores?.[key]?d.ratingScale.scores[key]+' · ':''}${ratingNames[key]}`),make('strong',String(values.filter(v=>v===key).length)));aside.append(row);}aside.append(make('p','Counts show rated sticks, not an overall bridge score.','fh-muted'));}
+   if(i===1){aside.append(make('h4','Changes made'),make('p',`${(d.removed||[]).length} original sticks removed`),make('p',`${(d.added||[]).length} blue sticks added`));}
+   if(i===2){aside.append(make('h4','Comments on the sketch'));if(!d.annotations?.length)aside.append(make('p','No location comments submitted.','fh-muted'));for(const [j,n] of (d.annotations||[]).entries()){const comment=make('div',undefined,'fh-comment');comment.append(make('strong',`${j+1} · ${ratingNames[n.color]||n.color}`),make('p',n.text));aside.append(comment);}}
+   aside.append(make('h4','Participant note'),make('p',d.notes?.[i]||'No additional note.','fh-note'));layout.append(visual,aside);panel.append(layout);
+   button.onclick=()=>select(i);button.onkeydown=e=>{let next;if(e.key==='ArrowRight')next=(i+1)%3;if(e.key==='ArrowLeft')next=(i+2)%3;if(e.key==='Home')next=0;if(e.key==='End')next=2;if(next!==undefined){e.preventDefault();select(next);buttons[next].focus();}};
+  });
+  function select(i){buttons.forEach((button,j)=>{button.setAttribute('aria-selected',String(i===j));button.tabIndex=i===j?0:-1;panels[j].hidden=i!==j;});}
+  card.append(tabs,...panels);select(0);
+  const footer=make('details',undefined,'fh-data'),summary=make('summary','Receipt & raw data'),meta=make('p',`Room ${record.room} · Receipt ${record.id}`,'fh-muted'),raw=make('pre',JSON.stringify({ratings:d.ratings,removed:d.removed,added:d.added,annotations:d.annotations},null,2));footer.append(summary,meta,raw);card.append(footer);target.append(card);
  }
 }
 
@@ -1906,10 +1919,11 @@ async function historyView(id){
   app.innerHTML = `
     <div>
       <p class="eyebrow"><a href="/history">← History</a> · room ${esc(rec.room)}</p>
-      <h1>${esc(rec.title)}</h1>
-      <p class="lede">${esc(when(rec.createdAt))} · ${esc(rec.arrow)}<br>
-        ${rec.finished ? "Ended." : `Never ended — this is how it stood at ${esc(when(rec.updatedAt))}.`}</p>
+      <h1>${(rec.feedback||[]).length?'Feedback review':esc(rec.title)}</h1>
+      <p class="lede">${esc(rec.title)} · ${esc(rec.arrow)}<br><span class="fh-muted">Experiment recorded ${esc(when(rec.createdAt))}</span></p>
     </div>
+    <section class="card fh-section" id="submitted-feedback"><p class="fh-kicker">PARTICIPANT FEEDBACK</p><h2>Submitted results</h2><p class="fh-muted">${(rec.feedback||[]).length} saved submission${(rec.feedback||[]).length===1?'':'s'} · Select a step to review its image and feedback.</p><div id="feedback-records"></div></section>
+    <details class="card fh-context" ${(rec.feedback||[]).length?'':'open'}><summary>Original experiment · conversation, AI process & result</summary>
     <div class="card goals">
       ${["A","B"].map(r => `<p><b>${roleName(r)}</b> ${esc(rec.goals[r])}</p>`).join("")}
     </div>
@@ -1918,9 +1932,9 @@ async function historyView(id){
       ${builderColumn(h)}
     </div>
     ${resultBar(h)}
-    <section class="card" id="submitted-feedback"><h2>Submitted feedback</h2><div id="feedback-records"></div></section>`;
+    </details>`;
   renderHistoryFeedback(document.getElementById("feedback-records"),rec.feedback||[]);
-  if(location.hash === "#submitted-feedback")document.getElementById("submitted-feedback").scrollIntoView();
+
   const cv = document.getElementById("crossing");
   const shown = h.control && bridgeTab === "control" ? h.control : h;
   if (cv && window.drawCrossing) drawCrossing(cv, shown.shape, shown.world, shown === h ? h.sheetDrawn : null);
