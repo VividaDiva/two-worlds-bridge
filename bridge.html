@@ -1551,7 +1551,7 @@ function integratedFeedback(h){
   let frame=feedbackFrames.get(key);
   if(!frame){
     frame=document.createElement("iframe");frame.title="Visual feedback for this pair and conversation";
-    frame.src=`/feedback?room=${encodeURIComponent(h.room)}&embedded=1&role=${activeSeat}${variant==='control'?'&variant=control':''}`;
+    frame.src=`./feedback.html?room=${encodeURIComponent(h.room)}&embedded=1&role=${activeSeat}${variant==='control'?'&variant=control':''}`;
     feedbackFrames.set(key,frame);host.append(frame);
   }
   frame.hidden=false;

@@ -5,6 +5,7 @@ const source=path.join(root,'agents/usertest/app.html');
 let html=fs.readFileSync(source,'utf8');
 html=html.replace('<script src="/draw.js"></script>','<script src="./agents/usertest/draw.js"></script><script src="./study-connection.js"></script>');
 html=html.replace('./study-connection.js','./study-connection.js?v='+version);
+html=html.replace('frame.src=`/feedback?','frame.src=`./feedback.html?');
 html=html.replace('<script>','<script>\n(async()=>{\nconst {location,history,fetch,EventSource,shareBase:githubShareBase}=await window.studyReady;');
 html=html.replace('const shareBase = () => (opts && opts.publicUrl) || location.origin;','const shareBase = () => githubShareBase;');
 html=html.replace(/\}\)\(\);\s*<\/script>/,'})().catch(showStudyError);\n})().catch(showStudyError);\nfunction showStudyError(error){const app=document.getElementById("app");app.replaceChildren();const title=document.createElement("h1"),message=document.createElement("p"),retry=document.createElement("button");title.textContent="Study connection unavailable";message.textContent="The page is hosted on GitHub. The study server could not be reached. Previously saved records have not been deleted.";retry.textContent="Try again";retry.onclick=()=>window.location.reload();app.append(title,message,retry);console.error(error);}\n</script>');
