@@ -25,12 +25,13 @@ start_server() {
   nohup node --env-file=.env usertest/server.mjs >> /tmp/usertest-server.log 2>&1 &
 }
 start_tunnel() {
+  tunnel_started=$SECONDS
   pkill -f "cloudflared tunnel --url http://localhost:$PORT" 2>/dev/null
   rm -f "$LOG"
   say "starting tunnel"
   TUNNEL_TRANSPORT_PROTOCOL=http2 nohup cloudflared tunnel --url "http://localhost:$PORT" --logfile "$LOG" > /tmp/tunnel2.out 2>&1 &
   for i in {1..30}; do
-    u=$(grep -ho 'https://[a-z0-9-]*\.trycloudflare\.com' "$LOG" /tmp/tunnel2.out 2>/dev/null | tail -1)
+    u=$(grep -aho 'https://[a-z0-9-]*\.trycloudflare\.com' "$LOG" 2>/dev/null | tail -1)
     [ -n "$u" ] && { say "tunnel up: $u"; publish "$u"; return; }
     sleep 2
   done
@@ -38,6 +39,7 @@ start_tunnel() {
 }
 
 public_failures=0
+tunnel_started=$SECONDS
 while true; do
   if ! curl -s -o /dev/null --max-time 3 "http://localhost:$PORT/"; then
     start_server
@@ -50,8 +52,8 @@ while true; do
     start_tunnel
   fi
   # A running cloudflared process can have no usable connection.
-  u=$(grep -ho 'https://[a-z0-9-]*\.trycloudflare\.com' "$LOG" /tmp/tunnel2.out 2>/dev/null | tail -1)
-  if [ -n "$u" ]; then
+  u=$(grep -aho 'https://[a-z0-9-]*\.trycloudflare\.com' "$LOG" 2>/dev/null | tail -1)
+  if [ -n "$u" ] && (( SECONDS - tunnel_started > 180 )); then
     http_code=$(curl -s -o /dev/null --max-time 12 -w '%{http_code}' "$u/api/options")
     if [ "$http_code" = 200 ]; then
       public_failures=0
