@@ -1928,6 +1928,14 @@ async function historyView(id){
   app.querySelectorAll("[data-output]").forEach(t=>t.onclick=()=>{outputTabs.set(h.room,t.dataset.output);historyView(id);});
 }
 
+// Public pages may outlive a temporary tunnel. Resolve History through the
+// stable GitHub entry point; keep local navigation local.
+document.addEventListener('click',e=>{
+ const a=e.target.closest('a[href]');
+ if(!a||!location.hostname.endsWith('.trycloudflare.com'))return;
+ const u=new URL(a.href,location.href);
+ if(u.origin===location.origin&&/^\/history(?:\/[a-z0-9]+)?$/.test(u.pathname))a.href='https://vividadiva.github.io/two-worlds-bridge/live.html#'+u.pathname+u.search+u.hash;
+},true);
 (async () => {
   // The way back to the history, on every page the facilitator uses. Never on a
   // participant's own seat or the join screen: the history shows what the

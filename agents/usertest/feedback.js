@@ -38,7 +38,8 @@ const last=h.sketches?.at(-1);
 // A legacy side-by-side control has no separate sketch: never label the Toolkit image as Control.
 const sketchUrl=last&&variant!=='control'?`/sketch/${encodeURIComponent(room)}/${last.n}.png`:null;
 source={shape:v.shape,world:v.world,extras:v.sheetDrawn,standing:v.standing,sketchUrl,sketch:last||null,variant:variant||'main',agent:variant==='control'?'keys':(h.agent||'keys'),capturedAt:new Date().toISOString(),conversation:{room,argument:h.argument,route:h.route,arrow:h.arrow,note:h.note,lines:(h.lines||[]).filter(l=>variant!=='control'||l.who!=='builder').map(l=>({who:l.who,text:l.text,phase:l.phase,upload:l.upload,decision:l.decision,relay:l.relay,about:l.about,clarification:l.clarification,understandingUpdate:l.understandingUpdate,built:l.built,failed:!!l.failed}))}};
-$('feedback-history').href=assetURL(`/history/${encodeURIComponent(room)}#submitted-feedback`);
+const historyPath=`/history/${encodeURIComponent(room)}#submitted-feedback`;
+$('feedback-history').href=connection||location.hostname.endsWith('.trycloudflare.com')?'https://vividadiva.github.io/two-worlds-bridge/live.html#'+historyPath:historyPath;
 $('back').href=assetURL(`/j/${encodeURIComponent(room)}/both`);
 $('context').textContent=`${h.argument==='refs'?'Two references':h.argument==='pairs'?'Two lives':h.argument||'Bridge study'} · ${source.agent==='toolkit'?'Toolkit':'Control'} · Session ${room}`;
 }
