@@ -1866,7 +1866,7 @@ async function sessionsView(){
 function renderHistoryFeedback(target,records){
  if(!records.length){target.textContent='No feedback submitted for this session yet.';return;}
  const labels=['1 · Matchstick ratings','2 · Rebuilt bridge','3 · Sketch annotations'];
- const ratingNames={red:'Dissatisfied',neutral:'Neutral',some:'Somewhat satisfied',blue:'Satisfied'};
+ const ratingNames={veryRed:'Very dissatisfied',veryBlue:'Very satisfied',red:'Dissatisfied',neutral:'Neutral',some:'Somewhat satisfied',blue:'Satisfied'};
  for(const record of records){
   const d=record.draft,card=document.createElement('article');card.className='feedback-history-card';
   const heading=document.createElement('h3');heading.textContent=`${d.participantLabel||({A:'Role 1',B:'Role 2'}[d.role])||d.role} · ${d.source?.agent==='toolkit'?'Toolkit':'Control'} · ${new Date(record.at).toLocaleString()}`;card.append(heading);

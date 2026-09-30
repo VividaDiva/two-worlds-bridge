@@ -14,7 +14,9 @@ if(embedded)document.body.classList.add('embedded');
 if(['A','B'].includes(seat))$('role').value=seat;
 if(participant){$('role').value='B';$('role').disabled=true;$('identity-picker').hidden=true;$('back').hidden=true;document.title='Role 2 · Bridge feedback';}
 const colors={red:'#e75e65',neutral:'#f3ccd9',some:'#a8d8f0',blue:'#2672cb'};
-const labels={red:'Dissatisfied',neutral:'Neutral',some:'Somewhat satisfied',blue:'Satisfied',none:'Erase color'};
+const bridgeRatingKeys=['veryRed','red','neutral','blue','veryBlue'];
+const bridgeColors={veryRed:'#b42335',red:'#ef9a9f',neutral:'#d7dadd',blue:'#8abfe8',veryBlue:'#205da8'};
+const labels={veryRed:'Very dissatisfied',veryBlue:'Very satisfied',red:'Dissatisfied',neutral:'Neutral',some:'Somewhat satisfied',blue:'Satisfied',none:'Erase color'};
 let step=0,color=null,mode='erase',brush=48,draft,matches,background,sketch=null,dirty=false,pointer=null,preview=null;
 let undo=[[],[],[]],redo=[[],[],[]];
 let orientation='horizontal',pieceLength=100,hover=null,original=false,beforeAction=null;
@@ -97,7 +99,7 @@ function showConversation(){
  if(!context.lines.length)$('feedback-chat').textContent='No conversation recorded for this result.';
  if(variant==='control')$('chat-help').textContent='Original participant messages for the Control comparison. Toolkit AI replies are excluded.';
 }
-function fresh(){return {version:1,rebuildBasis:'original-independent-of-ratings',palette:{...colors},ratingLabels:{...labels},coordinateSpace:{width:1200,height:700},role:$('role').value,participantLabel:$('role').selectedOptions[0].textContent,source:clone(source),ratings:{},added:[],strokes:[],annotations:[],notes:['','',''],visited:[true,false,false]};}
+function fresh(){return {version:2,ratingScale:{id:'bridge-satisfaction-5-v1',scores:Object.fromEntries(bridgeRatingKeys.map((key,i)=>[key,i+1])),labels:Object.fromEntries(bridgeRatingKeys.map(key=>[key,labels[key]])),unrated:'Cannot judge / not rated'},bridgePalette:{...bridgeColors},rebuildBasis:'original-independent-of-ratings',palette:{...colors},ratingLabels:{...labels},coordinateSpace:{width:1200,height:700},role:$('role').value,participantLabel:$('role').selectedOptions[0].textContent,source:clone(source),ratings:{},added:[],strokes:[],annotations:[],notes:['','',''],visited:[true,false,false]};}
 let editRevision=0;
 function localSave(){dirty=true;pendingRooms.add(room);editRevision++;pageDrafts.set(localKey(),clone(draft));renderPaths();$('receipt').textContent='Not submitted yet. Your work will be sent to History when you click Submit feedback. Refreshing this page starts over.';}
 async function load(){editRevision++;$('receipt').textContent='Your original result is safe. Work through the three steps, then submit your feedback to History.';draft=pageDrafts.has(localKey())?clone(pageDrafts.get(localKey())):fresh();if(pageDrafts.has(localKey()))$('receipt').textContent='Unsaved draft from this open page. Refreshing or opening a new page starts over.';draft.annotations ||= [];commentEdit=null;$('comment-bubble').hidden=true;undo=[[],[],[]];redo=[[],[],[]];pointer=null;preview=null;hover=null;original=false;beforeAction=null;step=0;color=null;mode='erase';sketch=null;showConversation();
@@ -140,7 +142,7 @@ $('comment-delete').onclick=()=>{if(!commentEdit)return;const before=commentEdit
 $('comment-bubble').onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();finishComment(true);}};
 window.addEventListener('resize',positionComment);window.addEventListener('scroll',positionComment,true);
 function removedIds(){return [...new Set(draft.rebuildRemoved||[])];}
-const palette=()=>['red','neutral','some','blue'].map(k=>`<button class="swatch" style="--color:${colors[k]}" data-color="${k}" aria-pressed="${k===color}"><span class="color-chip" aria-hidden="true"></span><span>${labels[k]}<small>${({red:'Red',neutral:'Light pink',some:'Light blue',blue:'Blue'})[k]}</small></span></button>`).join('');
+const palette=()=>(step===0?bridgeRatingKeys:['red','neutral','some','blue']).map((k,i)=>`<button class="swatch" style="--color:${step===0?bridgeColors[k]:colors[k]}" data-color="${k}" aria-pressed="${k===color}"><span class="color-chip" aria-hidden="true"></span><span>${step===0?`${i+1} · `:''}${labels[k]}${step===0?'':`<small>${({red:'Red',neutral:'Light pink',some:'Light blue',blue:'Blue'})[k]}</small>`}</span></button>`).join('');
 function render(){
  $('workspace').classList.toggle('sketch-step',step===2);
  document.querySelectorAll('[data-step]').forEach(b=>{b.classList.toggle('active',+b.dataset.step===step);b.setAttribute('aria-current',+b.dataset.step===step?'step':'false');});
@@ -148,11 +150,11 @@ function render(){
  const removing=mode==='erase'||mode==='restore';
  $('step-position').textContent=`STEP ${step+1} OF 3`;
  $('instruction').textContent=[
-  'Choose a color, then click individual sticks. Leave anything you cannot judge uncolored.',
+  'Choose a rating from 1 (very dissatisfied) to 5 (very satisfied), then click individual sticks. 3 is neutral. Leave anything you cannot judge uncolored.',
   mode==='restore'?'The dashed outlines show sticks that were taken away. Click one to bring it back.':removing?'Start fresh from the original bridge. Click unwanted sticks to remove them. Your ratings from step 1 stay separate.':'Choose a direction and length, then click the grid to add a blue stick. No drawing needed.',
   'Choose a color, then click a place on the sketch. A comment bubble will open: tell us why you feel this way.'
  ][step];
- $('palette').innerHTML=step===1?'':palette();
+ $('palette').classList.toggle('five-point',step===0);$('palette').innerHTML=step===1?'':palette();
  $('tools').innerHTML=step===2?'':step===1?`<p class="rebuild-progress"><span class="${removing?'current':''}">A · Take sticks away</span><span aria-hidden="true">→</span><span class="${!removing?'current':''}">B · Put new sticks in</span></p>${removing?`<div class="row"><button data-mode="${mode==='restore'?'erase':'restore'}">${mode==='restore'?'Back to taking sticks away':'Bring a stick back'}</button><span class="tool-explanation">You can also use Undo after a mistake.</span></div>`:`<div class="row piece-picker" aria-label="Choose the direction of the new stick">${Object.entries({horizontal:['━','Across'],vertical:['┃','Up / down'],rising:['╱','Slant up'],falling:['╲','Slant down']}).map(([k,[icon,name]])=>`<button data-piece="${k}" aria-pressed="${orientation===k}"><span class="piece-icon" aria-hidden="true">${icon}</span>${name}</button>`).join('')}<label>Stick length <select id="piece-length"><option value="50" ${pieceLength===50?'selected':''}>Short</option><option value="100" ${pieceLength===100?'selected':''}>Long</option></select></label></div><div class="row"><button data-mode="erase">← Take more sticks away</button><span class="tool-explanation">Blue sticks are your additions, not a rating.</span></div>`}`:`<div class="row"><button data-color="none" aria-pressed="${color==='none'}">Erase color</button><span class="tool-explanation">${step===0?'Click a colored stick to remove its color. The stick stays.':'Move over colored areas to erase only the color.'}</span></div>${step===2?`<div class="sketch-controls"><div class="row" aria-label="Coloring tool"><button data-sketch="brush" aria-pressed="${sketchTool==='brush'}">Brush</button><button data-sketch="fill" aria-pressed="${sketchTool==='fill'}">Double-click fill</button><span class="tool-explanation">${sketchTool==='fill'?'Double-click inside an enclosed area. Local outline detection; Undo reverses a fill.':'Drag to paint, or click to make a dot.'}</span></div>${sketchTool==='brush'?`<div class="brush-sizing"><label for="brush">${color==='none'?'Eraser':'Brush'} size <output id="brush-value" for="brush">${brush}</output></label><div class="brush-slider"><span aria-hidden="true" class="brush-dot small"></span><input id="brush" aria-label="Brush size" type="range" min="6" max="160" step="2" value="${brush}"><span aria-hidden="true" class="brush-dot large"></span></div><div class="row brush-presets">${[[16,'Small'],[48,'Medium'],[100,'Large']].map(([size,name])=>`<button data-brush="${size}" aria-pressed="${brush===size}">${name}</button>`).join('')}</div></div>`:''}</div>`:''}`;
 
  $('note').value=draft.notes[step];$('next').hidden=step===2;$('next').disabled=false;$('previous').disabled=step===0;$('previous').hidden=step===0;
@@ -171,7 +173,7 @@ function render(){
  $('canvas').hidden=step===2&&!sketch;$('download').disabled=step===2&&!sketch;
  draw($('canvas'),step,true);
  applyCanvasZoom();if(step===2)draw($('canvas'),2,true);renderComments();
- const values=Object.values(draft.ratings);$('counts').textContent=step===0?`${values.length} / ${matches.length} sticks rated · ${values.filter(c=>c==='red').length} dissatisfied · ${matches.length-values.length} not rated`:step===1?`${removedIds().length} original sticks removed · ${draft.added.length} blue sticks added`:sketch?`${draft.annotations.length} comments · click a numbered pin to edit`:'No saved sketch for this result. You can still save feedback on the matchsticks.';
+ const values=Object.values(draft.ratings);$('counts').textContent=step===0?`${values.length} / ${matches.length} sticks rated · ${values.filter(c=>c==='red'||c==='veryRed').length} dissatisfied · ${matches.length-values.length} not rated`:step===1?`${removedIds().length} original sticks removed · ${draft.added.length} blue sticks added`:sketch?`${draft.annotations.length} comments · click a numbered pin to edit`:'No saved sketch for this result. You can still save feedback on the matchsticks.';
 }
 function applyCanvasZoom(){
  const viewport=document.querySelector('.canvas-viewport'),canvas=$('canvas');
@@ -193,7 +195,7 @@ function draw(canvas,n,editing=false){
  if(!showOriginal)for(const [index,note] of (draft.annotations||[]).entries()){const radius=editing?14*1200/Math.max(1,$('canvas').getBoundingClientRect().width):22;ctx.beginPath();ctx.arc(note.x,note.y,radius,0,Math.PI*2);ctx.fillStyle=colors[note.color]||colors.neutral;ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=radius*.16;ctx.stroke();ctx.fillStyle=note.color==='blue'?'#fff':'#233d36';ctx.font=`bold ${radius}px system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(index+1),note.x,note.y);}
  if(editing&&!showOriginal&&cursorPoint&&sketchTool==='brush'){ctx.beginPath();ctx.arc(cursorPoint.x,cursorPoint.y,brush/2,0,Math.PI*2);ctx.fillStyle=colors[color]||'#fff';ctx.globalAlpha=.25;ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle='#fff';ctx.lineWidth=4;ctx.stroke();ctx.strokeStyle='#233d36';ctx.lineWidth=1.5;ctx.stroke();}
  return;}
- const ratingColors=Object.fromEntries(Object.entries(draft.ratings).map(([id,c])=>[id,colors[c]]));
+ const ratingColors=Object.fromEntries(Object.entries(draft.ratings).map(([id,c])=>[id,(draft.bridgePalette||colors)[c]]));
  // Draw at a fixed resolution, independent of the screen's device pixel ratio.
  const base=document.createElement('canvas');base.getBoundingClientRect=()=>({width:1200});
  drawCrossing(base,draft.source.shape,draft.source.world,draft.source.extras,{colors:showOriginal||n===1?{}:ratingColors,removed:n===1&&!showOriginal?removedIds():[]});
@@ -202,7 +204,7 @@ function draw(canvas,n,editing=false){
  if(editing&&mode==='restore'){ctx.save();ctx.setLineDash([6,6]);ctx.globalAlpha=.6;for(const m of matches.filter(m=>removedIds().includes(m.id))){ctx.strokeStyle='#b84950';ctx.lineWidth=9;ctx.beginPath();ctx.moveTo(m.x1,m.y1);ctx.lineTo(m.x2,m.y2);ctx.stroke();}ctx.restore();}
  for(const m of draft.added)drawStick(ctx,m,colors.blue,10);
  if(editing&&preview){ctx.save();ctx.globalAlpha=.55;drawStick(ctx,preview,colors.blue,12);ctx.restore();}}
- if(editing&&!showOriginal&&hover){ctx.save();ctx.strokeStyle=step===1?(mode==='restore'?'#2672cb':'#c23e49'):'#fff';ctx.lineWidth=20;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(hover.x1,hover.y1);ctx.lineTo(hover.x2,hover.y2);ctx.stroke();drawStick(ctx,hover,step===1?(mode==='restore'?'#2672cb':'#c23e49'):colors[color]||'#b07a3c',11);ctx.restore();}
+ if(editing&&!showOriginal&&hover){ctx.save();ctx.strokeStyle=step===1?(mode==='restore'?'#2672cb':'#c23e49'):'#fff';ctx.lineWidth=20;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(hover.x1,hover.y1);ctx.lineTo(hover.x2,hover.y2);ctx.stroke();drawStick(ctx,hover,step===1?(mode==='restore'?'#2672cb':'#c23e49'):(draft.bridgePalette||colors)[color]||'#b07a3c',11);ctx.restore();}
 }
 function drawStick(ctx,m,color,width){ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=width;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(m.x1,m.y1);ctx.lineTo(m.x2,m.y2);ctx.stroke();ctx.beginPath();ctx.arc(m.x2,m.y2,width*.65,0,Math.PI*2);ctx.fill();}
 // One pointer gesture is one undoable action. No-op clicks keep the redo branch.
@@ -250,7 +252,7 @@ function end(e){if(!pointer||pointer.id!==e.pointerId)return;if(step===2)paint(p
 $('canvas').ondblclick=e=>{if(step!==2||sketchTool!=='fill'||original||!sketch||!color||pointer)return;e.preventDefault();fillSketchAt(point(e));};
 $('canvas').onpointerup=end;$('canvas').onpointercancel=()=>{if(beforeAction!==null)applyAction(beforeAction);beforeAction=null;pointer=null;preview=null;render();};
 function showStepStart(){const viewport=document.querySelector('.canvas-viewport');viewport.scrollTop=0;viewport.scrollLeft=0;$('workspace').scrollIntoView({block:'start'});}
-function changeStep(n){finishComment();if(n!==step)zoom=1;if(n===1&&step!==1)mode='erase';step=n;draft.visited[step]=true;original=false;preview=null;hover=null;render();showStepStart();}
+function changeStep(n){finishComment();if(n!==step){zoom=1;color=null;}if(n===1&&step!==1)mode='erase';step=n;draft.visited[step]=true;original=false;preview=null;hover=null;render();showStepStart();}
  document.querySelector('nav').onclick=e=>{const b=e.target.closest('[data-step]');if(b)changeStep(+b.dataset.step);};
  $('palette').onclick=e=>{finishComment();const b=e.target.closest('[data-color]');if(b){color=b.dataset.color;original=false;render();}};
  $('tools').onclick=e=>{const size=e.target.closest('[data-brush]');if(size){setBrushSize(size.dataset.brush);return;}const eraser=e.target.closest('[data-color]');if(eraser){color=eraser.dataset.color;original=false;render();return;}const sketchButton=e.target.closest('[data-sketch]');if(sketchButton){sketchTool=sketchButton.dataset.sketch;render();return;}const piece=e.target.closest('[data-piece]'),b=e.target.closest('[data-mode]');if(piece){orientation=piece.dataset.piece;mode='grid';}else if(b)mode=b.dataset.mode;else return;original=false;preview=null;hover=null;render();};
@@ -272,7 +274,7 @@ function changeStep(n){finishComment();if(n!==step)zoom=1;if(n===1&&step!==1)mod
  document.querySelectorAll('[data-zoom]').forEach(b=>b.onclick=()=>zoomAtCenter(b.dataset.zoom));
  $('compare').onclick=()=>{finishComment();original=!original;hover=null;preview=null;render();};
  $('next').onclick=()=>{if(step===1&&(mode==='erase'||mode==='restore')){mode='grid';preview=null;hover=null;original=false;render();showStepStart();}else changeStep(Math.min(2,step+1));};$('previous').onclick=()=>changeStep(Math.max(0,step-1));
- document.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select,[contenteditable=true]')||pointer)return;const key=e.key.toLowerCase();if((e.metaKey||e.ctrlKey)&&!e.altKey&&(key==='z'||key==='y')){e.preventDefault();finishComment();historyAction(key==='y'||e.shiftKey?'redo':'undo');return;}if(e.metaKey||e.ctrlKey||e.altKey)return;if(step!==1&&(['1','2','3','4',...(step===0?['e']:[])].includes(key))){e.preventDefault();color=({1:'red',2:'neutral',3:'some',4:'blue',e:'none'})[key];original=false;render();}else if(step===1&&(mode==='grid'||mode==='free')&&key==='r'){e.preventDefault();const keys=Object.keys(pieces);orientation=keys[(keys.indexOf(orientation)+1)%keys.length];mode='grid';original=false;preview=null;render();}});
+ document.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select,[contenteditable=true]')||pointer)return;const key=e.key.toLowerCase();if((e.metaKey||e.ctrlKey)&&!e.altKey&&(key==='z'||key==='y')){e.preventDefault();finishComment();historyAction(key==='y'||e.shiftKey?'redo':'undo');return;}if(e.metaKey||e.ctrlKey||e.altKey)return;if(step!==1&&(['1','2','3','4',...(step===0?['5','e']:[])].includes(key))){e.preventDefault();finishComment();color=key==='e'?'none':(step===0?bridgeRatingKeys:['red','neutral','some','blue'])[Number(key)-1];original=false;render();}else if(step===1&&(mode==='grid'||mode==='free')&&key==='r'){e.preventDefault();const keys=Object.keys(pieces);orientation=keys[(keys.indexOf(orientation)+1)%keys.length];mode='grid';original=false;preview=null;render();}});
  $('role').onchange=()=>{finishComment();dirty=false;load();};
  $('download').onclick=()=>{const c=document.createElement('canvas');draw(c,step);const a=document.createElement('a');a.href=c.toDataURL();a.download=`${room}-${draft.role}-step${step+1}.png`;a.click();};
  $('save').onclick=async()=>{
