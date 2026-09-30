@@ -47,3 +47,11 @@ test('path progress counts reviewed steps by participant and sends no images',as
  await call('GET',null,'&summary=1');assert.equal(out.summaries.length,3);assert.equal(out.summaries.filter(x=>x.role==='B'&&x.complete).length,1);assert.equal(out.summaries.some(x=>'images' in x||'draft' in x),false);
  }finally{fs.rmSync(sessions,{recursive:true,force:true});}
 });
+
+test('retry uses one receipt and both local copies contain the complete submission',async()=>{
+ const sessions=fs.mkdtempSync(path.join(os.tmpdir(),'feedback-durable-'));let out,code;
+ const rooms=new Map([['qa',{argument:'pairs',route:'all',agent:'toolkit'}]]);
+ const data={room:'qa',submissionId:'11111111-1111-4111-8111-111111111111',draft:{role:'B',source:{},ratings:{x:'veryBlue'},annotations:[{text:'Saved comment'}],added:[],strokes:[],visited:[true,true,true]},images:[null,null,null]};
+ const post=()=>feedbackHandler({req:{method:'POST'},res:{},url:new URL('http://local/api/feedback'),here:'.',sessions,rooms,body:async()=>data,json:(_r,c,d)=>{code=c;out=d;}});
+ try{await post();assert.equal(code,200);const id=out.id;await post();assert.equal(code,200);assert.equal(out.id,id);const folder=path.join(sessions,'feedback','qa');assert.equal(fs.readdirSync(folder).length,1);const raw=fs.readFileSync(path.join(folder,id+'.json'),'utf8');assert.equal(raw,fs.readFileSync(path.join(sessions,'feedback-backups','qa',id+'.json'),'utf8'));assert.deepEqual(JSON.parse(raw).draft,data.draft);data.draft.ratings.x='red';await post();assert.equal(code,409);assert.equal(fs.readFileSync(path.join(folder,id+'.json'),'utf8'),raw);}finally{fs.rmSync(sessions,{recursive:true,force:true});}
+});

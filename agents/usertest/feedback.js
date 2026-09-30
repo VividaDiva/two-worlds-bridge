@@ -115,6 +115,7 @@ function showConversation(){
 }
 function fresh(){return {version:2,ratingScale:{id:'bridge-satisfaction-5-v1',scores:Object.fromEntries(bridgeRatingKeys.map((key,i)=>[key,i+1])),labels:Object.fromEntries(bridgeRatingKeys.map(key=>[key,labels[key]])),unrated:'Cannot judge / not rated'},bridgePalette:{...bridgeColors},rebuildBasis:'original-independent-of-ratings',palette:{...colors},ratingLabels:{...labels},coordinateSpace:{width:1200,height:700},role:$('role').value,participantLabel:$('role').selectedOptions[0].textContent,source:clone(source),ratings:{},added:[],strokes:[],annotations:[],notes:['','',''],visited:[true,false,false]};}
 let editRevision=0;
+let submissionAttempt=null;
 function localSave(){dirty=true;pendingRooms.add(room);editRevision++;pageDrafts.set(localKey(),clone(draft));renderPaths();$('receipt').textContent='Not submitted yet. Your work will be sent to History when you click Submit feedback. Refreshing this page starts over.';}
 async function load(){editRevision++;$('receipt').textContent='Your original result is safe. Work through the three steps, then submit your feedback to History.';draft=pageDrafts.has(localKey())?clone(pageDrafts.get(localKey())):fresh();if(pageDrafts.has(localKey()))$('receipt').textContent='Unsaved draft from this open page. Refreshing or opening a new page starts over.';draft.annotations ||= [];commentEdit=null;$('comment-bubble').hidden=true;undo=[[],[],[]];redo=[[],[],[]];pointer=null;preview=null;hover=null;original=false;beforeAction=null;step=0;color=null;mode='erase';sketch=null;showConversation();
 if(draft.source.sketchUrl){try{sketch=await new Promise((resolve,reject)=>{const img=new Image();img.crossOrigin='anonymous';img.onload=()=>resolve(img);img.onerror=reject;img.src=assetURL(draft.source.sketchUrl);});}catch{status('Saved sketch could not load. Matchstick feedback is still available.');}}
@@ -298,7 +299,8 @@ function changeStep(n){finishComment();if(n!==step){zoom=1;color=null;}if(n===1&
    const payload=clone(draft);
    payload.removed=removedIds();payload.originalMatches=clone(matches);payload.sketchSize=sketch?{width:1200,height:Math.round(1200*sketch.height/sketch.width)}:null;
    const images=[0,1,2].map(n=>{if(n===2&&!sketch)return null;const c=document.createElement('canvas');draw(c,n);return c.toDataURL('image/png');});
-   const r=await apiFetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({room,draft:payload,images})});
+   const signature=JSON.stringify({room,draft:payload,images});if(submissionAttempt?.signature!==signature)submissionAttempt={signature,id:crypto.randomUUID()};
+   const r=await apiFetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({room,draft:payload,images,submissionId:submissionAttempt.id})});
    const out=await r.json();if(!r.ok)throw Error(out.error||'Save failed');
    // Confirm the saved record is retrievable, not merely that the POST returned.
    const check=await apiFetch(`/api/feedback?room=${encodeURIComponent(room)}`,{cache:'no-store'});if(!check.ok)throw Error('Server receipt could not be verified. Check Saved feedback before retrying.');

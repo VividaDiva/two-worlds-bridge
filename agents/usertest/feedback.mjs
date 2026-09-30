@@ -30,12 +30,19 @@ export async function feedbackHandler({req,res,url,here,sessions,rooms,body,view
   if(!d || !['A','B'].includes(d.role) || !d.source || !Array.isArray(d.added) || !Array.isArray(d.strokes) || !Array.isArray(data.images) || data.images.length!==3 || JSON.stringify(data).length>18000000 || data.images.some(x=>x!==null && (typeof x!=='string'||!/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(x)))) {
     json(res,400,{error:'Invalid feedback record'});return true;
   }
-  const record={id:randomUUID(),at:new Date().toISOString(),room:data.room,argument:room.argument,route:room.route,agent:room.agent||'legacy',draft:d,images:data.images};
+  if(data.submissionId&&!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(data.submissionId)){json(res,400,{error:'Invalid submission identifier'});return true;}
+  const id=data.submissionId||randomUUID();
+  const existing=path.join(dir,id+'.json');
+  let prior=null;
+  if(fs.existsSync(existing)){prior=JSON.parse(fs.readFileSync(existing,'utf8'));if(JSON.stringify(prior.draft)!==JSON.stringify(d)||JSON.stringify(prior.images)!==JSON.stringify(data.images)){json(res,409,{error:'This receipt belongs to different feedback. Please submit a new revision.'});return true;}}
+  const record=prior||{id,at:new Date().toISOString(),room:data.room,argument:room.argument,route:room.route,agent:room.agent||'legacy',draft:d,images:data.images};
   try {
     fs.mkdirSync(dir,{recursive:true});
     const dest=path.join(dir,record.id+'.json');
-    fs.writeFileSync(dest+'.tmp',JSON.stringify(record));
-    fs.renameSync(dest+'.tmp',dest);
+    const serialized=JSON.stringify(record);
+    function durableWrite(file){const fd=fs.openSync(file+'.tmp','w');try{fs.writeFileSync(fd,serialized);fs.fsyncSync(fd);}finally{fs.closeSync(fd);}fs.renameSync(file+'.tmp',file);const directory=fs.openSync(path.dirname(file),'r');try{fs.fsyncSync(directory);}finally{fs.closeSync(directory);}if(fs.readFileSync(file,'utf8')!==serialized)throw Error('Saved record verification failed');}
+    if(!prior)durableWrite(dest);
+    const backup=path.join(sessions,'feedback-backups',data.room);fs.mkdirSync(backup,{recursive:true});durableWrite(path.join(backup,record.id+'.json'));
     json(res,200,{id:record.id,at:record.at,imagesReceived:record.images.filter(Boolean).length,role:d.role,room:data.room});
   } catch { json(res,500,{error:'Could not store feedback. Your submission was not confirmed; please retry.'}); }
   return true;

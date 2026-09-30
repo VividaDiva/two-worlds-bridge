@@ -1812,7 +1812,7 @@ function joinView(room){
 // in usertest/sessions/ on the machine running the server; this page is only a
 // way to find them again.
 async function sessionsView(){
-  const all = await fetch("/api/sessions").then(r => r.json()).catch(() => []);
+  let all;try{const response=await fetch('/api/sessions',{cache:'no-store'});if(!response.ok)throw Error();all=await response.json();}catch{app.innerHTML='<section class="card"><h1>History could not load</h1><p>Your records have not been deleted. Check the study connection, then try again.</p><a href="https://vividadiva.github.io/two-worlds-bridge/history.html">Reconnect to History</a></section>';return;}
   // Every tab clicked on the dashboard opens a room, so most rooms are empty.
   // They are kept and can be shown, but the ones somebody spoke in come first.
   const showEmpty = location.hash === "#all";
@@ -1834,6 +1834,7 @@ async function sessionsView(){
       <h1>History</h1>
       <p class="lede">Every room somebody spoke in, under the day it was held. Open one to go back through
         what they said, what the builder made of each line, and what it built.</p>
+      <section class="card"><h2>Received feedback</h2><p>Feedback submitted from other computers is saved here. Refresh this page to check for new submissions.</p><button onclick="location.reload()">Refresh received feedback</button>${all.some(s=>s.feedbackCount)?all.filter(s=>s.feedbackCount).map(s=>`<p><a href="/history/${esc(s.room)}#submitted-feedback">${esc(s.title)} · ${esc(s.room)} · ${s.feedbackCount} submission${s.feedbackCount===1?'':'s'}</a></p>`).join(''):'<p>No feedback has been received yet.</p>'}</section>
       ${hidden ? `<a class="showempty" href="#all">Show ${hidden} room${hidden === 1 ? "" : "s"} where nothing was said</a>`
         : showEmpty ? `<a class="showempty" href="#">Hide rooms where nothing was said</a>` : ""}
     </div>
