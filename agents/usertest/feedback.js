@@ -13,6 +13,17 @@ const params=new URLSearchParams(location.search), participant=params.get('parti
 if(embedded)document.body.classList.add('embedded');
 if(['A','B'].includes(seat))$('role').value=seat;
 if(participant){$('role').value='B';$('role').disabled=true;$('identity-picker').hidden=true;$('back').hidden=true;document.title='Role 2 · Bridge feedback';}
+// A shared study link is not a participant identity. Keep identity and receipt ownership
+// in this browser, while all actual feedback remains durably stored by the server.
+const identityKey='two-worlds-feedback-respondent-v1';
+let respondentId;
+try{respondentId=localStorage.getItem(identityKey);if(!respondentId){respondentId=crypto.randomUUID();localStorage.setItem(identityKey,respondentId);}}
+catch{respondentId=crypto.randomUUID();}
+const receiptKey='two-worlds-feedback-receipts-v1:'+respondentId;
+let ownReceipts=new Set();
+try{ownReceipts=new Set(JSON.parse(localStorage.getItem(receiptKey)||'[]'));}catch{}
+function rememberReceipt(id){ownReceipts.add(id);try{localStorage.setItem(receiptKey,JSON.stringify([...ownReceipts]));}catch{}}
+function ownFeedback(r){return r.draft?.respondentId===respondentId||ownReceipts.has(r.id);}
 const colors={red:'#e75e65',neutral:'#f3ccd9',some:'#a8d8f0',blue:'#2672cb'};
 const bridgeRatingKeys=['veryRed','red','neutral','blue','veryBlue'];
 const bridgeColors={veryRed:'#b42335',red:'#ef9a9f',neutral:'#d7dadd',blue:'#8abfe8',veryBlue:'#205da8'};
@@ -46,7 +57,7 @@ try{h=await fetchState(room);setSource();}catch(e){status(e.message);connectionE
 try{const us=await apiFetch('/api/users').then(r=>r.json());const arr=Array.isArray(us)?us:us.users||us.profiles||[];pair=arr.find(u=>u.sessions?.some(s=>s.room===room));if(pair?.participants)$('role').options[1].textContent=`Role ${pair.participants[1]}`;}catch{}
 if(participant){$('participant-badge').hidden=false;$('participant-badge').textContent=$('role').selectedOptions[0].textContent+' · Your feedback';}
 function feedbackPaths(sessions){const seen=new Set();const replaySources=new Set(sessions.filter(s=>s.agent==='toolkit'&&!s.historical).map(s=>s.replay?.sourceRoom).filter(Boolean));return sessions.filter(s=>['keys','toolkit'].includes(s.agent)&&(s.agent==='keys'||!s.historical)&&s.hasContent&&s.argument==='pairs').sort((a,b)=>Number(replaySources.has(b.room))-Number(replaySources.has(a.room))).filter(s=>{const key=s.agent+':'+s.argument+':'+s.route;if(seen.has(key))return false;seen.add(key);return true;}).sort((a,b)=>a.agent.localeCompare(b.agent)||a.argument.localeCompare(b.argument)||routeOrder.indexOf(a.route)-routeOrder.indexOf(b.route));}
-function completedSummary(r){return r.role==='B'&&r.complete===true;}
+function completedSummary(r){return r.role==='B'&&r.complete===true&&(r.respondentId===respondentId||ownReceipts.has(r.id));}
 function renderPaths(){
  if(!pathItems.length)return;
  $('path-tour').hidden=false;
@@ -113,7 +124,7 @@ function showConversation(){
  if(!context.lines.length)$('feedback-chat').textContent='No conversation recorded for this result.';
  if(variant==='control')$('chat-help').textContent='Original participant messages for the Control comparison. Toolkit AI replies are excluded.';
 }
-function fresh(){return {version:2,ratingScale:{id:'bridge-satisfaction-5-v1',scores:Object.fromEntries(bridgeRatingKeys.map((key,i)=>[key,i+1])),labels:Object.fromEntries(bridgeRatingKeys.map(key=>[key,labels[key]])),unrated:'Cannot judge / not rated'},bridgePalette:{...bridgeColors},rebuildBasis:'original-independent-of-ratings',palette:{...colors},ratingLabels:{...labels},coordinateSpace:{width:1200,height:700},role:$('role').value,participantLabel:$('role').selectedOptions[0].textContent,source:clone(source),ratings:{},added:[],strokes:[],annotations:[],notes:['','',''],visited:[true,false,false]};}
+function fresh(){return {version:2,respondentId,ratingScale:{id:'bridge-satisfaction-5-v1',scores:Object.fromEntries(bridgeRatingKeys.map((key,i)=>[key,i+1])),labels:Object.fromEntries(bridgeRatingKeys.map(key=>[key,labels[key]])),unrated:'Cannot judge / not rated'},bridgePalette:{...bridgeColors},rebuildBasis:'original-independent-of-ratings',palette:{...colors},ratingLabels:{...labels},coordinateSpace:{width:1200,height:700},role:$('role').value,participantLabel:$('role').selectedOptions[0].textContent,source:clone(source),ratings:{},added:[],strokes:[],annotations:[],notes:['','',''],visited:[true,false,false]};}
 let editRevision=0;
 let submissionAttempt=null;
 let confirmedCurrent=false,showingSaved=false,hasReceipt=false;
@@ -320,6 +331,7 @@ function changeStep(n){finishComment();if(n!==step){zoom=1;color=null;}if(n===1&
    const check=await apiFetch(`/api/feedback?room=${encodeURIComponent(room)}`,{cache:'no-store'});if(!check.ok)throw Error('Server receipt could not be verified. Check Saved feedback before retrying.');
    const saved=(await check.json()).records?.find(x=>x.id===out.id);
    if(!saved||saved.draft.role!==submittedRole||JSON.stringify(saved.draft)!==JSON.stringify(payload)||JSON.stringify(saved.images)!==JSON.stringify(images))throw Error('Saved feedback could not be verified. Check Saved feedback before retrying.');
+   rememberReceipt(out.id);
    const count=images.filter(Boolean).length;
    const receipt=`Received by server · ${payload.participantLabel||submittedRole} · ${count}/3 images${count<3?' (no sketch available)':''} · receipt ${out.id.slice(0,8)} · ${new Date(out.at).toLocaleString()}`;
    if(editRevision===revision){dirty=false;pendingRooms.delete(room);confirmedCurrent=true;showingSaved=true;hasReceipt=true;$('receipt').textContent=receipt;}
@@ -328,7 +340,7 @@ function changeStep(n){finishComment();if(n!==step){zoom=1;color=null;}if(n===1&
   }catch(e){$('receipt').textContent=`Submission not confirmed: ${e.message} Your edits remain on this open page. Retry before closing or refreshing.`;status('Please check the receipt above and retry if needed.');}
   finally{button.disabled=false;saving=false;renderPaths();$('submission-result').scrollIntoView({block:'start',behavior:'smooth'});}
  };
- async function records(confirmed){try{const r=confirmed?{records:[confirmed]}:await apiFetch(`/api/feedback?room=${encodeURIComponent(room)}`).then(r=>{if(!r.ok)throw Error('Could not load records');return r.json();});$('record-list').replaceChildren();for(const rec of (r.records||[]).filter(rec=>!participant||rec.draft.role==='B')){const a=document.createElement('article'),title=document.createElement('p');title.textContent=`${rec.draft.participantLabel||rec.draft.role} · ${rec.draft.source.agent} · ${new Date(rec.at).toLocaleString()}`;a.append(title);rec.images.forEach((src,i)=>{if(!src)return;const link=document.createElement('a'),img=new Image();link.href=src;link.download=`${room}-${rec.draft.role}-${rec.id}-step${i+1}.png`;img.src=src;img.alt=['Rated original matchsticks','Rebuilt bridge','Sketch comments'][i];link.append(img);a.append(link);});const details=document.createElement('p');details.textContent=rec.draft.notes.filter(Boolean).join(' · ');a.append(details);for(const [i,n] of (rec.draft.annotations||[]).entries()){const text=document.createElement('p');text.textContent=`${i+1}. ${labels[n.color]} — ${n.text}`;a.append(text);}const exportLink=document.createElement('a');exportLink.textContent='Download full record (JSON)';exportLink.href=URL.createObjectURL(new Blob([JSON.stringify(rec,null,2)],{type:'application/json'}));exportLink.download=`feedback-${rec.id}.json`;a.append(exportLink);$('record-list').append(a);}if(!$('record-list').children.length)$('record-list').textContent='No feedback saved yet.';}catch{status('Could not load saved feedback.');}}
+ async function records(confirmed){try{const r=confirmed?{records:[confirmed]}:await apiFetch(`/api/feedback?room=${encodeURIComponent(room)}`).then(r=>{if(!r.ok)throw Error('Could not load records');return r.json();});$('record-list').replaceChildren();for(const rec of (r.records||[]).filter(rec=>ownFeedback(rec)&&(!participant||rec.draft.role==='B'))){const a=document.createElement('article'),title=document.createElement('p');title.textContent=`${rec.draft.participantLabel||rec.draft.role} · ${rec.draft.source.agent} · ${new Date(rec.at).toLocaleString()}`;a.append(title);rec.images.forEach((src,i)=>{if(!src)return;const link=document.createElement('a'),img=new Image();link.href=src;link.download=`${room}-${rec.draft.role}-${rec.id}-step${i+1}.png`;img.src=src;img.alt=['Rated original matchsticks','Rebuilt bridge','Sketch comments'][i];link.append(img);a.append(link);});const details=document.createElement('p');details.textContent=rec.draft.notes.filter(Boolean).join(' · ');a.append(details);for(const [i,n] of (rec.draft.annotations||[]).entries()){const text=document.createElement('p');text.textContent=`${i+1}. ${labels[n.color]} — ${n.text}`;a.append(text);}const exportLink=document.createElement('a');exportLink.textContent='Download full record (JSON)';exportLink.href=URL.createObjectURL(new Blob([JSON.stringify(rec,null,2)],{type:'application/json'}));exportLink.download=`feedback-${rec.id}.json`;a.append(exportLink);$('record-list').append(a);}if(!$('record-list').children.length)$('record-list').textContent='No feedback saved yet.';}catch{status('Could not load saved feedback.');}}
 
  await load();await records();if(pathItems.length)await loadPathProgress();
 })().catch(e=>{document.getElementById('status').textContent=`Unable to open feedback: ${e.message}`;});
