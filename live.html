@@ -32,12 +32,10 @@
   const msg = document.getElementById("msg");
   const path = location.hash.replace(/^#/, "") || "/";
   try {
-    const r = await fetch("live.json?" + Date.now(), { cache: "no-store" });
-    const { url, at } = await r.json();
-    if (!url) throw new Error("no address");
-    const to = url.replace(/\/$/, "") + path;
-    msg.innerHTML = `Going to <a href="${to}">${to}</a><br><small>address as of ${new Date(at).toLocaleString()}</small>`;
-    location.replace(to);
+    const route=new URL(path,'https://study.local');
+    const to=new URL(route.pathname==='/feedback'?'feedback.html':'bridge.html',location.href);
+    if(route.pathname==='/feedback')to.search=route.search;else to.searchParams.set('path',route.pathname+route.search);
+    to.hash=route.hash;location.replace(to.href);
   } catch (e) {
     msg.textContent = "The live test does not seem to be running right now. Ask the facilitator for a link.";
   }

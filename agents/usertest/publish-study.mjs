@@ -1,0 +1,11 @@
+import fs from 'node:fs';import path from 'node:path';import {fileURLToPath} from 'node:url';import {createHash} from 'node:crypto';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
+const version=createHash('sha256').update(fs.readFileSync(path.join(root,'study-connection.js'))).digest('hex').slice(0,10);
+const source=path.join(root,'agents/usertest/app.html');
+let html=fs.readFileSync(source,'utf8');
+html=html.replace('<script src="/draw.js"></script>','<script src="./agents/usertest/draw.js"></script><script src="./study-connection.js"></script>');
+html=html.replace('./study-connection.js','./study-connection.js?v='+version);
+html=html.replace('<script>','<script>\n(async()=>{\nconst {location,history,fetch,EventSource,shareBase:githubShareBase}=await window.studyReady;');
+html=html.replace('const shareBase = () => (opts && opts.publicUrl) || location.origin;','const shareBase = () => githubShareBase;');
+html=html.replace(/\}\)\(\);\s*<\/script>/,'})().catch(showStudyError);\n})().catch(showStudyError);\nfunction showStudyError(error){const app=document.getElementById("app");app.replaceChildren();const title=document.createElement("h1"),message=document.createElement("p"),retry=document.createElement("button");title.textContent="Study connection unavailable";message.textContent="The page is hosted on GitHub. The study server could not be reached. Previously saved records have not been deleted.";retry.textContent="Try again";retry.onclick=()=>window.location.reload();app.append(title,message,retry);console.error(error);}\n</script>');
+for(const file of ['bridge.html','history.html'])fs.writeFileSync(path.join(root,file),html);

@@ -849,14 +849,13 @@ function restore() {
 
 const srv = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
-  // The GitHub Pages feedback client reads the same public study data and posts feedback.
-  // Other experiment mutation endpoints are deliberately not enabled cross-origin.
-  const feedbackOrigin = req.headers.origin === 'https://vividadiva.github.io';
-  const feedbackRead = ['/api/state','/api/users','/api/feedback'].includes(url.pathname) || /^\/sketch\/[a-z0-9]+\/\d+\.png$/.test(url.pathname);
-  const feedbackWrite = url.pathname === '/api/feedback';
-  if(feedbackOrigin && feedbackRead && (req.method==='GET'||req.method==='HEAD'||req.method==='OPTIONS'||(req.method==='POST'&&feedbackWrite))){
+  // Explicitly approved study UI origin; no wildcard or credentialed CORS.
+  const studyOrigin = req.headers.origin === 'https://vividadiva.github.io';
+  const studyRead = ['/api/state','/api/users','/api/feedback','/api/options','/api/sessions','/api/export','/events'].includes(url.pathname) || /^\/sketch\/[a-z0-9]+\/\d+\.png$/.test(url.pathname);
+  const studyWrite = ['/api/feedback','/api/users','/api/switch','/api/create','/api/claim','/api/upload','/api/say','/api/sketch','/api/correct','/api/prefer','/api/retro','/api/accept','/api/finish'].includes(url.pathname);
+  if(studyOrigin && ((studyRead&&['GET','HEAD'].includes(req.method))||(studyWrite&&req.method==='POST')||((studyRead||studyWrite)&&req.method==='OPTIONS'))){
     res.setHeader('Access-Control-Allow-Origin','https://vividadiva.github.io');res.setHeader('Vary','Origin');
-    if(req.method==='OPTIONS'){res.setHeader('Access-Control-Allow-Methods',feedbackWrite?'GET, POST, OPTIONS':'GET, OPTIONS');res.setHeader('Access-Control-Allow-Headers','Content-Type');res.writeHead(204);res.end();return;}
+    if(req.method==='OPTIONS'){res.setHeader('Access-Control-Allow-Methods',studyWrite?'GET, POST, OPTIONS':'GET, OPTIONS');res.setHeader('Access-Control-Allow-Headers','Content-Type');res.writeHead(204);res.end();return;}
   }
 
   if(req.method === "POST") {
