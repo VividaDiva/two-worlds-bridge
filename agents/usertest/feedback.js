@@ -65,7 +65,7 @@ function renderPaths(){
  tag.textContent=submitted?(hasDraft?'Submitted · open-page draft':'Submitted'):hasDraft?'Draft in this page':pathProgress.get(p.room)===null?'Status unavailable':'Not submitted';b.append(label,tag);list.append(b);});
  const current=visible.findIndex(p=>p.room===room);
  $('current-path').textContent=current>=0?`Path ${current+1} of ${visible.length} · ${routeLabels[visible[current].route]||h.route}`:'Choose a path';
- $('continue-path').hidden=pathProgress.get(room)!==true;
+ $('continue-path').hidden=pathProgress.get(room)!==true||pendingRooms.has(room);
  const pending=nextPath();$('continue-path').disabled=!pending||switching||saving;$('continue-path').textContent=pending?`Continue: ${pending.agent==='keys'?'Control':'Toolkit'} · ${routeLabels[pending.route]||pending.route} →`:'Control and Toolkit submitted ✓';
 }
 function nextPath(){const i=pathItems.findIndex(p=>p.room===room);return [...pathItems.slice(i+1),...pathItems.slice(0,i)].find(p=>pathProgress.get(p.room)!==true);}
@@ -116,8 +116,21 @@ function showConversation(){
 function fresh(){return {version:2,ratingScale:{id:'bridge-satisfaction-5-v1',scores:Object.fromEntries(bridgeRatingKeys.map((key,i)=>[key,i+1])),labels:Object.fromEntries(bridgeRatingKeys.map(key=>[key,labels[key]])),unrated:'Cannot judge / not rated'},bridgePalette:{...bridgeColors},rebuildBasis:'original-independent-of-ratings',palette:{...colors},ratingLabels:{...labels},coordinateSpace:{width:1200,height:700},role:$('role').value,participantLabel:$('role').selectedOptions[0].textContent,source:clone(source),ratings:{},added:[],strokes:[],annotations:[],notes:['','',''],visited:[true,false,false]};}
 let editRevision=0;
 let submissionAttempt=null;
-function localSave(){dirty=true;pendingRooms.add(room);editRevision++;pageDrafts.set(localKey(),clone(draft));renderPaths();$('receipt').textContent='Not submitted yet. Your work will be sent to History when you click Submit feedback. Refreshing this page starts over.';}
-async function load(){editRevision++;$('receipt').textContent='Your original result is safe. Work through the three steps, then submit your feedback to History.';draft=pageDrafts.has(localKey())?clone(pageDrafts.get(localKey())):fresh();if(pageDrafts.has(localKey()))$('receipt').textContent='Unsaved draft from this open page. Refreshing or opening a new page starts over.';draft.annotations ||= [];commentEdit=null;$('comment-bubble').hidden=true;undo=[[],[],[]];redo=[[],[],[]];pointer=null;preview=null;hover=null;original=false;beforeAction=null;step=0;color=null;mode='erase';sketch=null;showConversation();
+let confirmedCurrent=false,showingSaved=false,hasReceipt=false;
+function submissionUI(){
+ $('submission-result').classList.toggle('saved',hasReceipt);
+ $('saved-heading').hidden=!hasReceipt;
+ $('saved-heading').textContent=confirmedCurrent?'✓ Feedback saved':'Unsaved changes';
+ $('edit-submitted').hidden=!showingSaved;
+ $('workspace').hidden=showingSaved;
+ document.querySelector('nav').hidden=showingSaved;
+ $('save').hidden=step!==2||confirmedCurrent;
+ $('submission-review').hidden=step!==2||confirmedCurrent;
+ $('save').textContent=hasReceipt?'Submit updated feedback':'Submit my feedback';
+}
+$('edit-submitted').onclick=()=>{showingSaved=false;submissionUI();$('workspace').scrollIntoView({block:'start',behavior:'smooth'});};
+function localSave(){confirmedCurrent=false;showingSaved=false;dirty=true;pendingRooms.add(room);editRevision++;pageDrafts.set(localKey(),clone(draft));renderPaths();$('receipt').textContent='Not submitted yet. Your work will be sent to History when you click Submit feedback. Refreshing this page starts over.';if(hasReceipt)$('receipt').textContent='Your earlier submission is saved. Submit your new changes before continuing.';submissionUI();}
+async function load(){confirmedCurrent=false;showingSaved=false;hasReceipt=false;$('submission-result').classList.remove('saved');$('saved-heading').hidden=true;$('edit-submitted').hidden=true;document.querySelector('nav').hidden=false;$('records').open=false;editRevision++;$('receipt').textContent='Your original result is safe. Work through the three steps, then submit your feedback to History.';draft=pageDrafts.has(localKey())?clone(pageDrafts.get(localKey())):fresh();if(pageDrafts.has(localKey()))$('receipt').textContent='Unsaved draft from this open page. Refreshing or opening a new page starts over.';draft.annotations ||= [];commentEdit=null;$('comment-bubble').hidden=true;undo=[[],[],[]];redo=[[],[],[]];pointer=null;preview=null;hover=null;original=false;beforeAction=null;step=0;color=null;mode='erase';sketch=null;showConversation();
 if(draft.source.sketchUrl){try{sketch=await new Promise((resolve,reject)=>{const img=new Image();img.crossOrigin='anonymous';img.onload=()=>resolve(img);img.onerror=reject;img.src=assetURL(draft.source.sketchUrl);});}catch{status('Saved sketch could not load. Matchstick feedback is still available.');}}
 matches=crossingMatches(draft.source.shape,draft.source.world,draft.source.extras);$('workspace').hidden=false;render();}
 let commentEdit=null;
@@ -189,6 +202,7 @@ function render(){
  draw($('canvas'),step,true);
  applyCanvasZoom();if(step===2)draw($('canvas'),2,true);renderComments();
  const values=Object.values(draft.ratings);$('counts').textContent=step===0?`${values.length} / ${matches.length} sticks rated · ${values.filter(c=>c==='red'||c==='veryRed').length} dissatisfied · ${matches.length-values.length} not rated`:step===1?`${removedIds().length} original sticks removed · ${draft.added.length} blue sticks added`:sketch?`${draft.annotations.length} comments · click a numbered pin to edit`:'No saved sketch for this result. You can still save feedback on the matchsticks.';
+ submissionUI();
 }
 function applyCanvasZoom(){
  const viewport=document.querySelector('.canvas-viewport'),canvas=$('canvas');
@@ -308,11 +322,11 @@ function changeStep(n){finishComment();if(n!==step){zoom=1;color=null;}if(n===1&
    if(!saved||saved.draft.role!==submittedRole||JSON.stringify(saved.draft)!==JSON.stringify(payload)||JSON.stringify(saved.images)!==JSON.stringify(images))throw Error('Saved feedback could not be verified. Check Saved feedback before retrying.');
    const count=images.filter(Boolean).length;
    const receipt=`Received by server · ${payload.participantLabel||submittedRole} · ${count}/3 images${count<3?' (no sketch available)':''} · receipt ${out.id.slice(0,8)} · ${new Date(out.at).toLocaleString()}`;
-   if(editRevision===revision){dirty=false;pendingRooms.delete(room);$('receipt').textContent=receipt;}
+   if(editRevision===revision){dirty=false;pendingRooms.delete(room);confirmedCurrent=true;showingSaved=true;hasReceipt=true;$('receipt').textContent=receipt;}
    else $('receipt').textContent=receipt+' · Newer edits or the currently selected participant are not included in this submission.';
-   status(receipt);if(payload.role==='B'&&payload.visited?.length===3&&payload.visited.every(Boolean)){pathProgress.set(room,true);}renderPaths();await records(saved);$('records').open=true;$('feedback-history').href='https://vividadiva.github.io/two-worlds-bridge/feedback-records.html?room='+encodeURIComponent(room)+'&role='+submittedRole+'&receipt='+encodeURIComponent(out.id);$('records').scrollIntoView({block:'start',behavior:'smooth'});
+   status('');submissionUI();if(payload.role==='B'&&payload.visited?.length===3&&payload.visited.every(Boolean)){pathProgress.set(room,true);}renderPaths();await records(saved);$('records').open=true;$('feedback-history').href='https://vividadiva.github.io/two-worlds-bridge/feedback-records.html?room='+encodeURIComponent(room)+'&role='+submittedRole+'&receipt='+encodeURIComponent(out.id);$('submission-result').scrollIntoView({block:'start',behavior:'smooth'});
   }catch(e){$('receipt').textContent=`Submission not confirmed: ${e.message} Your edits remain on this open page. Retry before closing or refreshing.`;status('Please check the receipt above and retry if needed.');}
-  finally{button.disabled=false;saving=false;renderPaths();$('receipt').scrollIntoView({block:'nearest',behavior:'smooth'});}
+  finally{button.disabled=false;saving=false;renderPaths();$('submission-result').scrollIntoView({block:'start',behavior:'smooth'});}
  };
  async function records(confirmed){try{const r=confirmed?{records:[confirmed]}:await apiFetch(`/api/feedback?room=${encodeURIComponent(room)}`).then(r=>{if(!r.ok)throw Error('Could not load records');return r.json();});$('record-list').replaceChildren();for(const rec of (r.records||[]).filter(rec=>!participant||rec.draft.role==='B')){const a=document.createElement('article'),title=document.createElement('p');title.textContent=`${rec.draft.participantLabel||rec.draft.role} · ${rec.draft.source.agent} · ${new Date(rec.at).toLocaleString()}`;a.append(title);rec.images.forEach((src,i)=>{if(!src)return;const link=document.createElement('a'),img=new Image();link.href=src;link.download=`${room}-${rec.draft.role}-${rec.id}-step${i+1}.png`;img.src=src;img.alt=['Rated original matchsticks','Rebuilt bridge','Sketch comments'][i];link.append(img);a.append(link);});const details=document.createElement('p');details.textContent=rec.draft.notes.filter(Boolean).join(' · ');a.append(details);for(const [i,n] of (rec.draft.annotations||[]).entries()){const text=document.createElement('p');text.textContent=`${i+1}. ${labels[n.color]} — ${n.text}`;a.append(text);}const exportLink=document.createElement('a');exportLink.textContent='Download full record (JSON)';exportLink.href=URL.createObjectURL(new Blob([JSON.stringify(rec,null,2)],{type:'application/json'}));exportLink.download=`feedback-${rec.id}.json`;a.append(exportLink);$('record-list').append(a);}if(!$('record-list').children.length)$('record-list').textContent='No feedback saved yet.';}catch{status('Could not load saved feedback.');}}
 
