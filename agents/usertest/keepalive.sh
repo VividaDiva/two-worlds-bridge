@@ -16,6 +16,10 @@ say() { echo "$(date '+%F %T') $*"; }
 publish() {
   # live.json lives at the repository root, whatever directory this runs from.
   local root; root=$(git rev-parse --show-toplevel) || { say "not in the repository"; return; }
+  if grep -q 'blob-chunks-v1' "$root/live.json"; then
+    say "cloud feedback is active; leaving its permanent address unchanged"
+    return
+  fi
   printf '{ "url": "%s", "at": "%s" }\n' "$1" "$(date -u +%FT%TZ)" > "$root/live.json"
   git -C "$root" add live.json && git -C "$root" commit -q -m "live: $(echo "$1" | sed -E 's#https://([a-z0-9-]+).*#\1#')" live.json \
     && git -C "$root" push -q origin main && say "published to live.html" || say "could not publish the address"

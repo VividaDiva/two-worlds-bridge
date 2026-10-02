@@ -3,7 +3,7 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const version=createHash('sha256').update(fs.readFileSync(path.join(root,'study-connection.js'))).digest('hex').slice(0,10);
 const source=path.join(root,'agents/usertest/app.html');
 let html=fs.readFileSync(source,'utf8');
-html=html.replace('<script src="/draw.js"></script>','<script src="./agents/usertest/draw.js"></script><script src="./study-connection.js"></script>');
+html=html.replace('<script src="/draw.js"></script>','<script src="./agents/usertest/draw.js"></script><script src="./cloud-transport.js"></script><script src="./study-connection.js"></script>');
 html=html.replace('./study-connection.js','./study-connection.js?v='+version);
 html=html.replace('frame.src=`/feedback?','frame.src=`./feedback.html?');
 html=html.replace('<script>','<script>\n(async()=>{\nconst {location,history,fetch,EventSource,shareBase:githubShareBase}=await window.studyReady;');

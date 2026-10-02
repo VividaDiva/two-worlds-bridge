@@ -1,3 +1,10 @@
 
 # 200 full-height conversation PNGs, 278MB — regenerate with agents/shoot.mjs
 export/png/
+
+# Cloud build output and local credentials
+/node_modules/
+/dist/
+/.vercel/
+.env*
+.vercel

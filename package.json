@@ -1,0 +1,1 @@
+{"name":"two-worlds-cloud-feedback","private":true,"type":"module","scripts":{"build":"node cloud/build.mjs","test:cloud":"node --test cloud/*.test.mjs"},"dependencies":{"@vercel/blob":"^2.3.0"},"engines":{"node":">=22"}}

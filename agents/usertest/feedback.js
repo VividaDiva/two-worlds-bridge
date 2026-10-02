@@ -4,6 +4,7 @@ const $=id=>document.getElementById(id);
 const connection=window.bridgeFeedbackConnection;
 const apiFetch=(path,options)=>connection?connection.fetch(path,options):fetch(path,options);
 const assetURL=path=>connection?connection.url(path):path;
+const feedbackHistoryBase=connection?new URL('./feedback-records.html',location.href).href:'https://vividadiva.github.io/two-worlds-bridge/feedback-records.html';
 function connectionError(message){$('context').textContent='We could not load the saved experiment.';$('receipt').replaceChildren();const text=document.createElement('p');text.textContent=message;const retry=document.createElement('button');retry.type='button';retry.className='primary';retry.textContent='Try connecting again';retry.onclick=()=>location.reload();$('receipt').append(text,retry);$('status').textContent='';document.querySelector('nav').hidden=true;document.querySelector('.context-sidebar').hidden=true;$('records').hidden=true;}
 if(connection){try{await connection.ready;}catch(e){connectionError(e.message);return;}}
 let room=new URLSearchParams(location.search).get('room');
@@ -49,7 +50,7 @@ const last=h.sketches?.at(-1);
 // A legacy side-by-side control has no separate sketch: never label the Toolkit image as Control.
 const sketchUrl=last&&variant!=='control'?`/sketch/${encodeURIComponent(room)}/${last.n}.png`:null;
 source={shape:v.shape,world:v.world,extras:v.sheetDrawn,standing:v.standing,sketchUrl,sketch:last||null,variant:variant||'main',agent:variant==='control'?'keys':(h.agent||'keys'),capturedAt:new Date().toISOString(),conversation:{room,argument:h.argument,route:h.route,arrow:h.arrow,note:h.note,lines:(h.lines||[]).filter(l=>variant!=='control'||l.who!=='builder').map(l=>({who:l.who,text:l.text,phase:l.phase,upload:l.upload,decision:l.decision,relay:l.relay,about:l.about,clarification:l.clarification,understandingUpdate:l.understandingUpdate,built:l.built,failed:!!l.failed}))}};
-$('feedback-history').href='https://vividadiva.github.io/two-worlds-bridge/feedback-records.html?room='+encodeURIComponent(room)+'&role='+$('role').value;
+$('feedback-history').href=feedbackHistoryBase+'?room='+encodeURIComponent(room)+'&role='+$('role').value;
 $('back').href=assetURL(`/j/${encodeURIComponent(room)}/both`);
 $('context').textContent=`${h.argument==='refs'?'Two references':h.argument==='pairs'?'Two lives':h.argument||'Bridge study'} · ${source.agent==='toolkit'?'Toolkit':'Control'} · Session ${room}`;
 }
@@ -336,7 +337,7 @@ function changeStep(n){finishComment();if(n!==step){zoom=1;color=null;}if(n===1&
    const receipt=`Received by server · ${payload.participantLabel||submittedRole} · ${count}/3 images${count<3?' (no sketch available)':''} · receipt ${out.id.slice(0,8)} · ${new Date(out.at).toLocaleString()}`;
    if(editRevision===revision){dirty=false;pendingRooms.delete(room);confirmedCurrent=true;showingSaved=true;hasReceipt=true;$('receipt').textContent=receipt;}
    else $('receipt').textContent=receipt+' · Newer edits or the currently selected participant are not included in this submission.';
-   status('');submissionUI();if(payload.role==='B'&&payload.visited?.length===3&&payload.visited.every(Boolean)){pathProgress.set(room,true);}renderPaths();await records(saved);$('records').open=true;$('feedback-history').href='https://vividadiva.github.io/two-worlds-bridge/feedback-records.html?room='+encodeURIComponent(room)+'&role='+submittedRole+'&receipt='+encodeURIComponent(out.id);$('submission-result').scrollIntoView({block:'start',behavior:'smooth'});
+   status('');submissionUI();if(payload.role==='B'&&payload.visited?.length===3&&payload.visited.every(Boolean)){pathProgress.set(room,true);}renderPaths();await records(saved);$('records').open=true;$('feedback-history').href=feedbackHistoryBase+'?room='+encodeURIComponent(room)+'&role='+submittedRole+'&receipt='+encodeURIComponent(out.id);$('submission-result').scrollIntoView({block:'start',behavior:'smooth'});
   }catch(e){$('receipt').textContent=`Submission not confirmed: ${e.message} Your edits remain on this open page. Retry before closing or refreshing.`;status('Please check the receipt above and retry if needed.');}
   finally{button.disabled=false;saving=false;renderPaths();$('submission-result').scrollIntoView({block:'start',behavior:'smooth'});}
  };

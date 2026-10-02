@@ -1,0 +1,4 @@
+import {get,put} from '@vercel/blob';
+const users=await fetch('http://localhost:8780/api/users').then(r=>r.json());const rooms=[...new Set(users.flatMap(u=>u.sessions.map(s=>s.room)))];
+for(let i=0;i<rooms.length;i+=6)await Promise.all(rooms.slice(i,i+6).flatMap(room=>['A','B'].map(async role=>{const r=await fetch(`http://localhost:8780/api/state?room=${room}&role=${role}`);if(!r.ok)throw Error('Missing seat');const b=Buffer.from(JSON.stringify(await r.json())),key=`snapshot/seat/${room}-${role}.json`;const prior=await get(key,{access:'private',useCache:false});if(!prior)await put(key,b,{access:'private',addRandomSuffix:false,allowOverwrite:false,contentType:'application/json'});const stored=await get(key,{access:'private',useCache:false});if(!stored||!Buffer.from(await new Response(stored.stream).arrayBuffer()).equals(b))throw Error('Seat readback mismatch');})));
+console.log(JSON.stringify({seatSnapshots:rooms.length*2,verified:true}));

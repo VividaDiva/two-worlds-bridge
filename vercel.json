@@ -1,0 +1,53 @@
+{
+  "framework": null,
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "functions": {
+    "api/cloud.mjs": {
+      "maxDuration": 60
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/:route",
+      "destination": "/api/cloud?route=:route"
+    },
+    {
+      "source": "/sketch/:room/:image",
+      "destination": "/api/cloud?route=sketch&room=:room&image=:image"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/live.json",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/j/:room/:role",
+      "destination": "/bridge.html?path=/j/:room/:role",
+      "permanent": false
+    },
+    {
+      "source": "/history/:room",
+      "destination": "/bridge.html?path=/history/:room",
+      "permanent": false
+    },
+    {
+      "source": "/history",
+      "destination": "/history.html",
+      "permanent": false
+    },
+    {
+      "source": "/feedback",
+      "destination": "/feedback.html",
+      "permanent": false
+    }
+  ]
+}
