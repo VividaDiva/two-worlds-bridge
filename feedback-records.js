@@ -13,6 +13,7 @@ function render(rec,index,number){const d=rec.draft,article=el('article');articl
  if(i===0){const counts=new Map();Object.values(d.ratings||{}).forEach(k=>counts.set(k,(counts.get(k)||0)+1));article.append(el('p',[...counts].map(([k,n])=>`${d.ratingScale?.scores?.[k]?d.ratingScale.scores[k]+' · ':''}${d.ratingLabels?.[k]||labels[k]||k}: ${n} sticks`).join(' · ')||'No sticks rated.'));}
  if(i===1)article.append(el('p',`${(d.removed||[]).length} sticks removed · ${(d.added||[]).length} sticks added`));
  if(i===2)for(const [j,c] of (d.annotations||[]).entries())article.append(el('p',`${j+1}. ${labels[c.color]||c.color} — ${c.text}`,'comment'));
+ const score=d.overallScores?.[i];article.append(el('p','Overall score (−3 to +3): '+(score==='cannot-judge'?'Cannot judge':Number.isInteger(score)?(score>0?'+'+score:score):'Not rated')));
  if(d.notes?.[i])article.append(el('p','Your note: '+d.notes[i],'note'));
  });
  const url=URL.createObjectURL(new Blob([JSON.stringify(rec,null,2)],{type:'application/json'}));blobs.push(url);const download=el('a','Download full record (JSON)');download.href=url;download.download=`feedback-${rec.id}.json`;article.append(download);records.append(article);
