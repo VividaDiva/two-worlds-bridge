@@ -14,7 +14,7 @@ test('replayed Control source wins over duplicate runs without collapsing condit
 
 
 test('shared room progress counts only this browser receipts, never another participant or legacy records',()=>{
- const c=vm.createContext({respondentId:'browser-a',ownReceipts:new Set(['own-receipt'])});
+ const c=vm.createContext({$:()=>({value:'B'}),respondentId:'browser-a',ownReceipts:new Set(['own-receipt'])});
  vm.runInContext(source.slice(source.indexOf('function completedSummary('),source.indexOf('function renderPaths(')),c);
  c.summaries=[{id:'legacy',role:'B',complete:true},{id:'other',respondentId:'browser-b',role:'B',complete:true},{id:'own-receipt',role:'B',complete:true}];
  assert.equal(vm.runInContext('summaries.filter(completedSummary).length',c),1);
@@ -28,4 +28,12 @@ test('browser identity and confirmed receipts survive reopening; separate storag
  const reopened=open(memory);assert.equal(vm.runInContext("ownFeedback({id:'saved-a'})",reopened),true);
  const other=open(new Map());assert.equal(vm.runInContext("ownFeedback({id:'saved-a'})",other),false);
  assert.equal(vm.runInContext("ownFeedback({id:'legacy',draft:{role:'B'}})",reopened),false);
+});
+
+
+test('Role A participant progress cannot be confused with Role B in the same browser',()=>{
+ const c=vm.createContext({$:()=>({value:'A'}),respondentId:'same-browser',ownReceipts:new Set()});
+ vm.runInContext(source.slice(source.indexOf('function completedSummary('),source.indexOf('function renderPaths(')),c);
+ assert.equal(vm.runInContext("completedSummary({role:'A',complete:true,respondentId:'same-browser'})",c),true);
+ assert.equal(vm.runInContext("completedSummary({role:'B',complete:true,respondentId:'same-browser'})",c),false);
 });
