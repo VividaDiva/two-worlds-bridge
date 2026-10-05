@@ -63,11 +63,27 @@ const pageDrafts=new Map();
 const localKey=()=>`bridge-feedback-v1:${room}:${variant||'main'}:${$('role').value}`;
 // Synchronous, compact backups after each committed edit, separate from submissions.
 const draftStorageKeys=new Map();
+const cloudDraftQueue=new Map(),cloudDraftRevisions=new Map();let cloudDraftTimer=null,cloudDraftBusy=false;
+function queueCloudDraft(key,record){cloudDraftQueue.set(key,record);if(!cloudDraftTimer)cloudDraftTimer=setTimeout(flushCloudDrafts,1000);}
+async function flushCloudDrafts(){
+ clearTimeout(cloudDraftTimer);cloudDraftTimer=null;if(cloudDraftBusy)return;cloudDraftBusy=true;
+ try{for(const [key,record] of [...cloudDraftQueue]){try{
+  const r=await apiFetch('/api/drafts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({room:record.room,id:record.draft.cloudDraftId,revision:record.revision,draft:record.draft})});
+  if(!r.ok)throw Error('Cloud draft not confirmed');const saved=(await r.json()).record;
+  if(saved?.revision!==record.revision||JSON.stringify(saved.draft)!==JSON.stringify(record.draft))throw Error('Cloud draft differs');
+  if(cloudDraftQueue.get(key)===record){cloudDraftQueue.delete(key);try{const local=JSON.parse(localStorage.getItem(key));if(local?.revision===record.revision){local.cloudSavedAt=saved.at;localStorage.setItem(key,JSON.stringify(local));}}catch{}
+   if(draftStorageKeys.get(localKey())===key)$('autosave-status').textContent='Saved to researcher’s cloud · '+new Date(saved.at).toLocaleTimeString()+' · Draft, not submitted';}
+ }catch{if(draftStorageKeys.get(localKey())===key)$('autosave-status').textContent='Cloud backup pending · retrying automatically. Keep this page open until Saved to researcher’s cloud appears.';}}
+ }finally{cloudDraftBusy=false;if(cloudDraftQueue.size&&!cloudDraftTimer)cloudDraftTimer=setTimeout(flushCloudDrafts,5000);}
+}
+window.addEventListener('online',()=>flushCloudDrafts());
+
 function draftPrefix(){return `two-worlds-autodraft-v1:${respondentId}:${localKey()}:`;}
 function persistDraft(){
  const scope=localKey();if(!draftStorageKeys.has(scope))draftStorageKeys.set(scope,draftPrefix()+crypto.randomUUID());
- const key=draftStorageKeys.get(scope),record={kind:'unsubmitted-feedback-draft',room,variant:variant||null,step,savedAt:new Date().toISOString(),draft:clone(draft)};
- try{const encoded=JSON.stringify(record);localStorage.setItem(key,encoded);if(localStorage.getItem(key)!==encoded)throw Error('Backup verification failed');$('autosave-status').textContent='Draft saved on this browser · '+new Date(record.savedAt).toLocaleTimeString()+' · Not submitted';return true;}
+ const key=draftStorageKeys.get(scope);draft.cloudDraftId=key.split(':').at(-1);draft.removed=[...(draft.rebuildRemoved||[])];const revision=Math.max(Date.now(),(cloudDraftRevisions.get(key)||0)+1);cloudDraftRevisions.set(key,revision);const record={revision,kind:'unsubmitted-feedback-draft',room,variant:variant||null,step,savedAt:new Date().toISOString(),draft:clone(draft)};
+ queueCloudDraft(key,record);
+ try{const encoded=JSON.stringify(record);localStorage.setItem(key,encoded);if(localStorage.getItem(key)!==encoded)throw Error('Backup verification failed');$('autosave-status').textContent='Saved on this browser; syncing to researcher’s cloud · '+new Date(record.savedAt).toLocaleTimeString()+' · Not submitted';return true;}
  catch{$('autosave-status').textContent='Automatic backup unavailable. Keep this page open and submit, or download your draft below.';return false;}
 }
 function downloadDraft(record){const url=URL.createObjectURL(new Blob([JSON.stringify(record,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download=`feedback-draft-${record.room}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);}
@@ -75,7 +91,7 @@ function showDraftRecovery(){
  const panel=$('draft-recovery');panel.replaceChildren();const items=[];
  try{for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key.startsWith(draftPrefix())&&key!==draftStorageKeys.get(localKey())){const record=JSON.parse(localStorage.getItem(key));if(record?.kind==='unsubmitted-feedback-draft'&&record.room===room&&record.draft?.respondentId===respondentId)items.push({key,record});}}}catch{}
  items.sort((a,b)=>b.record.savedAt.localeCompare(a.record.savedAt));panel.hidden=!items.length;
- if(!items.length)return;const intro=document.createElement('p');intro.textContent='Unsubmitted drafts from this browser. Restore one to continue, or start a new response below. These are not in the researcher’s History.';panel.append(intro);
+ if(!items.length)return;const intro=document.createElement('p');intro.textContent='Unsubmitted drafts from this browser. Restore one to continue, or start a new response below. Cloud-saved copies appear separately as unsubmitted drafts in the researcher’s History.';panel.append(intro);
  for(const {key,record} of items){const row=document.createElement('div'),restore=document.createElement('button'),download=document.createElement('button');restore.type=download.type='button';restore.textContent='Restore draft · '+new Date(record.savedAt).toLocaleString();download.textContent='Download draft';
  restore.onclick=async()=>{if(saving||switching)return;if(dirty)persistDraft();draftStorageKeys.set(localKey(),key);pageDrafts.set(localKey(),clone(record.draft));dirty=true;pendingRooms.add(room);await load();step=Math.max(0,Math.min(2,record.step||0));render();persistDraft();$('workspace').scrollIntoView({block:'start'});};download.onclick=()=>downloadDraft(record);row.append(restore,download);panel.append(row);}
 }
@@ -185,7 +201,7 @@ $('edit-submitted').onclick=()=>{showingSaved=false;submissionUI();$('workspace'
 function localSave(){persistDraft();confirmedCurrent=false;showingSaved=false;dirty=true;pendingRooms.add(room);editRevision++;pageDrafts.set(localKey(),clone(draft));renderPaths();$('receipt').textContent='Not submitted yet. Your work will be sent to History when you click Submit feedback. Your draft is backed up on this browser when automatic backup is available.';if(hasReceipt)$('receipt').textContent='Your earlier submission is saved. Submit your new changes before continuing.';submissionUI();}
 async function load(){confirmedCurrent=false;showingSaved=false;hasReceipt=false;$('submission-result').classList.remove('saved');$('saved-heading').hidden=true;$('edit-submitted').hidden=true;document.querySelector('nav').hidden=false;$('records').open=false;editRevision++;$('receipt').textContent='Your original result is safe. Work through the three steps, then submit your feedback to History.';draft=pageDrafts.has(localKey())?clone(pageDrafts.get(localKey())):fresh();if(pageDrafts.has(localKey()))$('receipt').textContent='Unsubmitted draft. Submit when you have finished all three steps.';draft.annotations ||= [];commentEdit=null;$('comment-bubble').hidden=true;undo=[[],[],[]];redo=[[],[],[]];pointer=null;preview=null;hover=null;original=false;beforeAction=null;step=0;color=null;mode='erase';sketch=null;showConversation();
 if(draft.source.sketchUrl){try{sketch=await new Promise((resolve,reject)=>{const img=new Image();img.crossOrigin='anonymous';img.onload=()=>resolve(img);img.onerror=reject;img.src=assetURL(draft.source.sketchUrl);});}catch{status('Saved sketch could not load. Matchstick feedback is still available.');}}
-matches=crossingMatches(draft.source.shape,draft.source.world,draft.source.extras);$('workspace').hidden=false;render();showDraftRecovery();$('autosave-status').textContent=pageDrafts.has(localKey())?'Unsubmitted draft · changes save on this browser':'Changes save automatically on this browser · not submitted';}
+matches=crossingMatches(draft.source.shape,draft.source.world,draft.source.extras);$('workspace').hidden=false;render();showDraftRecovery();$('autosave-status').textContent=pageDrafts.has(localKey())?'Unsubmitted draft · changes save on this browser':'Changes automatically sync to the researcher’s cloud · draft, not submitted';}
 let commentEdit=null;
 function openComment(p,index=null){
  if(!sketch)return;if(commentEdit&&index===commentEdit.index){$('comment-text').focus();return;}const targetId=index===null?null:draft.annotations[index]?.id;finishComment();if(targetId){index=draft.annotations.findIndex(n=>n.id===targetId);if(index<0)return;}
@@ -378,7 +394,7 @@ function changeStep(n){if(saving||switching)return;finishComment();if(n!==step){
   try{
    draft.notes[step]=$('note').value;
    const payload=clone(draft);
-   payload.feedbackUiVersion='2026-10-05-auto-draft';payload.removed=removedIds();payload.originalMatches=clone(matches);payload.sketchSize=sketch?{width:1200,height:Math.round(1200*sketch.height/sketch.width)}:null;
+   payload.feedbackUiVersion='2026-10-05-cloud-draft';payload.removed=removedIds();payload.originalMatches=clone(matches);payload.sketchSize=sketch?{width:1200,height:Math.round(1200*sketch.height/sketch.width)}:null;
    const images=[0,1,2].map(n=>{if(n===2&&!sketch)return null;const c=document.createElement('canvas');draw(c,n);return c.toDataURL('image/png');});
    const signature=JSON.stringify({room,draft:payload,images});if(submissionAttempt?.signature!==signature)submissionAttempt={signature,id:crypto.randomUUID()};
    const attempt={room,draft:payload,images,submissionId:submissionAttempt.id,backedUpAt:new Date().toISOString()};
@@ -402,5 +418,6 @@ function changeStep(n){if(saving||switching)return;finishComment();if(n!==step){
  };
  async function records(confirmed){try{const r=confirmed?{records:[confirmed]}:await apiFetch(`/api/feedback?room=${encodeURIComponent(room)}`).then(r=>{if(!r.ok)throw Error('Could not load records');return r.json();});$('record-list').replaceChildren();for(const rec of (r.records||[]).filter(rec=>ownFeedback(rec)&&(!participant||rec.draft.role==='B'))){const a=document.createElement('article'),title=document.createElement('p');title.textContent=`${rec.draft.participantLabel||rec.draft.role} · ${rec.draft.source.agent} · ${new Date(rec.at).toLocaleString()}`;a.append(title);rec.images.forEach((src,i)=>{if(!src)return;const link=document.createElement('a'),img=new Image();link.href=src;link.download=`${room}-${rec.draft.role}-${rec.id}-step${i+1}.png`;img.src=src;img.alt=['Rated original matchsticks','Rebuilt bridge','Sketch comments'][i];link.append(img);a.append(link);});const details=document.createElement('p');details.textContent=rec.draft.notes.filter(Boolean).join(' · ');a.append(details);for(const [i,n] of (rec.draft.annotations||[]).entries()){const text=document.createElement('p');text.textContent=`${i+1}. ${labels[n.color]} — ${n.text}`;a.append(text);}const exportLink=document.createElement('a');exportLink.textContent='Download full record (JSON)';exportLink.href=URL.createObjectURL(new Blob([JSON.stringify(rec,null,2)],{type:'application/json'}));exportLink.download=`feedback-${rec.id}.json`;a.append(exportLink);$('record-list').append(a);}if(!$('record-list').children.length)$('record-list').textContent='No feedback saved yet.';}catch{status('Could not load saved feedback.');}}
 
+ try{for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key.startsWith('two-worlds-autodraft-v1:'+respondentId+':')){const record=JSON.parse(localStorage.getItem(key));if(record?.revision&&!record.cloudSavedAt)queueCloudDraft(key,record);}}}catch{}
  await load();await records();if(pathItems.length)await loadPathProgress();
 })().catch(e=>{document.getElementById('status').textContent=`Unable to open feedback: ${e.message}`;});

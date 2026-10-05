@@ -7,6 +7,7 @@ async function jsonRead(key){const b=await read(key);return b?JSON.parse(b.toStr
 async function writeOnce(key,value,type='application/json'){const b=Buffer.isBuffer(value)?value:Buffer.from(JSON.stringify(value));try{await put(key,b,{...opts,contentType:type,allowOverwrite:false});}catch(e){const old=await read(key);if(!old||!old.equals(b))throw e;}const check=await read(key);if(!check||!check.equals(b))throw Error('Cloud write verification failed');}
 async function paths(prefix){let cursor;const found=[];do{const r=await list({prefix,cursor,limit:1000});found.push(...r.blobs.map(b=>b.pathname));cursor=r.hasMore?r.cursor:undefined;}while(cursor);return found;}
 async function records(room){return (await Promise.all((await paths('feedback/'+room+'/')).filter(p=>p.endsWith('.json')).map(jsonRead))).filter(Boolean).sort((a,b)=>b.at.localeCompare(a.at));}
+async function draftRecords(room){const all=(await Promise.all((await paths('feedback-drafts/'+room+'/')).filter(p=>p.endsWith('.json')).map(jsonRead))).filter(Boolean),latest=new Map();for(const r of all)if(!latest.has(r.id)||latest.get(r.id).revision<r.revision)latest.set(r.id,r);return [...latest.values()].sort((a,b)=>b.at.localeCompare(a.at));}
 function importOK(req){const expected=process.env.BRIDGE_IMPORT_TOKEN||'',provided=req.headers['x-bridge-import']||'';return expected.length>=32&&provided.length===expected.length&&timingSafeEqual(Buffer.from(provided),Buffer.from(expected));}
 export default async function handler(req,res){
  const origin=req.headers.origin;
@@ -29,6 +30,16 @@ export default async function handler(req,res){
    if(!await jsonRead('snapshot/state/'+b.room+'.json'))return send(404,{error:'Unknown session'});
    const bytes=Buffer.from(b.data,'base64');if(hash(bytes)!==b.hash)return send(400,{error:'Chunk checksum mismatch'});
    await writeOnce('chunks/'+b.hash,bytes,'application/octet-stream');return send(200,{sha256:b.hash});
+  }
+  if(route==='drafts'){
+   const room=req.method==='POST'?b.room:q.room;if(!roomId(room))return send(400,{error:'Invalid room'});
+   if(!await jsonRead('snapshot/state/'+room+'.json'))return send(404,{error:'Unknown session'});
+   if(req.method==='GET')return send(200,{records:await draftRecords(room)});
+   if(req.method!=='POST'||!uuid(b.id)||!Number.isSafeInteger(b.revision)||b.revision<1||!validDraft(b.draft)||!uuid(b.draft.respondentId))return send(400,{error:'Invalid automatic draft'});
+   const key='feedback-drafts/'+room+'/'+b.id+'/'+b.revision+'.json';let rec=await jsonRead(key);
+   if(rec&&JSON.stringify(rec.draft)!==JSON.stringify(b.draft))return send(409,{error:'Draft revision differs'});
+   if(!rec){rec={id:b.id,room,revision:b.revision,at:new Date().toISOString(),autosaved:true,draft:b.draft};await writeOnce(key,rec);}
+   return send(200,{record:rec});
   }
   if(route==='feedback'){
    const room=req.method==='POST'?b.room:q.room;if(!roomId(room))return send(400,{error:'Invalid room'});
@@ -53,7 +64,7 @@ export default async function handler(req,res){
   if(route==='users'||route==='options')return send(200,await jsonRead('snapshot/'+route+'.json')||(route==='users'?[]:{}));
   if(route==='state'){if(!roomId(q.room))return send(400,{error:'Invalid room'});const seat=['A','B'].includes(q.role)?await jsonRead('snapshot/seat/'+q.room+'-'+q.role+'.json'):null;const s=seat||await jsonRead('snapshot/state/'+q.room+'.json');return send(s?200:404,s||{error:'Session not found'});}
   if(route==='sessions'){const sessions=await jsonRead('snapshot/sessions.json')||[],files=await paths('feedback/'),counts={},latest={};await Promise.all(files.map(async f=>{const r=f.split('/')[1];counts[r]=(counts[r]||0)+1;const record=await jsonRead(f);if(record?.at&&(!latest[r]||record.at>latest[r]))latest[r]=record.at;}));return send(200,sessions.map(s=>({...s,live:false,feedbackCount:counts[s.room]||0,latestFeedbackAt:latest[s.room]||null})));}
-  if(route==='export'){if(!roomId(q.room))return send(400,{error:'Invalid room'});const record=await jsonRead('snapshot/export/'+q.room+'.json');if(!record)return send(404,{error:'Record not found'});if(q.format==='json'){record.feedback=await records(q.room);return send(200,record);}res.setHeader('Content-Type','text/markdown; charset=utf-8');return res.end((record.transcript||[]).map(l=>`**${l.who}**: ${l.text||''}`).join('\n\n'));}
+  if(route==='export'){if(!roomId(q.room))return send(400,{error:'Invalid room'});const record=await jsonRead('snapshot/export/'+q.room+'.json');if(!record)return send(404,{error:'Record not found'});if(q.format==='json'){record.feedback=await records(q.room);record.drafts=(await draftRecords(q.room)).filter(d=>!record.feedback.some(r=>r.draft.cloudDraftId===d.id));return send(200,record);}res.setHeader('Content-Type','text/markdown; charset=utf-8');return res.end((record.transcript||[]).map(l=>`**${l.who}**: ${l.text||''}`).join('\n\n'));}
   if(route==='sketch'){if(!roomId(q.room)||!/^\d+\.png$/.test(q.image||''))return send(400,{error:'Invalid sketch'});const img=await read('snapshot/sketch/'+q.room+'/'+q.image);if(!img)return send(404,{error:'Sketch not found'});res.setHeader('Content-Type','image/png');return res.end(img);}
   return send(404,{error:'Not found'});
  }catch(e){console.error('Cloud study request failed:',e.message);return send(503,{error:'Cloud storage could not confirm this request. Please retry; existing records are preserved.'});}

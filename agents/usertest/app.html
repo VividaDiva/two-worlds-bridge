@@ -1855,6 +1855,7 @@ async function sessionsView(){
             <p class="sstands">Stands as <b>${esc(s.standing || "nothing built")}</b></p>
             <div class="acts">
               <a class="mini" href="/history/${esc(s.room)}">Open</a>
+              <a class="mini" href="/history/${esc(s.room)}#automatic-drafts">Automatic drafts</a>
               ${s.feedbackCount ? `<a class="mini" href="/history/${esc(s.room)}#submitted-feedback">Feedback · ${s.feedbackCount}</a>` : ""}
               ${s.live ? `<a class="mini" href="/j/${esc(s.room)}/both">Watch live</a>` : ""}
               <a class="mini" href="/api/export?room=${esc(s.room)}&format=md" download>Chat</a>
@@ -1878,8 +1879,8 @@ function renderHistoryFeedback(target,records){
   const d=record.draft,card=make('article',undefined,'fh-record');
   card.id='receipt-'+record.id;
   const header=make('header',undefined,'fh-record-head'),person=make('div');
-  const label=make('p',undefined,'fh-submission-label');label.append(make('strong',`Submission #${records.length-index}`));if(index===0)label.append(make('span','Latest in this session','fh-latest'));person.append(label);
-  person.append(make('p',`${d.source?.agent==='toolkit'?'TOOLKIT':'CONTROL'} · ${index===0?'LATEST SUBMISSION':'EARLIER SUBMISSION'}`,'fh-kicker'),make('h3',d.source?.testOnly?'System save check':d.participantLabel||({A:'Role 1',B:'Role 2'}[d.role])||d.role),make('p','Submitted '+feedbackTime(record.at),'fh-submitted-time'),make('p','Receipt '+record.id.slice(0,8)+' · Numbered within this session','fh-muted'));
+  const label=make('p',undefined,'fh-submission-label');label.append(make('strong',record.autosaved?'Automatic draft · NOT SUBMITTED':`Submission #${records.length-index}`));if(index===0)label.append(make('span','Latest in this session','fh-latest'));person.append(label);
+  person.append(make('p',`${d.source?.agent==='toolkit'?'TOOLKIT':'CONTROL'} · ${record.autosaved?'UNSUBMITTED DRAFT':index===0?'LATEST SUBMISSION':'EARLIER SUBMISSION'}`,'fh-kicker'),make('h3',d.source?.testOnly?'System save check':d.participantLabel||({A:'Role 1',B:'Role 2'}[d.role])||d.role),make('p',(record.autosaved?'Auto-saved ':'Submitted ')+feedbackTime(record.at),'fh-submitted-time'),make('p','Receipt '+record.id.slice(0,8)+' · Numbered within this session','fh-muted'));
   const download=make('a','Download record','mini');download.href=URL.createObjectURL(new Blob([JSON.stringify(record,null,2)],{type:'application/json'}));download.download=`feedback-${record.id}.json`;header.append(person,download);card.append(header);
   if(d.source?.testOnly)card.append(make('p','SYSTEM TEST · This checks that saving works. It is not participant feedback; its images are placeholders.','fh-test'));
   const counts=make('div',undefined,'fh-counts');for(const [n,label] of [[Object.keys(d.ratings||{}).length,'sticks rated'],[(d.removed||[]).length,'sticks removed'],[(d.added||[]).length,'sticks added'],[(d.annotations||[]).length,'sketch comments']]){const item=make('div');item.append(make('strong',String(n)),make('span',label));counts.append(item);}card.append(counts);
@@ -1889,7 +1890,11 @@ function renderHistoryFeedback(target,records){
    const panel=make('section',undefined,'fh-panel');panel.id=`fh-panel-${record.id}-${i}`;panel.setAttribute('role','tabpanel');panel.setAttribute('aria-labelledby',button.id);panels.push(panel);
    const layout=make('div',undefined,'fh-layout'),visual=make('div',undefined,'fh-visual'),aside=make('div',undefined,'fh-details');const src=record.images?.[i];
    if(d.source?.testOnly){visual.append(make('p','Placeholder image · system verification only','fh-muted'));}
-   else if(typeof src==='string'&&/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(src)){const img=make('img');img.src=src;img.alt=label;visual.append(img);const link=make('a','Download image');link.href=src;link.download=`feedback-${record.id}-step${i+1}.png`;visual.append(link);}else visual.append(make('p','No image was included in this submission.','fh-muted'));
+   else if(typeof src==='string'&&/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(src)){const img=make('img');img.src=src;img.alt=label;visual.append(img);const link=make('a','Download image');link.href=src;link.download=`feedback-${record.id}-step${i+1}.png`;visual.append(link);}else if(record.autosaved){
+    if(i<2&&window.drawCrossing){const cv=make('canvas');cv.style.width='100%';visual.append(cv);const palette=d.bridgePalette||d.palette||{};drawCrossing(cv,d.source.shape,d.source.world,d.source.extras,{colors:i===0?Object.fromEntries(Object.entries(d.ratings||{}).map(([k,v])=>[k,palette[v]])):{},removed:i===1?(d.rebuildRemoved||[]):[]});if(i===1){const ctx=cv.getContext('2d');ctx.save();ctx.scale(cv.width/1200,cv.height/700);ctx.strokeStyle='#2672cb';ctx.lineWidth=10;ctx.lineCap='round';for(const m of d.added||[]){ctx.beginPath();ctx.moveTo(m.x1,m.y1);ctx.lineTo(m.x2,m.y2);ctx.stroke();}ctx.restore();}}
+    else if(d.source.sketchUrl){const cv=make('canvas');cv.style.width='100%';visual.append(cv);fetch(d.source.sketchUrl).then(r=>{if(!r.ok)throw Error();return r.blob();}).then(blob=>{const url=URL.createObjectURL(blob),img=new Image();img.onload=()=>{cv.width=1200;cv.height=Math.round(1200*img.height/img.width);const ctx=cv.getContext('2d');ctx.drawImage(img,0,0,cv.width,cv.height);for(const [j,n] of (d.annotations||[]).entries()){ctx.beginPath();ctx.arc(n.x,n.y,22,0,Math.PI*2);ctx.fillStyle=d.palette?.[n.color]||'#2672cb';ctx.fill();ctx.fillStyle='#fff';ctx.font='bold 22px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(j+1),n.x,n.y);}URL.revokeObjectURL(url);};img.onerror=()=>URL.revokeObjectURL(url);img.src=url;}).catch(()=>visual.append(make('p','Sketch could not load; saved comments remain below.')));}
+    else visual.append(make('p','No sketch available; saved comment data remains below.','fh-muted'));
+   }else visual.append(make('p','No image was included in this submission.','fh-muted'));
    const overall=d.overallScores?.[i];aside.append(make('h4','Overall score (−3 to +3)'),make('p',overall==='cannot-judge'?'Cannot judge':Number.isInteger(overall)?(overall>0?'+'+overall:String(overall)):'Not rated','fh-note'));
    if(i===0&&!Object.keys(d.ratings||{}).length)aside.append(make('p',d.unratedConfirmed?'Participant explicitly chose to leave sticks uncolored.':'No stick colors were received in this submission. This is not a neutral rating.','fh-test'));
    if(i===0){aside.append(make('h4','Ratings by stick'));const keys=d.ratingScale?['veryRed','red','neutral','blue','veryBlue']:['red','neutral','some','blue'];const values=Object.values(d.ratings||{});for(const key of keys){const row=make('div',undefined,'fh-rating');row.append(make('span',`${d.ratingScale?.scores?.[key]?d.ratingScale.scores[key]+' · ':''}${ratingNames[key]}`),make('strong',String(values.filter(v=>v===key).length)));aside.append(row);}aside.append(make('p','Counts show rated sticks, not an overall bridge score.','fh-muted'));}
@@ -1928,7 +1933,7 @@ async function historyView(id){
       <h1>${(rec.feedback||[]).length?'Feedback review':esc(rec.title)}</h1>
       <p class="lede">${esc(rec.title)} · ${esc(rec.arrow)}<br><span class="fh-muted">Experiment recorded ${esc(when(rec.createdAt))}</span></p>
     </div>
-    <section class="card fh-section" id="submitted-feedback"><p class="fh-kicker">PARTICIPANT FEEDBACK</p><h2>Submitted results</h2><p class="fh-muted">${(rec.feedback||[]).length} saved submission${(rec.feedback||[]).length===1?'':'s'} · Select a step to review its image and feedback.</p><div id="feedback-records"></div></section>
+    <section class="card fh-section" id="submitted-feedback"><p class="fh-kicker">PARTICIPANT FEEDBACK</p><h2>Submitted results</h2><p class="fh-muted">${(rec.feedback||[]).length} saved submission${(rec.feedback||[]).length===1?'':'s'} · Select a step to review its image and feedback.</p><div id="feedback-records"></div></section><section class="card fh-section" id="automatic-drafts"><h2>Automatic backups · not submitted</h2><p>Saved while participants work, without pressing Submit. These may be incomplete. Refresh to see the latest cloud backup.</p><button onclick="location.reload()">Refresh backups</button><div id="draft-records"></div></section>
     <details class="card fh-context" ${(rec.feedback||[]).length?'':'open'}><summary>Original experiment · conversation, AI process & result</summary>
     <div class="card goals">
       ${["A","B"].map(r => `<p><b>${roleName(r)}</b> ${esc(rec.goals[r])}</p>`).join("")}
@@ -1940,6 +1945,7 @@ async function historyView(id){
     ${resultBar(h)}
     </details>`;
   renderHistoryFeedback(document.getElementById("feedback-records"),rec.feedback||[]);
+  renderHistoryFeedback(document.getElementById("draft-records"),rec.drafts||[]);
 
   const cv = document.getElementById("crossing");
   const shown = h.control && bridgeTab === "control" ? h.control : h;
