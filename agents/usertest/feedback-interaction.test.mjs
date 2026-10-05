@@ -23,7 +23,7 @@ test('empty stick ratings require an explicit opt-out; selected tools alone do n
 
 test('finishing a comment reads visible text even if the input event did not update the draft',()=>{
  const elements={'comment-text':{value:'A safe walkway is important'},'comment-color':{value:'blue'},'comment-bubble':{hidden:false}};
- const c=vm.createContext({draft:{annotations:[{id:'pin',text:'',color:'red'}]},commentEdit:{index:0,before:[]},undo:[[],[],[]],redo:[[],[],[]],step:2,clone:x=>JSON.parse(JSON.stringify(x)),$:id=>elements[id],localSave(){},render(){}});
+ const c=vm.createContext({draft:{annotations:[{id:'pin',text:'',color:'red'}]},commentEdit:{index:0,before:[]},undo:[[],[],[]],redo:[[],[],[]],step:2,syncVisibleNote(){},clone:x=>JSON.parse(JSON.stringify(x)),$:id=>elements[id],localSave(){},render(){}});
  vm.runInContext(source.slice(source.indexOf('function finishComment('),source.indexOf('function positionComment(')),c);
  vm.runInContext('finishComment()',c);
  assert.equal(c.draft.annotations.length,1);assert.equal(c.draft.annotations[0].text,elements['comment-text'].value);assert.equal(c.draft.annotations[0].color,'blue');assert.equal(c.undo[2].length,1);
@@ -46,4 +46,23 @@ test('unconfirmed submission retains full backup; failed storage still leaves do
  fail=true;await vm.runInContext("releaseSubmission('test')",c);assert.equal(pending.size,1);
  c.attempt={...attempt,submissionId:'quota-test'};assert.equal(await vm.runInContext('retainSubmission(attempt)',c),false);assert.equal(pending.size,2);
  fail=false;await vm.runInContext("releaseSubmission('test')",c);assert.equal(store.has('test'),false);assert.equal(pending.has('test'),false);
+});
+
+
+test('unvisited steps cannot silently count as completed',()=>{
+ const c=vm.createContext({draft:{visited:[true,false,true]}});
+ vm.runInContext(source.slice(source.indexOf('function unreviewedStep()'),source.indexOf(" $('save').onclick=async()=>{")),c);
+ assert.equal(vm.runInContext('unreviewedStep()',c),1);
+ c.draft.visited=[true,true,true];assert.equal(vm.runInContext('unreviewedStep()',c),undefined);
+});
+test('visible note survives a missed input event before rendering',()=>{
+ const c=vm.createContext({draft:{notes:['old','','']},step:0,$:()=>({value:'final note'}),localSave(){}});
+ vm.runInContext(source.slice(source.indexOf('function syncVisibleNote()'),source.indexOf('function finishComment(')),c);
+ vm.runInContext('syncVisibleNote()',c);assert.equal(c.draft.notes[0],'final note');
+});
+test('saving locks edits, navigation and participant selection until finished',()=>{
+ const elements={workspace:{},'identity-picker':{},save:{}},nav={};const c=vm.createContext({saving:false,$:id=>elements[id],document:{querySelector:()=>nav},renderPaths(){}});
+ vm.runInContext(source.slice(source.indexOf('function setSubmissionBusy('),source.indexOf('function unreviewedStep()')),c);
+ vm.runInContext('setSubmissionBusy(true)',c);assert.equal(c.saving,true);assert.equal(elements.workspace.inert,true);assert.equal(elements['identity-picker'].inert,true);assert.equal(nav.inert,true);
+ vm.runInContext('setSubmissionBusy(false)',c);assert.equal(c.saving,false);assert.equal(elements.workspace.inert,false);assert.equal(nav.inert,false);assert.equal(elements.save.disabled,false);
 });
