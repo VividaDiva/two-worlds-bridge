@@ -159,6 +159,7 @@ function openComment(p,index=null){
 function finishComment(cancel=false){
  if(!commentEdit)return;
  const before=commentEdit.before;
+ if(!cancel&&draft.annotations[commentEdit.index]){draft.annotations[commentEdit.index].text=$('comment-text').value;draft.annotations[commentEdit.index].color=$('comment-color').value;}
  if(cancel||!draft.annotations[commentEdit.index]?.text.trim())draft.annotations=clone(before);
  const after=clone(draft.annotations);commentEdit=null;$('comment-bubble').hidden=true;
  if(JSON.stringify(before)!==JSON.stringify(after)){undo[2].push({before,after,label:'sketch comment'});redo[2]=[];}
@@ -330,8 +331,9 @@ function changeStep(n){finishComment();if(n!==step){zoom=1;color=null;}if(n===1&
   if(saving||switching)return;if(!requireRatingProgress())return;if(commentEdit&&!$('comment-text').value.trim()){ $('comment-text').focus();$('comment-error').textContent='Please explain this comment, or cancel it before submitting.';return;}finishComment();const button=$('save');button.disabled=true;saving=true;renderPaths();const revision=editRevision,submittedRole=draft.role;
   $('receipt').textContent='Sending images and ratings… Please wait for the server receipt.';status('Saving feedback…');
   try{
+   draft.notes[step]=$('note').value;
    const payload=clone(draft);
-   payload.feedbackUiVersion='2026-10-05-solid-ratings';payload.removed=removedIds();payload.originalMatches=clone(matches);payload.sketchSize=sketch?{width:1200,height:Math.round(1200*sketch.height/sketch.width)}:null;
+   payload.feedbackUiVersion='2026-10-05-comment-readback';payload.removed=removedIds();payload.originalMatches=clone(matches);payload.sketchSize=sketch?{width:1200,height:Math.round(1200*sketch.height/sketch.width)}:null;
    const images=[0,1,2].map(n=>{if(n===2&&!sketch)return null;const c=document.createElement('canvas');draw(c,n);return c.toDataURL('image/png');});
    const signature=JSON.stringify({room,draft:payload,images});if(submissionAttempt?.signature!==signature)submissionAttempt={signature,id:crypto.randomUUID()};
    const r=await apiFetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({room,draft:payload,images,submissionId:submissionAttempt.id})});
@@ -342,7 +344,7 @@ function changeStep(n){finishComment();if(n!==step){zoom=1;color=null;}if(n===1&
    if(!saved||saved.draft.role!==submittedRole||JSON.stringify(saved.draft)!==JSON.stringify(payload)||JSON.stringify(saved.images)!==JSON.stringify(images))throw Error('Saved feedback could not be verified. Check Saved feedback before retrying.');
    rememberReceipt(out.id);
    const count=images.filter(Boolean).length;
-   const receipt=`Received by server · ${payload.participantLabel||submittedRole} · ${count}/3 images${count<3?' (no sketch available)':''} · receipt ${out.id.slice(0,8)} · ${new Date(out.at).toLocaleString()}`;
+   const receipt=`Received by server · ${payload.participantLabel||submittedRole} · ${Object.keys(saved.draft.ratings||{}).length} colored sticks · ${(saved.draft.annotations||[]).length} sketch comments · ${count}/3 images${count<3?' (no sketch available)':''} · receipt ${out.id.slice(0,8)} · ${new Date(out.at).toLocaleString()}`;
    if(editRevision===revision){dirty=false;pendingRooms.delete(room);confirmedCurrent=true;showingSaved=true;hasReceipt=true;$('receipt').textContent=receipt;}
    else $('receipt').textContent=receipt+' · Newer edits or the currently selected participant are not included in this submission.';
    status('');submissionUI();if(payload.role==='B'&&payload.visited?.length===3&&payload.visited.every(Boolean)){pathProgress.set(room,true);}renderPaths();await records(saved);$('records').open=true;$('feedback-history').href=feedbackHistoryBase+'?room='+encodeURIComponent(room)+'&role='+submittedRole+'&receipt='+encodeURIComponent(out.id);$('submission-result').scrollIntoView({block:'start',behavior:'smooth'});

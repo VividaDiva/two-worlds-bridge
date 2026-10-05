@@ -20,3 +20,11 @@ test('empty stick ratings require an explicit opt-out; selected tools alone do n
  vm.runInContext('draft.unratedConfirmed=true',c);assert.equal(vm.runInContext('allowRatingProgress()',c),true);
  vm.runInContext("draft.unratedConfirmed=false;draft.ratings.a='veryBlue'",c);assert.equal(vm.runInContext('allowRatingProgress()',c),true);
 });
+
+test('finishing a comment reads visible text even if the input event did not update the draft',()=>{
+ const elements={'comment-text':{value:'A safe walkway is important'},'comment-color':{value:'blue'},'comment-bubble':{hidden:false}};
+ const c=vm.createContext({draft:{annotations:[{id:'pin',text:'',color:'red'}]},commentEdit:{index:0,before:[]},undo:[[],[],[]],redo:[[],[],[]],step:2,clone:x=>JSON.parse(JSON.stringify(x)),$:id=>elements[id],localSave(){},render(){}});
+ vm.runInContext(source.slice(source.indexOf('function finishComment('),source.indexOf('function positionComment(')),c);
+ vm.runInContext('finishComment()',c);
+ assert.equal(c.draft.annotations.length,1);assert.equal(c.draft.annotations[0].text,elements['comment-text'].value);assert.equal(c.draft.annotations[0].color,'blue');assert.equal(c.undo[2].length,1);
+});
