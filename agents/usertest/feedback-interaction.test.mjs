@@ -28,3 +28,22 @@ test('finishing a comment reads visible text even if the input event did not upd
  vm.runInContext('finishComment()',c);
  assert.equal(c.draft.annotations.length,1);assert.equal(c.draft.annotations[0].text,elements['comment-text'].value);assert.equal(c.draft.annotations[0].color,'blue');assert.equal(c.undo[2].length,1);
 });
+
+test('cloud confirmation rejects loss of any step, note, score or image',()=>{
+ const c=vm.createContext({});vm.runInContext(source.slice(source.indexOf('function sameSubmission('),source.indexOf('if(connection){try{await connection.ready;}')),c);
+ const draft={role:'B',ratings:{a:'veryRed',b:'veryBlue'},removed:['c'],added:[{x1:0,y1:0,x2:50,y2:0}],annotations:[{text:'Keep railing',color:'blue'}],notes:['one','two','three'],overallScores:[-3,0,3]};
+ const images=['rated PNG','rebuilt PNG','sketch PNG'];c.payload=draft;c.images=images;c.saved={draft:structuredClone(draft),images:[...images]};
+ assert.equal(vm.runInContext('sameSubmission(saved,payload,images)',c),true);
+ for(const field of ['ratings','removed','added','annotations','notes','overallScores']){c.saved={draft:structuredClone(draft),images:[...images]};delete c.saved.draft[field];assert.equal(vm.runInContext('sameSubmission(saved,payload,images)',c),false,field);}
+ c.saved={draft:structuredClone(draft),images:[images[0],null,images[2]]};assert.equal(vm.runInContext('sameSubmission(saved,payload,images)',c),false);
+});
+test('unconfirmed submission retains full backup; failed storage still leaves downloadable memory copy',async()=>{
+ const store=new Map(),pending=new Map();let fail=false;
+ const c=vm.createContext({pendingCopies:pending,renderRecovery(){},recoveryStore:async(action,value)=>{if(fail)throw Error('quota');if(action==='put')store.set(value.submissionId,structuredClone(value));else store.delete(value);}});
+ vm.runInContext(source.slice(source.indexOf('async function retainSubmission('),source.indexOf("recoveryStore('list').then")),c);
+ const attempt={submissionId:'test',room:'qa',draft:{ratings:{a:'red'},annotations:[{text:'reason'}]},images:['one','two','three']};
+ c.attempt=attempt;assert.equal(await vm.runInContext('retainSubmission(attempt)',c),true);assert.deepEqual(store.get('test'),attempt);assert.equal(pending.size,1);
+ fail=true;await vm.runInContext("releaseSubmission('test')",c);assert.equal(pending.size,1);
+ c.attempt={...attempt,submissionId:'quota-test'};assert.equal(await vm.runInContext('retainSubmission(attempt)',c),false);assert.equal(pending.size,2);
+ fail=false;await vm.runInContext("releaseSubmission('test')",c);assert.equal(store.has('test'),false);assert.equal(pending.has('test'),false);
+});

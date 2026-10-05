@@ -6,6 +6,28 @@ const apiFetch=(path,options)=>connection?connection.fetch(path,options):fetch(p
 const assetURL=path=>connection?connection.url(path):path;
 const feedbackHistoryBase=connection?new URL('./feedback-records.html',location.href).href:'https://vividadiva.github.io/two-worlds-bridge/feedback-records.html';
 function connectionError(message){$('context').textContent='We could not load the saved experiment.';$('receipt').replaceChildren();const text=document.createElement('p');text.textContent=message;const retry=document.createElement('button');retry.type='button';retry.className='primary';retry.textContent='Try connecting again';retry.onclick=()=>location.reload();$('receipt').append(text,retry);$('status').textContent='';document.querySelector('nav').hidden=true;document.querySelector('.context-sidebar').hidden=true;$('records').hidden=true;}
+// Keep submitted attempts across refreshes; never restore them into a fresh questionnaire.
+const pendingCopies=new Map();
+function recoveryStore(action,value){return new Promise((resolve,reject)=>{
+ let db,settled=false;const done=(error,result)=>{if(settled)return;settled=true;clearTimeout(timer);db?.close();error?reject(error):resolve(result);};
+ const timer=setTimeout(()=>done(Error('Local backup timed out')),4000);
+ try{const request=indexedDB.open('two-worlds-feedback-outbox',1);
+ request.onupgradeneeded=()=>request.result.createObjectStore('attempts',{keyPath:'submissionId'});
+ request.onerror=()=>done(request.error);
+ request.onsuccess=()=>{db=request.result;if(settled){db.close();return;}const tx=db.transaction('attempts',action==='list'?'readonly':'readwrite'),store=tx.objectStore('attempts');let result;
+ const op=action==='list'?store.getAll():action==='put'?store.put(value):store.delete(value);
+ op.onsuccess=()=>{result=op.result;};tx.oncomplete=()=>done(null,result);tx.onerror=()=>done(tx.error||Error('Local backup failed'));tx.onabort=()=>done(tx.error||Error('Local backup aborted'));};
+ }catch(error){done(error);}
+});}
+function renderRecovery(){
+ const panel=$('recovery-copies');panel.replaceChildren();panel.hidden=!pendingCopies.size;if(panel.hidden)return;
+ const title=document.createElement('h3');title.textContent='Submission backups';const help=document.createElement('p');help.textContent='These attempts have not been confirmed on this page. Download a complete copy if saving fails, and give it to your researcher. It contains all three steps, comments, scores and images.';panel.append(title,help);
+ for(const item of pendingCopies.values()){const button=document.createElement('button');button.type='button';button.textContent=`Download backup · ${item.room} · ${new Date(item.backedUpAt).toLocaleString()}`;button.onclick=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(item)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download=`feedback-backup-${item.room}-${item.submissionId}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);};panel.append(button);}
+}
+async function retainSubmission(item){pendingCopies.set(item.submissionId,item);renderRecovery();try{await recoveryStore('put',item);return true;}catch{return false;}}
+async function releaseSubmission(id){try{await recoveryStore('delete',id);pendingCopies.delete(id);renderRecovery();}catch{/* Keep the recoverable copy if local cleanup fails. */}}
+recoveryStore('list').then(items=>{for(const item of items)if(!pendingCopies.has(item.submissionId))pendingCopies.set(item.submissionId,item);renderRecovery();}).catch(()=>{});
+function sameSubmission(saved,payload,images){return !!saved&&JSON.stringify(saved.draft)===JSON.stringify(payload)&&JSON.stringify(saved.images)===JSON.stringify(images);}
 if(connection){try{await connection.ready;}catch(e){connectionError(e.message);return;}}
 let room=new URLSearchParams(location.search).get('room');
 let variant=new URLSearchParams(location.search).get('variant');
@@ -333,22 +355,26 @@ function changeStep(n){finishComment();if(n!==step){zoom=1;color=null;}if(n===1&
   try{
    draft.notes[step]=$('note').value;
    const payload=clone(draft);
-   payload.feedbackUiVersion='2026-10-05-comment-readback';payload.removed=removedIds();payload.originalMatches=clone(matches);payload.sketchSize=sketch?{width:1200,height:Math.round(1200*sketch.height/sketch.width)}:null;
+   payload.feedbackUiVersion='2026-10-05-submission-backup';payload.removed=removedIds();payload.originalMatches=clone(matches);payload.sketchSize=sketch?{width:1200,height:Math.round(1200*sketch.height/sketch.width)}:null;
    const images=[0,1,2].map(n=>{if(n===2&&!sketch)return null;const c=document.createElement('canvas');draw(c,n);return c.toDataURL('image/png');});
    const signature=JSON.stringify({room,draft:payload,images});if(submissionAttempt?.signature!==signature)submissionAttempt={signature,id:crypto.randomUUID()};
+   const attempt={room,draft:payload,images,submissionId:submissionAttempt.id,backedUpAt:new Date().toISOString()};
+   const locallyBackedUp=await retainSubmission(attempt);
+   if(!locallyBackedUp)status('Browser backup is unavailable. Keep this page open until saving is confirmed; a backup download is available below.');
    const r=await apiFetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({room,draft:payload,images,submissionId:submissionAttempt.id})});
    const out=await r.json();if(!r.ok)throw Error(out.error||'Save failed');
    // Confirm the saved record is retrievable, not merely that the POST returned.
    const check=await apiFetch(`/api/feedback?room=${encodeURIComponent(room)}`,{cache:'no-store'});if(!check.ok)throw Error('Server receipt could not be verified. Check Saved feedback before retrying.');
    const saved=(await check.json()).records?.find(x=>x.id===out.id);
-   if(!saved||saved.draft.role!==submittedRole||JSON.stringify(saved.draft)!==JSON.stringify(payload)||JSON.stringify(saved.images)!==JSON.stringify(images))throw Error('Saved feedback could not be verified. Check Saved feedback before retrying.');
+   if(!sameSubmission(saved,payload,images))throw Error('Saved feedback could not be verified. Check Saved feedback before retrying.');
+   await releaseSubmission(submissionAttempt.id);
    rememberReceipt(out.id);
    const count=images.filter(Boolean).length;
-   const receipt=`Received by server · ${payload.participantLabel||submittedRole} · ${Object.keys(saved.draft.ratings||{}).length} colored sticks · ${(saved.draft.annotations||[]).length} sketch comments · ${count}/3 images${count<3?' (no sketch available)':''} · receipt ${out.id.slice(0,8)} · ${new Date(out.at).toLocaleString()}`;
+   const receipt=`Received by server · ${payload.participantLabel||submittedRole} · ${Object.keys(saved.draft.ratings||{}).length} colored sticks · ${(saved.draft.removed||[]).length} removed / ${(saved.draft.added||[]).length} added · ${(saved.draft.annotations||[]).length} sketch comments · ${count}/3 images${count<3?' (no sketch available)':''} · receipt ${out.id.slice(0,8)} · ${new Date(out.at).toLocaleString()}`;
    if(editRevision===revision){dirty=false;pendingRooms.delete(room);confirmedCurrent=true;showingSaved=true;hasReceipt=true;$('receipt').textContent=receipt;}
    else $('receipt').textContent=receipt+' · Newer edits or the currently selected participant are not included in this submission.';
    status('');submissionUI();if(payload.role==='B'&&payload.visited?.length===3&&payload.visited.every(Boolean)){pathProgress.set(room,true);}renderPaths();await records(saved);$('records').open=true;$('feedback-history').href=feedbackHistoryBase+'?room='+encodeURIComponent(room)+'&role='+submittedRole+'&receipt='+encodeURIComponent(out.id);$('submission-result').scrollIntoView({block:'start',behavior:'smooth'});
-  }catch(e){$('receipt').textContent=`Submission not confirmed: ${e.message} Your edits remain on this open page. Retry before closing or refreshing.`;status('Please check the receipt above and retry if needed.');}
+  }catch(e){$('receipt').textContent=`Submission not confirmed: ${e.message} Your edits remain on this page. Retry, or download the submission backup below before leaving.`;status('Please check the receipt above and retry if needed.');}
   finally{button.disabled=false;saving=false;renderPaths();$('submission-result').scrollIntoView({block:'start',behavior:'smooth'});}
  };
  async function records(confirmed){try{const r=confirmed?{records:[confirmed]}:await apiFetch(`/api/feedback?room=${encodeURIComponent(room)}`).then(r=>{if(!r.ok)throw Error('Could not load records');return r.json();});$('record-list').replaceChildren();for(const rec of (r.records||[]).filter(rec=>ownFeedback(rec)&&(!participant||rec.draft.role==='B'))){const a=document.createElement('article'),title=document.createElement('p');title.textContent=`${rec.draft.participantLabel||rec.draft.role} · ${rec.draft.source.agent} · ${new Date(rec.at).toLocaleString()}`;a.append(title);rec.images.forEach((src,i)=>{if(!src)return;const link=document.createElement('a'),img=new Image();link.href=src;link.download=`${room}-${rec.draft.role}-${rec.id}-step${i+1}.png`;img.src=src;img.alt=['Rated original matchsticks','Rebuilt bridge','Sketch comments'][i];link.append(img);a.append(link);});const details=document.createElement('p');details.textContent=rec.draft.notes.filter(Boolean).join(' · ');a.append(details);for(const [i,n] of (rec.draft.annotations||[]).entries()){const text=document.createElement('p');text.textContent=`${i+1}. ${labels[n.color]} — ${n.text}`;a.append(text);}const exportLink=document.createElement('a');exportLink.textContent='Download full record (JSON)';exportLink.href=URL.createObjectURL(new Blob([JSON.stringify(rec,null,2)],{type:'application/json'}));exportLink.download=`feedback-${rec.id}.json`;a.append(exportLink);$('record-list').append(a);}if(!$('record-list').children.length)$('record-list').textContent='No feedback saved yet.';}catch{status('Could not load saved feedback.');}}
