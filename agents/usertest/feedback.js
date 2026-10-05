@@ -61,6 +61,25 @@ const status=t=>$('status').textContent=t;
 const clone=x=>JSON.parse(JSON.stringify(x));
 const pageDrafts=new Map();
 const localKey=()=>`bridge-feedback-v1:${room}:${variant||'main'}:${$('role').value}`;
+// Synchronous, compact backups after each committed edit, separate from submissions.
+const draftStorageKeys=new Map();
+function draftPrefix(){return `two-worlds-autodraft-v1:${respondentId}:${localKey()}:`;}
+function persistDraft(){
+ const scope=localKey();if(!draftStorageKeys.has(scope))draftStorageKeys.set(scope,draftPrefix()+crypto.randomUUID());
+ const key=draftStorageKeys.get(scope),record={kind:'unsubmitted-feedback-draft',room,variant:variant||null,step,savedAt:new Date().toISOString(),draft:clone(draft)};
+ try{const encoded=JSON.stringify(record);localStorage.setItem(key,encoded);if(localStorage.getItem(key)!==encoded)throw Error('Backup verification failed');$('autosave-status').textContent='Draft saved on this browser · '+new Date(record.savedAt).toLocaleTimeString()+' · Not submitted';return true;}
+ catch{$('autosave-status').textContent='Automatic backup unavailable. Keep this page open and submit, or download your draft below.';return false;}
+}
+function downloadDraft(record){const url=URL.createObjectURL(new Blob([JSON.stringify(record,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download=`feedback-draft-${record.room}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);}
+function showDraftRecovery(){
+ const panel=$('draft-recovery');panel.replaceChildren();const items=[];
+ try{for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key.startsWith(draftPrefix())&&key!==draftStorageKeys.get(localKey())){const record=JSON.parse(localStorage.getItem(key));if(record?.kind==='unsubmitted-feedback-draft'&&record.room===room&&record.draft?.respondentId===respondentId)items.push({key,record});}}}catch{}
+ items.sort((a,b)=>b.record.savedAt.localeCompare(a.record.savedAt));panel.hidden=!items.length;
+ if(!items.length)return;const intro=document.createElement('p');intro.textContent='Unsubmitted drafts from this browser. Restore one to continue, or start a new response below. These are not in the researcher’s History.';panel.append(intro);
+ for(const {key,record} of items){const row=document.createElement('div'),restore=document.createElement('button'),download=document.createElement('button');restore.type=download.type='button';restore.textContent='Restore draft · '+new Date(record.savedAt).toLocaleString();download.textContent='Download draft';
+ restore.onclick=async()=>{if(saving||switching)return;if(dirty)persistDraft();draftStorageKeys.set(localKey(),key);pageDrafts.set(localKey(),clone(record.draft));dirty=true;pendingRooms.add(room);await load();step=Math.max(0,Math.min(2,record.step||0));render();persistDraft();$('workspace').scrollIntoView({block:'start'});};download.onclick=()=>downloadDraft(record);row.append(restore,download);panel.append(row);}
+}
+$('download-draft').onclick=()=>{syncVisibleNote();downloadDraft({kind:'unsubmitted-feedback-draft',room,variant:variant||null,step,savedAt:new Date().toISOString(),draft:clone(draft)});};
 let h,source,pair=null,switching=false,saving=false;
 let pathItems=[],pathProgress=new Map(),pendingRooms=new Set();
 const routeLabels={all:'Discuss together',develop:'Discuss together · auto-build',confer:'Discuss privately, then tell AI',both:'Tell AI separately',chain:'Role 1 → Role 2 → AI','via-1':'Role 1 → AI → Role 2','via-2':'Role 2 → AI → Role 1','only-1':'Role 1 only','only-2':'Role 2 only'};
@@ -163,10 +182,10 @@ function submissionUI(){
  $('save').textContent=hasReceipt?'Submit updated feedback':'Submit my feedback';
 }
 $('edit-submitted').onclick=()=>{showingSaved=false;submissionUI();$('workspace').scrollIntoView({block:'start',behavior:'smooth'});};
-function localSave(){confirmedCurrent=false;showingSaved=false;dirty=true;pendingRooms.add(room);editRevision++;pageDrafts.set(localKey(),clone(draft));renderPaths();$('receipt').textContent='Not submitted yet. Your work will be sent to History when you click Submit feedback. Refreshing this page starts over.';if(hasReceipt)$('receipt').textContent='Your earlier submission is saved. Submit your new changes before continuing.';submissionUI();}
-async function load(){confirmedCurrent=false;showingSaved=false;hasReceipt=false;$('submission-result').classList.remove('saved');$('saved-heading').hidden=true;$('edit-submitted').hidden=true;document.querySelector('nav').hidden=false;$('records').open=false;editRevision++;$('receipt').textContent='Your original result is safe. Work through the three steps, then submit your feedback to History.';draft=pageDrafts.has(localKey())?clone(pageDrafts.get(localKey())):fresh();if(pageDrafts.has(localKey()))$('receipt').textContent='Unsaved draft from this open page. Refreshing or opening a new page starts over.';draft.annotations ||= [];commentEdit=null;$('comment-bubble').hidden=true;undo=[[],[],[]];redo=[[],[],[]];pointer=null;preview=null;hover=null;original=false;beforeAction=null;step=0;color=null;mode='erase';sketch=null;showConversation();
+function localSave(){persistDraft();confirmedCurrent=false;showingSaved=false;dirty=true;pendingRooms.add(room);editRevision++;pageDrafts.set(localKey(),clone(draft));renderPaths();$('receipt').textContent='Not submitted yet. Your work will be sent to History when you click Submit feedback. Your draft is backed up on this browser when automatic backup is available.';if(hasReceipt)$('receipt').textContent='Your earlier submission is saved. Submit your new changes before continuing.';submissionUI();}
+async function load(){confirmedCurrent=false;showingSaved=false;hasReceipt=false;$('submission-result').classList.remove('saved');$('saved-heading').hidden=true;$('edit-submitted').hidden=true;document.querySelector('nav').hidden=false;$('records').open=false;editRevision++;$('receipt').textContent='Your original result is safe. Work through the three steps, then submit your feedback to History.';draft=pageDrafts.has(localKey())?clone(pageDrafts.get(localKey())):fresh();if(pageDrafts.has(localKey()))$('receipt').textContent='Unsubmitted draft. Submit when you have finished all three steps.';draft.annotations ||= [];commentEdit=null;$('comment-bubble').hidden=true;undo=[[],[],[]];redo=[[],[],[]];pointer=null;preview=null;hover=null;original=false;beforeAction=null;step=0;color=null;mode='erase';sketch=null;showConversation();
 if(draft.source.sketchUrl){try{sketch=await new Promise((resolve,reject)=>{const img=new Image();img.crossOrigin='anonymous';img.onload=()=>resolve(img);img.onerror=reject;img.src=assetURL(draft.source.sketchUrl);});}catch{status('Saved sketch could not load. Matchstick feedback is still available.');}}
-matches=crossingMatches(draft.source.shape,draft.source.world,draft.source.extras);$('workspace').hidden=false;render();}
+matches=crossingMatches(draft.source.shape,draft.source.world,draft.source.extras);$('workspace').hidden=false;render();showDraftRecovery();$('autosave-status').textContent=pageDrafts.has(localKey())?'Unsubmitted draft · changes save on this browser':'Changes save automatically on this browser · not submitted';}
 let commentEdit=null;
 function openComment(p,index=null){
  if(!sketch)return;if(commentEdit&&index===commentEdit.index){$('comment-text').focus();return;}const targetId=index===null?null:draft.annotations[index]?.id;finishComment();if(targetId){index=draft.annotations.findIndex(n=>n.id===targetId);if(index<0)return;}
@@ -359,7 +378,7 @@ function changeStep(n){if(saving||switching)return;finishComment();if(n!==step){
   try{
    draft.notes[step]=$('note').value;
    const payload=clone(draft);
-   payload.feedbackUiVersion='2026-10-05-submit-lock';payload.removed=removedIds();payload.originalMatches=clone(matches);payload.sketchSize=sketch?{width:1200,height:Math.round(1200*sketch.height/sketch.width)}:null;
+   payload.feedbackUiVersion='2026-10-05-auto-draft';payload.removed=removedIds();payload.originalMatches=clone(matches);payload.sketchSize=sketch?{width:1200,height:Math.round(1200*sketch.height/sketch.width)}:null;
    const images=[0,1,2].map(n=>{if(n===2&&!sketch)return null;const c=document.createElement('canvas');draw(c,n);return c.toDataURL('image/png');});
    const signature=JSON.stringify({room,draft:payload,images});if(submissionAttempt?.signature!==signature)submissionAttempt={signature,id:crypto.randomUUID()};
    const attempt={room,draft:payload,images,submissionId:submissionAttempt.id,backedUpAt:new Date().toISOString()};
@@ -375,7 +394,7 @@ function changeStep(n){if(saving||switching)return;finishComment();if(n!==step){
    rememberReceipt(out.id);
    const count=images.filter(Boolean).length;
    const receipt=`Received by server · ${payload.participantLabel||submittedRole} · ${Object.keys(saved.draft.ratings||{}).length} colored sticks · ${(saved.draft.removed||[]).length} removed / ${(saved.draft.added||[]).length} added · ${(saved.draft.annotations||[]).length} sketch comments · ${count}/3 images${count<3?' (no sketch available)':''} · receipt ${out.id.slice(0,8)} · ${new Date(out.at).toLocaleString()}`;
-   if(editRevision===revision){dirty=false;pendingRooms.delete(room);confirmedCurrent=true;showingSaved=true;hasReceipt=true;$('receipt').textContent=receipt;}
+   if(editRevision===revision){try{const key=draftStorageKeys.get(localKey());if(key)localStorage.removeItem(key);draftStorageKeys.delete(localKey());}catch{}dirty=false;pendingRooms.delete(room);confirmedCurrent=true;showingSaved=true;hasReceipt=true;$('receipt').textContent=receipt;}
    else $('receipt').textContent=receipt+' · Newer edits or the currently selected participant are not included in this submission.';
    status('');submissionUI();if(payload.role==='B'&&payload.visited?.length===3&&payload.visited.every(Boolean)){pathProgress.set(room,true);}renderPaths();await records(saved);$('records').open=true;$('feedback-history').href=feedbackHistoryBase+'?room='+encodeURIComponent(room)+'&role='+submittedRole+'&receipt='+encodeURIComponent(out.id);$('submission-result').scrollIntoView({block:'start',behavior:'smooth'});
   }catch(e){$('receipt').textContent=`Submission not confirmed: ${e.message} Your edits remain on this page. Retry, or download the submission backup below before leaving.`;status('Please check the receipt above and retry if needed.');}

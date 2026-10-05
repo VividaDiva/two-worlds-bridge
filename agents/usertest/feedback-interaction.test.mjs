@@ -66,3 +66,13 @@ test('saving locks edits, navigation and participant selection until finished',(
  vm.runInContext('setSubmissionBusy(true)',c);assert.equal(c.saving,true);assert.equal(elements.workspace.inert,true);assert.equal(elements['identity-picker'].inert,true);assert.equal(nav.inert,true);
  vm.runInContext('setSubmissionBusy(false)',c);assert.equal(c.saving,false);assert.equal(elements.workspace.inert,false);assert.equal(nav.inert,false);assert.equal(elements.save.disabled,false);
 });
+
+test('automatic draft backup preserves all steps without submit and separates paths',()=>{
+ const storage=new Map(),status={};let uuid=0;
+ const c=vm.createContext({respondentId:'person',room:'a',variant:null,step:2,draft:{ratings:{x:'red'},added:[{x1:1}],rebuildRemoved:['y'],annotations:[{text:'unfinished comment'}],overallScores:[-2,2,0],notes:['a','b','c']},localKey:()=>c.room+':B',crypto:{randomUUID:()=>String(++uuid)},clone:x=>JSON.parse(JSON.stringify(x)),$:()=>status,localStorage:{setItem:(k,v)=>storage.set(k,v),getItem:k=>storage.get(k)}});
+ vm.runInContext(source.slice(source.indexOf('const draftStorageKeys='),source.indexOf('function downloadDraft(')),c);
+ assert.equal(vm.runInContext('persistDraft()',c),true);let saved=JSON.parse([...storage.values()][0]);assert.deepEqual(saved.draft,c.draft);assert.equal(saved.step,2);
+ c.draft.annotations[0].text='latest typing';vm.runInContext('persistDraft()',c);assert.equal(storage.size,1);assert.equal(JSON.parse([...storage.values()][0]).draft.annotations[0].text,'latest typing');
+ c.room='b';vm.runInContext('persistDraft()',c);assert.equal(storage.size,2);
+ c.localStorage.setItem=()=>{throw Error('Quota exceeded');};assert.equal(vm.runInContext('persistDraft()',c),false);assert.match(status.textContent,/unavailable/);
+});
