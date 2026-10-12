@@ -13,12 +13,13 @@ test('rebuild removals depend only on explicit choices, never rating colors',()=
 
 test('comment edits and deletion undo as a unit without affecting bridge ratings',()=>{const c=harness();vm.runInContext("fields[2]='annotations';step=2;draft.annotations=[];draft.ratings={a:'blue'};beginAction();draft.annotations=[{id:'pin',x:120,y:240,color:'red',text:'Needs a railing'}];commitAction('comment');beginAction();draft.annotations[0].color='some';draft.annotations[0].text='Railing needs to be higher';commitAction('edit');historyAction('undo');",c);assert.equal(c.draft.annotations[0].text,'Needs a railing');assert.equal(c.draft.annotations[0].color,'red');vm.runInContext("historyAction('redo');beginAction();draft.annotations=[];commitAction('delete');historyAction('undo');",c);assert.equal(c.draft.annotations[0].text,'Railing needs to be higher');assert.equal(c.draft.ratings.a,'blue');});
 
-test('empty stick ratings require an explicit opt-out; selected tools alone do not count',()=>{
+test('stick coloring is required; selecting a tool or a legacy opt-out cannot bypass it',()=>{
  const c=vm.createContext({draft:{ratings:{}},color:'veryRed'});
  vm.runInContext(source.slice(source.indexOf('function allowRatingProgress()'),source.indexOf('function requireRatingProgress()')),c);
  assert.equal(vm.runInContext('allowRatingProgress()',c),false);
- vm.runInContext('draft.unratedConfirmed=true',c);assert.equal(vm.runInContext('allowRatingProgress()',c),true);
- vm.runInContext("draft.unratedConfirmed=false;draft.ratings.a='veryBlue'",c);assert.equal(vm.runInContext('allowRatingProgress()',c),true);
+ vm.runInContext('draft.unratedConfirmed=true',c);assert.equal(vm.runInContext('allowRatingProgress()',c),false);
+ vm.runInContext("draft.ratings.a='veryBlue'",c);assert.equal(vm.runInContext('allowRatingProgress()',c),true);
+ vm.runInContext('delete draft.ratings.a',c);assert.equal(vm.runInContext('allowRatingProgress()',c),false);
 });
 
 test('finishing a comment reads visible text even if the input event did not update the draft',()=>{

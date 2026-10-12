@@ -243,18 +243,17 @@ $('comment-bubble').onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();finish
 window.addEventListener('resize',positionComment);window.addEventListener('scroll',positionComment,true);
 function removedIds(){return [...new Set(draft.rebuildRemoved||[])];}
 const palette=()=>(step===0?bridgeRatingKeys:['red','neutral','some','blue']).map((k,i)=>`<button class="swatch" style="--color:${step===0?bridgeColors[k]:colors[k]}" data-color="${k}" aria-pressed="${k===color}"><span class="color-chip" aria-hidden="true"></span><span>${step===0?`${i+1} · `:''}${labels[k]}${step===0?'':`<small>${({red:'Red',neutral:'Light pink',some:'Light blue',blue:'Blue'})[k]}</small>`}</span></button>`).join('');
-function allowRatingProgress(){return Object.keys(draft.ratings||{}).length>0||draft.unratedConfirmed===true;}
-function requireRatingProgress(){if(allowRatingProgress())return true;changeStep(0);$('rating-error').textContent='No sticks are colored yet. Mark at least one stick, or explicitly choose to leave them uncolored.';$('rating-check').scrollIntoView({block:'center'});return false;}
-$('rating-skip').onchange=()=>{draft.unratedConfirmed=$('rating-skip').checked;localSave();render();};
+function allowRatingProgress(){return Object.keys(draft.ratings||{}).length>0;}
+function requireRatingProgress(){if(allowRatingProgress())return true;changeStep(0);$('rating-error').textContent='No sticks are colored yet. Choose a color and click at least one stick before continuing.';$('rating-error').hidden=false;$('rating-error').scrollIntoView({block:'center'});return false;}
 function render(){
- $('rating-check').hidden=step!==0;const ratedCount=Object.keys(draft.ratings||{}).length;$('rating-progress').textContent=ratedCount?`${ratedCount} sticks colored · these marks will be submitted`:'No sticks colored yet';$('rating-skip-label').hidden=ratedCount>0;$('rating-skip').checked=draft.unratedConfirmed===true;$('rating-error').textContent='';
+ $('rating-error').hidden=true;$('rating-error').textContent='';
  $('workspace').classList.toggle('sketch-step',step===2);
  document.querySelectorAll('[data-step]').forEach(b=>{b.classList.toggle('active',+b.dataset.step===step);b.setAttribute('aria-current',+b.dataset.step===step?'step':'false');});
  $('title').textContent=['Which parts meet your needs?','How would you change this bridge?','What do you think of this sketch?'][step];
  const removing=mode==='erase'||mode==='restore';
  $('step-position').textContent=`STEP ${step+1} OF 3`;
  $('instruction').textContent=[
-  'Choose a rating from 1 (very dissatisfied) to 5 (very satisfied), then click individual sticks. 3 is neutral. Leave anything you cannot judge uncolored.',
+  'Choose a rating from 1 (very dissatisfied) to 5 (very satisfied), then click individual sticks. 3 is neutral. Color at least one stick before continuing.',
   mode==='restore'?'The dashed outlines show sticks that were taken away. Click one to bring it back.':removing?'Start fresh from the original bridge. Click unwanted sticks to remove them. Your ratings from step 1 stay separate.':'Choose a direction and length, then click the grid to add a blue stick. No drawing needed.',
   'Choose a color, then click a place on the sketch. A comment bubble will open: tell us why you feel this way.'
  ][step];
@@ -269,7 +268,7 @@ function render(){
  $('advance-build').hidden=true;$('advance-build').onclick=()=>{mode='grid';preview=null;hover=null;original=false;render();showStepStart();};
  $('next').className='primary';$('save').className=step===2?'primary':'';$('save').textContent='Submit my feedback';$('save').hidden=step!==2;
  $('submission-review').hidden=step!==2;
- if(step===2){$('submission-review').replaceChildren();const title=document.createElement('h3');title.textContent='Ready to submit?';const list=document.createElement('ul');for(const text of [`Bridge ratings: ${Object.keys(draft.ratings).length} sticks marked${!Object.keys(draft.ratings).length&&draft.unratedConfirmed?' · deliberately left uncolored':''}`,`Bridge changes: ${removedIds().length} removed · ${draft.added.length} added`,sketch?`Sketch: ${draft.annotations.length} comments`:'Sketch unavailable · bridge feedback will still be saved']){const li=document.createElement('li');li.textContent=text;list.append(li);}const help=document.createElement('p');help.textContent='You can go back to any step. Submit saves all three steps and your notes to History.';$('submission-review').append(title,list,help);}
+ if(step===2){$('submission-review').replaceChildren();const title=document.createElement('h3');title.textContent='Ready to submit?';const list=document.createElement('ul');for(const text of [`Bridge ratings: ${Object.keys(draft.ratings).length} sticks marked`,`Bridge changes: ${removedIds().length} removed · ${draft.added.length} added`,sketch?`Sketch: ${draft.annotations.length} comments`:'Sketch unavailable · bridge feedback will still be saved']){const li=document.createElement('li');li.textContent=text;list.append(li);}const help=document.createElement('p');help.textContent='You can go back to any step. Submit saves all three steps and your notes to History.';$('submission-review').append(title,list,help);}
  $('note').placeholder=['Optional: why did you choose these colors?','Optional: what do your changes make better?','Optional: what do you want us to notice?'][step];
  $('undo').disabled=original||!undo[step].length;$('redo').disabled=original||!redo[step].length;
  $('undo').title=undo[step].length?`Undo ${undo[step].at(-1).label} (⌘/Ctrl Z)`:'Nothing to undo in this step';
@@ -362,7 +361,7 @@ $('canvas').ondblclick=e=>{if(step!==2||sketchTool!=='fill'||original||!sketch||
 $('canvas').onpointerup=end;$('canvas').onpointercancel=()=>{if(beforeAction!==null)applyAction(beforeAction);beforeAction=null;pointer=null;preview=null;render();};
 function showStepStart(){const viewport=document.querySelector('.canvas-viewport');viewport.scrollTop=0;viewport.scrollLeft=0;$('workspace').scrollIntoView({block:'start'});}
 function changeStep(n){if(saving||switching)return;finishComment();if(n!==step){zoom=1;color=null;}if(n===1&&step!==1)mode='erase';step=n;draft.visited[step]=true;original=false;preview=null;hover=null;render();showStepStart();}
- document.querySelector('nav').onclick=e=>{const b=e.target.closest('[data-step]');if(b)changeStep(+b.dataset.step);};
+ document.querySelector('nav').onclick=e=>{const b=e.target.closest('[data-step]');if(b){if(+b.dataset.step>0&&!requireRatingProgress())return;changeStep(+b.dataset.step);}};
  $('palette').onclick=e=>{finishComment();const b=e.target.closest('[data-color]');if(b){color=b.dataset.color;original=false;render();}};
  $('tools').onclick=e=>{const size=e.target.closest('[data-brush]');if(size){setBrushSize(size.dataset.brush);return;}const eraser=e.target.closest('[data-color]');if(eraser){color=eraser.dataset.color;original=false;render();return;}const sketchButton=e.target.closest('[data-sketch]');if(sketchButton){sketchTool=sketchButton.dataset.sketch;render();return;}const piece=e.target.closest('[data-piece]'),b=e.target.closest('[data-mode]');if(piece){orientation=piece.dataset.piece;mode='grid';}else if(b)mode=b.dataset.mode;else return;original=false;preview=null;hover=null;render();};
  $('tools').oninput=e=>{if(e.target.id==='brush')setBrushSize(e.target.value);if(e.target.id==='piece-length'){pieceLength=+e.target.value;preview=null;}};
