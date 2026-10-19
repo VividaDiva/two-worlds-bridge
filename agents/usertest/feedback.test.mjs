@@ -9,7 +9,7 @@ test('feedback appends immutable records, preserves source and separates partici
  const room={argument:'pairs',route:'all',agent:'keys',transcript:[{text:'original'}]};const before=JSON.stringify(room);
  const rooms=new Map([['abc',room]]);let out,code;
  const run=async(method,data)=>feedbackHandler({req:{method},res:{},url:new URL('http://local/api/feedback?room=abc'),here:'.',sessions,rooms,body:async()=>data,json:(_r,c,d)=>{code=c;out=d;}});
- try{const draft={role:'A',source:{shape:{hand:'rail'}},ratings:{0:'red'},added:[{x1:0,y1:0,x2:100,y2:0}],strokes:[]};
+ try{const draft={annotations:[{x:10,y:20,color:'blue',text:'Keep this edge'}],role:'A',source:{shape:{hand:'rail'}},ratings:{0:'red'},added:[{x1:0,y1:0,x2:100,y2:0}],strokes:[]};
  await run('POST',{room:'abc',draft,images:[null,null,null]});assert.equal(code,200);const first=out.id;
  await run('POST',{room:'abc',draft:{...draft,role:'B'},images:[null,null,null]});assert.notEqual(out.id,first);
  await run('GET');assert.equal(out.records.length,2);assert.equal(out.records.find(x=>x.id===first).draft.ratings[0],'red');assert.equal(JSON.stringify(room),before);
@@ -34,7 +34,7 @@ test('all images and rating geometry are retrieved exactly from disk by room and
 
 test('disk errors return a failure receipt rather than reporting a successful submission',async()=>{
  const temp=fs.mkdtempSync(path.join(os.tmpdir(),'feedback-failure-'));const sessions=path.join(temp,'not-a-directory');fs.writeFileSync(sessions,'test');let code;
- try{await feedbackHandler({req:{method:'POST'},res:{},url:new URL('http://local/api/feedback'),here:'.',sessions,rooms:new Map([['abc',{}]]),body:async()=>({room:'abc',draft:{role:'A',source:{},added:[],strokes:[]},images:[null,null,null]}),json:(_r,c)=>{code=c;}});assert.equal(code,500);}finally{fs.rmSync(temp,{recursive:true,force:true});}
+ try{await feedbackHandler({req:{method:'POST'},res:{},url:new URL('http://local/api/feedback'),here:'.',sessions,rooms:new Map([['abc',{}]]),body:async()=>({room:'abc',draft:{role:'A',source:{},ratings:{a:'blue'},removed:['a'],annotations:[{x:10,y:20,color:'blue',text:'Keep edge'}],added:[],strokes:[]},images:[null,null,null]}),json:(_r,c)=>{code=c;}});assert.equal(code,500);}finally{fs.rmSync(temp,{recursive:true,force:true});}
 });
 
 test('path progress counts reviewed steps by participant and sends no images',async()=>{
@@ -42,7 +42,7 @@ test('path progress counts reviewed steps by participant and sends no images',as
  const rooms=new Map([['test',{argument:'pairs',route:'all',agent:'toolkit'}]]);let out;
  const call=async(method,data,query='')=>feedbackHandler({req:{method},res:{},url:new URL('http://local/api/feedback?room=test'+query),here:'.',sessions,rooms,body:async()=>data,json:(_r,_c,d)=>out=d});
  try{for(const [role,visited] of [['A',[true,true,true]],['B',[true,false,true]],['B',[true,true,true]]]){
- await call('POST',{room:'test',draft:{role,source:{},ratings:{},added:[],strokes:[],visited},images:[null,null,null]});
+ await call('POST',{room:'test',draft:{role,source:{},ratings:{a:'blue'},removed:['a'],annotations:[{x:10,y:20,color:'blue',text:'Keep edge'}],added:[],strokes:[],visited},images:[null,null,null]});
  }
  await call('GET',null,'&summary=1');assert.equal(out.summaries.length,3);assert.equal(out.summaries.filter(x=>x.role==='B'&&x.complete).length,1);assert.equal(out.summaries.some(x=>'images' in x||'draft' in x),false);
  }finally{fs.rmSync(sessions,{recursive:true,force:true});}
@@ -51,7 +51,14 @@ test('path progress counts reviewed steps by participant and sends no images',as
 test('retry uses one receipt and both local copies contain the complete submission',async()=>{
  const sessions=fs.mkdtempSync(path.join(os.tmpdir(),'feedback-durable-'));let out,code;
  const rooms=new Map([['qa',{argument:'pairs',route:'all',agent:'toolkit'}]]);
- const data={room:'qa',submissionId:'11111111-1111-4111-8111-111111111111',draft:{role:'B',source:{},ratings:{x:'veryBlue'},annotations:[{text:'Saved comment'}],added:[],strokes:[],visited:[true,true,true]},images:[null,null,null]};
+ const data={room:'qa',submissionId:'11111111-1111-4111-8111-111111111111',draft:{role:'B',source:{},ratings:{x:'veryBlue'},annotations:[{x:10,y:20,color:'blue',text:'Saved comment'}],removed:['x'],added:[],strokes:[],visited:[true,true,true]},images:[null,null,null]};
  const post=()=>feedbackHandler({req:{method:'POST'},res:{},url:new URL('http://local/api/feedback'),here:'.',sessions,rooms,body:async()=>data,json:(_r,c,d)=>{code=c;out=d;}});
  try{await post();assert.equal(code,200);const id=out.id;await post();assert.equal(code,200);assert.equal(out.id,id);const folder=path.join(sessions,'feedback','qa');assert.equal(fs.readdirSync(folder).length,1);const raw=fs.readFileSync(path.join(folder,id+'.json'),'utf8');assert.equal(raw,fs.readFileSync(path.join(sessions,'feedback-backups','qa',id+'.json'),'utf8'));assert.deepEqual(JSON.parse(raw).draft,data.draft);data.draft.ratings.x='red';await post();assert.equal(code,409);assert.equal(fs.readFileSync(path.join(folder,id+'.json'),'utf8'),raw);}finally{fs.rmSync(sessions,{recursive:true,force:true});}
+});
+
+test('new submissions reject every missing action without writing a receipt',async()=>{
+ const sessions=fs.mkdtempSync(path.join(os.tmpdir(),'feedback-required-'));let out,code;
+ const complete={role:'B',source:{},ratings:{a:'blue'},removed:['a'],added:[],strokes:[],annotations:[{x:1,y:2,color:'blue',text:'Safer edge'}]};
+ const run=async draft=>feedbackHandler({req:{method:'POST'},res:{},url:new URL('http://local/api/feedback'),here:'.',sessions,rooms:new Map([['qa',{}]]),body:async()=>({room:'qa',draft,images:[null,null,null]}),json:(_r,c,d)=>{code=c;out=d;}});
+ try{for(const [step,patch] of [[0,{ratings:{},unratedConfirmed:true}],[1,{removed:[]}],[2,{annotations:[]}],[2,{annotations:[{x:1,y:2,color:'blue',text:'  '}]}]]){await run({...complete,...patch});assert.equal(code,422);assert.equal(out.step,step);assert.equal(fs.existsSync(path.join(sessions,'feedback')),false);}await run(complete);assert.equal(code,200);}finally{fs.rmSync(sessions,{recursive:true,force:true});}
 });

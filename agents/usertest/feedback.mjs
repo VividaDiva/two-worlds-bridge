@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import {feedbackCompletionIssue} from '../../cloud/protocol.mjs';
 import path from 'node:path';
 import {randomUUID} from 'node:crypto';
 export function feedbackFiles(sessions,room){
@@ -35,6 +36,7 @@ export async function feedbackHandler({req,res,url,here,sessions,rooms,body,view
   const existing=path.join(dir,id+'.json');
   let prior=null;
   if(fs.existsSync(existing)){prior=JSON.parse(fs.readFileSync(existing,'utf8'));if(JSON.stringify(prior.draft)!==JSON.stringify(d)||JSON.stringify(prior.images)!==JSON.stringify(data.images)){json(res,409,{error:'This receipt belongs to different feedback. Please submit a new revision.'});return true;}}
+  const issue=feedbackCompletionIssue(d);if(!prior&&issue){json(res,422,{error:issue.message,step:issue.step});return true;}
   const record=prior||{id,at:new Date().toISOString(),room:data.room,argument:room.argument,route:room.route,agent:room.agent||'legacy',draft:d,images:data.images};
   try {
     fs.mkdirSync(dir,{recursive:true});

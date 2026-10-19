@@ -78,3 +78,10 @@ test('automatic draft backup preserves all steps without submit and separates pa
  c.room='b';vm.runInContext('persistDraft()',c);assert.equal(storage.size,2);
  c.localStorage.setItem=()=>{throw Error('Quota exceeded');};assert.equal(vm.runInContext('persistDraft()',c),false);assert.match(status.textContent,/unavailable/);
 });
+
+test('browser and backend enforce the same three-step requirements',async()=>{
+ const {feedbackCompletionIssue}=await import('../../cloud/protocol.mjs');const c=vm.createContext({});
+ vm.runInContext(source.slice(source.indexOf('function feedbackCompletionIssue('),source.indexOf('function allowRatingProgress()')),c);
+ const full={ratings:{a:'blue'},removed:['a'],added:[],annotations:[{x:10,y:20,color:'red',text:'Need a safer path'}]};
+ for(const draft of [full,{...full,ratings:{}},{...full,removed:[]},{...full,annotations:[]},{...full,annotations:[{x:10,y:20,color:'red',text:' '}]}]){c.draft=draft;assert.equal(JSON.stringify(vm.runInContext('feedbackCompletionIssue(draft)',c)),JSON.stringify(feedbackCompletionIssue(draft)));}
+});

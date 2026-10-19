@@ -1,6 +1,6 @@
 import {get,put,list} from '@vercel/blob';
 import {timingSafeEqual} from 'node:crypto';
-import {hash,uuid,roomId,imageManifest,validDraft,verifyImage} from '../cloud/protocol.mjs';
+import {hash,uuid,roomId,imageManifest,validDraft,verifyImage,feedbackCompletionIssue} from '../cloud/protocol.mjs';
 const opts={access:'private',addRandomSuffix:false};
 async function read(key){const r=await get(key,{access:'private',useCache:false});if(!r)return null;return Buffer.from(await new Response(r.stream).arrayBuffer());}
 async function jsonRead(key){const b=await read(key);return b?JSON.parse(b.toString()):null;}
@@ -46,6 +46,8 @@ export default async function handler(req,res){
    const state=await jsonRead('snapshot/state/'+room+'.json');if(!state)return send(404,{error:'Session not found'});
    if(req.method==='GET'){const saved=await records(room);return send(200,q.summary==='1'?{summaries:saved.map(r=>({id:r.id,role:r.draft.role,respondentId:r.draft.respondentId,complete:r.draft.visited?.length===3&&r.draft.visited.every(Boolean)}))}:{records:saved});}
    if(req.method!=='POST'||!uuid(b.submissionId)||!validDraft(b.draft)||!Array.isArray(b.images)||b.images.length!==3||!b.images.every(imageManifest))return send(400,{error:'Invalid feedback'});
+   const completionIssue=feedbackCompletionIssue(b.draft);
+   if(completionIssue&&!await jsonRead('feedback/'+room+'/'+b.submissionId+'.json'))return send(422,{error:completionIssue.message,step:completionIssue.step});
    // No success until every image is present, checked, and the immutable record is readable.
    for(const m of b.images)await verifyImage(m,h=>read('chunks/'+h));
    const key='feedback/'+room+'/'+b.submissionId+'.json';let rec=await jsonRead(key);
