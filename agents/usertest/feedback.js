@@ -120,7 +120,7 @@ function renderPaths(){
  if(!pathItems.length)return;
  $('path-tour').hidden=false;
  const done=pathItems.filter(p=>pathProgress.get(p.room)===true).length;
- $('path-progress').textContent=`${done} of ${pathItems.length} paths submitted`;
+ $('path-progress').textContent=`${done} / ${pathItems.length} submitted here`;
  $('path-progress-bar').max=pathItems.length;$('path-progress-bar').value=done;
  const active=source.agent==='toolkit'?'toolkit':'keys';
  const visible=pathItems.filter(p=>p.agent===active);
@@ -131,9 +131,9 @@ function renderPaths(){
  visible.forEach((p,i)=>{const b=document.createElement('button');b.type='button';b.dataset.room=p.room;b.setAttribute('aria-current',p.room===room?'page':'false');b.disabled=switching||saving;
  const label=document.createElement('span');label.textContent=`${i+1}. ${routeLabels[p.route]||p.route}`;
  const tag=document.createElement('small');const submitted=pathProgress.get(p.room)===true;const hasDraft=pendingRooms.has(p.room);
- tag.textContent=(p.room===room?'You are here · ':'')+(submitted?(hasDraft?'Submitted · open-page draft':'Submitted'):hasDraft?'Draft in this page':pathProgress.get(p.room)===null?'Status unavailable':'Not submitted');b.append(label,tag);list.append(b);});
+ tag.textContent=(p.room===room?'Current':'')+(submitted?(p.room===room?' · ':'')+(hasDraft?'Submitted · edited':'✓ Submitted'):hasDraft?(p.room===room?' · Draft':'Draft'):pathProgress.get(p.room)===null?' · Status unavailable':'');b.append(label,tag);list.append(b);});
  const current=visible.findIndex(p=>p.room===room);
- $('current-path').textContent=current>=0?`You are reviewing ${current+1} / ${visible.length} · ${routeLabels[visible[current].route]||h.route}`:'Choose a path';
+ $('current-path').textContent=current>=0?`Path ${current+1} / ${visible.length} · ${routeLabels[visible[current].route]||h.route}`:'Choose a path';
  $('continue-path').hidden=pathProgress.get(room)!==true||pendingRooms.has(room);
  const pending=nextPath();$('continue-path').disabled=!pending||switching||saving;$('continue-path').textContent=pending?`Continue: ${pending.agent==='keys'?'Control':'Toolkit'} · ${routeLabels[pending.route]||pending.route} →`:'Control and Toolkit submitted ✓';
 }
@@ -255,11 +255,11 @@ function requireRatingProgress(){if(allowRatingProgress())return true;changeStep
 function updateTaskChecklist(){
  if(!draft)return;
  const count=Object.keys(draft.ratings||{}).length,removed=removedIds().length,added=(draft.added||[]).length,comments=(draft.annotations||[]).filter(a=>a.text?.trim()).length;
- $('task-rating-status').textContent=count?`✓ ${count} sticks colored`:'Required · color at least one stick';
- $('task-rebuild-status').textContent=removed||added?`✓ ${removed} removed · ${added} added`:'Required · remove or add a stick';
- $('task-sketch-status').textContent=comments?`✓ ${comments} written comments`:'Required · add a comment with your reason';
+ $('task-rating-status').textContent=count?`✓ ${count} sticks colored`:'Color ≥1 stick';
+ $('task-rebuild-status').textContent=removed||added?`✓ ${removed} removed · ${added} added`:'Remove or add ≥1 stick';
+ $('task-sketch-status').textContent=comments?`✓ ${comments} written comments`:'Add ≥1 comment + reason';
  const scores=(draft.overallScores||[]).filter(v=>v!==null&&v!==undefined).length;
- $('task-score-status').textContent=`This path: overall scores ${scores} / 3 answered${scores<3?' · please score each step':''}`;
+ $('task-score-status').textContent=`Scores: ${scores} / 3${scores===3?' ✓':''}`;
 }
 function render(){
  updateTaskChecklist();
