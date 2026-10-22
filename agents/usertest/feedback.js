@@ -126,14 +126,14 @@ function renderPaths(){
  const visible=pathItems.filter(p=>p.agent===active);
  const conditions=$('condition-switch');conditions.replaceChildren();
  for(const [agent,name] of [['keys','Control'],['toolkit','Toolkit']]){const items=pathItems.filter(p=>p.agent===agent),count=items.filter(p=>pathProgress.get(p.room)===true).length;const b=document.createElement('button');b.type='button';b.dataset.condition=agent;b.setAttribute('aria-pressed',String(active===agent));b.disabled=switching||saving||!items.length;b.textContent=`${name} · ${count} / ${items.length} submitted`;conditions.append(b);}
- $('condition-label').textContent=`${active==='keys'?'CONTROL':'TOOLKIT'} · ONE PATH AT A TIME`;
+ $('condition-label').textContent=`${active==='keys'?'CONTROL':'TOOLKIT'} · CURRENT CONDITION`;
  const list=$('path-list');list.replaceChildren();
  visible.forEach((p,i)=>{const b=document.createElement('button');b.type='button';b.dataset.room=p.room;b.setAttribute('aria-current',p.room===room?'page':'false');b.disabled=switching||saving;
- const label=document.createElement('span');label.textContent=`${i+1}. ${p.argument==='refs'?'Two references':'Two lives'} · ${routeLabels[p.route]||p.route}`;
+ const label=document.createElement('span');label.textContent=`${i+1}. ${routeLabels[p.route]||p.route}`;
  const tag=document.createElement('small');const submitted=pathProgress.get(p.room)===true;const hasDraft=pendingRooms.has(p.room);
- tag.textContent=submitted?(hasDraft?'Submitted · open-page draft':'Submitted'):hasDraft?'Draft in this page':pathProgress.get(p.room)===null?'Status unavailable':'Not submitted';b.append(label,tag);list.append(b);});
+ tag.textContent=(p.room===room?'You are here · ':'')+(submitted?(hasDraft?'Submitted · open-page draft':'Submitted'):hasDraft?'Draft in this page':pathProgress.get(p.room)===null?'Status unavailable':'Not submitted');b.append(label,tag);list.append(b);});
  const current=visible.findIndex(p=>p.room===room);
- $('current-path').textContent=current>=0?`Path ${current+1} of ${visible.length} · ${routeLabels[visible[current].route]||h.route}`:'Choose a path';
+ $('current-path').textContent=current>=0?`You are reviewing ${current+1} / ${visible.length} · ${routeLabels[visible[current].route]||h.route}`:'Choose a path';
  $('continue-path').hidden=pathProgress.get(room)!==true||pendingRooms.has(room);
  const pending=nextPath();$('continue-path').disabled=!pending||switching||saving;$('continue-path').textContent=pending?`Continue: ${pending.agent==='keys'?'Control':'Toolkit'} · ${routeLabels[pending.route]||pending.route} →`:'Control and Toolkit submitted ✓';
 }
@@ -252,7 +252,17 @@ function feedbackCompletionIssue(d){
 }
 function allowRatingProgress(){return Object.keys(draft.ratings||{}).length>0;}
 function requireRatingProgress(){if(allowRatingProgress())return true;changeStep(0);$('rating-error').textContent='No sticks are colored yet. Choose a color and click at least one stick before continuing.';$('rating-error').hidden=false;$('rating-error').scrollIntoView({block:'center'});return false;}
+function updateTaskChecklist(){
+ if(!draft)return;
+ const count=Object.keys(draft.ratings||{}).length,removed=removedIds().length,added=(draft.added||[]).length,comments=(draft.annotations||[]).filter(a=>a.text?.trim()).length;
+ $('task-rating-status').textContent=count?`✓ ${count} sticks colored`:'Required · color at least one stick';
+ $('task-rebuild-status').textContent=removed||added?`✓ ${removed} removed · ${added} added`:'Required · remove or add a stick';
+ $('task-sketch-status').textContent=comments?`✓ ${comments} written comments`:'Required · add a comment with your reason';
+ const scores=(draft.overallScores||[]).filter(v=>v!==null&&v!==undefined).length;
+ $('task-score-status').textContent=`This path: overall scores ${scores} / 3 answered${scores<3?' · please score each step':''}`;
+}
 function render(){
+ updateTaskChecklist();
  $('completion-error').hidden=true;$('rating-error').hidden=true;$('rating-error').textContent='';
  $('workspace').classList.toggle('sketch-step',step===2);
  document.querySelectorAll('[data-step]').forEach(b=>{b.classList.toggle('active',+b.dataset.step===step);b.setAttribute('aria-current',+b.dataset.step===step?'step':'false');});
@@ -269,7 +279,7 @@ function render(){
 
  draft.overallScores ||= [null,null,null];
  $('overall-question').textContent=['How well does the original bridge meet your needs?','How well does your rebuilt bridge meet your needs?','How well does the sketch meet your needs?'][step];
- $('overall-options').replaceChildren();for(const v of [-3,-2,-1,0,1,2,3,'cannot-judge']){const label=document.createElement('label'),input=document.createElement('input');input.type='radio';input.name='overall-score';input.value=String(v);input.checked=draft.overallScores[step]===v;input.onchange=()=>{draft.overallScores[step]=v;localSave();};label.append(input,document.createTextNode(v==='cannot-judge'?'Cannot judge':v>0?'+'+v:String(v)));$('overall-options').append(label);}
+ $('overall-options').replaceChildren();for(const v of [-3,-2,-1,0,1,2,3,'cannot-judge']){const label=document.createElement('label'),input=document.createElement('input');input.type='radio';input.name='overall-score';input.value=String(v);input.checked=draft.overallScores[step]===v;input.onchange=()=>{draft.overallScores[step]=v;localSave();updateTaskChecklist();};label.append(input,document.createTextNode(v==='cannot-judge'?'Cannot judge':v>0?'+'+v:String(v)));$('overall-options').append(label);}
  $('note').value=draft.notes[step];$('next').hidden=step===2;$('next').disabled=false;$('previous').disabled=step===0;$('previous').hidden=step===0;
  $('next').textContent=step===0?'Next: change the bridge →':removing?'Finished taking sticks away →':'Next: comment on the sketch →';
  $('advance-build').hidden=true;$('advance-build').onclick=()=>{mode='grid';preview=null;hover=null;original=false;render();showStepStart();};
