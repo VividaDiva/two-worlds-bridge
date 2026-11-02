@@ -121,27 +121,27 @@ $('context').textContent=`${h.argument==='refs'?'Two references':h.argument==='p
 try{h=await fetchState(room);setSource();}catch(e){status(e.message);connectionError(e.message);return;}
 try{const us=await apiFetch('/api/users').then(r=>r.json());const arr=Array.isArray(us)?us:us.users||us.profiles||[];pair=arr.find(u=>u.sessions?.some(s=>s.room===room));if(pair?.participants)$('role').options[1].textContent=`Role ${pair.participants[1]}`;}catch{}
 if(resumeReceipt&&!pair?.sessions?.some(s=>s.room===resumeRoom)){connectionError('This continuation link does not belong to this study.');return;}
-if(participant){document.title=$('role').selectedOptions[0].textContent+' · Bridge feedback';$('participant-badge').hidden=false;$('participant-badge').textContent=$('role').selectedOptions[0].textContent+' · Your feedback';}
+if(participant){document.title=$('role').selectedOptions[0].textContent+' · Bridge feedback';$('participant-badge').hidden=false;$('participant-badge').textContent=$('role').selectedOptions[0].textContent;}
 function feedbackPaths(sessions){const seen=new Set();const replaySources=new Set(sessions.filter(s=>s.agent==='toolkit'&&!s.historical).map(s=>s.replay?.sourceRoom).filter(Boolean));return sessions.filter(s=>['keys','toolkit'].includes(s.agent)&&(s.agent==='keys'||!s.historical)&&s.hasContent&&s.argument==='pairs').sort((a,b)=>Number(replaySources.has(b.room))-Number(replaySources.has(a.room))).filter(s=>{const key=s.agent+':'+s.argument+':'+s.route;if(seen.has(key))return false;seen.add(key);return true;}).sort((a,b)=>a.agent.localeCompare(b.agent)||a.argument.localeCompare(b.argument)||routeOrder.indexOf(a.route)-routeOrder.indexOf(b.route));}
 function completedSummary(r){return r.role===$('role').value&&r.complete===true&&(r.respondentId===respondentId||ownReceipts.has(r.id));}
 function renderPaths(){
  if(!pathItems.length)return;
  $('path-tour').hidden=false;
  const done=pathItems.filter(p=>pathProgress.get(p.room)===true).length;
- $('path-progress').textContent=`${done} / ${pathItems.length} complete · ${pathItems.length-done} remaining`;
+ $('path-progress').textContent=`${done}/${pathItems.length} complete`;
  $('path-progress-bar').max=pathItems.length;$('path-progress-bar').value=done;
  const active=source.agent==='toolkit'?'toolkit':'keys';
  const visible=pathItems.filter(p=>p.agent===active);
  const conditions=$('condition-switch');conditions.replaceChildren();
- for(const [agent,name] of [['keys','Control'],['toolkit','Toolkit']]){const items=pathItems.filter(p=>p.agent===agent),count=items.filter(p=>pathProgress.get(p.room)===true).length;const b=document.createElement('button');b.type='button';b.dataset.condition=agent;b.setAttribute('aria-pressed',String(active===agent));b.disabled=switching||saving||!items.length;b.textContent=`${name} · ${count} / ${items.length} complete`;conditions.append(b);}
+ for(const [agent,name] of [['keys','Control'],['toolkit','Toolkit']]){const items=pathItems.filter(p=>p.agent===agent),count=items.filter(p=>pathProgress.get(p.room)===true).length;const b=document.createElement('button');b.type='button';b.dataset.condition=agent;b.setAttribute('aria-pressed',String(active===agent));b.disabled=switching||saving||!items.length;b.textContent=`${name} ${count}/${items.length}`;conditions.append(b);}
  $('condition-label').textContent=`${active==='keys'?'CONTROL':'TOOLKIT'} · CURRENT CONDITION`;
  const list=$('path-list');list.replaceChildren();
  visible.forEach((p,i)=>{const b=document.createElement('button');b.type='button';b.dataset.room=p.room;b.setAttribute('aria-current',p.room===room?'page':'false');b.disabled=switching||saving;
  const label=document.createElement('span');label.textContent=`${i+1}. ${routeLabels[p.route]||p.route}`;
  const tag=document.createElement('small');const submitted=pathProgress.get(p.room)===true;const hasDraft=pendingRooms.has(p.room);
- tag.textContent=(p.room===room?'Current':'')+(submitted?(p.room===room?' · ':'')+(hasDraft?'Submitted · edited':'✓ Submitted'):hasDraft?(p.room===room?' · Draft':'Draft'):pathProgress.get(p.room)===null?' · Status unavailable':savedPathDrafts.has(p.room)?' · Saved · finish missing items':' · To do');b.append(label,tag);list.append(b);});
+ tag.textContent=submitted?(hasDraft?'Edited':'✓ Complete'):hasDraft?'Draft':pathProgress.get(p.room)===null?'Status unavailable':savedPathDrafts.has(p.room)?'Saved · incomplete':'';b.append(label,tag);list.append(b);});
  const current=visible.findIndex(p=>p.room===room);
- $('current-path').textContent=current>=0?`Path ${current+1} / ${visible.length} · ${routeLabels[visible[current].route]||h.route}`:'Choose a path';
+ $('current-path').textContent=current>=0?`${routeLabels[visible[current].route]||h.route}`:'Choose a path';
  $('continue-path').hidden=false;
  const pending=pathProgress.get(room)!==true?pathItems.find(p=>p.room===room):nextPath();$('continue-path').disabled=!pending||switching||saving;$('continue-path').textContent=pending?.room===room?'Finish this path →':pending?`Continue: ${pending.agent==='keys'?'Control':'Toolkit'} · ${routeLabels[pending.route]||pending.route} →`:'Control and Toolkit submitted ✓';
 }
@@ -169,7 +169,7 @@ if(h.argument==='refs'){
 if(participant&&!variant&&pair){pathItems=feedbackPaths(pair.sessions||[]);renderPaths();}
 function showConversation(){
  const context=draft.source.conversation||source.conversation;
- $('chat-help').textContent='Read-only review of this session, in original order. Some messages may not have been visible to both people during the experiment.';
+ $('chat-help').textContent='Original transcript; includes private messages.';
  if(!draft.source.conversation)$('chat-help').textContent='Conversation loaded when this page opened. This older drawing draft has no saved chat snapshot; the conversation may include later messages.';
  const roleName=r=>r==='A'?$('role').options[0].textContent:r==='B'?$('role').options[1].textContent:r==='builder'?'AI':r||'Unknown speaker';
  const rename=s=>(s||'').replace(/Role 2/g,roleName('B')).replace(/Role 1/g,roleName('A'));
@@ -264,9 +264,9 @@ function requireRatingProgress(){if(allowRatingProgress())return true;changeStep
 function updateTaskChecklist(){
  if(!draft)return;
  const count=Object.keys(draft.ratings||{}).length,removed=removedIds().length,added=(draft.added||[]).length,comments=(draft.annotations||[]).filter(a=>a.text?.trim()).length;
- $('task-rating-status').textContent=count?`✓ ${count} sticks colored`:'Color ≥1 stick';
- $('task-rebuild-status').textContent=removed||added?`✓ ${removed} removed · ${added} added`:'Remove or add ≥1 stick';
- $('task-sketch-status').textContent=comments?`✓ ${comments} written comments`:'Add ≥1 comment + reason';
+ $('task-rating-status').textContent=count?`✓ ${count} sticks colored`:'○ Color sticks';
+ $('task-rebuild-status').textContent=removed||added?`✓ Bridge changed`:'○ Change bridge';
+ $('task-sketch-status').textContent=comments?`✓ ${comments} comments`:'○ Add sketch comment';
  const scores=(draft.overallScores||[]).filter(v=>v!==null&&v!==undefined).length;
  $('task-score-status').textContent=`Scores: ${scores} / 3${scores===3?' ✓':''}`;
 }
@@ -279,9 +279,9 @@ function render(){
  const removing=mode==='erase'||mode==='restore';
  $('step-position').textContent=`STEP ${step+1} OF 3`;
  $('instruction').textContent=[
-  'Choose a rating from 1 (very dissatisfied) to 5 (very satisfied), then click individual sticks. 3 is neutral. Color at least one stick before continuing.',
-  mode==='restore'?'The dashed outlines show sticks that were taken away. Click one to bring it back.':removing?'Start fresh from the original bridge. Click unwanted sticks to remove them. Required: remove or add at least one stick. Your ratings from step 1 stay separate.':'Choose a direction and length, then click the grid to add a blue stick. No drawing needed.',
-  'Choose a color, then click a place on the sketch. Required: add at least one comment bubble and write why you feel this way.'
+  'Choose a color, then click or drag across sticks.',
+  mode==='restore'?'Click a dashed stick to restore it.':removing?'Click unwanted sticks to remove them, then add your own.':'Choose a stick, then click the grid to place it.',
+  'Choose a color, click the sketch, and write a reason.'
  ][step];
  $('palette').classList.toggle('five-point',step===0);$('palette').innerHTML=step===1?'':palette();
  $('tools').innerHTML=step===2?'':step===1?`<p class="rebuild-progress"><span class="${removing?'current':''}">A · Take sticks away</span><span aria-hidden="true">→</span><span class="${!removing?'current':''}">B · Put new sticks in</span></p>${removing?`<div class="row"><button data-mode="${mode==='restore'?'erase':'restore'}">${mode==='restore'?'Back to taking sticks away':'Bring a stick back'}</button><span class="tool-explanation">You can also use Undo after a mistake.</span></div>`:`<div class="row piece-picker" aria-label="Choose the direction of the new stick">${Object.entries({horizontal:['━','Across'],vertical:['┃','Up / down'],rising:['╱','Slant up'],falling:['╲','Slant down']}).map(([k,[icon,name]])=>`<button data-piece="${k}" aria-pressed="${orientation===k}"><span class="piece-icon" aria-hidden="true">${icon}</span>${name}</button>`).join('')}<label>Stick length <select id="piece-length"><option value="50" ${pieceLength===50?'selected':''}>Short</option><option value="100" ${pieceLength===100?'selected':''}>Long</option></select></label></div><div class="row"><button data-mode="erase">← Take more sticks away</button><span class="tool-explanation">Blue sticks are your additions, not a rating.</span></div>`}`:`<div class="row"><button data-color="none" aria-pressed="${color==='none'}">Erase color</button><span class="tool-explanation">${step===0?'Click a colored stick to remove its color. The stick stays.':'Move over colored areas to erase only the color.'}</span></div>${step===2?`<div class="sketch-controls"><div class="row" aria-label="Coloring tool"><button data-sketch="brush" aria-pressed="${sketchTool==='brush'}">Brush</button><button data-sketch="fill" aria-pressed="${sketchTool==='fill'}">Double-click fill</button><span class="tool-explanation">${sketchTool==='fill'?'Double-click inside an enclosed area. Local outline detection; Undo reverses a fill.':'Drag to paint, or click to make a dot.'}</span></div>${sketchTool==='brush'?`<div class="brush-sizing"><label for="brush">${color==='none'?'Eraser':'Brush'} size <output id="brush-value" for="brush">${brush}</output></label><div class="brush-slider"><span aria-hidden="true" class="brush-dot small"></span><input id="brush" aria-label="Brush size" type="range" min="6" max="160" step="2" value="${brush}"><span aria-hidden="true" class="brush-dot large"></span></div><div class="row brush-presets">${[[16,'Small'],[48,'Medium'],[100,'Large']].map(([size,name])=>`<button data-brush="${size}" aria-pressed="${brush===size}">${name}</button>`).join('')}</div></div>`:''}</div>`:''}`;
@@ -294,12 +294,12 @@ function render(){
  $('advance-build').hidden=true;$('advance-build').onclick=()=>{mode='grid';preview=null;hover=null;original=false;render();showStepStart();};
  $('next').className='primary';$('save').className=step===2?'primary':'';$('save').textContent='Submit my feedback';$('save').hidden=step!==2;
  $('submission-review').hidden=step!==2;
- if(step===2){$('submission-review').replaceChildren();const title=document.createElement('h3');title.textContent='Ready to submit?';const list=document.createElement('ul');for(const text of [`Bridge ratings: ${Object.keys(draft.ratings).length} sticks marked`,`Bridge changes: ${removedIds().length} removed · ${draft.added.length} added`,sketch?`Sketch: ${draft.annotations.length} comments`:'Sketch unavailable · submission requires a sketch comment']){const li=document.createElement('li');li.textContent=text;list.append(li);}const help=document.createElement('p');help.textContent='All three are required: color a stick, change the bridge, and add a sketch comment with a written reason. Submit saves all three steps and your notes to History.';$('submission-review').append(title,list,help);}
+ if(step===2){$('submission-review').replaceChildren();const title=document.createElement('h3');title.textContent='Your feedback';const list=document.createElement('ul');for(const text of [`Bridge ratings: ${Object.keys(draft.ratings).length} sticks marked`,`Bridge changes: ${removedIds().length} removed · ${draft.added.length} added`,sketch?`Sketch: ${draft.annotations.length} comments`:'Sketch unavailable · submission requires a sketch comment']){const li=document.createElement('li');li.textContent=text;list.append(li);}const help=document.createElement('p');help.textContent='All three are required: color a stick, change the bridge, and add a sketch comment with a written reason. Submit saves all three steps and your notes to History.';$('submission-review').append(title,list,help);}
  $('note').placeholder=['Optional: why did you choose these colors?','Optional: what do your changes make better?','Optional: what do you want us to notice?'][step];
  $('undo').disabled=original||!undo[step].length;$('redo').disabled=original||!redo[step].length;
  $('undo').title=undo[step].length?`Undo ${undo[step].at(-1).label} (⌘/Ctrl Z)`:'Nothing to undo in this step';
  $('redo').title=redo[step].length?`Redo ${redo[step].at(-1).label} (⌘/Ctrl Shift Z)`:'Nothing to redo in this step';
- $('active-tool').textContent=original?'Viewing original · editing paused':step===2?(color&&color!=='none'?`Selected: ${labels[color]} · click to add a comment`:'Choose a color to add a comment'):step===1?mode==='grid'?'Click a grid point to place your new stick':mode==='erase'?'Click a stick to take it away':mode==='restore'?'Click a dashed stick to bring it back':'Free draw · blue sticks':color==='none'?(step===2?'Erase sketch color':'Click a stick to erase its color'):color?`Selected: ${labels[color]} · now click a stick to color it`:'Start by choosing a color';
+ $('active-tool').textContent=original?'Viewing original · editing paused':step===2?(color&&color!=='none'?`Selected: ${labels[color]}`:'Choose a color to add a comment'):step===1?mode==='grid'?'Click a grid point to place your new stick':mode==='erase'?'Click a stick to take it away':mode==='restore'?'Click a dashed stick to bring it back':'Free draw · blue sticks':color==='none'?(step===2?'Erase sketch color':'Click a stick to erase its color'):color?`Selected: ${labels[color]}`:'Choose a color';
  $('gesture-help').textContent=step===1?mode==='grid'?'The preview shows where your stick will go. Click once to place it.':mode==='erase'?'Click the highlighted stick to remove it. Undo brings it back.':mode==='restore'?'Dashed sticks are removed. Click one to bring it back.':'Drag from start to end. Release to place sticks.':step===0?'Click or drag across sticks to color them. Dashed outline = hover only; solid color = your rating.':sketchTool==='fill'?'Double-click inside a closed outline to fill it.':'Hold and move to color. The circle shows the size of your brush.';
  $('compare').textContent=original?'Back to my changes':'Compare with original';$('compare').setAttribute('aria-pressed',String(original));
  $('canvas').hidden=step===2&&!sketch;$('download').disabled=step===2&&!sketch;
