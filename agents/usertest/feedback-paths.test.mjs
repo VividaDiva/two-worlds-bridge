@@ -37,3 +37,8 @@ test('Role A participant progress cannot be confused with Role B in the same bro
  assert.equal(vm.runInContext("completedSummary({role:'A',complete:true,respondentId:'same-browser'})",c),true);
  assert.equal(vm.runInContext("completedSummary({role:'B',complete:true,respondentId:'same-browser'})",c),false);
 });
+
+test('personal continuation restores only the matching receipt and role without changing default browser identity',async()=>{
+ const code=source.slice(source.indexOf('// A personal continuation link'),source.indexOf('const colors='));
+ for(const role of ['A','B']){const c=vm.createContext({params:new URLSearchParams('resume=receipt&resumeRoom=room'),$:()=>({value:role}),respondentId:'default-browser',receiptKey:'default',ownReceipts:new Set(),apiFetch:async()=>({ok:true,json:async()=>({records:[{id:'receipt',draft:{role:'B',respondentId:'returning-user'}}]})}),connectionError:()=>{}});await vm.runInContext('(async()=>{'+code+'})()',c);assert.equal(c.respondentId,role==='B'?'returning-user':'default-browser');}
+});
