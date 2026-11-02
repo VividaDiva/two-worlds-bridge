@@ -133,13 +133,13 @@ function renderPaths(){
  const active=source.agent==='toolkit'?'toolkit':'keys';
  const visible=pathItems.filter(p=>p.agent===active);
  const conditions=$('condition-switch');conditions.replaceChildren();
- for(const [agent,name] of [['keys','Control'],['toolkit','Toolkit']]){const items=pathItems.filter(p=>p.agent===agent),count=items.filter(p=>pathProgress.get(p.room)===true).length;const b=document.createElement('button');b.type='button';b.dataset.condition=agent;b.setAttribute('aria-pressed',String(active===agent));b.disabled=switching||saving||!items.length;b.textContent=`${name} · ${count} / ${items.length} submitted`;conditions.append(b);}
+ for(const [agent,name] of [['keys','Control'],['toolkit','Toolkit']]){const items=pathItems.filter(p=>p.agent===agent),count=items.filter(p=>pathProgress.get(p.room)===true).length;const b=document.createElement('button');b.type='button';b.dataset.condition=agent;b.setAttribute('aria-pressed',String(active===agent));b.disabled=switching||saving||!items.length;b.textContent=`${name} · ${count} / ${items.length} complete`;conditions.append(b);}
  $('condition-label').textContent=`${active==='keys'?'CONTROL':'TOOLKIT'} · CURRENT CONDITION`;
  const list=$('path-list');list.replaceChildren();
  visible.forEach((p,i)=>{const b=document.createElement('button');b.type='button';b.dataset.room=p.room;b.setAttribute('aria-current',p.room===room?'page':'false');b.disabled=switching||saving;
  const label=document.createElement('span');label.textContent=`${i+1}. ${routeLabels[p.route]||p.route}`;
  const tag=document.createElement('small');const submitted=pathProgress.get(p.room)===true;const hasDraft=pendingRooms.has(p.room);
- tag.textContent=(p.room===room?'Current':'')+(submitted?(p.room===room?' · ':'')+(hasDraft?'Submitted · edited':'✓ Submitted'):hasDraft?(p.room===room?' · Draft':'Draft'):pathProgress.get(p.room)===null?' · Status unavailable':savedPathDrafts.has(p.room)?' · Finish missing items':' · To do');b.append(label,tag);list.append(b);});
+ tag.textContent=(p.room===room?'Current':'')+(submitted?(p.room===room?' · ':'')+(hasDraft?'Submitted · edited':'✓ Submitted'):hasDraft?(p.room===room?' · Draft':'Draft'):pathProgress.get(p.room)===null?' · Status unavailable':savedPathDrafts.has(p.room)?' · Saved · finish missing items':' · To do');b.append(label,tag);list.append(b);});
  const current=visible.findIndex(p=>p.room===room);
  $('current-path').textContent=current>=0?`Path ${current+1} / ${visible.length} · ${routeLabels[visible[current].route]||h.route}`:'Choose a path';
  $('continue-path').hidden=false;
