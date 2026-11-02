@@ -85,3 +85,15 @@ test('browser and backend enforce the same three-step requirements',async()=>{
  const full={ratings:{a:'blue'},removed:['a'],added:[],annotations:[{x:10,y:20,color:'red',text:'Need a safer path'}]};
  for(const draft of [full,{...full,ratings:{}},{...full,removed:[]},{...full,annotations:[]},{...full,annotations:[{x:10,y:20,color:'red',text:' '}]}]){c.draft=draft;assert.equal(JSON.stringify(vm.runInContext('feedbackCompletionIssue(draft)',c)),JSON.stringify(feedbackCompletionIssue(draft)));}
 });
+
+
+test('next-step score gate rejects missing values, accepts zero and cannot-judge, and focuses the field',()=>{
+ let focused=0,scrolled=0;const error={hidden:true};const rating={setAttribute(){},scrollIntoView(){scrolled++;}};const options={querySelector:()=>({focus(){focused++;}})};
+ const c=vm.createContext({draft:{overallScores:[null]},step:0,$:id=>({'overall-error':error,'overall-rating':rating,'overall-options':options}[id])});
+ vm.runInContext(source.slice(source.indexOf('function requireOverallScore('),source.indexOf('function changeStep(')),c);
+ for(const value of [null,undefined,-4,4,'0']){c.draft.overallScores=[value];assert.equal(vm.runInContext('requireOverallScore()',c),false);}
+ assert.equal(error.hidden,false);assert.equal(focused,5);assert.equal(scrolled,5);
+ for(const value of [-3,0,3,'cannot-judge']){c.draft.overallScores=[value];assert.equal(vm.runInContext('requireOverallScore()',c),true);}
+ assert.match(source,/dataset.step>step&&!requireOverallScore/);
+ assert.match(source,/else \{if\(!requireOverallScore\(\)\)return;changeStep/);
+});
