@@ -42,11 +42,18 @@ const identityKey='two-worlds-feedback-respondent-v1';
 let respondentId;
 try{respondentId=localStorage.getItem(identityKey);if(!respondentId){respondentId=crypto.randomUUID();localStorage.setItem(identityKey,respondentId);}}
 catch{respondentId=crypto.randomUUID();}
-const receiptKey='two-worlds-feedback-receipts-v1:'+respondentId;
+let receiptKey='two-worlds-feedback-receipts-v1:'+respondentId;
 let ownReceipts=new Set();
 try{ownReceipts=new Set(JSON.parse(localStorage.getItem(receiptKey)||'[]'));}catch{}
 function rememberReceipt(id){ownReceipts.add(id);try{localStorage.setItem(receiptKey,JSON.stringify([...ownReceipts]));}catch{}}
 function ownFeedback(r){return r.draft?.respondentId===respondentId||ownReceipts.has(r.id);}
+// A personal continuation link explicitly resumes an existing respondent, without
+// changing the browser's identity for ordinary shared links.
+const resumeReceipt=params.get('resume'),resumeRoom=params.get('resumeRoom');
+if(resumeReceipt&&resumeRoom){
+ try{const response=await apiFetch(`/api/feedback?room=${encodeURIComponent(resumeRoom)}`);if(!response.ok)throw Error();const record=(await response.json()).records?.find(r=>r.id===resumeReceipt&&r.draft?.role===$('role').value);if(!record?.draft?.respondentId)throw Error();respondentId=record.draft.respondentId;receiptKey='two-worlds-feedback-receipts-v1:'+respondentId;ownReceipts=new Set([record.id]);}
+ catch{connectionError('Could not restore your previous feedback. Please retry this personal link.');return;}
+}
 const colors={red:'#e75e65',neutral:'#f3ccd9',some:'#a8d8f0',blue:'#2672cb'};
 const bridgeRatingKeys=['veryRed','red','neutral','blue','veryBlue'];
 const bridgeColors={veryRed:'#b42335',red:'#ef9a9f',neutral:'#d7dadd',blue:'#8abfe8',veryBlue:'#205da8'};
@@ -97,7 +104,7 @@ function showDraftRecovery(){
 }
 $('download-draft').onclick=()=>{syncVisibleNote();downloadDraft({kind:'unsubmitted-feedback-draft',room,variant:variant||null,step,savedAt:new Date().toISOString(),draft:clone(draft)});};
 let h,source,pair=null,switching=false,saving=false;
-let pathItems=[],pathProgress=new Map(),pendingRooms=new Set();
+let pathItems=[],pathProgress=new Map(),pendingRooms=new Set(),savedPathDrafts=new Map();
 const routeLabels={all:'Discuss together',develop:'Discuss together · auto-build',confer:'Discuss privately, then tell AI',both:'Tell AI separately',chain:'Role 1 → Role 2 → AI','via-1':'Role 1 → AI → Role 2','via-2':'Role 2 → AI → Role 1','only-1':'Role 1 only','only-2':'Role 2 only'};
 const routeOrder=Object.keys(routeLabels);
 async function fetchState(id){const r=await apiFetch(`/api/state?room=${encodeURIComponent(id)}&role=host`);if(!r.ok)throw Error('Session is unavailable');return r.json();}
@@ -113,6 +120,7 @@ $('context').textContent=`${h.argument==='refs'?'Two references':h.argument==='p
 }
 try{h=await fetchState(room);setSource();}catch(e){status(e.message);connectionError(e.message);return;}
 try{const us=await apiFetch('/api/users').then(r=>r.json());const arr=Array.isArray(us)?us:us.users||us.profiles||[];pair=arr.find(u=>u.sessions?.some(s=>s.room===room));if(pair?.participants)$('role').options[1].textContent=`Role ${pair.participants[1]}`;}catch{}
+if(resumeReceipt&&!pair?.sessions?.some(s=>s.room===resumeRoom)){connectionError('This continuation link does not belong to this study.');return;}
 if(participant){document.title=$('role').selectedOptions[0].textContent+' · Bridge feedback';$('participant-badge').hidden=false;$('participant-badge').textContent=$('role').selectedOptions[0].textContent+' · Your feedback';}
 function feedbackPaths(sessions){const seen=new Set();const replaySources=new Set(sessions.filter(s=>s.agent==='toolkit'&&!s.historical).map(s=>s.replay?.sourceRoom).filter(Boolean));return sessions.filter(s=>['keys','toolkit'].includes(s.agent)&&(s.agent==='keys'||!s.historical)&&s.hasContent&&s.argument==='pairs').sort((a,b)=>Number(replaySources.has(b.room))-Number(replaySources.has(a.room))).filter(s=>{const key=s.agent+':'+s.argument+':'+s.route;if(seen.has(key))return false;seen.add(key);return true;}).sort((a,b)=>a.agent.localeCompare(b.agent)||a.argument.localeCompare(b.argument)||routeOrder.indexOf(a.route)-routeOrder.indexOf(b.route));}
 function completedSummary(r){return r.role===$('role').value&&r.complete===true&&(r.respondentId===respondentId||ownReceipts.has(r.id));}
@@ -120,7 +128,7 @@ function renderPaths(){
  if(!pathItems.length)return;
  $('path-tour').hidden=false;
  const done=pathItems.filter(p=>pathProgress.get(p.room)===true).length;
- $('path-progress').textContent=`${done} / ${pathItems.length} submitted here`;
+ $('path-progress').textContent=`${done} / ${pathItems.length} complete · ${pathItems.length-done} remaining`;
  $('path-progress-bar').max=pathItems.length;$('path-progress-bar').value=done;
  const active=source.agent==='toolkit'?'toolkit':'keys';
  const visible=pathItems.filter(p=>p.agent===active);
@@ -131,14 +139,14 @@ function renderPaths(){
  visible.forEach((p,i)=>{const b=document.createElement('button');b.type='button';b.dataset.room=p.room;b.setAttribute('aria-current',p.room===room?'page':'false');b.disabled=switching||saving;
  const label=document.createElement('span');label.textContent=`${i+1}. ${routeLabels[p.route]||p.route}`;
  const tag=document.createElement('small');const submitted=pathProgress.get(p.room)===true;const hasDraft=pendingRooms.has(p.room);
- tag.textContent=(p.room===room?'Current':'')+(submitted?(p.room===room?' · ':'')+(hasDraft?'Submitted · edited':'✓ Submitted'):hasDraft?(p.room===room?' · Draft':'Draft'):pathProgress.get(p.room)===null?' · Status unavailable':'');b.append(label,tag);list.append(b);});
+ tag.textContent=(p.room===room?'Current':'')+(submitted?(p.room===room?' · ':'')+(hasDraft?'Submitted · edited':'✓ Submitted'):hasDraft?(p.room===room?' · Draft':'Draft'):pathProgress.get(p.room)===null?' · Status unavailable':savedPathDrafts.has(p.room)?' · Finish missing items':' · To do');b.append(label,tag);list.append(b);});
  const current=visible.findIndex(p=>p.room===room);
  $('current-path').textContent=current>=0?`Path ${current+1} / ${visible.length} · ${routeLabels[visible[current].route]||h.route}`:'Choose a path';
- $('continue-path').hidden=pathProgress.get(room)!==true||pendingRooms.has(room);
- const pending=nextPath();$('continue-path').disabled=!pending||switching||saving;$('continue-path').textContent=pending?`Continue: ${pending.agent==='keys'?'Control':'Toolkit'} · ${routeLabels[pending.route]||pending.route} →`:'Control and Toolkit submitted ✓';
+ $('continue-path').hidden=false;
+ const pending=pathProgress.get(room)!==true?pathItems.find(p=>p.room===room):nextPath();$('continue-path').disabled=!pending||switching||saving;$('continue-path').textContent=pending?.room===room?'Finish this path →':pending?`Continue: ${pending.agent==='keys'?'Control':'Toolkit'} · ${routeLabels[pending.route]||pending.route} →`:'Control and Toolkit submitted ✓';
 }
 function nextPath(){const i=pathItems.findIndex(p=>p.room===room);return [...pathItems.slice(i+1),...pathItems.slice(0,i)].find(p=>pathProgress.get(p.room)!==true);}
-async function loadPathProgress(){await Promise.all(pathItems.map(async p=>{try{const r=await apiFetch(`/api/feedback?room=${encodeURIComponent(p.room)}&summary=1`,{cache:'no-store'});if(!r.ok)throw Error();const out=await r.json();pathProgress.set(p.room,(out.summaries||[]).some(completedSummary));}catch{pathProgress.set(p.room,null);}}));renderPaths();}
+async function loadPathProgress(){await Promise.all(pathItems.map(async p=>{try{const r=await apiFetch(`/api/feedback?room=${encodeURIComponent(p.room)}`,{cache:'no-store'});if(!r.ok)throw Error();const out=await r.json();const latest=(out.records||[]).filter(r=>ownFeedback(r)&&r.draft.role===$('role').value).sort((a,b)=>b.at.localeCompare(a.at))[0];if(latest)savedPathDrafts.set(p.room,latest.draft);pathProgress.set(p.room,!!latest&&!feedbackCompletionIssue(latest.draft));}catch{pathProgress.set(p.room,null);}}));renderPaths();}
 async function switchPath(id){
  finishComment();
  if(id===room||switching||saving||!pathItems.some(p=>p.room===id))return;
@@ -148,7 +156,7 @@ async function switchPath(id){
  finally{switching=false;renderPaths();}
 }
 $('path-list').onclick=e=>{const b=e.target.closest('[data-room]');if(b)switchPath(b.dataset.room);};
-$('continue-path').onclick=()=>{const next=nextPath();if(next)switchPath(next.room);};
+$('continue-path').onclick=()=>{if(pathProgress.get(room)!==true){const issue=feedbackCompletionIssue({...draft,removed:removedIds()});showingSaved=false;submissionUI();changeStep(issue?.step||0);return;}const next=nextPath();if(next)switchPath(next.room);};
 $('condition-switch').onclick=e=>{const b=e.target.closest('[data-condition]');if(!b)return;const options=pathItems.filter(p=>p.agent===b.dataset.condition);const target=options.find(p=>p.argument===h.argument&&p.route===h.route)||options.find(p=>pathProgress.get(p.room)!==true)||options[0];if(target)switchPath(target.room);};
 // Two references is paused for feedback; preserve its sessions and submissions.
 if(h.argument==='refs'){
@@ -199,7 +207,7 @@ function submissionUI(){
 }
 $('edit-submitted').onclick=()=>{showingSaved=false;submissionUI();$('workspace').scrollIntoView({block:'start',behavior:'smooth'});};
 function localSave(){persistDraft();confirmedCurrent=false;showingSaved=false;dirty=true;pendingRooms.add(room);editRevision++;pageDrafts.set(localKey(),clone(draft));renderPaths();$('receipt').textContent='Not submitted yet. Your work will be sent to History when you click Submit feedback. Your draft is backed up on this browser when automatic backup is available.';if(hasReceipt)$('receipt').textContent='Your earlier submission is saved. Submit your new changes before continuing.';submissionUI();}
-async function load(){confirmedCurrent=false;showingSaved=false;hasReceipt=false;$('submission-result').classList.remove('saved');$('saved-heading').hidden=true;$('edit-submitted').hidden=true;document.querySelector('nav').hidden=false;$('records').open=false;editRevision++;$('receipt').textContent='Your original result is safe. Work through the three steps, then submit your feedback to History.';draft=pageDrafts.has(localKey())?clone(pageDrafts.get(localKey())):fresh();if(pageDrafts.has(localKey()))$('receipt').textContent='Unsubmitted draft. Submit when you have finished all three steps.';draft.annotations ||= [];commentEdit=null;$('comment-bubble').hidden=true;undo=[[],[],[]];redo=[[],[],[]];pointer=null;preview=null;hover=null;original=false;beforeAction=null;step=0;color=null;mode='erase';sketch=null;showConversation();
+async function load(){confirmedCurrent=false;showingSaved=false;hasReceipt=false;$('submission-result').classList.remove('saved');$('saved-heading').hidden=true;$('edit-submitted').hidden=true;document.querySelector('nav').hidden=false;$('records').open=false;editRevision++;$('receipt').textContent='Your original result is safe. Work through the three steps, then submit your feedback to History.';draft=pageDrafts.has(localKey())?clone(pageDrafts.get(localKey())):resumeReceipt&&savedPathDrafts.has(room)?clone(savedPathDrafts.get(room)):fresh();if(pageDrafts.has(localKey()))$('receipt').textContent='Unsubmitted draft. Submit when you have finished all three steps.';draft.annotations ||= [];commentEdit=null;$('comment-bubble').hidden=true;undo=[[],[],[]];redo=[[],[],[]];pointer=null;preview=null;hover=null;original=false;beforeAction=null;step=0;color=null;mode='erase';sketch=null;showConversation();
 if(draft.source.sketchUrl){try{sketch=await new Promise((resolve,reject)=>{const img=new Image();img.crossOrigin='anonymous';img.onload=()=>resolve(img);img.onerror=reject;img.src=assetURL(draft.source.sketchUrl);});}catch{status('Saved sketch could not load. Your work stays saved as a draft; the sketch must load before you can complete and submit all three steps.');}}
 matches=crossingMatches(draft.source.shape,draft.source.world,draft.source.extras);$('workspace').hidden=false;render();showDraftRecovery();$('autosave-status').textContent=pageDrafts.has(localKey())?'Unsubmitted draft · changes save on this browser':'Changes automatically sync to the researcher’s cloud · draft, not submitted';}
 let commentEdit=null;
@@ -248,6 +256,7 @@ function feedbackCompletionIssue(d){
  if(!Object.values(d.ratings||{}).some(v=>colors.includes(v)))return {step:0,message:'Step 1: choose a rating color and apply it to at least one stick.'};
  if(!(d.removed||d.rebuildRemoved||[]).length&&!(d.added||[]).some(s=>[s.x1,s.y1,s.x2,s.y2].every(Number.isFinite)&&(s.x1!==s.x2||s.y1!==s.y2)))return {step:1,message:'Step 2: remove at least one original stick or add at least one blue stick.'};
  if(!(d.annotations||[]).some(a=>typeof a.text==='string'&&a.text.trim()&&Number.isFinite(a.x)&&Number.isFinite(a.y)&&['red','neutral','some','blue'].includes(a.color)))return {step:2,message:'Step 3: place a colored comment on the sketch and write your reason.'};
+ for(const step of [0,1,2]){const value=d.overallScores?.[step];if(value!=='cannot-judge'&&!(Number.isInteger(value)&&value>=-3&&value<=3))return {step,message:`Step ${step+1}: choose an overall score (−3 to +3), or Cannot judge.`};}
  return null;
 }
 function allowRatingProgress(){return Object.keys(draft.ratings||{}).length>0;}
@@ -410,7 +419,7 @@ function changeStep(n){if(saving||switching)return;finishComment();if(n!==step){
   try{
    draft.notes[step]=$('note').value;
    const payload=clone(draft);
-   payload.feedbackUiVersion='2026-10-18-required-three-steps';payload.removed=removedIds();payload.originalMatches=clone(matches);payload.sketchSize=sketch?{width:1200,height:Math.round(1200*sketch.height/sketch.width)}:null;
+   payload.feedbackUiVersion='2026-11-02-required-actions-and-scores';payload.removed=removedIds();payload.originalMatches=clone(matches);payload.sketchSize=sketch?{width:1200,height:Math.round(1200*sketch.height/sketch.width)}:null;
    const images=[0,1,2].map(n=>{if(n===2&&!sketch)return null;const c=document.createElement('canvas');draw(c,n);return c.toDataURL('image/png');});
    const signature=JSON.stringify({room,draft:payload,images});if(submissionAttempt?.signature!==signature)submissionAttempt={signature,id:crypto.randomUUID()};
    const attempt={room,draft:payload,images,submissionId:submissionAttempt.id,backedUpAt:new Date().toISOString()};
@@ -435,5 +444,5 @@ function changeStep(n){if(saving||switching)return;finishComment();if(n!==step){
  async function records(confirmed){try{const r=confirmed?{records:[confirmed]}:await apiFetch(`/api/feedback?room=${encodeURIComponent(room)}`).then(r=>{if(!r.ok)throw Error('Could not load records');return r.json();});$('record-list').replaceChildren();for(const rec of (r.records||[]).filter(rec=>ownFeedback(rec)&&(!participant||rec.draft.role===$('role').value))){const a=document.createElement('article'),title=document.createElement('p');title.textContent=`${rec.draft.participantLabel||rec.draft.role} · ${rec.draft.source.agent} · ${new Date(rec.at).toLocaleString()}`;a.append(title);rec.images.forEach((src,i)=>{if(!src)return;const link=document.createElement('a'),img=new Image();link.href=src;link.download=`${room}-${rec.draft.role}-${rec.id}-step${i+1}.png`;img.src=src;img.alt=['Rated original matchsticks','Rebuilt bridge','Sketch comments'][i];link.append(img);a.append(link);});const details=document.createElement('p');details.textContent=rec.draft.notes.filter(Boolean).join(' · ');a.append(details);for(const [i,n] of (rec.draft.annotations||[]).entries()){const text=document.createElement('p');text.textContent=`${i+1}. ${labels[n.color]} — ${n.text}`;a.append(text);}const exportLink=document.createElement('a');exportLink.textContent='Download full record (JSON)';exportLink.href=URL.createObjectURL(new Blob([JSON.stringify(rec,null,2)],{type:'application/json'}));exportLink.download=`feedback-${rec.id}.json`;a.append(exportLink);$('record-list').append(a);}if(!$('record-list').children.length)$('record-list').textContent='No feedback saved yet.';}catch{status('Could not load saved feedback.');}}
 
  try{for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key.startsWith('two-worlds-autodraft-v1:'+respondentId+':')){const record=JSON.parse(localStorage.getItem(key));if(record?.revision&&!record.cloudSavedAt)queueCloudDraft(key,record);}}}catch{}
- await load();await records();if(pathItems.length)await loadPathProgress();
+ if(pathItems.length)await loadPathProgress();await load();await records();
 })().catch(e=>{document.getElementById('status').textContent=`Unable to open feedback: ${e.message}`;});

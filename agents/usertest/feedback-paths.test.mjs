@@ -23,7 +23,7 @@ test('shared room progress counts only this browser receipts, never another part
 
 test('browser identity and confirmed receipts survive reopening; separate storage starts clean',()=>{
  const memory=new Map();let serial=0;
- function open(storage){const c=vm.createContext({localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},crypto:{randomUUID:()=>`browser-${++serial}`}});vm.runInContext(source.slice(source.indexOf("const identityKey="),source.indexOf('const colors=')),c);return c;}
+ function open(storage){const c=vm.createContext({localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},crypto:{randomUUID:()=>`browser-${++serial}`}});vm.runInContext(source.slice(source.indexOf("const identityKey="),source.indexOf('// A personal continuation link')),c);return c;}
  const first=open(memory);vm.runInContext("rememberReceipt('saved-a')",first);
  const reopened=open(memory);assert.equal(vm.runInContext("ownFeedback({id:'saved-a'})",reopened),true);
  const other=open(new Map());assert.equal(vm.runInContext("ownFeedback({id:'saved-a'})",other),false);

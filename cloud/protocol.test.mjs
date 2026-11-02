@@ -14,7 +14,7 @@ test('overall feedback scores preserve zero and reject out-of-range values',asyn
 
 test('all three actions are required, and undoing an action makes a submission incomplete',async()=>{
  const {feedbackCompletionIssue}=await import('./protocol.mjs');
- const d={ratings:{a:'veryBlue'},removed:[],added:[{x1:0,y1:0,x2:50,y2:0}],annotations:[{x:1,y:2,color:'red',text:'Needs a railing'}]};
+ const d={overallScores:[0,'cannot-judge',3],ratings:{a:'veryBlue'},removed:[],added:[{x1:0,y1:0,x2:50,y2:0}],annotations:[{x:1,y:2,color:'red',text:'Needs a railing'}]};
  assert.equal(feedbackCompletionIssue(d),null);
  assert.equal(feedbackCompletionIssue({...d,ratings:{},unratedConfirmed:true}).step,0);
  assert.equal(feedbackCompletionIssue({...d,added:[]}).step,1);
@@ -23,3 +23,5 @@ test('all three actions are required, and undoing an action makes a submission i
  assert.equal(feedbackCompletionIssue({...d,annotations:[]}).step,2);
  assert.equal(feedbackCompletionIssue({...d,annotations:[{x:1,y:2,color:'red',text:'  '}]}).step,2);
 });
+
+test('all three overall scores required for final submission only',async()=>{const {feedbackCompletionIssue}=await import('./protocol.mjs');const d={ratings:{a:'blue'},removed:['a'],annotations:[{x:0,y:0,color:'blue',text:'safe'}],overallScores:[0,-3,3]};assert.equal(feedbackCompletionIssue(d),null);for(const i of [0,1,2]){const scores=[0,-3,3];scores[i]=null;assert.equal(feedbackCompletionIssue({...d,overallScores:scores}).step,i);}assert.equal(feedbackCompletionIssue({...d,overallScores:[0,'cannot-judge',3]}),null);});
