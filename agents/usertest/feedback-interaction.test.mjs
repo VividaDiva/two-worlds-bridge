@@ -95,5 +95,14 @@ test('next-step score gate rejects missing values, accepts zero and cannot-judge
  assert.equal(error.hidden,false);assert.equal(focused,5);assert.equal(scrolled,5);
  for(const value of [-3,0,3,'cannot-judge']){c.draft.overallScores=[value];assert.equal(vm.runInContext('requireOverallScore()',c),true);}
  assert.match(source,/dataset.step>step&&!requireOverallScore/);
- assert.match(source,/else \{if\(!requireOverallScore\(\)\)return;changeStep/);
+ assert.match(source,/if\(!requireOverallScore\(\)\)return;changeStep/);
+});
+
+
+test('forward navigation checks actions as well as scores',()=>{
+ const c=vm.createContext({draft:{ratings:{a:'blue'},removed:[],added:[],annotations:[]},step:1,finishComment(){},removedIds:()=>[],changeStep:n=>{c.step=n;},$:()=>({scrollIntoView(){}})});
+ vm.runInContext(source.slice(source.indexOf('function feedbackCompletionIssue('),source.indexOf('function allowRatingProgress()')),c);
+ vm.runInContext(source.slice(source.indexOf('function requireCurrentAction('),source.indexOf('function requireOverallScore(')),c);
+ assert.equal(vm.runInContext('requireCurrentAction()',c),false);
+ c.draft.added=[{x1:0,y1:0,x2:50,y2:0}];assert.equal(vm.runInContext('requireCurrentAction()',c),true);
 });

@@ -127,13 +127,13 @@ function completedSummary(r){return r.role===$('role').value&&r.complete===true&
 function renderPaths(){
  if(!pathItems.length)return;
  $('path-tour').hidden=false;
- const done=pathItems.filter(p=>pathProgress.get(p.room)===true).length;
- $('path-progress').textContent=`${done}/${pathItems.length} complete`;
+ const done=pathItems.filter(p=>pathProgress.get(p.room)===true&&!pendingRooms.has(p.room)).length;
+ $('path-progress').textContent=done===pathItems.length?'✓ All feedback complete':`${done}/${pathItems.length} complete · ${pathItems.length-done} left`;
  $('path-progress-bar').max=pathItems.length;$('path-progress-bar').value=done;
  const active=source.agent==='toolkit'?'toolkit':'keys';
  const visible=pathItems.filter(p=>p.agent===active);
  const conditions=$('condition-switch');conditions.replaceChildren();
- for(const [agent,name] of [['keys','Control'],['toolkit','Toolkit']]){const items=pathItems.filter(p=>p.agent===agent),count=items.filter(p=>pathProgress.get(p.room)===true).length;const b=document.createElement('button');b.type='button';b.dataset.condition=agent;b.setAttribute('aria-pressed',String(active===agent));b.disabled=switching||saving||!items.length;b.textContent=`${name} ${count}/${items.length}`;conditions.append(b);}
+ for(const [agent,name] of [['keys','Control'],['toolkit','Toolkit']]){const items=pathItems.filter(p=>p.agent===agent),count=items.filter(p=>pathProgress.get(p.room)===true&&!pendingRooms.has(p.room)).length;const b=document.createElement('button');b.type='button';b.dataset.condition=agent;b.setAttribute('aria-pressed',String(active===agent));b.disabled=switching||saving||!items.length;b.textContent=`${name} ${count}/${items.length}`;conditions.append(b);}
  $('condition-label').textContent=`${active==='keys'?'CONTROL':'TOOLKIT'} · CURRENT CONDITION`;
  const list=$('path-list');list.replaceChildren();
  visible.forEach((p,i)=>{const b=document.createElement('button');b.type='button';b.dataset.room=p.room;b.setAttribute('aria-current',p.room===room?'page':'false');b.disabled=switching||saving;
@@ -143,9 +143,9 @@ function renderPaths(){
  const current=visible.findIndex(p=>p.room===room);
  $('current-path').textContent=current>=0?`${routeLabels[visible[current].route]||h.route}`:'Choose a path';
  $('continue-path').hidden=false;
- const pending=pathProgress.get(room)!==true?pathItems.find(p=>p.room===room):nextPath();$('continue-path').disabled=!pending||switching||saving;$('continue-path').textContent=pending?.room===room?'Finish this path →':pending?`Continue: ${pending.agent==='keys'?'Control':'Toolkit'} · ${routeLabels[pending.route]||pending.route} →`:'Control and Toolkit submitted ✓';
+ const pending=pathProgress.get(room)!==true||pendingRooms.has(room)?pathItems.find(p=>p.room===room):nextPath();$('continue-path').disabled=!pending||switching||saving;$('continue-path').textContent=pending?.room===room?'Finish this path →':pending?`Continue: ${pending.agent==='keys'?'Control':'Toolkit'} · ${routeLabels[pending.route]||pending.route} →`:'Control and Toolkit submitted ✓';
 }
-function nextPath(){const i=pathItems.findIndex(p=>p.room===room);return [...pathItems.slice(i+1),...pathItems.slice(0,i)].find(p=>pathProgress.get(p.room)!==true);}
+function nextPath(){const i=pathItems.findIndex(p=>p.room===room);return [...pathItems.slice(i+1),...pathItems.slice(0,i)].find(p=>pathProgress.get(p.room)!==true||pendingRooms.has(p.room));}
 async function loadPathProgress(){await Promise.all(pathItems.map(async p=>{try{const r=await apiFetch(`/api/feedback?room=${encodeURIComponent(p.room)}`,{cache:'no-store'});if(!r.ok)throw Error();const out=await r.json();const latest=(out.records||[]).filter(r=>ownFeedback(r)&&r.draft.role===$('role').value).sort((a,b)=>b.at.localeCompare(a.at))[0];if(latest)savedPathDrafts.set(p.room,latest.draft);pathProgress.set(p.room,!!latest&&!feedbackCompletionIssue(latest.draft));}catch{pathProgress.set(p.room,null);}}));renderPaths();}
 async function switchPath(id){
  finishComment();
@@ -156,7 +156,7 @@ async function switchPath(id){
  finally{switching=false;renderPaths();}
 }
 $('path-list').onclick=e=>{const b=e.target.closest('[data-room]');if(b)switchPath(b.dataset.room);};
-$('continue-path').onclick=()=>{if(pathProgress.get(room)!==true){const issue=feedbackCompletionIssue({...draft,removed:removedIds()});showingSaved=false;submissionUI();changeStep(issue?.step||0);return;}const next=nextPath();if(next)switchPath(next.room);};
+$('continue-path').onclick=()=>{if(pathProgress.get(room)!==true||pendingRooms.has(room)){const issue=feedbackCompletionIssue({...draft,removed:removedIds()});showingSaved=false;submissionUI();changeStep(issue?.step||0);return;}const next=nextPath();if(next)switchPath(next.room);};
 $('condition-switch').onclick=e=>{const b=e.target.closest('[data-condition]');if(!b)return;const options=pathItems.filter(p=>p.agent===b.dataset.condition);const target=options.find(p=>p.argument===h.argument&&p.route===h.route)||options.find(p=>pathProgress.get(p.room)!==true)||options[0];if(target)switchPath(target.room);};
 // Two references is paused for feedback; preserve its sessions and submissions.
 if(h.argument==='refs'){
@@ -197,7 +197,8 @@ let confirmedCurrent=false,showingSaved=false,hasReceipt=false;
 function submissionUI(){
  $('submission-result').classList.toggle('saved',hasReceipt);
  $('saved-heading').hidden=!hasReceipt;
- $('saved-heading').textContent=confirmedCurrent?'✓ Feedback saved':'Unsaved changes';
+ const left=pathItems.filter(p=>pathProgress.get(p.room)!==true||pendingRooms.has(p.room)).length;
+ $('saved-heading').textContent=confirmedCurrent?(pathItems.length&&left===0?'✓ All feedback complete':`✓ This path saved${pathItems.length?' · '+left+' left':''}`):'Unsaved changes';
  $('edit-submitted').hidden=!showingSaved;
  $('workspace').hidden=showingSaved;
  document.querySelector('nav').hidden=showingSaved;
@@ -264,9 +265,10 @@ function requireRatingProgress(){if(allowRatingProgress())return true;changeStep
 function updateTaskChecklist(){
  if(!draft)return;
  const count=Object.keys(draft.ratings||{}).length,removed=removedIds().length,added=(draft.added||[]).length,comments=(draft.annotations||[]).filter(a=>a.text?.trim()).length;
- $('task-rating-status').textContent=count?`✓ ${count} sticks colored`:'○ Color sticks';
- $('task-rebuild-status').textContent=removed||added?`✓ Bridge changed`:'○ Change bridge';
- $('task-sketch-status').textContent=comments?`✓ ${comments} comments`:'○ Add sketch comment';
+ const scored=n=>draft.overallScores?.[n]==='cannot-judge'||(Number.isInteger(draft.overallScores?.[n])&&draft.overallScores[n]>=-3&&draft.overallScores[n]<=3);
+ $('task-rating-status').textContent=count?(scored(0)?'✓ Bridge rated':'○ Bridge: score needed'):'○ Color sticks';
+ $('task-rebuild-status').textContent=removed||added?(scored(1)?'✓ Rebuild rated':'○ Rebuild: score needed'):'○ Change bridge';
+ $('task-sketch-status').textContent=comments?(scored(2)?'✓ Sketch rated':'○ Sketch: score needed'):'○ Add sketch comment';
  const scores=(draft.overallScores||[]).filter(v=>v!==null&&v!==undefined).length;
  $('task-score-status').textContent=`Scores: ${scores} / 3${scores===3?' ✓':''}`;
 }
@@ -387,6 +389,12 @@ function end(e){if(!pointer||pointer.id!==e.pointerId)return;if(step===2)paint(p
 $('canvas').ondblclick=e=>{if(step!==2||sketchTool!=='fill'||original||!sketch||!color||pointer)return;e.preventDefault();fillSketchAt(point(e));};
 $('canvas').onpointerup=end;$('canvas').onpointercancel=()=>{if(beforeAction!==null)applyAction(beforeAction);beforeAction=null;pointer=null;preview=null;render();};
 function showStepStart(){const viewport=document.querySelector('.canvas-viewport');viewport.scrollTop=0;viewport.scrollLeft=0;$('workspace').scrollIntoView({block:'start'});}
+function requireCurrentAction(){
+ finishComment();
+ const issue=feedbackCompletionIssue({...draft,overallScores:[0,0,0],removed:removedIds()});
+ if(!issue||issue.step>step)return true;
+ changeStep(issue.step);$('completion-error').hidden=false;$('completion-error').textContent=issue.message;$('completion-error').scrollIntoView({block:'center'});return false;
+}
 function requireOverallScore(){
  const value=draft.overallScores?.[step];
  if(value==='cannot-judge'||(Number.isInteger(value)&&value>=-3&&value<=3))return true;
@@ -397,7 +405,7 @@ function requireOverallScore(){
  return false;
 }
 function changeStep(n){if(saving||switching)return;finishComment();if(n!==step){zoom=1;color=null;}if(n===1&&step!==1)mode='erase';step=n;draft.visited[step]=true;original=false;preview=null;hover=null;render();showStepStart();}
- document.querySelector('nav').onclick=e=>{const b=e.target.closest('[data-step]');if(b){if(+b.dataset.step>step&&!requireOverallScore())return;if(+b.dataset.step>0&&!requireRatingProgress())return;changeStep(+b.dataset.step);}};
+ document.querySelector('nav').onclick=e=>{const b=e.target.closest('[data-step]');if(b){if(+b.dataset.step>step&&!requireCurrentAction())return;if(+b.dataset.step>step&&!requireOverallScore())return;if(+b.dataset.step>0&&!requireRatingProgress())return;changeStep(+b.dataset.step);}};
  $('palette').onclick=e=>{finishComment();const b=e.target.closest('[data-color]');if(b){color=b.dataset.color;original=false;render();}};
  $('tools').onclick=e=>{const size=e.target.closest('[data-brush]');if(size){setBrushSize(size.dataset.brush);return;}const eraser=e.target.closest('[data-color]');if(eraser){color=eraser.dataset.color;original=false;render();return;}const sketchButton=e.target.closest('[data-sketch]');if(sketchButton){sketchTool=sketchButton.dataset.sketch;render();return;}const piece=e.target.closest('[data-piece]'),b=e.target.closest('[data-mode]');if(piece){orientation=piece.dataset.piece;mode='grid';}else if(b)mode=b.dataset.mode;else return;original=false;preview=null;hover=null;render();};
  $('tools').oninput=e=>{if(e.target.id==='brush')setBrushSize(e.target.value);if(e.target.id==='piece-length'){pieceLength=+e.target.value;preview=null;}};
@@ -417,7 +425,7 @@ function changeStep(n){if(saving||switching)return;finishComment();if(n!==step){
  }
  document.querySelectorAll('[data-zoom]').forEach(b=>b.onclick=()=>zoomAtCenter(b.dataset.zoom));
  $('compare').onclick=()=>{finishComment();original=!original;hover=null;preview=null;render();};
- $('next').onclick=()=>{if(step===0&&!requireRatingProgress())return;if(step===1&&(mode==='erase'||mode==='restore')){mode='grid';preview=null;hover=null;original=false;render();showStepStart();}else {if(!requireOverallScore())return;changeStep(Math.min(2,step+1));}};$('previous').onclick=()=>changeStep(Math.max(0,step-1));
+ $('next').onclick=()=>{if(step===0&&!requireRatingProgress())return;if(step===1&&(mode==='erase'||mode==='restore')){mode='grid';preview=null;hover=null;original=false;render();showStepStart();}else {if(!requireCurrentAction())return;if(!requireOverallScore())return;changeStep(Math.min(2,step+1));}};$('previous').onclick=()=>changeStep(Math.max(0,step-1));
  document.addEventListener('keydown',e=>{if(saving||switching)return;if(e.target.closest('input,textarea,select,[contenteditable=true]')||pointer)return;const key=e.key.toLowerCase();if((e.metaKey||e.ctrlKey)&&!e.altKey&&(key==='z'||key==='y')){e.preventDefault();finishComment();historyAction(key==='y'||e.shiftKey?'redo':'undo');return;}if(e.metaKey||e.ctrlKey||e.altKey)return;if(step!==1&&(['1','2','3','4',...(step===0?['5','e']:[])].includes(key))){e.preventDefault();finishComment();color=key==='e'?'none':(step===0?bridgeRatingKeys:['red','neutral','some','blue'])[Number(key)-1];original=false;render();}else if(step===1&&(mode==='grid'||mode==='free')&&key==='r'){e.preventDefault();const keys=Object.keys(pieces);orientation=keys[(keys.indexOf(orientation)+1)%keys.length];mode='grid';original=false;preview=null;render();}});
  $('role').onchange=()=>{finishComment();dirty=false;load();};
  $('download').onclick=()=>{const c=document.createElement('canvas');draw(c,step);const a=document.createElement('a');a.href=c.toDataURL();a.download=`${room}-${draft.role}-step${step+1}.png`;a.click();};
@@ -447,7 +455,7 @@ function changeStep(n){if(saving||switching)return;finishComment();if(n!==step){
    const receipt=`Received by server · ${payload.participantLabel||submittedRole} · ${Object.keys(saved.draft.ratings||{}).length} colored sticks · ${(saved.draft.removed||[]).length} removed / ${(saved.draft.added||[]).length} added · ${(saved.draft.annotations||[]).length} sketch comments · ${count}/3 images${count<3?' (no sketch available)':''} · receipt ${out.id.slice(0,8)} · ${new Date(out.at).toLocaleString()}`;
    if(editRevision===revision){try{const key=draftStorageKeys.get(localKey());if(key)localStorage.removeItem(key);draftStorageKeys.delete(localKey());}catch{}dirty=false;pendingRooms.delete(room);confirmedCurrent=true;showingSaved=true;hasReceipt=true;$('receipt').textContent=receipt;}
    else $('receipt').textContent=receipt+' · Newer edits or the currently selected participant are not included in this submission.';
-   status('');submissionUI();if(payload.role===submittedRole&&payload.visited?.length===3&&payload.visited.every(Boolean)){pathProgress.set(room,true);}renderPaths();await records(saved);$('records').open=true;$('feedback-history').href=feedbackHistoryBase+'?room='+encodeURIComponent(room)+'&role='+submittedRole+'&receipt='+encodeURIComponent(out.id);$('submission-result').scrollIntoView({block:'start',behavior:'smooth'});
+   status('');submissionUI();if(payload.role===submittedRole&&payload.visited?.length===3&&payload.visited.every(Boolean)){pathProgress.set(room,true);savedPathDrafts.set(room,clone(saved.draft));}renderPaths();submissionUI();await records(saved);$('records').open=true;$('feedback-history').href=feedbackHistoryBase+'?room='+encodeURIComponent(room)+'&role='+submittedRole+'&receipt='+encodeURIComponent(out.id);$('submission-result').scrollIntoView({block:'start',behavior:'smooth'});
   }catch(e){$('receipt').textContent=`Submission not confirmed: ${e.message} Your edits remain on this page. Retry, or download the submission backup below before leaving.`;status('Please check the receipt above and retry if needed.');}
   finally{setSubmissionBusy(false);$('submission-result').scrollIntoView({block:'start',behavior:'smooth'});}
  };

@@ -42,3 +42,10 @@ test('personal continuation restores only the matching receipt and role without 
  const code=source.slice(source.indexOf('// A personal continuation link'),source.indexOf('const colors='));
  for(const role of ['A','B']){const c=vm.createContext({params:new URLSearchParams('resume=receipt&resumeRoom=room'),$:()=>({value:role}),respondentId:'default-browser',receiptKey:'default',ownReceipts:new Set(),apiFetch:async()=>({ok:true,json:async()=>({records:[{id:'receipt',draft:{role:'B',respondentId:'returning-user'}}]})}),connectionError:()=>{}});await vm.runInContext('(async()=>{'+code+'})()',c);assert.equal(c.respondentId,role==='B'?'returning-user':'default-browser');}
 });
+
+
+test('next path crosses conditions and includes edited submissions',()=>{
+ const c=vm.createContext({room:'a',pathItems:[{room:'a'},{room:'b'},{room:'c'}],pathProgress:new Map([['a',true],['b',true],['c',true]]),pendingRooms:new Set(['b'])});
+ vm.runInContext(source.slice(source.indexOf('function nextPath('),source.indexOf('async function loadPathProgress(')),c);
+ assert.equal(vm.runInContext('nextPath().room',c),'b');c.pendingRooms.clear();assert.equal(vm.runInContext('nextPath()',c),undefined);c.pathProgress.set('c',false);assert.equal(vm.runInContext('nextPath().room',c),'c');
+});
