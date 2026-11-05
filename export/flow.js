@@ -35,19 +35,30 @@ function drawFlow(t){
  const frame=interpretationFrame(session,index),input=t.who==='machine'&&frame.receivesAI?routeMessages(session,frame.sourceIndex).find(m=>m.to==='M'):null;
  const messages=routeMessages(session,index),from=t.who==='machine'?'M':t.who,to=recipients(session,t);
  const width=Math.max(280,Math.round($('flow').getBoundingClientRect().width)||520);
- const layouts=messages.map(m=>({...m,layout:edgeChips(m.words.length?m.words:[{text:m.kind==='extracted'?'No keywords':'No coded keys',status:'coded'}],m.to==='M'?Math.min(180,Math.max(116,(width-50)/2)):Math.max(100,Math.min(240,width-176)))}));
- const baseHeight=Math.max(280,...layouts.filter(m=>m.to==='M').map(m=>m.layout.height+190));
+ const diagonalWidth=Math.min(180,width*.56);
+ const layouts=messages.map(m=>({...m,layout:edgeChips(m.words.length?m.words:[{text:m.kind==='extracted'?'No keywords':'No coded keys',status:'coded'}],m.to==='M'?diagonalWidth:Math.max(100,Math.min(240,width-176)))}));
  const inputLayout=input?edgeChips(input.words.length?input.words:[{text:'No keywords',status:'coded'}],Math.min(360,width-30)):null;
- const height=baseHeight+(inputLayout?inputLayout.height+38:0),p={A:[52,50],B:[width-52,50],M:[width/2,baseHeight-40]};
- let svg='<defs><marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10" fill="var(--green)"/></marker></defs>';
- for(let [a,b] of [['A','B'],['A','M'],['B','M']]){if(b===from)[a,b]=[b,a];const active=a===from&&to.includes(b),[x1,y1]=p[a],[x2,y2]=p[b],len=Math.hypot(x2-x1,y2-y1),dx=(x2-x1)/len,dy=(y2-y1)/len,inset=k=>k==='M'?Math.min(54/Math.abs(dx||1e-9),25/Math.abs(dy||1e-9))+6:36,start=inset(a),end=inset(b);svg+=`<path class="triangle-edge${active?' active':''}" d="M${x1+dx*start} ${y1+dy*start}L${x2-dx*end} ${y2-dy*end}" ${active?'marker-end="url(#arrowhead)"':''}/>`;}
+ // Reserve the same input area on every turn so the triangle stays still during replay.
+ const canvasStyle=getComputedStyle($('flow').parentElement);
+ const availableHeight=$('flow-panel').clientHeight-parseFloat(canvasStyle.paddingTop)-parseFloat(canvasStyle.paddingBottom)-29;
+ const fillPanel=recording&&matchMedia('(min-width:901px)').matches;
+ const radius=Math.min(42,Math.max(30,width*.075)),nodeWidth=Math.min(148,Math.max(108,width*.27)),nodeHeight=radius+22;
+ const maxInputHeight=Math.max(22,...session.transcript.flatMap((_,i)=>routeMessages(session,i).filter(m=>m.to==='M').map(m=>edgeChips(m.words,Math.min(360,width-30)).height)));
+ const footerHeight=nodeHeight/2+33+maxInputHeight+8;
+ const maxEdgeHeight=Math.max(22,...session.transcript.flatMap((_,i)=>routeMessages(session,i).filter(m=>m.to==='M').map(m=>edgeChips(m.words,diagonalWidth).height)));
+ const insetX=radius+20,topY=radius+24;
+ const minHeight=footerHeight+topY+maxEdgeHeight+Math.max(2*radius,nodeHeight)+20;
+ const height=Math.max(360,minHeight,fillPanel?availableHeight:Math.min(540,width*.92)),baseHeight=height-footerHeight;
+ const p={A:[insetX,topY],B:[width-insetX,topY],M:[width/2,baseHeight]};
+ let svg='<defs>'+['A','B','M'].map(k=>`<marker id="arrowhead-${k}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10" fill="var(${k==='A'?'--role-1':k==='B'?'--role-2':'--green'})"/></marker>`).join('')+'</defs>';
+ for(let [a,b] of [['A','B'],['A','M'],['B','M']]){if(b===from)[a,b]=[b,a];const active=a===from&&to.includes(b),[x1,y1]=p[a],[x2,y2]=p[b],len=Math.hypot(x2-x1,y2-y1),dx=(x2-x1)/len,dy=(y2-y1)/len,inset=k=>k==='M'?Math.min(nodeWidth/2/Math.abs(dx||1e-9),nodeHeight/2/Math.abs(dy||1e-9))+7:radius+8,start=inset(a),end=inset(b);svg+=`<path class="triangle-edge source-${a}${active?' active':''}" d="M${x1+dx*start} ${y1+dy*start}L${x2-dx*end} ${y2-dy*end}" ${active?`marker-end="url(#arrowhead-${a})"`:''}/>`;}
  for(const m of layouts){const [x1,y1]=p[m.from],[x2,y2]=p[m.to],cx=(x1+x2)/2,cy=(y1+y2)/2,caption=m.kind==='coded'?'Coded in the participant message':m.kind==='extracted'?'AI extraction':'AI reply';svg+=`<g class="edge-words"><title>${esc(role[m.from]+' → '+role[m.to]+': '+caption)}</title>`;
   m.layout.rows.forEach((row,j)=>{let x=cx-row.reduce((n,w)=>n+w.width+5,-5)/2;const y=cy-m.layout.height/2+j*27;for(const word of row){svg+=`<g class="edge-word ${word.status}" transform="translate(${x},${y})"><rect width="${word.width}" height="22" rx="5"/><text x="${word.width/2}" y="15">${esc(word.label)}</text><title>${esc(word.status==='lost'?'Not extracted: '+word.text:word.status==='extra'?'Extra extraction: '+word.text:word.text)}</title></g>`;x+=word.width+5;}});svg+='</g>';
  }
- if(inputLayout){svg+=`<g class="input-indicators"><title>${esc('Latest AI-visible input: '+role[frame.source.who]+', turn '+(frame.sourceIndex+1))}</title><text class="input-caption" x="${width/2}" y="${baseHeight+1}">${esc('Latest input · '+role[frame.source.who])}</text>`;
-  inputLayout.rows.forEach((row,j)=>{let x=(width-row.reduce((n,w)=>n+w.width+5,-5))/2;const y=baseHeight+12+j*27;for(const word of row){svg+=`<g class="edge-word ${word.status}" transform="translate(${x},${y})"><rect width="${word.width}" height="22" rx="11"/><text x="${word.width/2}" y="15">${esc(word.label)}</text><title>${esc(word.status==='lost'?'Not extracted: '+word.text:word.status==='extra'?'Extra extraction: '+word.text:word.text)}</title></g>`;x+=word.width+5;}});svg+='</g>';
+ if(inputLayout){svg+=`<g class="input-indicators"><title>${esc('Latest AI-visible input: '+role[frame.source.who]+', turn '+(frame.sourceIndex+1))}</title><text class="input-caption" x="${width/2}" y="${baseHeight+nodeHeight/2+22}">${esc('Latest input · '+role[frame.source.who])}</text>`;
+  inputLayout.rows.forEach((row,j)=>{let x=(width-row.reduce((n,w)=>n+w.width+5,-5))/2;const y=baseHeight+nodeHeight/2+33+j*27;for(const word of row){svg+=`<g class="edge-word ${word.status}" transform="translate(${x},${y})"><rect width="${word.width}" height="22" rx="11"/><text x="${word.width/2}" y="15">${esc(word.label)}</text><title>${esc(word.status==='lost'?'Not extracted: '+word.text:word.status==='extra'?'Extra extraction: '+word.text:word.text)}</title></g>`;x+=word.width+5;}});svg+='</g>';
  }
- for(const k of ['A','B','M']){const [x,y]=p[k];svg+=`<g class="triangle-node ${k}${from===k?' speaking':to.includes(k)?' receives':''}" transform="translate(${x},${y})"><title>${esc(role[k]+(from===k?' speaking':to.includes(k)?' receives':'')+(k==='M'&&t.who==='machine'?'\n'+t.text+(t.say?'\n'+t.say:''):''))}</title>${k==='M'?'<rect x="-54" y="-25" width="108" height="50" rx="12"/>':'<circle r="29"/>'}<text y="4">${role[k]}</text></g>`;}
+ for(const k of ['A','B','M']){const [x,y]=p[k];svg+=`<g class="triangle-node ${k}${from===k?' speaking':to.includes(k)?' receives':''}" transform="translate(${x},${y})"><title>${esc(role[k]+(from===k?' speaking':to.includes(k)?' receives':'')+(k==='M'&&t.who==='machine'?'\n'+t.text+(t.say?'\n'+t.say:''):''))}</title>${k==='M'?`<rect x="${-nodeWidth/2}" y="${-nodeHeight/2}" width="${nodeWidth}" height="${nodeHeight}" rx="18"/>`:`${from===k?`<circle class="node-halo" r="${radius+7}"/>`:''}<circle r="${radius}"/>`}<text y="4">${role[k]}</text></g>`;}
  $('flow').setAttribute('viewBox',`0 0 ${width} ${height}`);$('flow').style.height=height+'px';$('flow').innerHTML=svg;
  $('flow').setAttribute('aria-label',`${role[from]} speaking. ${messages.length?messages.map(m=>`${role[m.from]} to ${role[m.to]}: ${m.kind}; ${m.words.map(w=>w.text+' ('+w.status+')').join(', ')||'no keywords recorded'}`).join('. '):'No reply is relayed to participants.'}`);
  const statuses=new Set([...messages.flatMap(m=>m.words.map(w=>w.status)),...(input?.words||[]).map(w=>w.status)]);
