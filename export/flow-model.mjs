@@ -35,3 +35,18 @@ export function routeMessages(session,index){
   return {from,to,kind:'extracted',words};
  });
 }
+
+// This is the chronological extraction record, not proof of the AI's internal
+// memory or its currently active requirements. Keys retain first-seen order;
+// later evidence updates only that role/key's status and source index.
+export function interpretationRecord(session,index){
+ const records={A:new Map(),B:new Map()};
+ for(let i=0;i<=Math.min(index,session.transcript.length-1);i++){
+  const turn=session.transcript[i];
+  if(turn.who!=='A'&&turn.who!=='B')continue;
+  const input=routeMessages(session,i).find(message=>message.to==='M');
+  if(!input)continue;
+  for(const word of input.words)records[turn.who].set(word.text,{text:word.text,status:word.status,sourceIndex:i});
+ }
+ return {A:[...records.A.values()],B:[...records.B.values()]};
+}

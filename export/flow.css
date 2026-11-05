@@ -11,7 +11,7 @@
 .recording-context,#hide-controls{display:none}
 body.recording{background:#eeeee8}
 .recording .masthead,.recording .intro,.recording .routes,.recording .session-bar,.recording .stage-footer,.recording .chat-end{display:none}
-.recording .workspace{display:block;max-width:1600px;height:100dvh;padding:20px 24px 88px;min-height:640px}
+.recording .workspace{display:block;max-width:1600px;height:100dvh;padding:20px 24px;min-height:640px}.recording.controls-visible .workspace{padding-bottom:88px}
 .recording .stage{height:100%;display:flex;flex-direction:column}
 .recording .columns{flex:1;min-height:0;grid-template-columns:minmax(0,1fr) minmax(0,1.08fr);gap:22px;align-items:stretch}
 .recording .conversation{display:flex;flex-direction:column;min-height:0}
@@ -42,7 +42,7 @@ body.recording{background:#eeeee8}
 .recording #recording-toggle{border-left:1px solid var(--line);border-radius:0;margin-left:2px;padding-left:12px}
 .recording #error{position:fixed;z-index:20;top:10px;left:10px;right:10px;background:var(--card)}
 @media(min-width:1500px){.recording .message p{font-size:17px}}
-@media(max-width:900px){.recording .workspace{height:auto;min-height:100dvh;padding:14px 14px 96px}.recording .columns{grid-template-columns:1fr}.recording #chat{max-height:440px;flex:auto}.recording .inspector{min-height:480px}.recording .replay-controls{width:calc(100% - 24px);flex-wrap:wrap;bottom:10px;gap:6px}.recording .recording-context{display:none}.recording #hide-controls{font-size:11px}.recording .inspect-tabs{gap:13px;padding-right:14px}.recording .panel-head{padding-left:16px}.recording .panel-head h2{font-size:15px}}
+@media(max-width:900px){.recording .workspace{height:auto;min-height:100dvh;padding:14px}.recording.controls-visible .workspace{padding-bottom:96px}.recording .columns{grid-template-columns:1fr}.recording #chat{max-height:440px;flex:auto}.recording .inspector{min-height:480px}.recording .replay-controls{width:calc(100% - 24px);flex-wrap:wrap;bottom:10px;gap:6px}.recording .recording-context{display:none}.recording #hide-controls{font-size:11px}.recording .inspect-tabs{gap:13px;padding-right:14px}.recording .panel-head{padding-left:16px}.recording .panel-head h2{font-size:15px}}
 
 .recording .triangle-node text{font-size:14px}.recording .flow-key{margin-bottom:0}
 @media(min-width:901px){.recording .flow-canvas{height:100%}}
@@ -54,3 +54,16 @@ body.recording{background:#eeeee8}
 .recording .message-top{font-size:12px}
 
 @media(max-width:700px){.message,.recording .message{max-width:96%;gap:7px}.chat-avatar,.recording .chat-avatar{width:25px;height:25px;font-size:9px}.bubble,.recording .bubble{padding:11px 13px}.recording .flow-canvas{padding-top:12px}}
+
+/* The keyword record is separate from message arrows: it is a cumulative archive view. */
+.interpretation-record{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-content:start;padding:2px 4px 8px;flex:none}
+.record-role{min-width:0}.record-role-label{display:block;font-size:11px;font-weight:600;color:var(--role-1);margin-bottom:8px}.record-role.B .record-role-label{color:var(--role-2)}
+.record-words{display:flex;flex-wrap:wrap;gap:5px;align-content:start}.record-word{display:inline-flex;align-items:center;min-height:24px;padding:3px 8px;border:1px solid var(--line);border-radius:6px;font:11px/16px var(--mono);white-space:nowrap}
+.record-word.kept{background:#e9f0e2;border-color:#cbdac0;color:#355c3d}.record-word.extra{background:#f1edf4;border-color:#d2c5da;color:#75607f}.record-word.lost{background:#fff8f3;border:1px dashed #b18b76;color:#946044}.record-word.fresh{box-shadow:0 0 0 1px currentColor}
+.record-empty{font:11px/24px var(--mono);color:#7a8178}.record-measure{position:absolute;visibility:hidden;pointer-events:none;min-height:0!important}
+.flow-key{justify-content:flex-end;flex-wrap:wrap;gap:7px 14px;margin:0;font:10px/16px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.flow-key span{display:inline-flex;gap:5px;align-items:center;white-space:nowrap}.flow-key i{display:inline-grid;place-items:center;flex:none;width:16px;height:16px;border:1px solid;border-radius:4px;font:11px var(--mono)}
+.flow-key .kept{background:#e9f0e2;border-color:#cbdac0;color:#355c3d}.flow-key .extra{background:#f1edf4;border-color:#d2c5da;color:#75607f}.flow-key .lost{background:#fff8f3;border-color:#b18b76;border-style:dashed;color:#946044}
+@media(max-width:700px){.interpretation-record{gap:14px;padding-inline:0}.flow-key{gap:7px 10px;font-size:9px}.record-word{font-size:10px;padding-inline:6px}}
+
+@media(max-width:900px),(pointer:coarse){.recording #hide-controls{display:none}}

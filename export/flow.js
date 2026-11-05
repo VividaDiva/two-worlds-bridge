@@ -1,4 +1,4 @@
-import {PATHS,SCENARIOS,recipients,selectSession,interpretationFrame,routeMessages} from './flow-model.mjs?v=5';
+import {PATHS,SCENARIOS,recipients,selectSession,interpretationFrame,routeMessages,interpretationRecord} from './flow-model.mjs?v=6';
 const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const role={A:'Role 1',B:'Role 2',M:'AI builder',machine:'AI builder'};
 const notes={all:'Both roles and the builder share the conversation.',confer:'Private discussion → a summary to the builder.',both:'Each role speaks to the builder separately.',chain:'Role 1 → Role 2 → builder.','via-1':'Role 1 → builder → Role 2 → builder.','via-2':'Role 2 → builder → Role 1 → builder.','only-1':'Only Role 1 contributes.','only-2':'Only Role 2 contributes.'};
@@ -18,12 +18,12 @@ function render(){const t=session.transcript[index],n=session.transcript.length;
  $('chat-end').textContent=index===n-1?'END OF RECORDED RUN':`${n-index-1} turns ahead`;drawFlow(t);renderResult();}
 function seek(n,{scroll=true}={}){index=Math.max(0,Math.min(session.transcript.length-1,n));if(index<session.transcript.length-1&&activeTab==='result')setTab('flow');render();if(scroll)scrollReplay();if(index===session.transcript.length-1)stop();}
 function scrollReplay(){const pane=$('chat'),el=pane.lastElementChild;if(!el)return;const box=pane.getBoundingClientRect(),item=el.getBoundingClientRect();pane.scrollTop+=item.height>pane.clientHeight-24?item.top-box.top-16:item.bottom-box.bottom+12;}
-function showControls(show=true){$('replay-controls').hidden=!show;if(!show&&$('replay-controls').contains(document.activeElement))document.activeElement.blur();}
-function setRecording(on,writeURL=true){recording=on;document.body.classList.toggle('recording',on);$('recording-toggle').textContent=on?'Explorer':'Recording view';$('recording-toggle').setAttribute('aria-pressed',String(on));showControls();if(writeURL){const url=new URL(location.href);if(on)url.searchParams.set('view','recording');else url.searchParams.delete('view');history.replaceState(null,'',url);}if(session){requestAnimationFrame(()=>{scrollReplay();if(activeTab==='result')renderResult();else drawFlow(session.transcript[index]);});}window.scrollTo(0,0);}
+function showControls(show=true){$('replay-controls').hidden=!show;document.body.classList.toggle('controls-visible',show);if(!show&&$('replay-controls').contains(document.activeElement))document.activeElement.blur();if(session)requestAnimationFrame(()=>{if(activeTab==='flow')drawFlow(session.transcript[index]);else renderResult();});}
+function setRecording(on,writeURL=true){recording=on;document.body.classList.toggle('recording',on);$('recording-toggle').textContent=on?'Explorer':'Recording view';$('recording-toggle').setAttribute('aria-pressed',String(on));showControls(!on||matchMedia('(max-width:900px), (pointer:coarse)').matches);if(writeURL){const url=new URL(location.href);if(on)url.searchParams.set('view','recording');else url.searchParams.delete('view');history.replaceState(null,'',url);}if(session){requestAnimationFrame(()=>{scrollReplay();if(activeTab==='result')renderResult();else drawFlow(session.transcript[index]);});}window.scrollTo(0,0);}
 $('recording-toggle').onclick=()=>{setRecording(!recording);document.activeElement.blur();};
 $('hide-controls').onclick=()=>showControls(false);
 document.addEventListener('keydown',e=>{if(!recording||e.altKey||e.ctrlKey||e.metaKey||e.defaultPrevented)return;if(e.key==='Escape'){e.preventDefault();if($('replay-controls').hidden)showControls();else setRecording(false);return;}if(e.target.closest('input,select,textarea,[contenteditable="true"]'))return;if(e.key.toLowerCase()==='h'){e.preventDefault();showControls($('replay-controls').hidden);return;}if(e.target.closest('button,[role="button"],[role="tab"],summary,a'))return;if(!session)return;if(e.code==='Space'){e.preventDefault();$('play').click();}else if(e.key==='ArrowRight'){e.preventDefault();stop();advance();}else if(e.key==='ArrowLeft'){e.preventDefault();stop();seek(index-1);}else if(e.key.toLowerCase()==='r'){e.preventDefault();load(session);}});
-window.addEventListener('resize',()=>{if(session){if(activeTab==='result')renderResult();else drawFlow(session.transcript[index]);}});
+window.addEventListener('resize',()=>{if(recording&&matchMedia('(max-width:900px), (pointer:coarse)').matches&&$('replay-controls').hidden)showControls();if(session){if(activeTab==='result')renderResult();else drawFlow(session.transcript[index]);}});
 setRecording(recording,false);
 function advance(){if(index<session.transcript.length-1)seek(index+1);else stop();}
 function edgeChips(words,maxWidth){
@@ -32,38 +32,36 @@ function edgeChips(words,maxWidth){
  return {rows,height:rows.length*27-5,width:Math.max(0,...rows.map(row=>row.reduce((n,w)=>n+w.width+5,-5)))};
 }
 function drawFlow(t){
- const frame=interpretationFrame(session,index),input=t.who==='machine'&&frame.receivesAI?routeMessages(session,frame.sourceIndex).find(m=>m.to==='M'):null;
+ const record=interpretationRecord(session,index);
+ $('interpretation-record').innerHTML=['A','B'].map(r=>`<div class="record-role ${r}"><span class="record-role-label">${role[r]}</span><div class="record-words">${record[r].length?record[r].map(w=>`<span class="record-word ${w.status}${w.sourceIndex===index?' fresh':''}" title="${esc((w.status==='lost'?'Not extracted: ':w.status==='extra'?'Extra extraction: ':'Matched key: ')+w.text+' · '+role[r]+', turn '+(w.sourceIndex+1))}">${w.status==='lost'?'× ':w.status==='extra'?'+ ':''}${esc(w.text)}</span>`).join(''):'<span class="record-empty">No keys yet</span>'}</div></div>`).join('');
  const messages=routeMessages(session,index),from=t.who==='machine'?'M':t.who,to=recipients(session,t);
  const width=Math.max(280,Math.round($('flow').getBoundingClientRect().width)||520);
  const diagonalWidth=Math.min(180,width*.56);
  const layouts=messages.map(m=>({...m,layout:edgeChips(m.words.length?m.words:[{text:m.kind==='extracted'?'No keywords':'No coded keys',status:'coded'}],m.to==='M'?diagonalWidth:Math.max(100,Math.min(240,width-176)))}));
- const inputLayout=input?edgeChips(input.words.length?input.words:[{text:'No keywords',status:'coded'}],Math.min(360,width-30)):null;
- // Reserve the same input area on every turn so the triangle stays still during replay.
+ // Measure the complete record invisibly to reserve stable space across replay turns.
+ const recordElement=$('interpretation-record'),finalRecord=interpretationRecord(session,session.transcript.length-1);
+ const measure=recordElement.cloneNode(false);measure.removeAttribute('id');measure.classList.add('record-measure');measure.setAttribute('aria-hidden','true');measure.style.width=width+'px';
+ measure.innerHTML=['A','B'].map(r=>`<div class="record-role ${r}"><span class="record-role-label">${role[r]}</span><div class="record-words">${finalRecord[r].map(w=>`<span class="record-word">+ ${esc(w.text)}</span>`).join('')||'<span class="record-empty">No keys yet</span>'}</div></div>`).join('');
+ recordElement.parentElement.append(measure);const recordHeight=measure.getBoundingClientRect().height;measure.remove();recordElement.style.minHeight=recordHeight+'px';
  const canvasStyle=getComputedStyle($('flow').parentElement);
- const availableHeight=$('flow-panel').clientHeight-parseFloat(canvasStyle.paddingTop)-parseFloat(canvasStyle.paddingBottom)-29;
+ const availableHeight=$('flow-panel').clientHeight-parseFloat(canvasStyle.paddingTop)-parseFloat(canvasStyle.paddingBottom)-recordHeight-$('flow-key').getBoundingClientRect().height-parseFloat(canvasStyle.rowGap)*2;
  const fillPanel=recording&&matchMedia('(min-width:901px)').matches;
  const radius=Math.min(42,Math.max(30,width*.075)),nodeWidth=Math.min(148,Math.max(108,width*.27)),nodeHeight=radius+22;
- const maxInputHeight=Math.max(22,...session.transcript.flatMap((_,i)=>routeMessages(session,i).filter(m=>m.to==='M').map(m=>edgeChips(m.words,Math.min(360,width-30)).height)));
- const footerHeight=nodeHeight/2+33+maxInputHeight+8;
+ const footerHeight=nodeHeight/2+12;
  const maxEdgeHeight=Math.max(22,...session.transcript.flatMap((_,i)=>routeMessages(session,i).filter(m=>m.to==='M').map(m=>edgeChips(m.words,diagonalWidth).height)));
  const insetX=radius+20,topY=radius+24;
  const minHeight=footerHeight+topY+maxEdgeHeight+Math.max(2*radius,nodeHeight)+20;
- const height=Math.max(360,minHeight,fillPanel?availableHeight:Math.min(540,width*.92)),baseHeight=height-footerHeight;
+ const height=Math.max(310,minHeight,fillPanel?availableHeight:Math.min(540,width*.92)),baseHeight=height-footerHeight;
  const p={A:[insetX,topY],B:[width-insetX,topY],M:[width/2,baseHeight]};
  let svg='<defs>'+['A','B','M'].map(k=>`<marker id="arrowhead-${k}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10" fill="var(${k==='A'?'--role-1':k==='B'?'--role-2':'--green'})"/></marker>`).join('')+'</defs>';
  for(let [a,b] of [['A','B'],['A','M'],['B','M']]){if(b===from)[a,b]=[b,a];const active=a===from&&to.includes(b),[x1,y1]=p[a],[x2,y2]=p[b],len=Math.hypot(x2-x1,y2-y1),dx=(x2-x1)/len,dy=(y2-y1)/len,inset=k=>k==='M'?Math.min(nodeWidth/2/Math.abs(dx||1e-9),nodeHeight/2/Math.abs(dy||1e-9))+7:radius+8,start=inset(a),end=inset(b);svg+=`<path class="triangle-edge source-${a}${active?' active':''}" d="M${x1+dx*start} ${y1+dy*start}L${x2-dx*end} ${y2-dy*end}" ${active?`marker-end="url(#arrowhead-${a})"`:''}/>`;}
  for(const m of layouts){const [x1,y1]=p[m.from],[x2,y2]=p[m.to],cx=(x1+x2)/2,cy=(y1+y2)/2,caption=m.kind==='coded'?'Coded in the participant message':m.kind==='extracted'?'AI extraction':'AI reply';svg+=`<g class="edge-words"><title>${esc(role[m.from]+' → '+role[m.to]+': '+caption)}</title>`;
   m.layout.rows.forEach((row,j)=>{let x=cx-row.reduce((n,w)=>n+w.width+5,-5)/2;const y=cy-m.layout.height/2+j*27;for(const word of row){svg+=`<g class="edge-word ${word.status}" transform="translate(${x},${y})"><rect width="${word.width}" height="22" rx="5"/><text x="${word.width/2}" y="15">${esc(word.label)}</text><title>${esc(word.status==='lost'?'Not extracted: '+word.text:word.status==='extra'?'Extra extraction: '+word.text:word.text)}</title></g>`;x+=word.width+5;}});svg+='</g>';
  }
- if(inputLayout){svg+=`<g class="input-indicators"><title>${esc('Latest AI-visible input: '+role[frame.source.who]+', turn '+(frame.sourceIndex+1))}</title><text class="input-caption" x="${width/2}" y="${baseHeight+nodeHeight/2+22}">${esc('Latest input · '+role[frame.source.who])}</text>`;
-  inputLayout.rows.forEach((row,j)=>{let x=(width-row.reduce((n,w)=>n+w.width+5,-5))/2;const y=baseHeight+nodeHeight/2+33+j*27;for(const word of row){svg+=`<g class="edge-word ${word.status}" transform="translate(${x},${y})"><rect width="${word.width}" height="22" rx="11"/><text x="${word.width/2}" y="15">${esc(word.label)}</text><title>${esc(word.status==='lost'?'Not extracted: '+word.text:word.status==='extra'?'Extra extraction: '+word.text:word.text)}</title></g>`;x+=word.width+5;}});svg+='</g>';
- }
  for(const k of ['A','B','M']){const [x,y]=p[k];svg+=`<g class="triangle-node ${k}${from===k?' speaking':to.includes(k)?' receives':''}" transform="translate(${x},${y})"><title>${esc(role[k]+(from===k?' speaking':to.includes(k)?' receives':'')+(k==='M'&&t.who==='machine'?'\n'+t.text+(t.say?'\n'+t.say:''):''))}</title>${k==='M'?`<rect x="${-nodeWidth/2}" y="${-nodeHeight/2}" width="${nodeWidth}" height="${nodeHeight}" rx="18"/>`:`${from===k?`<circle class="node-halo" r="${radius+7}"/>`:''}<circle r="${radius}"/>`}<text y="4">${role[k]}</text></g>`;}
  $('flow').setAttribute('viewBox',`0 0 ${width} ${height}`);$('flow').style.height=height+'px';$('flow').innerHTML=svg;
  $('flow').setAttribute('aria-label',`${role[from]} speaking. ${messages.length?messages.map(m=>`${role[m.from]} to ${role[m.to]}: ${m.kind}; ${m.words.map(w=>w.text+' ('+w.status+')').join(', ')||'no keywords recorded'}`).join('. '):'No reply is relayed to participants.'}`);
- const statuses=new Set([...messages.flatMap(m=>m.words.map(w=>w.status)),...(input?.words||[]).map(w=>w.status)]);
- if(input)$('flow').setAttribute('aria-label',$('flow').getAttribute('aria-label')+' Latest input from '+role[frame.source.who]+': '+input.words.map(w=>w.text+' ('+w.status+')').join(', ')+'.'+(t.say?' Recorded AI reply: '+t.say:''));
- $('flow-key').innerHTML=[statuses.has('lost')?'<span>× Not extracted</span>':'',statuses.has('extra')?'<span>+ Extra</span>':''].join('');
+ $('flow').setAttribute('aria-label',$('flow').getAttribute('aria-label')+' The extraction record below retains earlier AI-visible inputs by role.');
 }
 function renderResult(){const done=index===session.transcript.length-1;$('result-empty').hidden=done;$('bridge').hidden=!done;if(!done)return;const all=[...session.met.A,...session.met.B];$('score').textContent=`${all.filter(m=>m.ok).length}/${all.length}`;drawCrossing($('cv'),session.outcome.shape,session.outcome.world,[]);$('bname').textContent=session.outcome.name;$('role-scores').innerHTML=['A','B'].map(r=>`<span>${role[r]} <b>${session.met[r].filter(m=>m.ok).length}/${session.met[r].length}</b></span>`).join('');}
 $('paths').onclick=e=>{const b=e.target.closest('[data-path]');if(b)choose(b.dataset.path);};

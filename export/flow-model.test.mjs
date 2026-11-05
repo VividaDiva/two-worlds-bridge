@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {PATHS,SCENARIOS,recipients,selectSession,needState,interpretationFrame,routeMessages} from './flow-model.mjs';
+import {PATHS,SCENARIOS,recipients,selectSession,needState,interpretationFrame,routeMessages,interpretationRecord} from './flow-model.mjs';
 const data=JSON.parse(fs.readFileSync(new URL('./eight-paths.json',import.meta.url),'utf8'));
 const key=s=>`${s.path}:${s.scenario}:${s.pair}`;
 
@@ -127,4 +127,77 @@ test('all archive route messages use only the current permitted payload and neve
 test('six-chip stress case preserves all three extractions and all three missed coded keys',()=>{
  const s=data.sessions.find(s=>s.path==='only-1'&&s.scenario==='places'&&s.pair===1),edges=routeMessages(s,0);
  assert.deepEqual(edges,[{from:'A',to:'M',kind:'extracted',words:[{text:'water',status:'extra'},{text:'high',status:'extra'},{text:'guarded',status:'extra'},{text:'steady',status:'lost'},{text:'minimal',status:'lost'},{text:'low',status:'lost'}]}]);
+});
+
+
+test('extraction record retains each role when the other speaks and persists through replies and private discussion',()=>{
+ const s={path:'confer',see:{A:{hears:true,echo:true},B:{hears:true,echo:true}},transcript:[
+  {who:'A',meant:['grip','guarded'],taken:['grip','water']},
+  {who:'machine',meant:['fake'],taken:['fake']},
+  {who:'B',meant:['high'],taken:['high']},
+  {who:'A',phase:'confer',meant:['private-key'],taken:['private-key']},
+  {who:'machine'}
+ ]};
+ const a=[{text:'grip',status:'kept',sourceIndex:0},{text:'water',status:'extra',sourceIndex:0},{text:'guarded',status:'lost',sourceIndex:0}];
+ assert.deepEqual(interpretationRecord(s,0),{A:a,B:[]});
+ assert.deepEqual(interpretationRecord(s,1),{A:a,B:[]});
+ const both={A:a,B:[{text:'high',status:'kept',sourceIndex:2}]};
+ for(const i of [2,3,4])assert.deepEqual(interpretationRecord(s,i),both);
+});
+
+test('later evidence updates the same role/key without dropping older distinct keys or mixing collaborators',()=>{
+ const s={path:'all',see:{A:{hears:true},B:{hears:true}},transcript:[
+  {who:'A',meant:['grip','guarded'],taken:['grip','water']},
+  {who:'B',meant:['guarded'],taken:[]},
+  {who:'A',meant:['guarded','high'],taken:['guarded','water']},
+  {who:'A',meant:['water'],taken:[]}
+ ]};
+ assert.deepEqual(interpretationRecord(s,2),{
+  A:[{text:'grip',status:'kept',sourceIndex:0},{text:'water',status:'extra',sourceIndex:2},{text:'guarded',status:'kept',sourceIndex:2},{text:'high',status:'lost',sourceIndex:2}],
+  B:[{text:'guarded',status:'lost',sourceIndex:1}]
+ });
+ const after=interpretationRecord(s,3);
+ assert.deepEqual(after.A.find(e=>e.text==='water'),{text:'water',status:'lost',sourceIndex:3});
+ assert.deepEqual(after.A.map(e=>e.text),['grip','water','guarded','high']);
+ assert.deepEqual(after.B,[{text:'guarded',status:'lost',sourceIndex:1}]);
+});
+
+test('extraction record excludes human relay input and handles empty or absent keyword fields literally',()=>{
+ const s={path:'chain',see:{A:{hears:false},B:{hears:true}},transcript:[
+  {who:'A',meant:['excluded'],taken:['excluded']},
+  {who:'B'},
+  {who:'machine',meant:['fabricated'],taken:['fabricated']},
+  {who:'B',meant:[],taken:[]}
+ ]};
+ assert.deepEqual(interpretationRecord(s,3),{A:[],B:[]});
+ assert.deepEqual(interpretationRecord({transcript:[]},0),{A:[],B:[]});
+ assert.deepEqual(interpretationRecord(s,-1),{A:[],B:[]});
+});
+
+test('rewinding reconstructs earlier statuses and returned records cannot mutate the archive or later reads',()=>{
+ const s={path:'only-1',see:{},transcript:[{who:'A',meant:['guarded'],taken:[]},{who:'machine'},{who:'A',meant:['guarded'],taken:['guarded']},{who:'machine'}]};
+ const snapshot=JSON.stringify(s),first={A:[{text:'guarded',status:'lost',sourceIndex:0}],B:[]},last={A:[{text:'guarded',status:'kept',sourceIndex:2}],B:[]};
+ assert.deepEqual(interpretationRecord(s,3),last);
+ assert.deepEqual(interpretationRecord(s,0),first);
+ const changed=interpretationRecord(s,3);changed.A[0].text='edited';changed.A.push({text:'fake',status:'extra',sourceIndex:99});
+ assert.deepEqual(interpretationRecord(s,3),last);assert.deepEqual(interpretationRecord(s,0),first);assert.equal(JSON.stringify(s),snapshot);
+});
+
+test('every archived extraction record points to the latest permitted evidence for its own role/key without future leakage or mutation',()=>{
+ for(const s of data.sessions){const snapshot=JSON.stringify(s);for(let i=0;i<s.transcript.length;i++){
+  const record=interpretationRecord(s,i);
+  for(const r of ['A','B']){
+   const inputs=s.transcript.slice(0,i+1).map((turn,sourceIndex)=>({turn,sourceIndex})).filter(e=>e.turn.who===r&&recipients(s,e.turn).includes('M'));
+   const expectedKeys=new Set(inputs.flatMap(({turn})=>[...(turn.meant||[]),...(turn.taken||[])]));
+   assert.deepEqual(new Set(record[r].map(e=>e.text)),expectedKeys,key(s));assert.equal(record[r].length,expectedKeys.size,key(s));
+   for(const entry of record[r]){
+    const evidence=inputs.filter(({turn})=>(turn.meant||[]).includes(entry.text)||(turn.taken||[]).includes(entry.text)).at(-1);
+    assert.equal(entry.sourceIndex,evidence.sourceIndex,key(s));assert.ok(entry.sourceIndex<=i);assert.notEqual(evidence.turn.phase,'confer');
+    const expectedStatus=(evidence.turn.taken||[]).includes(entry.text)?(evidence.turn.meant||[]).includes(entry.text)?'kept':'extra':'lost';
+    assert.equal(entry.status,expectedStatus,key(s));
+   }
+  }
+ }
+ const first=interpretationRecord(s,0);interpretationRecord(s,s.transcript.length-1);assert.deepEqual(interpretationRecord(s,0),first);assert.equal(JSON.stringify(s),snapshot,key(s));
+ }
 });
