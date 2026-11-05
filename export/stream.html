@@ -109,7 +109,7 @@ function geom(k){const L=lines[k],ux=uniq(L.lx),uc=uniq(L.lc),un=uniq(L.ln);cons
 function render(){
  const n=lines.length;if(!n){$('strip').innerHTML='';$('viz').innerHTML='';return;}
  const LL=lines[n-1];KR=84/Math.sqrt(Math.max(LL.M,LL.I,4));const G=lines.map((_,k)=>geom(k));const last=G[n-1];
- const STEP=Math.max(200,Math.round(Math.max(...G.map(g=>g.r1+g.r2+g.d))+48)),PADL=40,W=PADL+n*STEP+60,CW=Math.round(STEP*.56);
+ const STEP=Math.max(200,Math.round(Math.max(...G.map(g=>g.r1+g.r2+g.d))+96)),PADL=40,W=PADL+n*STEP+60,CW=Math.round(STEP*.56);
  const VY=150+Math.max(last.r1,last.r2)+16,RY0=VY+Math.max(last.r1,last.r2)+40,RH=120,H=RY0+RH+40;
  const X=k=>PADL+k*STEP+STEP/2;
  // the chat strip above the drawing
