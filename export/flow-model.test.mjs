@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {PATHS,SCENARIOS,recipients,selectSession,needState,interpretationFrame} from './flow-model.mjs';
+import {PATHS,SCENARIOS,recipients,selectSession,needState,interpretationFrame,routeMessages} from './flow-model.mjs';
 const data=JSON.parse(fs.readFileSync(new URL('./eight-paths.json',import.meta.url),'utf8'));
 const key=s=>`${s.path}:${s.scenario}:${s.pair}`;
 
@@ -80,4 +80,51 @@ test('every archive frame has no future or private builder source and survives r
   else {assert.equal(f.source,t);assert.equal(f.sourceIndex,i);assert.equal(f.receivesAI,recipients(s,t).includes('M'));}
  }
  const start=interpretationFrame(s,0);interpretationFrame(s,s.transcript.length-1);assert.deepEqual(interpretationFrame(s,0),start);assert.equal(JSON.stringify(s),snapshot);}
+});
+
+
+test('route edge labels distinguish coded peer input from AI extraction and preserve recorded order',()=>{
+ const s={path:'all',see:{A:{hears:true,echo:true},B:{hears:true,echo:true}},transcript:[{who:'A',meant:['grip','guarded'],taken:['grip','water']},{who:'machine',meant:['fake'],taken:['fake']}]};
+ assert.deepEqual(routeMessages(s,0),[
+  {from:'A',to:'B',kind:'coded',words:[{text:'grip',status:'coded'},{text:'guarded',status:'coded'}]},
+  {from:'A',to:'M',kind:'extracted',words:[{text:'grip',status:'kept'},{text:'water',status:'extra'},{text:'guarded',status:'lost'}]}
+ ]);
+ assert.deepEqual(routeMessages(s,1),['A','B'].map(to=>({from:'M',to,kind:'reply',words:[{text:'Reply',status:'reply'}]})));
+});
+
+test('private and human-relayed inputs never label an AI edge, even if excluded extraction fields exist',()=>{
+ for(const [path,phase] of [['confer','confer'],['chain',null]]){
+  const s={path,see:{A:{hears:false},B:{hears:true}},transcript:[{who:'A',phase,meant:['guarded'],taken:['private-key']}]};
+  assert.deepEqual(routeMessages(s,0),[{from:'A',to:'B',kind:'coded',words:[{text:'guarded',status:'coded'}]}]);
+ }
+});
+
+test('missing keywords stay empty and absent or unrelayed turns have no route messages',()=>{
+ const s={path:'both',see:{A:{hears:false,echo:false},B:{hears:false,echo:false}},transcript:[{who:'A'},{who:'B',meant:[],taken:[]},{who:'machine'}]};
+ assert.deepEqual(routeMessages(s,0),[{from:'A',to:'M',kind:'extracted',words:[]}]);
+ assert.deepEqual(routeMessages(s,1),[{from:'B',to:'M',kind:'extracted',words:[]}]);
+ for(const i of [-1,2,3])assert.deepEqual(routeMessages(s,i),[]);
+ assert.deepEqual(routeMessages({transcript:[]},0),[]);
+});
+
+test('all archive route messages use only the current permitted payload and never borrow input keys for replies',()=>{
+ for(const s of data.sessions){const snapshot=JSON.stringify(s);for(let i=0;i<s.transcript.length;i++){
+  const t=s.transcript[i],edges=routeMessages(s,i),from=t.who==='machine'?'M':t.who;
+  assert.deepEqual(edges.map(e=>e.to),recipients(s,t),key(s));
+  for(const edge of edges){assert.equal(edge.from,from,key(s));
+   if(from==='M'){assert.equal(edge.kind,'reply');assert.deepEqual(edge.words,[{text:'Reply',status:'reply'}]);continue;}
+   if(edge.to!=='M'){assert.equal(edge.kind,'coded');assert.deepEqual(edge.words,(t.meant||[]).map(text=>({text,status:'coded'})));continue;}
+   assert.notEqual(t.phase,'confer');assert.ok(!(s.path==='chain'&&t.who==='A'));assert.equal(edge.kind,'extracted');
+   const kept=edge.words.filter(w=>w.status==='kept').map(w=>w.text),extra=edge.words.filter(w=>w.status==='extra').map(w=>w.text),lost=edge.words.filter(w=>w.status==='lost').map(w=>w.text);
+   assert.deepEqual(kept,(t.taken||[]).filter(w=>(t.meant||[]).includes(w)));assert.deepEqual(extra,(t.taken||[]).filter(w=>!(t.meant||[]).includes(w)));assert.deepEqual(lost,(t.meant||[]).filter(w=>!(t.taken||[]).includes(w)));
+  }
+ }
+ assert.equal(JSON.stringify(s),snapshot,key(s));
+ const first=routeMessages(s,0);routeMessages(s,s.transcript.length-1);assert.deepEqual(routeMessages(s,0),first);
+ }
+});
+
+test('six-chip stress case preserves all three extractions and all three missed coded keys',()=>{
+ const s=data.sessions.find(s=>s.path==='only-1'&&s.scenario==='places'&&s.pair===1),edges=routeMessages(s,0);
+ assert.deepEqual(edges,[{from:'A',to:'M',kind:'extracted',words:[{text:'water',status:'extra'},{text:'high',status:'extra'},{text:'guarded',status:'extra'},{text:'steady',status:'lost'},{text:'minimal',status:'lost'},{text:'low',status:'lost'}]}]);
 });

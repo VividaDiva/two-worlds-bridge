@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f3f2ed"><title>Communication Atlas · Two Worlds</title><link rel="stylesheet" href="flow.css?v=4"></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f3f2ed"><title>Communication Atlas · Two Worlds</title><link rel="stylesheet" href="flow.css?v=5"></head>
 <body>
 <script>if(new URLSearchParams(location.search).get("view")==="recording")document.body.classList.add("recording");</script>
 <header class="masthead"><a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">↗</span> TWO WORLDS<span class="brand-separator">/</span><span class="brand-sub">Research atlas</span></a><span class="archive-tag"><i></i> Simulation archive</span></header>
@@ -15,16 +15,13 @@
 <section class="inspector" aria-label="AI interpretation and outcome"><div class="panel-head"><h2>AI builder</h2></div><div class="inspect-tabs" role="tablist" aria-label="Inspect the run"><button id="flow-tab" role="tab" aria-selected="true" aria-controls="flow-panel">Information flow</button><button id="result-tab" role="tab" aria-selected="false" aria-controls="result-panel" tabindex="-1">Final bridge</button></div>
 <div id="flow-panel" role="tabpanel" aria-labelledby="flow-tab">
 <div class="flow-canvas">
-<div id="turn-note" class="turn-note"></div>
-<div id="flow-roles" class="flow-roles"></div>
-<svg id="flow" class="flow-connectors" viewBox="0 0 520 88" preserveAspectRatio="none" aria-hidden="true"></svg>
-<div id="reading" class="ai-reading"></div>
-<div class="keyword-legend" aria-label="Keyword status"><span class="kept" title="Present in both the coded keywords and the AI extraction">Matched</span><span class="lost" title="Coded in the input, but absent from this extraction">Not extracted</span><span class="extra" title="Extracted by AI but absent from the coded keywords; not necessarily incorrect">Extra</span></div>
-<div id="reply-thread" class="reply-thread"><span class="reply-connector" aria-hidden="true">↓</span><div class="chat builder-chat" id="builder-chat" tabindex="0" aria-label="AI builder replies"></div></div>
+<svg id="flow" class="triangle-flow" viewBox="0 0 520 280" role="img" aria-label="Communication flow"></svg>
+<div id="flow-key" class="flow-key"></div>
+<div id="reply-thread" class="reply-thread"><div class="chat builder-chat" id="builder-chat" tabindex="0" aria-label="AI builder replies"></div></div>
 </div></div>
 <div id="result-panel" role="tabpanel" aria-labelledby="result-tab" hidden><div class="result-empty" id="result-empty"><span>↗</span><h3>The bridge is at the end.</h3><button id="reveal" class="primary">Jump to final turn</button></div><div id="bridge" hidden><div class="outcome-score"><b id="score"></b><span>preset goals met</span></div><canvas id="cv" aria-label="Final generated bridge"></canvas><h3 id="bname"></h3><div id="role-scores" class="role-scores"></div><p class="result-note">Recorded outcome · keyword-based builder</p></div></div>
 </section></div>
 <footer class="stage-footer"><span>Recorded simulation. No live generation.</span><details><summary>Model details</summary><p id="model-details"></p></details></footer>
 </div></div>
-<script src="../agents/usertest/draw.js"></script><script type="module" src="flow.js?v=4"></script>
+<script src="../agents/usertest/draw.js"></script><script type="module" src="flow.js?v=5"></script>
 </body></html>

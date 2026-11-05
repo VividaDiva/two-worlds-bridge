@@ -19,3 +19,19 @@ export function interpretationFrame(session,index){
  const selected=current&&(current.who==='A'||current.who==='B')?{turn:current,index}:current?.who==='machine'?lastReceived:null;
  return {sourceIndex:selected?.index??-1,source:selected?.turn??null,receivesAI:!!selected&&recipients(session,selected.turn).includes('M'),roles};
 }
+
+// Edge labels describe the current message only. The archive records no parsed
+// keywords for builder replies, so prior input keys must never become reply data.
+export function routeMessages(session,index){
+ const turn=session.transcript[index];
+ if(!turn||!['A','B','machine'].includes(turn.who))return [];
+ const from=turn.who==='machine'?'M':turn.who;
+ const meant=turn.meant||[],taken=turn.taken||[];
+ return recipients(session,turn).map(to=>{
+  if(from==='M')return {from,to,kind:'reply',words:[{text:'Reply',status:'reply'}]};
+  if(to!=='M')return {from,to,kind:'coded',words:meant.map(text=>({text,status:'coded'}))};
+  const words=taken.map(text=>({text,status:meant.includes(text)?'kept':'extra'}));
+  for(const text of meant)if(!taken.includes(text))words.push({text,status:'lost'});
+  return {from,to,kind:'extracted',words};
+ });
+}
