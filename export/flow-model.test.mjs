@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {PATHS,SCENARIOS,recipients,selectSession,needState} from './flow-model.mjs';
+import {PATHS,SCENARIOS,recipients,selectSession,needState,interpretationFrame} from './flow-model.mjs';
 const data=JSON.parse(fs.readFileSync(new URL('./eight-paths.json',import.meta.url),'utf8'));
 const key=s=>`${s.path}:${s.scenario}:${s.pair}`;
 
@@ -48,4 +48,36 @@ test('private discussion and human relay never count excluded words as builder e
 
 test('every recorded run stays unfinished before its final turn and marks completion exactly at the end',()=>{
  for(const s of data.sessions){for(let i=0;i<s.transcript.length;i++)assert.equal(needState(s,i).done,i===s.transcript.length-1,key(s));const before=needState(s,0);needState(s,s.transcript.length-1);const after=needState(s,0);assert.deepEqual([...after.voiced],[...before.voiced]);assert.deepEqual([...after.heard],[...before.heard]);}
+});
+
+
+test('interpretation frame keeps both roles but selects only the latest input on a deferred builder reply',()=>{
+ const s={path:'both',see:{A:{hears:false,echo:false},B:{hears:false,echo:false}},transcript:[{who:'A',meant:['high'],taken:['high']},{who:'B',meant:['wide'],taken:['many']},{who:'machine'}]};
+ const f=interpretationFrame(s,2);assert.equal(f.source,s.transcript[1]);assert.equal(f.sourceIndex,1);assert.equal(f.receivesAI,true);assert.deepEqual(f.roles,{A:{turn:s.transcript[0],index:0},B:{turn:s.transcript[1],index:1}});
+ const first=interpretationFrame(s,0);assert.equal(first.source,s.transcript[0]);assert.equal(first.roles.B,null);
+});
+
+test('current private messages remain visible but are not AI inputs; builder frame skips private history',()=>{
+ const s={path:'confer',see:{A:{hears:true},B:{hears:true}},transcript:[{who:'A',meant:['high'],taken:['high']},{who:'B',phase:'confer',meant:['wide'],taken:['wide']},{who:'machine'}]};
+ const privateFrame=interpretationFrame(s,1);assert.equal(privateFrame.source,s.transcript[1]);assert.equal(privateFrame.receivesAI,false);
+ const builderFrame=interpretationFrame(s,2);assert.equal(builderFrame.source,s.transcript[0]);assert.equal(builderFrame.sourceIndex,0);assert.equal(builderFrame.roles.B.turn,s.transcript[1]);
+ const noInput={path:'chain',see:{A:{hears:false},B:{hears:true}},transcript:[{who:'A',meant:['safe'],taken:['guarded']},{who:'machine'}]};
+ const empty=interpretationFrame(noInput,1);assert.equal(empty.source,null);assert.equal(empty.sourceIndex,-1);assert.equal(empty.receivesAI,false);assert.equal(empty.roles.A.turn,noInput.transcript[0]);
+});
+
+test('empty recorded participant messages and absent keys remain literal without inferred content',()=>{
+ const s=data.sessions.find(s=>s.path==='all'&&s.scenario==='refs'&&s.pair===1),f=interpretationFrame(s,0);
+ assert.equal(f.source,s.transcript[0]);assert.equal(f.source.text,'');assert.deepEqual(f.source.meant,[]);assert.deepEqual(f.source.taken,[]);assert.equal(f.roles.B,null);
+ const empty=interpretationFrame({path:'all',see:{},transcript:[]},0);assert.deepEqual(empty,{sourceIndex:-1,source:null,receivesAI:false,roles:{A:null,B:null}});
+ const before=interpretationFrame(s,-1);assert.deepEqual(before,{sourceIndex:-1,source:null,receivesAI:false,roles:{A:null,B:null}});
+});
+
+test('every archive frame has no future or private builder source and survives rewinding without mutation',()=>{
+ for(const s of data.sessions){const snapshot=JSON.stringify(s);for(let i=0;i<s.transcript.length;i++){
+  const f=interpretationFrame(s,i),t=s.transcript[i];
+  for(const r of ['A','B']){const candidates=s.transcript.slice(0,i+1).map((turn,index)=>({turn,index})).filter(x=>x.turn.who===r),last=candidates.at(-1);assert.equal(f.roles[r]?.index,last?.index,key(s));assert.equal(f.roles[r]?.turn,last?.turn,key(s));}
+  if(t.who==='machine'){const candidates=s.transcript.slice(0,i).map((turn,index)=>({turn,index})).filter(x=>['A','B'].includes(x.turn.who)&&recipients(s,x.turn).includes('M')),last=candidates.at(-1);assert.equal(f.sourceIndex,last?.index??-1,key(s));assert.equal(f.source,last?.turn??null,key(s));if(f.source){assert.ok(f.sourceIndex<i);assert.equal(f.receivesAI,true);assert.notEqual(f.source.phase,'confer');}}
+  else {assert.equal(f.source,t);assert.equal(f.sourceIndex,i);assert.equal(f.receivesAI,recipients(s,t).includes('M'));}
+ }
+ const start=interpretationFrame(s,0);interpretationFrame(s,s.transcript.length-1);assert.deepEqual(interpretationFrame(s,0),start);assert.equal(JSON.stringify(s),snapshot);}
 });

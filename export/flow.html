@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f3f2ed"><title>Communication Atlas · Two Worlds</title><link rel="stylesheet" href="flow.css?v=2"></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f3f2ed"><title>Communication Atlas · Two Worlds</title><link rel="stylesheet" href="flow.css?v=3"></head>
 <body>
 <header class="masthead"><a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">↗</span> TWO WORLDS<span class="brand-separator">/</span><span class="brand-sub">Research atlas</span></a><span class="archive-tag"><i></i> Simulation archive</span></header>
 <div class="intro"><div><p class="eyebrow">01 — COMMUNICATION</p><h1>What makes it <em>through?</em></h1><p class="lede">Follow two perspectives into one AI-built bridge.</p></div><div class="archive-stats" aria-label="Archive size"><span><b id="session-count">—</b> recorded runs</span><span><b>8</b> pathways</span><span><b>5</b> scenarios</span></div></div>
@@ -11,11 +11,19 @@
 <div class="replay-controls"><button id="play" class="play primary" disabled>▶ Play</button><button id="back" aria-label="Previous turn" title="Previous turn" disabled>←</button><button id="step" aria-label="Next turn" title="Next turn" disabled>→</button><input id="scrub" type="range" min="0" max="1" value="0" aria-label="Replay position" disabled><span id="position" aria-live="polite">— / —</span><button id="reset" class="quiet" title="Restart replay" disabled>↺</button><button id="result-jump" class="text-button" disabled>Final bridge ↗</button></div>
 <div class="columns">
 <section class="conversation" aria-labelledby="conversation-title"><div class="panel-head"><h2 id="conversation-title">Participant conversation</h2><span class="section-number">01</span></div><div class="cast" id="cast"></div><div class="chat" id="chat" tabindex="0" aria-label="Participant conversation replay"></div><div class="chat-end" id="chat-end"></div></section>
-<section class="inspector" aria-label="AI interpretation and outcome"><div class="panel-head"><h2>AI builder</h2><span class="section-number">02</span></div><div class="chat builder-chat" id="builder-chat" tabindex="0" aria-label="AI builder replies"></div><div class="inspect-tabs" role="tablist" aria-label="Inspect the run"><button id="flow-tab" role="tab" aria-selected="true" aria-controls="flow-panel">Information flow</button><button id="result-tab" role="tab" aria-selected="false" aria-controls="result-panel" tabindex="-1">Final bridge</button></div>
-<div id="flow-panel" role="tabpanel" aria-labelledby="flow-tab"><div class="flow-canvas"><svg id="flow" viewBox="0 0 520 260" role="img" aria-label="Message visibility"></svg><div id="turn-note" class="turn-note"></div></div><div id="reading" class="reading"></div><div class="ledger"><div class="ledger-heading"><h3>Goal coverage</h3><span>Up to this turn</span></div><div id="ledger"></div><details class="metric-note"><summary>About this measure</summary><p>Preset goal keys, coded expressions and extracted keys are distinct. “Met” uses the recorded final keyword metric; it does not establish that a person’s full intent was satisfied.</p></details></div></div>
+<section class="inspector" aria-label="AI interpretation and outcome"><div class="panel-head"><h2>AI builder</h2><span class="section-number">02</span></div><div class="inspect-tabs" role="tablist" aria-label="Inspect the run"><button id="flow-tab" role="tab" aria-selected="true" aria-controls="flow-panel">Information flow</button><button id="result-tab" role="tab" aria-selected="false" aria-controls="result-panel" tabindex="-1">Final bridge</button></div>
+<div id="flow-panel" role="tabpanel" aria-labelledby="flow-tab">
+<div class="flow-canvas">
+<div id="turn-note" class="turn-note"></div>
+<div id="flow-roles" class="flow-roles"></div>
+<svg id="flow" class="flow-connectors" viewBox="0 0 520 88" preserveAspectRatio="none" aria-hidden="true"></svg>
+<div id="reading" class="ai-reading"></div>
+<div class="keyword-legend" aria-label="Keyword status"><span class="kept" title="Present in both the coded keywords and the AI extraction">Matched</span><span class="lost" title="Coded in the input, but absent from this extraction">Not extracted</span><span class="extra" title="Extracted by AI but absent from the coded keywords; not necessarily incorrect">Extra</span></div>
+<div id="reply-thread" class="reply-thread"><span class="reply-connector" aria-hidden="true">↓</span><div class="chat builder-chat" id="builder-chat" tabindex="0" aria-label="AI builder replies"></div></div>
+</div></div>
 <div id="result-panel" role="tabpanel" aria-labelledby="result-tab" hidden><div class="result-empty" id="result-empty"><span>↗</span><h3>The bridge is at the end.</h3><button id="reveal" class="primary">Jump to final turn</button></div><div id="bridge" hidden><div class="outcome-score"><b id="score"></b><span>preset goals met</span></div><canvas id="cv" aria-label="Final generated bridge"></canvas><h3 id="bname"></h3><div id="role-scores" class="role-scores"></div><p class="result-note">Recorded outcome · keyword-based builder</p></div></div>
 </section></div>
 <footer class="stage-footer"><span>Recorded simulation. No live generation.</span><details><summary>Model details</summary><p id="model-details"></p></details></footer>
 </div></div>
-<script src="../agents/usertest/draw.js"></script><script type="module" src="flow.js?v=2"></script>
+<script src="../agents/usertest/draw.js"></script><script type="module" src="flow.js?v=3"></script>
 </body></html>
