@@ -6,3 +6,58 @@
 @media(max-width:700px){.masthead{padding:16px 18px}.brand-sub,.brand-separator{display:none}.archive-tag{font-size:10px}.intro{padding:25px 18px;display:block}h1{font-size:38px;letter-spacing:-1.4px}.archive-stats{margin-top:22px;gap:24px}.archive-stats span{flex-direction:row;gap:6px;align-items:baseline}.archive-stats b{font-size:18px}.workspace{padding:0 14px 25px;gap:14px}#paths{grid-template-columns:repeat(2,minmax(0,1fr))}.columns{grid-template-columns:1fr;gap:16px}.session-caption{display:none}.session-bar{padding:12px 14px}.selectors{width:100%;justify-content:space-between}.replay-controls{position:sticky;top:0;z-index:5;flex-wrap:wrap;padding:10px;box-shadow:0 3px 6px #20302306;margin-bottom:14px}.replay-controls .text-button{font-size:11px}.replay-controls button{padding:8px;min-height:40px}.play{min-width:69px}#scrub{min-width:60px}.quiet{display:none}.chat{max-height:340px}.panel-head{padding:15px 16px}.stage-footer{flex-wrap:wrap}.flow-canvas{padding:15px 12px}.flow-roles{gap:10px}.flow-role{padding:11px 9px}.flow-role-head{gap:5px}.flow-role-head h3{font-size:11px}.flow-role-meta{font-size:9px}.keyword{font-size:10px;padding:5px 6px}.reading-state{font-size:8px}.ai-reading{padding:14px}.turn-note{font-size:9px}.lede{font-size:13px}.cast p{font-size:11px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;scroll-behavior:auto!important;transition:none!important}}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+.recording-context,#hide-controls{display:none}
+body.recording{background:#eeeee8}
+.recording .masthead,.recording .intro,.recording .routes,.recording .session-bar,.recording .stage-footer,.recording .chat-end{display:none}
+.recording .workspace{display:block;max-width:1600px;height:100dvh;padding:20px 24px 88px;min-height:640px}
+.recording .stage{height:100%;display:flex;flex-direction:column}
+.recording .columns{flex:1;min-height:0;grid-template-columns:minmax(0,1fr) minmax(0,1.08fr);gap:22px;align-items:stretch}
+.recording .conversation{display:flex;flex-direction:column;min-height:0}
+.recording .panel-head{padding:16px 20px;min-height:54px}
+.recording .panel-head h2{font-size:17px;letter-spacing:-.3px}
+.recording .cast>div{padding:13px 18px;font-size:12px}
+.recording .cast strong{font-size:12px}
+.recording .cast p{font-size:12px;line-height:1.5}
+.recording #chat{min-height:0;max-height:none;flex:1;padding:22px 20px;gap:24px}
+.recording .message{opacity:.73}
+.recording .message.current,.recording .message.source-input{opacity:1}
+.recording .message p{font-size:15px;line-height:1.7}
+.recording .message-top{font-size:11px}
+.recording .reach{font-size:11px}
+.recording .inspector{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);min-height:0}
+.recording .inspector>.panel-head{grid-column:1;padding-right:12px}
+.recording .inspect-tabs{grid-column:2;justify-content:flex-end;padding-right:20px;gap:18px;align-items:stretch}
+.recording .inspect-tabs button{font-size:12px;padding-block:10px}
+.recording #flow-panel,.recording #result-panel{grid-column:1/-1;min-height:0;overflow:auto;scrollbar-width:thin;scrollbar-color:#cbd1c4 transparent}
+.recording .flow-canvas{padding:16px 18px}
+.recording .turn-note{display:none}
+.recording .flow-role{padding:10px 13px 12px}
+.recording .flow-role-head h3{font-size:13px}
+.recording .flow-role-meta{margin:8px 0 7px;font-size:10px}
+.recording .keyword{font-size:12px;padding:5px 8px}
+.recording .flow-connectors{height:40px}
+.recording .ai-reading{padding:12px 15px}
+.recording .ai-reading-head{margin-bottom:10px}
+.recording .ai-reading h3{font-size:13px}
+.recording .keyword-legend{font-size:10px;margin-top:9px}
+.recording .reply-connector{display:none}
+.recording .reply-thread{margin-top:15px;padding-top:0;border-top:0}
+.recording .reply-thread.earlier-replies{padding-top:12px;border-top:1px solid var(--line)}
+.recording .earlier-replies .speaker:after{content:" · Previous reply";font-weight:400;color:var(--muted)}
+.recording .chat.builder-chat{max-height:none;overflow:visible;padding:0;scrollbar-gutter:auto}
+.recording #builder-chat .message:not(:last-child){display:none}
+.recording .reply-thread .message.machine{padding:13px 15px;opacity:1}
+.recording .reply-thread .message p{font-size:14px;line-height:1.6}
+.recording .reply-thread .message .built-title{font-size:21px;margin:5px 0 8px}
+.recording #bridge{padding:22px;display:flex;flex-direction:column;justify-content:center;min-height:100%}
+.recording .outcome-score,.recording .role-scores,.recording .result-note{display:none}
+.recording #bname{font-size:28px;margin:8px 0}
+.recording .replay-controls{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:10;width:calc(100% - 48px);max-width:1080px;min-height:56px;margin:0;padding:8px 12px;border:1px solid #d5dacf;border-radius:12px;background:#fffefaed;box-shadow:0 4px 20px #20302308;backdrop-filter:blur(10px);gap:7px}
+.recording .recording-context{display:block;max-width:170px;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0 12px 0 3px}
+.recording #hide-controls{display:block;white-space:nowrap}
+.recording #result-jump{display:none}
+.recording #recording-toggle{border-left:1px solid var(--line);border-radius:0;margin-left:2px;padding-left:12px}
+.recording #error{position:fixed;z-index:20;top:10px;left:10px;right:10px;background:var(--card)}
+@media(min-width:1500px){.recording .message p{font-size:17px}.recording .reply-thread .message p{font-size:15px}.recording .flow-role{padding:15px}.recording .flow-connectors{height:56px}.recording .ai-reading{padding:17px}}
+@media(max-width:900px){.recording .workspace{height:auto;min-height:100dvh;padding:14px 14px 96px}.recording .columns{grid-template-columns:1fr}.recording #chat{max-height:440px;flex:auto}.recording .inspector{min-height:480px}.recording .replay-controls{width:calc(100% - 24px);flex-wrap:wrap;bottom:10px;gap:6px}.recording .recording-context{display:none}.recording #hide-controls{font-size:11px}.recording .inspect-tabs{gap:13px;padding-right:14px}.recording .panel-head{padding-left:16px}.recording .panel-head h2{font-size:15px}.recording .keyword{font-size:11px}}
