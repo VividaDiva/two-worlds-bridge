@@ -1679,13 +1679,13 @@
     "A": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ],
     "B": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ]
    }
@@ -1857,13 +1857,13 @@
     "A": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ],
     "B": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ]
    }
@@ -2030,13 +2030,13 @@
     "A": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ],
     "B": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ]
    }
@@ -2206,13 +2206,13 @@
     "A": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ],
     "B": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ]
    }
@@ -5903,13 +5903,13 @@
     "A": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ],
     "B": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ]
    }
@@ -8714,13 +8714,13 @@
     "A": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ],
     "B": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ]
    }
@@ -8952,13 +8952,13 @@
     "A": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ],
     "B": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ]
    }
@@ -13803,13 +13803,13 @@
     "A": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ],
     "B": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ]
    }
@@ -13931,13 +13931,13 @@
     "A": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ],
     "B": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ]
    }
@@ -14059,13 +14059,13 @@
     "A": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ],
     "B": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ]
    }
@@ -16567,13 +16567,13 @@
     "A": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ],
     "B": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ]
    }
@@ -16950,13 +16950,13 @@
     "A": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ],
     "B": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ]
    }
@@ -19125,13 +19125,13 @@
     "A": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ],
     "B": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ]
    }
@@ -19229,13 +19229,13 @@
     "A": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ],
     "B": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ]
    }
@@ -21418,13 +21418,13 @@
     "A": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ],
     "B": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ]
    }
@@ -21730,13 +21730,13 @@
     "A": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ],
     "B": [
      {
       "need": "water",
-      "ok": false
+      "ok": true
      }
     ]
    }

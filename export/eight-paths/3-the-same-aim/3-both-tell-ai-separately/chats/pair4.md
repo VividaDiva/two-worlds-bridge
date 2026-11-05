@@ -11,7 +11,7 @@ You are given that the bridge should be placed over the water.
 
 
 Hidden needs:
-- ✗ water — the ground between us is water
+- ✓ water — the ground between us is water
 
 ## Role 2 (claude-opus-5)
 
