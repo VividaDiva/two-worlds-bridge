@@ -42,7 +42,7 @@ button.primary{background:var(--green);color:#fff;border-color:var(--green)}
 svg{display:block}
 .venn{opacity:0;transition:opacity .5s,transform .5s;transform:translateX(-12px)}.venn.on{opacity:1;transform:none}
 .venn .cm{fill:var(--meant-bg);stroke:var(--meant);stroke-width:1.6;mix-blend-mode:multiply}.venn .ci{fill:var(--interp-bg);stroke:var(--interp);stroke-width:1.6;mix-blend-mode:multiply}
-.venn .rg .cnt{font:600 11px 'Iowan Old Style',Georgia,serif;opacity:.75}.venn .rg .wd{font:600 9.5px var(--mono)}.venn .rg.x text{fill:var(--missed)}.venn .rg.c text{fill:var(--interp)}.venn .rg.n text{fill:var(--new)}
+.venn .rg .cnt{font:600 11px 'Iowan Old Style',Georgia,serif;opacity:.75}.venn .rg .wd{font:500 9.5px var(--mono);opacity:.62}.venn .rg .wd.fresh{font-weight:700;opacity:1}.venn .rg.x text{fill:var(--missed)}.venn .rg.c text{fill:var(--interp)}.venn .rg.n text{fill:var(--new)}
 .venn .lab{font:9px var(--mono);letter-spacing:.1em;fill:var(--muted);text-transform:uppercase}
 .venn .dot{stroke:var(--card);stroke-width:1.2}.venn .dot.c{fill:var(--interp)}.venn .dot.x{fill:var(--missed)}.venn .dot.n{fill:var(--card);stroke:var(--new);stroke-dasharray:2 1.5}
 .river path{transition:d .5s}.river .bx{fill:var(--missed);opacity:.28}.river .bc{fill:var(--interp);opacity:.42}.river .bn{fill:url(#hatch);stroke:var(--new);stroke-width:.6;opacity:.7}
@@ -60,7 +60,7 @@ svg{display:block}
 </style></head>
 <body>
 <header class="masthead"><a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">↗</span> TWO WORLDS<span class="brand-separator">/</span><span class="brand-sub">Research atlas</span></a><span class="archive-tag"><i></i> Simulation archive</span></header>
-<div class="intro"><div><h1>What the talk <em>grew</em></h1><p>Every line adds needs. Some are meant and interpreted (<b>carried</b>), some meant and dropped (<b>missed</b>), some interpreted though nobody meant them (<b>new</b>). Each line’s keywords sit inside the bubbles — what the speaker meant on the left, what the builder took on the right, the ones both share in the overlap. The bubbles keep swelling to the right as the conversation goes on; the river beneath keeps the running count.</p></div>
+<div class="intro"><div><h1>What the talk <em>grew</em></h1><p>Every line adds needs. Some are meant and interpreted (<b>carried</b>), some meant and dropped (<b>missed</b>), some interpreted though nobody meant them (<b>new</b>). The bubbles hold the keywords so far — meant but never taken on the left, taken though never meant on the right, the ones both share in the overlap; the bold ones are what this line added, ×n is a word that came up again. The bubbles keep swelling to the right as the conversation goes on; the river beneath keeps the running count.</p></div>
 <div class="legend"><span><i class="m"></i>speakers meant</span><span><i class="i"></i>the builder interpreted</span><span><i class="c"></i>carried</span><span><i class="x"></i>missed</span><span><i class="n"></i>new</span></div></div>
 <div id="error" hidden>Could not load the archive.</div>
 <div class="bar">
@@ -100,13 +100,16 @@ function build(){
  index=0;render();$('scroll').scrollLeft=0;
 }
 let KR=9;const R=v=>22+KR*Math.sqrt(v);
-function geom(k){const L=lines[k],r1=R(L.M),r2=R(L.I),mn=Math.min(r1,r2),share=Math.min(L.M,L.I)?L.C/Math.min(L.M,L.I):0;let d=(r1+r2)-2*mn*share;
+const uniq=a=>{const m=new Map();a.forEach(w=>m.set(w,(m.get(w)||0)+1));return [...m].map(([w,n])=>({w,n}));};
+const fit=(...lists)=>Math.max(...lists.map(l=>l.length))*11/2+18;
+function geom(k){const L=lines[k],ux=uniq(L.lx),uc=uniq(L.lc),un=uniq(L.ln);const r1=Math.max(R(L.M),fit(ux,uc)),r2=Math.max(R(L.I),fit(uc,un)),mn=Math.min(r1,r2),share=Math.min(L.M,L.I)?L.C/Math.min(L.M,L.I):0;let d=(r1+r2)-2*mn*share;
  // leave room inside a crescent for the words that belong there
- if(L.x.length)d=Math.max(d,r2-r1+62);if(L.n.length)d=Math.max(d,r1-r2+62);d=Math.min(d,r1+r2-(L.c.length?40:0));return {r1,r2,d};}
+ const WX=Math.max(...ux.map(o=>o.w.length+(o.n>1?3:0)),0)*6.2+22,WN=Math.max(...un.map(o=>o.w.length+(o.n>1?3:0)),0)*6.2+22;
+ if(ux.length)d=Math.max(d,r2-r1+WX);if(un.length)d=Math.max(d,r1-r2+WN);d=Math.min(d,r1+r2-(uc.length?Math.max(...uc.map(o=>o.w.length+(o.n>1?3:0)))*6.2+16:0));return {r1,r2,d,ux,uc,un};}
 function render(){
  const n=lines.length;if(!n){$('strip').innerHTML='';$('viz').innerHTML='';return;}
  const LL=lines[n-1];KR=84/Math.sqrt(Math.max(LL.M,LL.I,4));const G=lines.map((_,k)=>geom(k));const last=G[n-1];
- const STEP=Math.max(200,Math.round(last.r1+last.r2+last.d+48)),PADL=40,W=PADL+n*STEP+60,CW=Math.round(STEP*.56);
+ const STEP=Math.max(200,Math.round(Math.max(...G.map(g=>g.r1+g.r2+g.d))+48)),PADL=40,W=PADL+n*STEP+60,CW=Math.round(STEP*.56);
  const VY=150+Math.max(last.r1,last.r2)+16,RY0=VY+Math.max(last.r1,last.r2)+40,RH=120,H=RY0+RH+40;
  const X=k=>PADL+k*STEP+STEP/2;
  // the chat strip above the drawing
@@ -119,9 +122,9 @@ function render(){
  });
  $('strip').innerHTML=strip;
  // Venn chain. Each region holds this line's keywords; the small figure above is the running count.
- const region=(cls,words,total,cx,width,outX,anchor,tip)=>{if(!words.length&&!total)return '';const out=width<46&&outX!=null;const x=out?outX:cx,an=out?anchor:'middle';
+ const region=(cls,words,fresh,total,cx,width,outX,anchor,tip)=>{if(!words.length)return '';const out=width<40&&outX!=null;const x=out?outX:cx,an=out?anchor:'middle';
   const y0=VY-(words.length*11)/2+4;
-  return `<g class="rg ${cls}"><title>${esc(tip)}</title><text class="cnt" x="${x}" y="${y0-12}" text-anchor="${an}">${total}</text>${words.map((w,j)=>`<text class="wd" x="${x}" y="${y0+j*11+4}" text-anchor="${an}">${esc(w)}</text>`).join('')}</g>`;};
+  return `<g class="rg ${cls}"><title>${esc(tip)}</title><text class="cnt" x="${x}" y="${y0-12}" text-anchor="${an}">${total}</text>${words.map((o,j)=>`<text class="wd${fresh.includes(o.w)?' fresh':''}" x="${x}" y="${y0+j*11+4}" text-anchor="${an}">${esc(o.w)}${o.n>1?` ×${o.n}`:''}</text>`).join('')}</g>`;};
  let v='';
  lines.forEach((L,k)=>{const g=G[k],x=X(k),on=k<=index?' on':'',x1=x-g.d/2,x2=x+g.d/2;
   const tipx=`Missed so far (${L.X}): ${L.lx.map(w=>FEATLABEL[w]).join('; ')||'—'}`,tipc=`Carried so far (${L.C}): ${L.lc.map(w=>FEATLABEL[w]).join('; ')||'—'}`,tipn=`New so far (${L.N}): ${L.ln.map(w=>FEATLABEL[w]).join('; ')||'—'}`;
@@ -130,7 +133,7 @@ function render(){
   const dots=[];const put=(arr,cls,cx0)=>arr.forEach((w,j)=>dots.push(`<circle class="dot ${cls}" r="3.2" cx="${cx0+(j-(arr.length-1)/2)*8}" cy="${VY+Math.max(g.r1,g.r2)+9}"><title>${esc(FEATLABEL[w])}</title></circle>`));
   put(L.x,'x',cxX);put(L.c,'c',cxC);put(L.n,'n',cxN);
   v+=`<g class="venn${on}"><circle class="cm" cx="${x1}" cy="${VY}" r="${g.r1}"><title>${esc(tipx)}</title></circle><circle class="ci" cx="${x2}" cy="${VY}" r="${g.r2}"><title>${esc(tipn)}</title></circle>`
-   +region('x',L.x,L.X,cxX,Math.min(x2-g.r2,x1+g.r1)-(x1-g.r1),x1-g.r1-6,'end',tipx)+region('c',L.c,L.C,cxC,Math.min(x1+g.r1,x2+g.r2)-Math.max(x2-g.r2,x1-g.r1),null,null,tipc)+region('n',L.n,L.N,cxN,x2+g.r2-Math.max(x1+g.r1,x2-g.r2),x2+g.r2+6,'start',tipn)
+   +region('x',g.ux,L.x,L.X,cxX,Math.min(x2-g.r2,x1+g.r1)-(x1-g.r1),x1-g.r1-6,'end',tipx)+region('c',g.uc,L.c,L.C,cxC,Math.min(x1+g.r1,x2+g.r2)-Math.max(x2-g.r2,x1-g.r1),null,null,tipc)+region('n',g.un,L.n,L.N,cxN,x2+g.r2-Math.max(x1+g.r1,x2-g.r2),x2+g.r2+6,'start',tipn)
    +`<text class="lab" x="${x}" y="${VY-Math.max(g.r1,g.r2)-8}">line ${k+1}</text>${dots.join('')}</g>`;
  });
  // river
