@@ -1,72 +1,15 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f3f2ed"><title>Where It Went · Two Worlds</title><link rel="stylesheet" href="flow.css?v=12">
-<style>
-.jpage{padding:0 36px 40px}
-.jbar{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;padding:14px 36px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--card)}
-.jbar label{display:flex;flex-direction:column;gap:3px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-.jbar select,.jbar button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:7px 11px;cursor:pointer}
-.jbar select{min-width:150px}
-.jbar .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}.jbar .seg button{border:0;border-radius:0}.jbar .seg button[aria-pressed=true]{background:var(--ink);color:#fff}
-.jbar .spacer{flex:1}
-.jcard{margin:18px 0;border:1px solid var(--line);border-radius:14px;background:var(--card);padding:16px 18px 18px}
-.jcard h2{font:500 22px/1.2 'Iowan Old Style',Georgia,serif;letter-spacing:-.5px;margin:0 0 4px}
-.jcard .jsub-line{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--muted);margin:0 0 10px}
-.jcard .journey-head p{font-size:14px}
-.jcard .journey-note{display:none}
-.jcard .jwrap{margin-top:4px}
-.lines{margin:14px 0 0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px 16px}
-.lines li{font-size:12.5px;line-height:1.45;color:var(--ink);padding:6px 10px;border-radius:8px;background:var(--pale)}
-.lines li.A{background:var(--role-1-bg)}.lines li.B{background:var(--role-2-bg)}
-.lines b{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:2px}
-.lines li.A b{color:var(--role-1)}.lines li.B b{color:var(--role-2)}
-.lines i{font-style:normal;font-family:var(--mono);font-size:10px;color:var(--muted)}
-.gloss{margin:26px 0 0;border-top:1px solid var(--line);padding-top:18px}
-.gloss h3{font:500 18px/1.2 'Iowan Old Style',Georgia,serif;margin:0 0 6px}
-.gloss p{color:var(--muted);font-size:13px;max-width:720px;margin:0 0 12px}
-.gloss table{border-collapse:collapse;font-size:12.5px;width:100%;max-width:900px}
-.gloss td,.gloss th{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line);vertical-align:top}
-.gloss th{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
-.gloss td.k{font-family:var(--mono);font-weight:600;white-space:nowrap}
-.gloss td.q{color:var(--muted);font-style:italic}
-#error{margin:20px 36px;padding:12px;border:1px solid #b23b3b;border-radius:8px;color:#b23b3b}
-@media(max-width:800px){.jbar,.jpage{padding-left:16px;padding-right:16px}}
-</style></head>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f3f2ed"><title>Need journeys · Two Worlds</title><link rel="stylesheet" href="journey.css?v=1"></head>
 <body>
-<header class="masthead"><a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">↗</span> TWO WORLDS<span class="brand-separator">/</span><span class="brand-sub">Research atlas</span></a><span class="archive-tag"><i></i> Simulation archive</span></header>
-<div class="intro"><div><h1>Where it <em>went</em></h1></div><div class="archive-stats"><span><b id="session-count">—</b> recorded runs</span><span><b>8</b> pathways</span><span><b>5</b> scenarios</span></div></div>
-<div id="error" hidden>Could not load the archive.</div>
-<div class="jbar">
-<label>Path<select id="path"></select></label>
-<label>Scenario<select id="scen"></select></label>
-<label>Run<select id="pair"></select></label>
-<div class="seg" role="group" aria-label="View"><button id="mode-run" aria-pressed="true">This run</button><button id="mode-paths" aria-pressed="false">Same run, all 8 paths</button></div>
-<span class="spacer"></span>
-<a class="archive-link" href="flow.html" id="to-flow">Replay this run ↗</a>
-<a class="archive-link" href="stream.html" id="to-stream">Bubble stream ↗</a>
-</div>
-<div class="jpage"><div id="cards"></div>
-<div class="gloss"><h3>What the row labels are</h3><p>Each row is a <b>key</b>: one of 17 needs the reader can code a sentence as. The bold word is the key itself; the small line under it is the key’s plain-English gloss, written once for the whole study. Neither is a quotation. What the participant actually said is in the line cards above; the reader turned those words into keys, and the lanes follow the keys.</p>
-<table><thead><tr><th>Key</th><th>Gloss</th><th>Example of a line coded as this key</th></tr></thead><tbody id="gloss-rows"></tbody></table></div>
-</div>
-<script type="module">
-import {PATHS,SCENARIOS} from './flow-model.mjs?v=6';
-import {journeyHTML,FEATLABEL} from './flow-journey.mjs?v=3';
-const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let data,mode='run';const sel={path:'all',scen:'pairs',pair:0};
-const card=s=>{const lines=s.transcript.map((t,i)=>({t,i})).filter(x=>x.t.who==='A'||x.t.who==='B');let k=0;
- return `<section class="jcard"><h2>${esc(PATHS[s.path])}</h2><p class="jsub-line">${esc(SCENARIOS[s.scenario])} · run ${s.pair+1} · ${lines.length} line${lines.length===1?'':'s'} · built: ${esc(s.outcome.name)}</p>${journeyHTML(s,s.transcript.length-1)}<ul class="lines">${lines.map(({t})=>{k++;return `<li class="${t.who}"><b>Line ${k} · ${t.who==='A'?'Role 1':'Role 2'}${t.phase==='confer'?' · private':t.unread?' · not heard by the builder':''}</b>${esc(t.text)}<br><i>meant: ${(t.meant||[]).join(', ')||'—'}${t.unread?'':' · AI took: '+((t.taken||[]).join(', ')||'—')}${t.heard&&t.heard.length?' · took the last line to mean: '+t.heard.join(', '):''}</i></li>`;}).join('')}</ul></section>`;};
-function render(){const runs=mode==='run'?[data.sessions.find(s=>s.path===sel.path&&s.scenario===sel.scen&&s.pair===sel.pair)].filter(Boolean):data.paths.map(([p])=>data.sessions.find(s=>s.path===p&&s.scenario===sel.scen&&s.pair===sel.pair)).filter(Boolean);
- $('cards').innerHTML=runs.map(card).join('');$('to-flow').href=`flow.html#path=${sel.path}&scen=${sel.scen}&pair=${sel.pair}`;$('to-stream').href=`stream.html#path=${sel.path}&scen=${sel.scen}&pair=${sel.pair}&mode=run`;
- history.replaceState(null,'',`#path=${sel.path}&scen=${sel.scen}&pair=${sel.pair}&mode=${mode}`);}
-function setMode(m){mode=m;$('mode-run').setAttribute('aria-pressed',String(m==='run'));$('mode-paths').setAttribute('aria-pressed',String(m==='paths'));$('path').disabled=m==='paths';render();}
-$('mode-run').onclick=()=>setMode('run');$('mode-paths').onclick=()=>setMode('paths');
-for(const k of ['path','scen','pair'])$(k).onchange=()=>{sel[k]=k==='pair'?Number($(k).value):$(k).value;render();};
-function glossary(){const ex={},sc={};for(const s of data.sessions)for(const t of s.transcript){if(t.who!=='A'&&t.who!=='B')continue;const m=t.meant||[];if(t.text.length<30)continue;const score=m.length*1000+t.text.length;for(const k of m)if(!(k in sc)||score<sc[k]){sc[k]=score;ex[k]=t.text;}}
- $('gloss-rows').innerHTML=Object.keys(FEATLABEL).map(k=>`<tr><td class="k">${k}</td><td>${esc(FEATLABEL[k])}</td><td class="q">${ex[k]?'“'+esc(ex[k].length>160?ex[k].slice(0,157)+'…':ex[k])+'”':'—'}</td></tr>`).join('');}
-async function init(){try{const r=await fetch('eight-paths.json');if(!r.ok)throw 0;data=await r.json();$('session-count').textContent=data.sessions.length;
- $('path').innerHTML=data.paths.map(([p])=>`<option value="${p}">${PATHS[p]}</option>`).join('');$('scen').innerHTML=Object.keys(data.scenarios).map(k=>`<option value="${k}">${SCENARIOS[k]}</option>`).join('');$('pair').innerHTML=[...new Set(data.sessions.map(s=>s.pair))].sort().map(k=>`<option value="${k}">${String(k+1).padStart(2,'0')}</option>`).join('');
- const p=new URLSearchParams(location.hash.slice(1));if(PATHS[p.get('path')])sel.path=p.get('path');if(SCENARIOS[p.get('scen')])sel.scen=p.get('scen');if(p.get('pair')!=null&&!isNaN(+p.get('pair')))sel.pair=+p.get('pair');
- $('path').value=sel.path;$('scen').value=sel.scen;$('pair').value=String(sel.pair);glossary();setMode(p.get('mode')==='paths'?'paths':'run');}catch(e){$('error').hidden=false;console.error(e);}}
-init();
-</script>
+<header class="site-header"><a class="brand" href="../index.html">Two Worlds</a><h1>Need journeys</h1><nav><button id="guide-toggle">Key guide</button><a id="to-flow" href="flow.html">Conversation ↗</a></nav></header>
+<main class="shell">
+<section class="controls" aria-label="Choose a recorded run"><div class="selectors"><label><span class="sr-only">Communication path</span><select id="path" disabled></select></label><label><span class="sr-only">Scenario</span><select id="scen" disabled></select></label><label><span>Run</span><select id="pair" disabled></select></label></div><div class="view-switch" role="group" aria-label="View"><button id="mode-run" aria-pressed="true" disabled>One path</button><button id="mode-paths" aria-pressed="false" disabled>Compare paths</button></div></section>
+<section class="player" aria-label="Replay controls"><button id="play" class="primary" title="Play or pause (Space)" disabled>▶ Play</button><button id="back" class="icon-button" aria-label="Previous step" title="Previous step (←)" disabled>←</button><button id="next" class="icon-button" aria-label="Next step" title="Next step (→)" disabled>→</button><input id="scrub" type="range" min="0" max="1" value="0" aria-label="Replay step" disabled><output id="position" aria-live="polite">—</output><button id="reset" class="icon-button" aria-label="Restart" title="Restart (R)" disabled>↺</button><select id="speed" aria-label="Playback speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select></section>
+<div id="error" role="alert" hidden>Could not load this archive. <button id="retry">Try again</button></div>
+<div id="stage" aria-busy="true"></div>
+</main>
+<footer class="page-footer">Recorded simulation</footer>
+<dialog id="guide" aria-labelledby="guide-title"><div class="dialog-head"><h2 id="guide-title">Key guide</h2><button id="guide-close" class="close-button" aria-label="Close key guide">×</button></div><p>Keys are coded labels, not quotations. Lines connect matching keys in the recorded hand-offs. A match in the final bridge does not prove what caused it.</p><div id="key-list" class="key-list"></div></dialog>
+<script src="../agents/usertest/draw.js"></script><script type="module" src="journey.js?v=1"></script>
 </body></html>
