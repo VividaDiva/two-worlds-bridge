@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Information Flow Replay</title>
+<style>
+:root{color-scheme:light;--page:#f4f2ec;--card:#fff;--surface:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--ink3:#8a8884;--line:#e2e0da;--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s1b:#e3eefb;--s2b:#fdeae2;--s3b:#e2f5ec;--mute:#eceae3}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){color-scheme:dark;--page:#131312;--card:#1f1f1d;--surface:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--ink3:#8f8e86;--line:#333330;--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s1b:#1c2a3d;--s2b:#3a241a;--s3b:#1a3328;--mute:#2a2a27}}
+:root[data-theme=dark]{color-scheme:dark;--page:#131312;--card:#1f1f1d;--surface:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--ink3:#8f8e86;--line:#333330;--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s1b:#1c2a3d;--s2b:#3a241a;--s3b:#1a3328;--mute:#2a2a27}
+*{box-sizing:border-box}body{margin:0;background:var(--page);color:var(--ink);font:15px/1.5 "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif}
+header{max-width:1240px;margin:0 auto;padding:26px 32px 10px}
+.eyebrow{font:12px/1 ui-monospace,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin:0 0 10px}
+h1{font-size:30px;margin:0 0 6px;font-weight:500}.lede{color:var(--ink2);margin:0;max-width:80ch}
+.bar{max-width:1240px;margin:14px auto 0;padding:0 32px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+select,button{font:inherit;font-size:13.5px;padding:7px 11px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer}
+button.primary{background:var(--ink);color:var(--surface);border-color:var(--ink)}button:disabled{opacity:.45;cursor:default}
+.bar .sp{margin-left:auto;color:var(--ink2);font-size:13px}
+main{max-width:1240px;margin:14px auto 60px;padding:0 32px;display:grid;grid-template-columns:minmax(360px,5fr) minmax(420px,6fr);gap:18px}
+@media(max-width:900px){main{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;min-height:560px}.panel.right{position:sticky;top:12px;align-self:start;max-height:calc(100vh - 24px);overflow:auto}
+.panel h2{font-size:15px;font-weight:500;margin:0 0 10px;color:var(--ink2);display:flex;justify-content:space-between}
+.cast{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}.cast div{font-size:12.5px;padding:8px 10px;border-radius:8px;background:var(--mute);color:var(--ink2);border-left:3px solid}
+.cast .A{border-color:var(--s1)}.cast .B{border-color:var(--s2)}.cast b{color:var(--ink)}
+.chat{display:flex;flex-direction:column;gap:10px}
+.msg{display:none;max-width:92%;padding:10px 13px;border-radius:12px;font-size:14px;animation:in .35s ease-out}
+.msg.on{display:block}.msg.cur{outline:2px solid var(--ink);outline-offset:2px}
+@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.msg .who{font:11px/1 ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px}
+.msg.A{align-self:flex-start;background:var(--s1b);border-bottom-left-radius:3px}.msg.A .who{color:var(--s1)}
+.msg.B{align-self:flex-end;background:var(--s2b);border-bottom-right-radius:3px}.msg.B .who{color:var(--s2)}
+.msg.machine{align-self:center;background:var(--s3b);border:1px dashed var(--s3);text-align:center;max-width:96%}.msg.machine .who{color:var(--s3)}
+.msg.priv{background:repeating-linear-gradient(45deg,transparent,transparent 6px,rgba(0,0,0,.035) 6px,rgba(0,0,0,.035) 12px),var(--mute)}
+.msg .reach{font-size:11.5px;color:var(--ink3);margin-top:6px}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}.chip{font:11.5px ui-monospace,Menlo,monospace;padding:2px 7px;border-radius:999px;border:1px solid var(--ink3);color:var(--ink2)}
+.chip.heard{background:var(--s3);border-color:var(--s3);color:#fff}.chip.unheard{border-style:dashed;text-decoration:line-through;opacity:.7}
+svg{display:block;width:100%;height:auto;font-family:inherit}svg text{font-size:12px;fill:var(--ink2)}
+.node circle,.node rect{fill:var(--card);stroke:var(--line);stroke-width:1.5;transition:stroke .3s,stroke-width .3s}.node.on circle,.node.on rect{stroke-width:3}
+.node.A.on circle{stroke:var(--s1)}.node.B.on circle{stroke:var(--s2)}.node.M.on circle,.node.M.on rect{stroke:var(--s3)}
+.node .nm{fill:var(--ink);font-size:13px;text-anchor:middle}
+.arrow{fill:none;stroke:var(--line);stroke-width:2;transition:stroke .3s}
+.arrow.live{stroke:var(--ink);stroke-dasharray:6 6;animation:dash 1.2s linear infinite}.arrow.deaf{stroke-dasharray:2 5;opacity:.5}
+@keyframes dash{to{stroke-dashoffset:-24}}
+.pkt{font:11px ui-monospace,Menlo,monospace}.pkt rect{rx:9;fill:var(--ink)}.pkt text{fill:var(--surface);text-anchor:middle}
+.pkt.drop rect{fill:var(--ink3)}.pkt.drop text{text-decoration:line-through}
+.ledger{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.ledger h3{font-size:13px;font-weight:500;color:var(--ink2);margin:0 0 6px}
+.lrow{display:grid;grid-template-columns:92px 1fr 1fr 1fr 1fr;align-items:center;font-size:12px;color:var(--ink2);padding:3px 0;border-bottom:1px dotted var(--line)}
+.lrow.head{color:var(--ink3);font:11px ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase}
+.lrow .nd{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--ink)}.lrow .nd.A{border-left:3px solid var(--s1);padding-left:6px}.lrow .nd.B{border-left:3px solid var(--s2);padding-left:6px}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;border:1.5px solid var(--line);transition:all .4s}
+.dot.v{background:var(--ink3);border-color:var(--ink3)}.dot.h{background:var(--s3);border-color:var(--s3)}.dot.b{background:var(--ink);border-color:var(--ink)}.dot.x{border-color:var(--s2);background:repeating-linear-gradient(45deg,var(--s2),var(--s2) 2px,transparent 2px,transparent 4px)}
+.bridge{margin-top:12px;display:none}.bridge.on{display:block}.bridge canvas{width:100%;border-radius:8px;display:block}.bridge p{font-size:13px;color:var(--ink2);margin:6px 0 0}
+.status{font-size:12.5px;color:var(--ink3);margin-top:10px;min-height:18px}
+.lgd{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink2);margin:6px 0 0}
+</style></head><body>
+<header><p class="eyebrow">Two Worlds, One Builder · replay</p><h1>Three agents talking, and where the information goes</h1>
+<p class="lede">Left: the conversation as it happened. Right: what each sentence carried, who it reached, what the builder kept, and what ended up in the bridge. Step through any of the 160 simulated sessions.</p></header>
+<div class="bar"><select id="path"></select><select id="scen"></select><select id="pair"></select>
+<button id="reset">↺ Reset</button><button id="step" class="primary">Next turn →</button><button id="play">▶ Play</button><span class="sp" id="pos"></span></div>
+<main>
+<section class="panel"><h2><span>Conversation</span><span id="pathNote"></span></h2><div class="cast" id="cast"></div><div class="chat" id="chat"></div></section>
+<section class="panel right"><h2><span>Information flow</span><span id="turnNote"></span></h2>
+<svg id="flow" viewBox="0 0 560 300" role="img" aria-label="who hears whom on this turn"></svg>
+<div class="lgd"><span>— reached</span><span>· · · did not reach</span><span><span class="chip heard" style="padding:0 6px">need</span> kept by the builder</span><span><span class="chip unheard" style="padding:0 6px">need</span> said, not heard</span></div>
+<div class="ledger"><h3>Hidden needs · voiced → heard → built</h3><div id="ledger"></div></div>
+<div class="bridge" id="bridge"><canvas id="cv"></canvas><p id="bname"></p></div>
+<div class="status" id="status"></div></section>
+</main>
+<script src="../agents/usertest/draw.js"></script>
+<script>
+const CN={all:"Discuss together",confer:"Confer, then tell AI",both:"Tell AI separately",chain:"Role 1 → Role 2 → AI","via-1":"Role 1 → AI → Role 2","via-2":"Role 2 → AI → Role 1","only-1":"Role 1 only","only-2":"Role 2 only"};
+const SCN={places:"Two structures",loads:"Two loads",agreed:"The same aim",pairs:"Two lives",refs:"Two references"};
+const NAME={A:"Role 1 · gpt-4o",B:"Role 2 · claude-opus-5",machine:"AI builder · gemini"};
+// who a turn reaches, per path
+const REACH={
+ all:(t)=>t.who==="machine"?["A","B"]:["M",t.who==="A"?"B":"A"],
+ confer:(t)=>t.phase==="confer"?[t.who==="A"?"B":"A"]:t.who==="machine"?["A","B"]:["M",t.who==="A"?"B":"A"],
+ both:(t)=>t.who==="machine"?["A","B"]:["M"],
+ chain:(t)=>t.who==="A"?["B"]:t.who==="B"?["M"]:["B"],
+ "via-1":(t)=>t.who==="machine"?["B","A"]:["M"],
+ "via-2":(t)=>t.who==="machine"?["A","B"]:["M"],
+ "only-1":(t)=>t.who==="machine"?["A"]:["M"],
+ "only-2":(t)=>t.who==="machine"?["B"]:["M"]};
+const P={A:[90,70],B:[470,70],M:[280,215]};
+let DATA,S,i=-1,timer=null;
+const $=id=>document.getElementById(id);
+fetch("eight-paths.json").then(r=>r.json()).then(d=>{DATA=d;
+ $("path").innerHTML=d.paths.map(p=>`<option value="${p[0]}">${CN[p[0]]}</option>`).join("");
+ $("scen").innerHTML=Object.keys(d.scenarios).map(k=>`<option value="${k}">${SCN[k]}</option>`).join("");
+ $("pair").innerHTML=[0,1,2,3].map(k=>`<option value="${k}">pair ${k+1}</option>`).join("");
+ const h=new URLSearchParams(location.hash.slice(1)); if(h.get("path"))$("path").value=h.get("path"); if(h.get("scen"))$("scen").value=h.get("scen"); if(h.get("pair"))$("pair").value=h.get("pair");
+ load();});
+["path","scen","pair"].forEach(id=>$(id).addEventListener("change",load));
+function load(){stop(); S=DATA.sessions.find(s=>s.path===$("path").value&&s.scenario===$("scen").value&&s.pair==$("pair").value); i=-1;
+ location.hash=`path=${S.path}&scen=${S.scenario}&pair=${S.pair}`;
+ $("pathNote").textContent=CN[S.path]+" · "+SCN[S.scenario]+" · pair "+(S.pair+1);
+ $("cast").innerHTML=["A","B"].map(r=>`<div class="${r}"><b>${NAME[r]}</b><br>${S.cast[r].situation}</div>`).join("");
+ $("chat").innerHTML=S.transcript.map((t,k)=>{const who=t.who; const chips=(t.meant||[]).map(m=>`<span class="chip" data-k="${k}" data-m="${m}">${m}</span>`).join("");
+   const reach=REACH[S.path](t).map(x=>x==="M"?"AI builder":x==="A"?"Role 1":"Role 2");
+   return `<div class="msg ${who}${t.phase==="confer"?" priv":""}" id="m${k}"><div class="who">${NAME[who]}${t.phase==="confer"?" · private":""}${t.changed===false?" · no change":""}</div>${who==="machine"?`<b>${t.text}</b>${t.say?`<div>${t.say}</div>`:""}`:t.text}${chips?`<div class="chips">${chips}</div>`:""}<div class="reach">→ ${reach.join(", ")}${t.phase==="confer"?" · the builder cannot hear this":""}</div></div>`}).join("");
+ drawFlow(null); ledger(); $("bridge").classList.remove("on"); $("status").textContent=""; pos();}
+function pos(){$("pos").textContent=`turn ${Math.max(0,i+1)} / ${S.transcript.length}`; $("step").disabled=i>=S.transcript.length-1}
+function ledger(){const heard=new Set(),voiced=new Set(); for(let k=0;k<=i;k++){const t=S.transcript[k]; if(t.who==="machine")continue; (t.meant||[]).forEach(m=>voiced.add(t.who+":"+m)); if(t.phase!=="confer")(t.taken||[]).forEach(m=>heard.add(t.who+":"+m))}
+ const done=i>=S.transcript.length-1;
+ $("ledger").innerHTML=`<div class="lrow head"><span>need</span><span>hidden</span><span>voiced</span><span>heard</span><span>built</span></div>`+["A","B"].flatMap(r=>S.met[r].map(m=>{const v=voiced.has(r+":"+m.need),h=heard.has(r+":"+m.need);
+   return `<div class="lrow"><span class="nd ${r}">${m.need}</span><span><i class="dot v"></i></span><span><i class="dot ${v?"v":""}"></i></span><span><i class="dot ${h?"h":""}"></i></span><span><i class="dot ${done?(m.ok?"b":"x"):""}"></i></span></div>`})).join("")}
+function drawFlow(t){const svg=$("flow"); const reach=t?REACH[S.path](t):[]; const from=t?(t.who==="machine"?"M":t.who):null;
+ const edge=(a,b)=>{const [x1,y1]=P[a],[x2,y2]=P[b]; const live=from===a&&reach.includes(b); const deaf=from===a&&!reach.includes(b);
+   return `<path class="arrow${live?" live":deaf?" deaf":""}" d="M${x1},${y1} L${x2},${y2}" marker-end="${live?"url(#ah)":""}"/>`};
+ const pairs=[["A","B"],["B","A"],["A","M"],["B","M"],["M","A"],["M","B"]];
+ let g=`<defs><marker id="ah" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--ink)"/></marker></defs>`;
+ g+=pairs.filter(([a,b])=>from===a||(!from)).map(([a,b])=>edge(a,b)).join("")+pairs.filter(([a,b])=>from&&from!==a).map(([a,b])=>`<path class="arrow" d="M${P[a][0]},${P[a][1]} L${P[b][0]},${P[b][1]}"/>`).join("");
+ const node=(k,label)=>`<g class="node ${k}${from===k||reach.includes(k)?" on":""}" transform="translate(${P[k][0]},${P[k][1]})">${k==="M"?`<rect x="-34" y="-24" width="68" height="48" rx="10"/>`:`<circle r="26"/>`}<text class="nm" y="5">${label}</text></g>`;
+ g+=node("A","Role 1")+node("B","Role 2")+node("M","builder");
+ // packets: the needs this sentence carried, travelling to the builder (or to the other person)
+ if(t&&t.who!=="machine"&&(t.meant||[]).length){const tgt=reach.includes("M")?"M":reach[0]; const [x1,y1]=P[t.who],[x2,y2]=P[tgt]; const taken=new Set(t.phase!=="confer"?(t.taken||[]):[]);
+   t.meant.forEach((m,k)=>{const f=(k+1)/(t.meant.length+1); const x=x1+(x2-x1)*f,y=y1+(y2-y1)*f-14; const kept=tgt==="M"&&taken.has(m);
+     g+=`<g class="pkt${tgt==="M"&&!kept?" drop":""}" transform="translate(${x},${y})"><rect x="-26" y="-9" width="52" height="18"/><text y="4">${m}</text></g>`})}
+ if(t&&t.who==="machine"){g+=`<text x="280" y="275" text-anchor="middle" style="fill:var(--ink)">${t.changed===false?"no change — ":"built: "}${t.text}</text>`}
+ svg.innerHTML=g;
+ const [x1,y1]=P["M"]; svg.insertAdjacentHTML("beforeend",`<text x="${x1}" y="${y1+40}" text-anchor="middle">${t?"":"press Next turn"}</text>`)}
+function step(){if(i>=S.transcript.length-1){stop();return} i++; const t=S.transcript[i];
+ document.querySelectorAll(".msg.cur").forEach(m=>m.classList.remove("cur")); const m=$("m"+i); m.classList.add("on","cur"); m.scrollIntoView({block:"nearest",behavior:"smooth"});
+ if(t.who!=="machine"){const taken=new Set(t.phase!=="confer"?(t.taken||[]):[]); m.querySelectorAll(".chip").forEach(c=>{if(t.phase==="confer")return; c.classList.add(taken.has(c.dataset.m)?"heard":"unheard")})}
+ drawFlow(t); ledger();
+ const reach=REACH[S.path](t); $("turnNote").textContent=`turn ${i+1}: ${NAME[t.who].split(" ·")[0]} → ${reach.map(x=>x==="M"?"builder":x==="A"?"Role 1":"Role 2").join(" + ")}`;
+ if(t.who!=="machine"){const n=(t.meant||[]).length,k=t.phase==="confer"?0:(t.taken||[]).filter(x=>(t.meant||[]).includes(x)).length; $("status").textContent=t.phase==="confer"?`Said in private: ${n} need${n===1?"":"s"} carried, the builder hears none of it.`:reach.includes("M")?`This sentence carried ${n} need${n===1?"":"s"}; the builder kept ${k}.`:`Reached ${reach.map(x=>x==="A"?"Role 1":"Role 2").join("")} only — the builder will hear it second-hand, if at all.`}
+ else $("status").textContent=t.changed===false?"The builder answered but left the bridge as it was.":"The builder laid a new bridge from everything it has kept so far.";
+ if(i===S.transcript.length-1){$("bridge").classList.add("on"); drawCrossing($("cv"),S.outcome.shape,S.outcome.world,[]); const ok=[...S.met.A,...S.met.B].filter(x=>x.ok).length,tot=S.met.A.length+S.met.B.length; $("bname").textContent=`Final: ${S.outcome.name}. ${ok} of ${tot} hidden needs survived.`}
+ pos()}
+function stop(){if(timer){clearInterval(timer);timer=null;$("play").textContent="▶ Play"}}
+$("step").addEventListener("click",()=>{stop();step()}); $("reset").addEventListener("click",load);
+$("play").addEventListener("click",()=>{if(timer){stop();return} if(i>=S.transcript.length-1)load(); $("play").textContent="❚❚ Pause"; step(); timer=setInterval(()=>{step(); if(i>=S.transcript.length-1)stop()},2600)});
+</script></body></html>
