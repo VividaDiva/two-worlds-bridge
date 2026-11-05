@@ -68,3 +68,43 @@ body.recording{background:#eeeee8}
 @media(max-width:700px){.interpretation-record{gap:14px;padding-inline:0}.flow-key{gap:7px 10px;font-size:9px}.record-word{font-size:10px;padding-inline:6px}}
 
 @media(max-width:900px),(pointer:coarse){.recording #hide-controls{display:none}}
+
+/* Where it went: need lanes */
+#journey-panel{padding:14px 16px 18px;overflow:hidden}
+.journey-head p{margin:0 0 8px;font-size:14px;line-height:1.5;color:var(--ink)}
+.journey-head b{color:var(--green)}
+.journey-empty,.journey-note{color:var(--muted);font-size:12.5px;line-height:1.5;margin:10px 0 0}
+.journey-note a{color:var(--green)}
+.jlegend{display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--mono);font-size:10.5px;color:var(--muted);margin:0 0 10px}
+.jlegend span{display:inline-flex;align-items:center;gap:6px}
+.jlegend i{display:inline-block}
+.jlegend .lg-dot{width:10px;height:10px;border-radius:50%;background:var(--green)}
+.jlegend .lg-carried{width:22px;height:3px;border-radius:2px;background:var(--green)}
+.jlegend .lg-missed{width:16px;border-top:2px dotted #b23b3b}
+.jlegend .lg-added{width:8px;height:8px;border-radius:50%;border:1.5px dashed var(--green)}
+.jlegend .lg-not{width:8px;height:8px;border-radius:50%;border:1.5px solid var(--green);background:linear-gradient(var(--green),var(--green)) center/8px 1.5px no-repeat}
+.jlegend .lg-built{width:10px;height:10px;border-radius:3px;background:var(--green)}
+.jwrap{display:flex;border:1px solid var(--line);border-radius:10px;background:var(--card);overflow:hidden}
+.jlabels{flex:none;border-right:1px solid var(--line);background:var(--card)}
+.jscroll{overflow-x:auto;flex:1;min-width:0;scroll-behavior:smooth}
+.journey,.jlabels{display:block;max-width:none;--jl:40%}
+.jband{fill:var(--pale);opacity:.55;transition:opacity .4s}
+.jband.built{fill:var(--green);opacity:.12}
+.jband.ahead{opacity:.18}
+.jline{font-family:var(--mono);font-size:9px;letter-spacing:.12em;fill:var(--muted)}
+.jhead{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;font-weight:600;text-transform:uppercase;fill:var(--ink)}
+.jhead.a{fill:var(--role-1)}.jhead.b{fill:var(--role-2)}.jhead.m{fill:var(--green)}
+.jhead.ahead,.jsub.ahead{opacity:.3}
+.jsub{font-family:var(--mono);font-size:9px;fill:var(--muted)}
+.jlab{font-family:var(--mono);font-size:10px;fill:var(--ink)}
+.jlabels .lane.ahead{opacity:.35;transition:opacity .4s}
+.lane .jsw{fill:hsl(var(--h) 55% var(--jl))}
+.lane .jl{stroke-width:3;stroke-linecap:round}
+.lane .jl.carried{stroke:hsl(var(--h) 55% var(--jl));opacity:.85}
+.lane .jl.added{stroke:hsl(var(--h) 55% var(--jl));stroke-width:2;stroke-dasharray:4 3;opacity:.8}
+.lane .jl.dropped{stroke:#b23b3b;stroke-width:1.6;stroke-dasharray:2 3}
+.lane .jx{font-family:var(--mono);font-size:11px;fill:#b23b3b}
+.lane .jn{fill:hsl(var(--h) 55% var(--jl));stroke:var(--card);stroke-width:2}
+.lane .jn.added{fill:var(--card);stroke:hsl(var(--h) 55% var(--jl));stroke-dasharray:3 2}
+.lane .jn.not{fill:var(--card);stroke:hsl(var(--h) 55% var(--jl))}
+.lane .jnot{stroke:hsl(var(--h) 55% var(--jl));stroke-width:2}

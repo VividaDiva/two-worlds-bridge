@@ -132,7 +132,13 @@
       "steady",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "exposed"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -141,7 +147,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -156,7 +166,16 @@
       "high",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "water"
+     ],
+     "meantRefuses": [
+      "steady"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -165,7 +184,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -178,7 +201,16 @@
      "taken": [
       "high"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "high",
+      "sways"
+     ],
+     "meantRefuses": [
+      "low"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -187,7 +219,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -202,7 +238,18 @@
       "guarded",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "high",
+      "water"
+     ],
+     "meantRefuses": [
+      "exposed"
+     ],
+     "takenRefuses": [
+      "sways"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -211,7 +258,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -316,7 +367,11 @@
      "taken": [
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -325,7 +380,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -340,7 +399,16 @@
       "high",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "water",
+      "steady"
+     ],
+     "meantRefuses": [
+      "low"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -349,7 +417,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -363,7 +435,17 @@
      "taken": [
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "water",
+      "high",
+      "open"
+     ],
+     "meantRefuses": [
+      "sways"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -372,7 +454,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -388,7 +474,18 @@
       "steady",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "grip"
+     ],
+     "meantRefuses": [
+      "exposed"
+     ],
+     "takenRefuses": [
+      "sways"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -397,7 +494,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -505,7 +606,15 @@
       "minimal",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "water"
+     ],
+     "takenRefuses": [
+      "water"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -514,7 +623,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -528,7 +641,16 @@
      "taken": [
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "minimal"
+     ],
+     "meantRefuses": [
+      "inGap"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -537,7 +659,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -553,7 +679,18 @@
       "water",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "water",
+      "high"
+     ],
+     "meantRefuses": [
+      "sways"
+     ],
+     "takenRefuses": [
+      "sways"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -562,7 +699,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -578,7 +719,15 @@
       "guarded",
       "steady"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady"
+     ],
+     "meantRefuses": [
+      "exposed"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -587,7 +736,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -692,7 +845,11 @@
       "steady",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -701,7 +858,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -717,7 +878,19 @@
       "sways",
       "low"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "water",
+      "guarded",
+      "steady"
+     ],
+     "meantRefuses": [
+      "inGap"
+     ],
+     "takenRefuses": [
+      "low"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -726,7 +899,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -742,7 +919,11 @@
       "high",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -751,7 +932,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -766,7 +951,19 @@
       "light",
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy",
+      "high",
+      "guarded"
+     ],
+     "meantRefuses": [
+      "heavy"
+     ],
+     "takenRefuses": [
+      "heavy"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -775,7 +972,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -879,7 +1080,15 @@
       "light",
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "heavy"
+     ],
+     "takenRefuses": [
+      "heavy"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -888,7 +1097,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -904,7 +1117,19 @@
       "steady",
       "light"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "water",
+      "steady",
+      "minimal"
+     ],
+     "meantRefuses": [
+      "light"
+     ],
+     "takenRefuses": [
+      "light"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -913,7 +1138,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -930,7 +1159,20 @@
       "water",
       "light"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy",
+      "steady"
+     ],
+     "meantRefuses": [
+      "light",
+      "sways"
+     ],
+     "takenRefuses": [
+      "water",
+      "light"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -939,7 +1181,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -953,7 +1199,16 @@
      "taken": [
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "heavy"
+     ],
+     "meantRefuses": [
+      "light"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -962,7 +1217,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -1055,7 +1314,11 @@
      "taken": [
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -1064,7 +1327,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -1079,7 +1346,14 @@
       "water",
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "light",
+      "grip"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -1088,7 +1362,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -1101,7 +1379,17 @@
      "taken": [
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy",
+      "footed",
+      "water"
+     ],
+     "meantRefuses": [
+      "heavy"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -1110,7 +1398,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -1124,7 +1416,15 @@
       "steady",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "grip"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [
+      "sways"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -1133,7 +1433,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -1230,7 +1534,11 @@
       "water",
       "footed"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -1239,7 +1547,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -1256,7 +1568,17 @@
       "steady",
       "high"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "water",
+      "steady",
+      "footed"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [
+      "high"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -1265,7 +1587,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -1281,7 +1607,13 @@
       "steady",
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [
+      "heavy"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -1290,7 +1622,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -1306,7 +1642,18 @@
       "steady",
       "light"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "light",
+      "steady"
+     ],
+     "meantRefuses": [
+      "light"
+     ],
+     "takenRefuses": [
+      "light"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -1315,7 +1662,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -1409,7 +1760,11 @@
      "taken": [
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -1418,7 +1773,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -1431,7 +1790,15 @@
      "taken": [
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "grip"
+     ],
+     "meantRefuses": [
+      "light"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -1440,7 +1807,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -1456,7 +1827,15 @@
       "grip",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "sways"
+     ],
+     "takenRefuses": [
+      "sways"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -1465,7 +1844,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -1473,7 +1856,11 @@
      "phase": null,
      "meant": [],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     }
    ],
    "outcome": {
@@ -1568,7 +1955,11 @@
      "taken": [
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -1577,7 +1968,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -1592,7 +1987,16 @@
       "water",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "grip",
+      "steady"
+     ],
+     "meantRefuses": [
+      "exposed"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -1601,7 +2005,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -1613,7 +2021,14 @@
      "taken": [
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "water"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -1622,7 +2037,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -1637,7 +2056,15 @@
       "guarded",
       "light"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "guarded"
+     ],
+     "meantRefuses": [
+      "exposed"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -1646,7 +2073,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -1743,7 +2174,11 @@
       "water",
       "steady"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -1752,7 +2187,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -1768,7 +2207,18 @@
       "heavy",
       "light"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "water",
+      "steady"
+     ],
+     "meantRefuses": [
+      "light"
+     ],
+     "takenRefuses": [
+      "light"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -1777,7 +2227,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -1790,7 +2244,14 @@
      "taken": [
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "low",
+      "heavy"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -1799,7 +2260,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -1814,7 +2279,16 @@
       "heavy",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy",
+      "water"
+     ],
+     "meantRefuses": [
+      "exposed"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -1823,7 +2297,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -1918,7 +2396,13 @@
       "sways"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "sways"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -1927,7 +2411,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -1942,7 +2430,15 @@
       "water",
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "minimal"
+     ],
+     "meantRefuses": [
+      "exposed"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -1951,7 +2447,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -1966,7 +2466,13 @@
       "grip",
       "steady"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "sways"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -1975,7 +2481,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -1987,7 +2497,14 @@
      "taken": [
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "grip",
+      "steady"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -1996,7 +2513,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -2093,7 +2614,13 @@
       "water",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "steady"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -2102,7 +2629,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -2116,7 +2647,18 @@
      "taken": [
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "water",
+      "guarded"
+     ],
+     "meantRefuses": [
+      "minimal"
+     ],
+     "takenRefuses": [
+      "guarded"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -2125,7 +2667,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -2140,7 +2686,11 @@
       "water",
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -2149,7 +2699,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -2164,7 +2718,14 @@
       "rock",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "water"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -2173,7 +2734,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -2270,7 +2835,11 @@
      "taken": [
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -2279,7 +2848,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -2293,7 +2866,15 @@
      "taken": [
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "grip"
+     ],
+     "meantRefuses": [
+      "exposed"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -2302,7 +2883,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -2315,7 +2900,17 @@
      "taken": [
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "guarded",
+      "high"
+     ],
+     "meantRefuses": [
+      "steady"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -2324,7 +2919,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -2336,7 +2935,13 @@
      "taken": [
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "grip"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -2345,7 +2950,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -2451,7 +3060,11 @@
       "steady",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -2460,7 +3073,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -2473,7 +3090,16 @@
      "taken": [
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "grip"
+     ],
+     "meantRefuses": [
+      "exposed"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -2482,7 +3108,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -2497,7 +3127,13 @@
       "heavy",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "exposed"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -2506,7 +3142,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -2521,7 +3161,18 @@
       "guarded",
       "light"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "guarded",
+      "steady"
+     ],
+     "meantRefuses": [
+      "light"
+     ],
+     "takenRefuses": [
+      "light"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -2530,7 +3181,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -2637,7 +3292,11 @@
       "grip",
       "steady"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -2646,7 +3305,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -2661,7 +3324,19 @@
       "sheltered",
       "open"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy",
+      "steady",
+      "grip"
+     ],
+     "meantRefuses": [
+      "exposed"
+     ],
+     "takenRefuses": [
+      "open"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -2670,7 +3345,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -2686,7 +3365,15 @@
       "open",
       "many"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "many"
+     ],
+     "takenRefuses": [
+      "many"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -2695,7 +3382,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -2708,7 +3399,18 @@
      "taken": [
       "light"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "guarded",
+      "open"
+     ],
+     "meantRefuses": [
+      "light"
+     ],
+     "takenRefuses": [
+      "light"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -2717,7 +3419,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -2826,7 +3532,11 @@
       "water",
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -2835,7 +3545,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -2850,7 +3564,17 @@
       "guarded",
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "water",
+      "heavy",
+      "steady"
+     ],
+     "meantRefuses": [
+      "exposed"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -2859,7 +3583,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -2875,7 +3603,19 @@
       "grip",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "open",
+      "guarded"
+     ],
+     "meantRefuses": [
+      "sways"
+     ],
+     "takenRefuses": [
+      "sways"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -2884,7 +3624,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -2899,7 +3643,14 @@
       "steady",
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "grip"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -2908,7 +3659,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -3036,7 +3791,11 @@
       "steady",
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -3045,7 +3804,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -3060,7 +3823,18 @@
       "high",
       "low"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "heavy"
+     ],
+     "meantRefuses": [
+      "low"
+     ],
+     "takenRefuses": [
+      "low"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -3069,7 +3843,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -3083,7 +3861,18 @@
      "taken": [
       "high"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "high",
+      "inGap"
+     ],
+     "meantRefuses": [
+      "high"
+     ],
+     "takenRefuses": [
+      "high"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -3092,7 +3881,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -3108,7 +3901,18 @@
       "low",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy",
+      "low"
+     ],
+     "meantRefuses": [
+      "low"
+     ],
+     "takenRefuses": [
+      "sways"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -3117,7 +3921,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -3240,7 +4048,11 @@
      "phase": null,
      "meant": [],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -3256,7 +4068,13 @@
       "steady",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [
+      "sways"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -3265,7 +4083,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -3279,7 +4101,14 @@
       "heavy",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "high",
+      "steady"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -3288,7 +4117,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -3304,7 +4137,17 @@
       "steady",
       "low"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "footed"
+     ],
+     "meantRefuses": [
+      "low"
+     ],
+     "takenRefuses": [
+      "low"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -3313,7 +4156,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -3437,7 +4284,11 @@
      "taken": [
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -3446,7 +4297,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -3461,7 +4316,16 @@
       "footed",
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy",
+      "steady"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [
+      "heavy"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -3470,7 +4334,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -3483,7 +4351,15 @@
      "taken": [
       "footed"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "footed",
+      "heavy"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -3492,7 +4368,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -3507,7 +4387,18 @@
       "high",
       "low"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "footed",
+      "steady"
+     ],
+     "meantRefuses": [
+      "low"
+     ],
+     "takenRefuses": [
+      "low"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -3516,7 +4407,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -3644,7 +4539,13 @@
      "taken": [
       "steady"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "sways"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -3653,7 +4554,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -3668,7 +4573,18 @@
       "high",
       "low"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "low"
+     ],
+     "meantRefuses": [
+      "low"
+     ],
+     "takenRefuses": [
+      "low"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -3677,7 +4593,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -3690,7 +4610,15 @@
      "taken": [
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "high"
+     ],
+     "meantRefuses": [
+      "light"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -3699,7 +4627,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -3713,7 +4645,14 @@
       "water",
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy",
+      "steady"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -3722,7 +4661,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -3824,7 +4767,11 @@
       "sways"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -3836,7 +4783,14 @@
       "steady"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "guarded",
+      "grip"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -3848,7 +4802,15 @@
       "inGap"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "water",
+      "sways",
+      "inGap"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -3860,7 +4822,14 @@
       "inGap"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "inGap"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -3871,7 +4840,15 @@
       "sways"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "heavy",
+      "water"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -3883,7 +4860,14 @@
       "steady"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "sheltered"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -3898,7 +4882,11 @@
       "steady",
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -3907,7 +4895,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -4011,7 +5003,11 @@
       "high"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -4023,7 +5019,14 @@
       "inGap"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "low"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -4034,7 +5037,15 @@
       "grip"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "water",
+      "footed"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -4046,7 +5057,14 @@
       "inGap"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "guarded",
+      "grip"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -4058,7 +5076,11 @@
       "water"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -4070,7 +5092,14 @@
       "inGap"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "footed",
+      "heavy"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -4086,7 +5115,18 @@
       "sways",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "footed",
+      "heavy"
+     ],
+     "meantRefuses": [
+      "inGap"
+     ],
+     "takenRefuses": [
+      "water"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -4095,7 +5135,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -4197,7 +5241,11 @@
       "low"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -4209,7 +5257,14 @@
       "inGap"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "minimal",
+      "steady"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -4221,7 +5276,15 @@
       "high"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "water",
+      "exposed",
+      "sways"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -4232,7 +5295,14 @@
       "steady"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "sways"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -4244,7 +5314,14 @@
       "heavy"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "sways",
+      "steady"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -4256,7 +5333,11 @@
       "inGap"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -4271,7 +5352,11 @@
       "steady",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -4280,7 +5365,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -4383,7 +5472,11 @@
       "sways"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -4395,7 +5488,14 @@
       "grip"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "low"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -4407,7 +5507,15 @@
       "sways"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "water",
+      "footed",
+      "minimal"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -4418,7 +5526,13 @@
       "steady"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -4430,7 +5544,11 @@
       "guarded"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -4441,7 +5559,14 @@
       "steady"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "light",
+      "steady"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -4457,7 +5582,18 @@
       "steady",
       "inGap"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "light",
+      "steady"
+     ],
+     "meantRefuses": [
+      "inGap"
+     ],
+     "takenRefuses": [
+      "inGap"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -4466,7 +5602,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -4566,7 +5706,11 @@
       "steady"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -4578,7 +5722,14 @@
       "water"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "grip",
+      "steady"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -4589,7 +5740,13 @@
       "grip"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -4601,7 +5758,14 @@
       "steady"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "grip",
+      "heavy"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -4613,7 +5777,14 @@
       "exposed"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "heavy"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -4625,7 +5796,14 @@
       "heavy"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "grip",
+      "steady"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -4640,7 +5818,11 @@
       "heavy",
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -4649,7 +5831,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -4742,7 +5928,11 @@
       "guarded"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -4754,7 +5944,15 @@
       "sways"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "guarded",
+      "grip",
+      "steady"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -4766,7 +5964,14 @@
       "sways"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy",
+      "footed"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -4778,7 +5983,13 @@
       "sways"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -4789,7 +6000,14 @@
       "light"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "light",
+      "steady"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -4801,7 +6019,15 @@
       "exposed"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy",
+      "guarded",
+      "steady"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -4817,7 +6043,16 @@
       "water",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "guarded"
+     ],
+     "meantRefuses": [
+      "exposed"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -4826,7 +6061,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -4919,7 +6158,11 @@
       "exposed"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -4931,7 +6174,15 @@
       "grip"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "guarded",
+      "grip",
+      "steady"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -4943,7 +6194,15 @@
       "sways"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy",
+      "steady",
+      "grip"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -4955,7 +6214,13 @@
       "sways"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -4965,7 +6230,13 @@
       "heavy"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -4977,7 +6248,13 @@
       "exposed"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -4993,7 +6270,14 @@
       "steady",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy",
+      "guarded"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -5002,7 +6286,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -5094,7 +6382,11 @@
       "sways"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -5106,7 +6398,14 @@
       "sways"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "grip",
+      "sways"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -5118,7 +6417,11 @@
       "high"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -5130,7 +6433,15 @@
       "high"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "grip",
+      "steady",
+      "light"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -5142,7 +6453,14 @@
       "grip"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy",
+      "low"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -5153,7 +6471,15 @@
       "low"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "grip",
+      "low"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -5170,7 +6496,17 @@
       "grip",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "low",
+      "grip"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [
+      "sways"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -5179,7 +6515,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -5273,7 +6613,11 @@
       "guarded"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -5285,7 +6629,15 @@
       "minimal"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "guarded",
+      "grip",
+      "steady"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -5295,7 +6647,13 @@
       "grip"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -5305,7 +6663,13 @@
       "grip"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "grip"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -5317,7 +6681,13 @@
       "heavy"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "grip"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -5329,7 +6699,14 @@
       "guarded"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "grip",
+      "heavy"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -5345,7 +6722,11 @@
       "grip",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -5354,7 +6735,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -5447,7 +6832,11 @@
       "high"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -5459,7 +6848,13 @@
       "exposed"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "water"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -5471,7 +6866,15 @@
       "sways"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy",
+      "guarded",
+      "steady"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -5483,7 +6886,14 @@
       "exposed"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "water"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -5494,7 +6904,11 @@
       "guarded"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -5506,7 +6920,14 @@
       "exposed"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "guarded",
+      "water"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -5521,7 +6942,15 @@
       "high",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "high",
+      "guarded",
+      "steady"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -5530,7 +6959,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -5621,7 +7054,11 @@
       "water"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -5632,7 +7069,14 @@
       "grip"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "water",
+      "steady"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -5644,7 +7088,14 @@
       "many"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "grip"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -5655,7 +7106,14 @@
       "light"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "guarded",
+      "heavy"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -5666,7 +7124,14 @@
       "grip"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "light",
+      "grip"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -5676,7 +7141,14 @@
       "grip"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "grip",
+      "steady"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -5691,7 +7163,14 @@
       "grip",
       "steady"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "grip",
+      "low"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -5700,7 +7179,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -5791,7 +7274,11 @@
       "water"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -5803,7 +7290,14 @@
       "exposed"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "water",
+      "high"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -5813,7 +7307,15 @@
       "grip"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "exposed",
+      "guarded",
+      "water"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -5825,7 +7327,14 @@
       "sways"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "guarded",
+      "open"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -5835,7 +7344,15 @@
       "open"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "guarded",
+      "open"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -5846,7 +7363,14 @@
       "exposed"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "guarded",
+      "open"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -5862,7 +7386,14 @@
       "guarded",
       "open"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "open",
+      "guarded"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -5871,7 +7402,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -5966,7 +7501,11 @@
       "sways"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -5978,7 +7517,14 @@
       "minimal"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy",
+      "steady"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -5990,7 +7536,13 @@
       "heavy"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -6002,7 +7554,14 @@
       "exposed"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "minimal",
+      "guarded"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -6012,7 +7571,15 @@
       "sheltered"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy",
+      "high",
+      "guarded"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -6023,7 +7590,14 @@
       "guarded"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "guarded",
+      "sheltered"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -6040,7 +7614,13 @@
       "guarded",
       "sheltered"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [
+      "sheltered"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -6049,7 +7629,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -6154,7 +7738,11 @@
       "sways"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -6166,7 +7754,14 @@
       "water"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "heavy"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -6178,7 +7773,15 @@
       "minimal"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "guarded",
+      "grip",
+      "steady"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -6190,7 +7793,14 @@
       "exposed"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "guarded",
+      "grip"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -6201,7 +7811,15 @@
       "many"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "inGap",
+      "low",
+      "water"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -6213,7 +7831,14 @@
       "minimal"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy",
+      "minimal"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -6229,7 +7854,14 @@
       "heavy",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy",
+      "minimal"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -6238,7 +7870,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -6344,7 +7980,11 @@
       "grip"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -6356,7 +7996,14 @@
       "exposed"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "guarded"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -6367,7 +8014,14 @@
       "high"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "open",
+      "guarded"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -6378,7 +8032,13 @@
       "exposed"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "guarded"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -6388,7 +8048,13 @@
       "grip"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "grip"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -6400,7 +8066,14 @@
       "exposed"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "grip",
+      "heavy"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -6412,7 +8085,11 @@
       "steady"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -6421,7 +8098,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -6524,7 +8205,11 @@
       "guarded"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -6535,7 +8220,14 @@
       "exposed"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "guarded",
+      "grip"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -6546,7 +8238,13 @@
       "guarded"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "guarded"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -6558,7 +8256,14 @@
       "exposed"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "grip",
+      "guarded"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -6569,7 +8274,14 @@
       "grip"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "guarded",
+      "grip"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -6580,7 +8292,14 @@
       "exposed"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "grip",
+      "guarded"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -6595,7 +8314,16 @@
       "grip",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "grip",
+      "guarded"
+     ],
+     "meantRefuses": [
+      "exposed"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -6604,7 +8332,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -6729,7 +8461,11 @@
       "inGap"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -6740,7 +8476,14 @@
       "open"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy",
+      "open"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -6752,7 +8495,15 @@
       "heavy"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "low",
+      "steady",
+      "light"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -6763,7 +8514,15 @@
       "steady"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy",
+      "guarded",
+      "steady"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -6774,7 +8533,15 @@
       "heavy"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "low",
+      "heavy",
+      "steady"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -6786,7 +8553,14 @@
       "sways"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy",
+      "guarded"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -6803,7 +8577,13 @@
       "guarded",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [
+      "sways"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -6812,7 +8592,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -6935,7 +8719,11 @@
       "many"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -6947,7 +8735,13 @@
       "exposed"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -6958,7 +8752,15 @@
       "heavy"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "exposed",
+      "heavy",
+      "guarded"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -6969,7 +8771,14 @@
       "inGap"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy",
+      "guarded"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -6981,7 +8790,11 @@
       "high"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -6993,7 +8806,14 @@
       "exposed"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy",
+      "high"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -7009,7 +8829,14 @@
       "heavy",
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy",
+      "high"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -7018,7 +8845,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -7144,7 +8975,11 @@
       "grip"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -7156,7 +8991,14 @@
       "low"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "low",
+      "steady"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -7167,7 +9009,13 @@
       "low"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "high"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -7178,7 +9026,14 @@
       "high"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "high",
+      "low"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -7189,7 +9044,14 @@
       "high"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "high",
+      "low"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -7201,7 +9063,13 @@
       "inGap"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -7216,7 +9084,11 @@
       "high",
       "steady"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -7225,7 +9097,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -7348,7 +9224,13 @@
       "high"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -7360,7 +9242,14 @@
       "high"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "light",
+      "low"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -7372,7 +9261,11 @@
       "guarded"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -7383,7 +9276,15 @@
       "heavy"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "guarded",
+      "grip",
+      "steady"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "A",
@@ -7395,7 +9296,11 @@
       "guarded"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -7406,7 +9311,14 @@
       "guarded"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "guarded",
+      "heavy"
+     ],
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -7422,7 +9334,14 @@
       "grip",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "guarded",
+      "heavy"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -7431,7 +9350,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -7538,7 +9461,11 @@
      "taken": [
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "B",
@@ -7551,7 +9478,11 @@
      "taken": [
       "inGap"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "machine",
@@ -7560,7 +9491,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -7665,7 +9600,11 @@
       "grip",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "B",
@@ -7681,7 +9620,11 @@
       "rock",
       "high"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "machine",
@@ -7690,7 +9633,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -7796,7 +9743,11 @@
      "taken": [
       "steady"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "B",
@@ -7810,7 +9761,11 @@
       "sways",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "machine",
@@ -7819,7 +9774,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -7924,7 +9883,11 @@
       "water",
       "steady"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "B",
@@ -7939,7 +9902,11 @@
       "high",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "machine",
@@ -7948,7 +9915,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -8052,7 +10023,11 @@
       "steady",
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "B",
@@ -8068,7 +10043,11 @@
       "steady",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "machine",
@@ -8077,7 +10056,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -8174,7 +10157,11 @@
       "water",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "B",
@@ -8190,7 +10177,11 @@
       "steady",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "machine",
@@ -8199,7 +10190,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -8295,7 +10290,11 @@
       "water",
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "B",
@@ -8311,7 +10310,11 @@
       "steady",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "machine",
@@ -8320,7 +10323,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -8416,7 +10423,11 @@
       "water",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "B",
@@ -8433,7 +10444,11 @@
       "grip",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "machine",
@@ -8442,7 +10457,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -8537,7 +10556,11 @@
       "steady",
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "B",
@@ -8552,7 +10575,11 @@
       "grip",
       "steady"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "machine",
@@ -8561,7 +10588,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -8658,7 +10689,11 @@
       "grip",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "B",
@@ -8674,7 +10709,11 @@
       "guarded",
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "machine",
@@ -8683,7 +10722,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -8777,7 +10820,11 @@
      "taken": [
       "sheltered"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "B",
@@ -8792,7 +10839,11 @@
       "heavy",
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "machine",
@@ -8801,7 +10852,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -8896,7 +10951,11 @@
      "taken": [
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "B",
@@ -8912,7 +10971,11 @@
       "steady",
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "machine",
@@ -8921,7 +10984,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -9018,7 +11085,11 @@
       "grip",
       "footed"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "B",
@@ -9033,7 +11104,11 @@
       "water",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "machine",
@@ -9042,7 +11117,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -9149,7 +11228,11 @@
       "water",
       "footed"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "B",
@@ -9164,7 +11247,11 @@
       "guarded",
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "machine",
@@ -9173,7 +11260,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -9278,7 +11369,11 @@
       "heavy",
       "steady"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "B",
@@ -9290,7 +11385,11 @@
       "exposed"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "machine",
@@ -9299,7 +11398,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -9404,7 +11507,11 @@
       "steady",
       "sheltered"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "B",
@@ -9420,7 +11527,11 @@
       "guarded",
       "light"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "machine",
@@ -9429,7 +11540,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -9557,7 +11672,11 @@
       "heavy",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "B",
@@ -9573,7 +11692,11 @@
       "steady",
       "high"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "machine",
@@ -9582,7 +11705,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -9707,7 +11834,11 @@
      "taken": [
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "B",
@@ -9723,7 +11854,11 @@
       "high",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "machine",
@@ -9732,7 +11867,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -9857,7 +11996,11 @@
       "sheltered"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "B",
@@ -9873,7 +12016,11 @@
       "high",
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "machine",
@@ -9882,7 +12029,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -10008,7 +12159,11 @@
      "taken": [
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "B",
@@ -10024,7 +12179,11 @@
       "guarded",
       "minimal"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": false
     },
     {
      "who": "machine",
@@ -10033,7 +12192,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -10134,7 +12297,11 @@
       "sways"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -10149,7 +12316,17 @@
       "sways",
       "inGap"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady"
+     ],
+     "meantRefuses": [
+      "inGap"
+     ],
+     "takenRefuses": [
+      "inGap"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -10158,7 +12335,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -10262,7 +12443,11 @@
       "footed"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -10278,7 +12463,18 @@
       "sways",
       "steady"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady",
+      "footed"
+     ],
+     "meantRefuses": [
+      "inGap"
+     ],
+     "takenRefuses": [
+      "steady"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -10287,7 +12483,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -10391,7 +12591,11 @@
       "grip"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -10406,7 +12610,17 @@
       "water",
       "high"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "minimal",
+      "low",
+      "grip"
+     ],
+     "meantRefuses": [
+      "inGap"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -10415,7 +12629,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -10518,7 +12736,11 @@
       "grip"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -10535,7 +12757,17 @@
       "high",
       "inGap"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "steady"
+     ],
+     "meantRefuses": [
+      "inGap"
+     ],
+     "takenRefuses": [
+      "inGap"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -10544,7 +12776,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -10643,7 +12879,11 @@
       "grip"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -10659,7 +12899,14 @@
       "water",
       "steady"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "water",
+      "steady"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -10668,7 +12915,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -10760,7 +13011,11 @@
       "grip"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -10774,7 +13029,14 @@
       "heavy",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "water",
+      "steady"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -10783,7 +13045,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -10875,7 +13141,11 @@
       "steady"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -10892,7 +13162,17 @@
       "water",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "water",
+      "light",
+      "steady"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [
+      "sways"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -10901,7 +13181,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -10993,7 +13277,11 @@
       "water"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -11007,7 +13295,17 @@
      "taken": [
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "water",
+      "grip",
+      "guarded"
+     ],
+     "meantRefuses": [
+      "light"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -11016,7 +13314,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -11109,7 +13411,11 @@
       "grip"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -11123,7 +13429,16 @@
       "guarded",
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "grip",
+      "steady"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [
+      "grip"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -11132,7 +13447,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -11224,7 +13543,11 @@
       "guarded"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -11238,7 +13561,16 @@
       "heavy",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "water",
+      "guarded"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [
+      "guarded"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -11247,7 +13579,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -11338,7 +13674,11 @@
       "exposed"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -11354,7 +13694,19 @@
       "steady",
       "exposed"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "water",
+      "grip",
+      "steady"
+     ],
+     "meantRefuses": [
+      "sways"
+     ],
+     "takenRefuses": [
+      "exposed"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -11363,7 +13715,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -11453,7 +13809,11 @@
       "grip"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -11468,7 +13828,14 @@
       "heavy",
       "steady"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "grip",
+      "water"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -11477,7 +13844,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -11573,7 +13944,11 @@
       "grip"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -11586,7 +13961,16 @@
      "taken": [
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy",
+      "steady"
+     ],
+     "meantRefuses": [
+      "exposed"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -11595,7 +13979,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -11697,7 +14085,11 @@
       "exposed"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -11711,7 +14103,15 @@
      "taken": [
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "low"
+     ],
+     "meantRefuses": [
+      "exposed"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -11720,7 +14120,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -11822,7 +14226,11 @@
       "grip"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -11836,7 +14244,15 @@
       "grip",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "water",
+      "steady",
+      "guarded"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -11845,7 +14261,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -11947,7 +14367,11 @@
       "steady"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -11962,7 +14386,14 @@
       "grip",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "grip",
+      "guarded"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -11971,7 +14402,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -12095,7 +14530,11 @@
       "steady"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -12111,7 +14550,17 @@
       "water",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy"
+     ],
+     "meantRefuses": [
+      "sways"
+     ],
+     "takenRefuses": [
+      "sways"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -12120,7 +14569,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -12243,7 +14696,11 @@
       "steady"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -12258,7 +14715,17 @@
       "high",
       "low"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy"
+     ],
+     "meantRefuses": [
+      "low"
+     ],
+     "takenRefuses": [
+      "low"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -12267,7 +14734,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -12392,7 +14863,11 @@
       "heavy"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -12407,7 +14882,19 @@
       "high",
       "low"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy",
+      "guarded",
+      "steady"
+     ],
+     "meantRefuses": [
+      "low"
+     ],
+     "takenRefuses": [
+      "low"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -12416,7 +14903,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -12542,7 +15033,11 @@
       "sheltered"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": true
     },
     {
      "who": "B",
@@ -12556,7 +15051,14 @@
      "taken": [
       "sheltered"
      ],
-     "changed": null
+     "changed": null,
+     "heard": [
+      "heavy",
+      "steady"
+     ],
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -12565,7 +15067,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -12673,7 +15179,13 @@
       "guarded",
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "sways"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -12682,7 +15194,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -12697,7 +15213,15 @@
       "water",
       "inGap"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "inGap"
+     ],
+     "takenRefuses": [
+      "inGap"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -12706,7 +15230,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -12810,7 +15338,11 @@
      "taken": [
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -12819,7 +15351,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -12834,7 +15370,15 @@
       "high",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "inGap"
+     ],
+     "takenRefuses": [
+      "sways"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -12843,7 +15387,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -12947,7 +15495,11 @@
       "grip",
       "steady"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -12956,7 +15508,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -12973,7 +15529,15 @@
       "light",
       "low"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "low"
+     ],
+     "takenRefuses": [
+      "low"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -12982,7 +15546,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -13087,7 +15655,11 @@
       "heavy",
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -13096,7 +15668,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -13110,7 +15686,13 @@
      "taken": [
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "footed"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -13119,7 +15701,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -13223,7 +15809,11 @@
       "water",
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -13232,7 +15822,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -13247,7 +15841,13 @@
       "heavy",
       "steady"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "light"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -13256,7 +15856,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -13354,7 +15958,11 @@
       "sways",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -13363,7 +15971,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -13379,7 +15991,17 @@
       "guarded",
       "light"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "light",
+      "guarded"
+     ],
+     "takenRefuses": [
+      "guarded",
+      "light"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -13388,7 +16010,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -13481,7 +16107,11 @@
      "taken": [
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -13490,7 +16120,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -13506,7 +16140,15 @@
       "steady",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "light"
+     ],
+     "takenRefuses": [
+      "sways"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -13515,7 +16157,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -13609,7 +16255,11 @@
      "taken": [
       "high"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -13618,7 +16268,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -13633,7 +16287,15 @@
       "heavy",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "guarded"
+     ],
+     "takenRefuses": [
+      "guarded"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -13642,7 +16304,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -13737,7 +16403,13 @@
      "taken": [
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "water"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -13746,7 +16418,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -13762,7 +16438,13 @@
       "guarded",
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "minimal"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -13771,7 +16453,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -13867,7 +16553,11 @@
       "water",
       "steady"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -13876,7 +16566,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -13891,7 +16585,15 @@
       "water",
       "light"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "light"
+     ],
+     "takenRefuses": [
+      "light"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -13900,7 +16602,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -13995,7 +16701,13 @@
       "water",
       "steady"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "exposed"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -14004,7 +16716,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -14019,7 +16735,15 @@
       "high",
       "low"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "low"
+     ],
+     "takenRefuses": [
+      "low"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -14028,7 +16752,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -14123,7 +16851,11 @@
       "guarded",
       "steady"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -14132,7 +16864,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -14148,7 +16884,15 @@
       "heavy",
       "light"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "light"
+     ],
+     "takenRefuses": [
+      "light"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -14157,7 +16901,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -14252,7 +17000,11 @@
       "guarded",
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -14261,7 +17013,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -14275,7 +17031,13 @@
      "taken": [
       "low"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "open"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -14284,7 +17046,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -14390,7 +17156,11 @@
       "steady",
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -14399,7 +17169,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -14417,7 +17191,16 @@
       "exposed",
       "open"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "exposed"
+     ],
+     "takenRefuses": [
+      "exposed",
+      "open"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -14426,7 +17209,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -14532,7 +17319,11 @@
       "water",
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -14541,7 +17332,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -14555,7 +17350,15 @@
      "taken": [
       "exposed"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "exposed"
+     ],
+     "takenRefuses": [
+      "exposed"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -14564,7 +17367,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -14668,7 +17475,11 @@
       "grip"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -14677,7 +17488,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -14692,7 +17507,13 @@
       "water",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "light"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -14701,7 +17522,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -14827,7 +17652,11 @@
       "heavy",
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -14836,7 +17665,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -14850,7 +17683,11 @@
       "guarded",
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -14859,7 +17696,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -14987,7 +17828,11 @@
       "heavy",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -14996,7 +17841,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -15012,7 +17861,13 @@
       "low",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "exposed"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -15021,7 +17876,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -15147,7 +18006,11 @@
      "taken": [
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -15156,7 +18019,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -15172,7 +18039,15 @@
       "light",
       "low"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "low"
+     ],
+     "takenRefuses": [
+      "low"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -15181,7 +18056,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -15308,7 +18187,11 @@
       "steady",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -15317,7 +18200,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "B",
@@ -15332,7 +18219,13 @@
       "high",
       "footed"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "low"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -15341,7 +18234,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -15446,7 +18343,15 @@
       "sways",
       "inGap"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "inGap"
+     ],
+     "takenRefuses": [
+      "inGap"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -15455,7 +18360,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -15469,7 +18378,11 @@
       "steady",
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -15478,7 +18391,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -15585,7 +18502,15 @@
       "sways",
       "inGap"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "inGap"
+     ],
+     "takenRefuses": [
+      "inGap"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -15594,7 +18519,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -15608,7 +18537,11 @@
       "water",
       "steady"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -15617,7 +18550,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -15724,7 +18661,15 @@
       "sways",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "inGap"
+     ],
+     "takenRefuses": [
+      "water"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -15733,7 +18678,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -15745,7 +18694,11 @@
      "taken": [
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -15754,7 +18707,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -15860,7 +18817,15 @@
       "sways",
       "inGap"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "inGap"
+     ],
+     "takenRefuses": [
+      "inGap"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -15869,7 +18834,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -15883,7 +18852,11 @@
       "steady",
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -15892,7 +18865,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -15996,7 +18973,13 @@
       "heavy",
       "steady"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "sways"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -16005,7 +18988,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -16018,7 +19005,11 @@
      "taken": [
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -16027,7 +19018,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -16125,7 +19120,13 @@
       "steady",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [
+      "sways"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -16134,7 +19135,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -16145,7 +19150,11 @@
       "many"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -16154,7 +19163,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -16250,7 +19263,11 @@
       "heavy",
       "steady"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -16259,7 +19276,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -16275,7 +19296,16 @@
       "steady",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "sways",
+      "exposed"
+     ],
+     "takenRefuses": [
+      "sways"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -16284,7 +19314,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -16379,7 +19413,13 @@
       "heavy",
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "sways"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -16388,7 +19428,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -16400,7 +19444,11 @@
      "taken": [
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -16409,7 +19457,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -16505,7 +19557,13 @@
       "guarded",
       "steady"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "exposed"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -16514,7 +19572,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -16528,7 +19590,11 @@
       "steady",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -16537,7 +19603,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -16632,7 +19702,11 @@
       "grip",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -16641,7 +19715,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -16654,7 +19732,11 @@
      "taken": [
       "footed"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -16663,7 +19745,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -16759,7 +19845,13 @@
       "high",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [
+      "water"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -16768,7 +19860,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -16783,7 +19879,15 @@
       "steady",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "sways"
+     ],
+     "takenRefuses": [
+      "sways"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -16792,7 +19896,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -16887,7 +19995,13 @@
       "steady",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "guarded"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -16896,7 +20010,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -16910,7 +20028,11 @@
       "heavy",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -16919,7 +20041,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -17017,7 +20143,15 @@
       "guarded",
       "exposed"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "exposed"
+     ],
+     "takenRefuses": [
+      "exposed"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -17026,7 +20160,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -17038,7 +20176,11 @@
      "taken": [
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -17047,7 +20189,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -17151,7 +20297,11 @@
      "taken": [
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -17160,7 +20310,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -17176,7 +20330,13 @@
       "heavy",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [
+      "sways"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -17185,7 +20345,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -17292,7 +20456,13 @@
       "grip",
       "steady"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "sways"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -17301,7 +20471,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -17316,7 +20490,11 @@
       "heavy",
       "footed"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -17325,7 +20503,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -17429,7 +20611,11 @@
      "taken": [
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -17438,7 +20624,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -17453,7 +20643,13 @@
       "steady",
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "sways"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -17462,7 +20658,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -17593,7 +20793,15 @@
       "grip",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "sways"
+     ],
+     "takenRefuses": [
+      "sways"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -17602,7 +20810,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -17616,7 +20828,13 @@
      "taken": [
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "low"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -17625,7 +20843,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -17754,7 +20976,16 @@
       "heavy",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "sways",
+      "exposed"
+     ],
+     "takenRefuses": [
+      "sways"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -17763,7 +20994,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -17778,7 +21013,13 @@
       "steady",
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "light"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -17787,7 +21028,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -17914,7 +21159,11 @@
       "steady",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -17923,7 +21172,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -17937,7 +21190,11 @@
       "guarded",
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -17946,7 +21203,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -18073,7 +21334,13 @@
       "steady",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "guarded"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -18082,7 +21349,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     },
     {
      "who": "A",
@@ -18097,7 +21368,15 @@
       "heavy",
       "light"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "light"
+     ],
+     "takenRefuses": [
+      "light"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -18106,7 +21385,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": false
+     "changed": false,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -18212,7 +21495,13 @@
       "steady",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "exposed"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -18221,7 +21510,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -18327,7 +21620,14 @@
       "high",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [
+      "high",
+      "guarded"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -18336,7 +21636,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -18443,7 +21747,13 @@
       "grip",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "heavy"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -18452,7 +21762,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -18555,7 +21869,13 @@
       "steady"
      ],
      "taken": [],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "steady"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -18564,7 +21884,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -18666,7 +21990,11 @@
      "taken": [
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -18675,7 +22003,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -18772,7 +22104,11 @@
       "water",
       "sheltered"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -18781,7 +22117,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -18875,7 +22215,11 @@
      "taken": [
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -18884,7 +22228,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -18979,7 +22327,11 @@
      "taken": [
       "steady"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -18988,7 +22340,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -19083,7 +22439,13 @@
       "water",
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "exposed"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -19092,7 +22454,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -19187,7 +22553,11 @@
       "water",
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -19196,7 +22566,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -19291,7 +22665,11 @@
       "grip",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -19300,7 +22678,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -19396,7 +22778,15 @@
       "steady",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "sways"
+     ],
+     "takenRefuses": [
+      "sways"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -19405,7 +22795,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -19501,7 +22895,11 @@
      "taken": [
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -19510,7 +22908,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -19615,7 +23017,11 @@
      "taken": [
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -19624,7 +23030,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -19727,7 +23137,14 @@
      "taken": [
       "sheltered"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "sheltered",
+      "steady"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -19736,7 +23153,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -19843,7 +23264,13 @@
       "steady",
       "grip"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "exposed"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -19852,7 +23279,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -19980,7 +23411,11 @@
       "heavy",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -19989,7 +23424,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -20113,7 +23552,11 @@
      "taken": [
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -20122,7 +23565,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -20248,7 +23695,13 @@
      "taken": [
       "heavy"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "light"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -20257,7 +23710,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -20383,7 +23840,11 @@
       "heavy",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -20392,7 +23853,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -20495,7 +23960,13 @@
      "taken": [
       "inGap"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "inGap"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -20504,7 +23975,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -20612,7 +24087,15 @@
       "sways",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "inGap"
+     ],
+     "takenRefuses": [
+      "water"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -20621,7 +24104,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -20726,7 +24213,13 @@
      "taken": [
       "inGap"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "inGap"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -20735,7 +24228,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -20842,7 +24339,13 @@
       "footed",
       "inGap"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "inGap"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -20851,7 +24354,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -20958,7 +24465,15 @@
       "steady",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "light"
+     ],
+     "takenRefuses": [
+      "sways"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -20967,7 +24482,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -21063,7 +24582,11 @@
       "steady",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -21072,7 +24595,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -21167,7 +24694,11 @@
       "heavy",
       "steady"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -21176,7 +24707,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -21271,7 +24806,13 @@
       "heavy",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "light"
+     ],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -21280,7 +24821,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -21378,7 +24923,15 @@
       "guarded",
       "low"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "low"
+     ],
+     "takenRefuses": [
+      "low"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -21387,7 +24940,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -21483,7 +25040,15 @@
       "guarded",
       "low"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "low"
+     ],
+     "takenRefuses": [
+      "low"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -21492,7 +25057,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -21586,7 +25155,11 @@
      "taken": [
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -21595,7 +25168,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -21690,7 +25267,11 @@
       "steady",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -21699,7 +25280,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -21796,7 +25381,11 @@
       "steady",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -21805,7 +25394,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -21908,7 +25501,11 @@
       "grip",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -21917,7 +25514,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -22024,7 +25625,11 @@
       "grip",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -22033,7 +25638,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -22140,7 +25749,11 @@
       "grip",
       "guarded"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -22149,7 +25762,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -22279,7 +25896,11 @@
       "guarded",
       "water"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -22288,7 +25909,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -22416,7 +26041,15 @@
       "sways",
       "steady"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "exposed"
+     ],
+     "takenRefuses": [
+      "steady"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -22425,7 +26058,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -22553,7 +26190,11 @@
       "guarded",
       "minimal"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [],
+     "takenRefuses": [],
+     "unread": false
     },
     {
      "who": "machine",
@@ -22562,7 +26203,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {
@@ -22690,7 +26335,15 @@
       "steady",
       "sways"
      ],
-     "changed": null
+     "changed": null,
+     "heard": null,
+     "meantRefuses": [
+      "guarded"
+     ],
+     "takenRefuses": [
+      "sways"
+     ],
+     "unread": false
     },
     {
      "who": "machine",
@@ -22699,7 +26352,11 @@
      "phase": null,
      "meant": null,
      "taken": null,
-     "changed": true
+     "changed": true,
+     "heard": null,
+     "meantRefuses": null,
+     "takenRefuses": null,
+     "unread": null
     }
    ],
    "outcome": {

@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f3f2ed"><title>Bubble Stream · Two Worlds</title>
+<style>
+:root{--paper:#f3f2ed;--card:#fffefa;--ink:#202d29;--muted:#69736b;--line:#dcded5;--pale:#e6eddf;--green:#355d4c;--role-1:#526b55;--role-1-bg:#edf1e7;--role-2:#78627d;--role-2-bg:#f2edf3;--meant:#b8702a;--meant-bg:#f6ede2;--interp:#1f8a7a;--interp-bg:#e3f0ec;--missed:#b23b3b;--new:#8a5a2b;--mono:ui-monospace,SFMono-Regular,Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);background:var(--paper);font:14px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.masthead{display:flex;align-items:center;justify-content:space-between;padding:24px 36px;border-bottom:1px solid var(--line)}
+.brand{color:var(--ink);text-decoration:none;font-family:var(--mono);font-size:12px;letter-spacing:.14em;display:inline-flex;align-items:center;gap:10px}
+.brand-mark{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--green);color:#fff;font-size:14px}
+.brand-sub{color:var(--muted);letter-spacing:.06em}.brand-separator{color:var(--line);margin:0 8px}
+.archive-tag{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--muted)}.archive-tag i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:8px;vertical-align:middle}
+.intro{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;padding:34px 36px 18px;flex-wrap:wrap}
+h1{font:500 clamp(36px,4vw,58px)/1.08 'Iowan Old Style',Georgia,serif;letter-spacing:-2px;margin:0}h1 em{color:var(--green);font-style:italic}
+.intro p{max-width:560px;color:var(--muted);margin:10px 0 0;font-size:14.5px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--muted)}.legend span{display:inline-flex;align-items:center;gap:7px}.legend i{width:12px;height:12px;border-radius:50%;display:inline-block}
+.legend .m{background:var(--meant-bg);border:2px solid var(--meant)}.legend .i{background:var(--interp-bg);border:2px solid var(--interp)}.legend .c{background:var(--interp);opacity:.6}.legend .x{background:var(--missed)}.legend .n{background:repeating-linear-gradient(45deg,var(--new) 0 2px,transparent 2px 4px);border:1px solid var(--new);border-radius:2px}
+.bar{display:flex;gap:14px;align-items:center;padding:14px 36px;flex-wrap:wrap;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--card)}
+label{display:flex;flex-direction:column;gap:3px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+select,button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:7px 11px;cursor:pointer}
+select{min-width:150px}button:disabled{opacity:.4;cursor:default}
+button.primary{background:var(--green);color:#fff;border-color:var(--green)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}.seg button{border:0;border-radius:0}.seg button[aria-pressed=true]{background:var(--ink);color:#fff}
+.spacer{flex:1}.pos{font-family:var(--mono);font-size:12px;color:var(--muted);min-width:70px;text-align:right}
+.caption{padding:12px 36px 0;color:var(--muted);font-size:13px}.caption b{color:var(--ink)}
+.stage{margin:14px 36px 10px;border:1px solid var(--line);border-radius:14px;background:var(--card);overflow:hidden}
+.scroll{overflow-x:auto;overflow-y:hidden;scroll-behavior:smooth;position:relative}
+.strip{position:relative;height:160px}
+.cell{position:absolute;top:24px;height:130px;display:flex;flex-direction:column;justify-content:flex-end;opacity:0;transform:translateY(8px);transition:opacity .45s,transform .45s}
+.cell.on{opacity:1;transform:none}
+.cell .who{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;margin:0 0 4px;display:flex;gap:6px;align-items:center;white-space:nowrap;overflow:hidden}
+.cell.A .who{color:var(--role-1)}.cell.B .who{color:var(--role-2)}
+.cell .who small{color:var(--muted);letter-spacing:.04em;text-transform:none}
+.bubble{border-radius:12px;padding:8px 10px;font-size:12px;line-height:1.4;max-height:80px;overflow:hidden;position:relative;background:var(--pale);border:1px solid var(--line)}
+.cell.A .bubble{background:var(--role-1-bg)}.cell.B .bubble{background:var(--role-2-bg)}
+.bubble:after{content:"";position:absolute;left:0;right:0;bottom:0;height:22px;background:linear-gradient(transparent,var(--role-1-bg))}.cell.B .bubble:after{background:linear-gradient(transparent,var(--role-2-bg))}
+.bubble.private{border-style:dashed}
+.chips{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px}.chip{font-family:var(--mono);font-size:9.5px;padding:1px 6px;border-radius:999px;border:1px solid}
+.chip.c{color:var(--interp);border-color:var(--interp);background:var(--interp-bg)}.chip.x{color:var(--missed);border-color:var(--missed);background:#f8e9e9}.chip.n{color:var(--new);border-color:var(--new);border-style:dashed;background:#f7f0e8}
+.ai{position:absolute;top:84px;font-family:var(--mono);font-size:9.5px;color:var(--muted);opacity:0;transition:opacity .45s;max-width:120px;line-height:1.35}
+.ai.on{opacity:1}.ai b{display:block;color:var(--green);letter-spacing:.1em;font-weight:600}
+.sep{position:absolute;top:0;bottom:0;border-left:1px dashed var(--line)}.sep span{position:absolute;top:5px;left:6px;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--muted);white-space:nowrap}
+svg{display:block}
+.venn{opacity:0;transition:opacity .5s,transform .5s;transform:translateX(-12px)}.venn.on{opacity:1;transform:none}
+.venn .cm{fill:var(--meant-bg);stroke:var(--meant);stroke-width:1.6;mix-blend-mode:multiply}.venn .ci{fill:var(--interp-bg);stroke:var(--interp);stroke-width:1.6;mix-blend-mode:multiply}
+.venn text{font:600 12px 'Iowan Old Style',Georgia,serif;text-anchor:middle}.venn .tx{fill:var(--missed)}.venn .tc{fill:var(--interp)}.venn .tn{fill:var(--new)}
+.venn .lab{font:9px var(--mono);letter-spacing:.1em;fill:var(--muted);text-transform:uppercase}
+.venn .dot{stroke:var(--card);stroke-width:1.2}.venn .dot.c{fill:var(--interp)}.venn .dot.x{fill:var(--missed)}.venn .dot.n{fill:var(--card);stroke:var(--new);stroke-dasharray:2 1.5}
+.river path{transition:d .5s}.river .bx{fill:var(--missed);opacity:.28}.river .bc{fill:var(--interp);opacity:.42}.river .bn{fill:url(#hatch);stroke:var(--new);stroke-width:.6;opacity:.7}
+.river .edge{fill:none;stroke-width:1.2;opacity:.9}.river .ex{stroke:var(--missed)}.river .ec{stroke:var(--interp)}.river .en{stroke:var(--new)}
+.river .rl{font:10px var(--mono);letter-spacing:.08em;fill:var(--muted)}
+.axis{font:9px var(--mono);letter-spacing:.1em;fill:var(--muted)}
+.tick{stroke:var(--line)}
+.summary{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;padding:14px 36px 28px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.summary .track{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--pale)}.summary .track i{display:block;height:100%;transition:width .5s}
+.summary .track .c{background:var(--interp)}.summary .track .x{background:var(--missed)}.summary .track .n{background:repeating-linear-gradient(90deg,var(--new) 0 4px,transparent 4px 7px)}
+.summary b{color:var(--ink)}
+.foot{padding:0 36px 36px;color:var(--muted);font-size:12.5px;display:flex;gap:18px;flex-wrap:wrap}.foot a{color:var(--green)}
+#error{margin:20px 36px;padding:12px;border:1px solid var(--missed);border-radius:8px;color:var(--missed)}
+@media(max-width:800px){.masthead,.intro,.bar,.caption,.summary,.foot{padding-left:16px;padding-right:16px}.stage{margin-left:16px;margin-right:16px}.summary{grid-template-columns:1fr}}
+</style></head>
+<body>
+<header class="masthead"><a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">↗</span> TWO WORLDS<span class="brand-separator">/</span><span class="brand-sub">Research atlas</span></a><span class="archive-tag"><i></i> Simulation archive</span></header>
+<div class="intro"><div><h1>What the talk <em>grew</em></h1><p>Every line adds needs. Some are meant and interpreted (<b>carried</b>), some meant and dropped (<b>missed</b>), some interpreted though nobody meant them (<b>new</b>). The two bubbles keep swelling to the right as the conversation goes on; the river beneath keeps the running count.</p></div>
+<div class="legend"><span><i class="m"></i>speakers meant</span><span><i class="i"></i>the builder interpreted</span><span><i class="c"></i>carried</span><span><i class="x"></i>missed</span><span><i class="n"></i>new</span></div></div>
+<div id="error" hidden>Could not load the archive.</div>
+<div class="bar">
+<label>Path<select id="path"></select></label>
+<label>Scenario<select id="scen"></select></label>
+<label>Run<select id="pair"></select></label>
+<div class="seg" role="group" aria-label="Length"><button id="mode-run" aria-pressed="true">This run</button><button id="mode-path" aria-pressed="false">All runs of this path, end to end</button></div>
+<span class="spacer"></span>
+<button id="play" class="primary">▶ Play</button><button id="back" aria-label="Previous line">←</button><button id="step" aria-label="Next line">→</button><button id="reset" title="Restart">↺</button><button id="end" title="Jump to the end">⇥</button><span class="pos" id="pos">— / —</span>
+</div>
+<p class="caption" id="caption"></p>
+<div class="stage"><div class="scroll" id="scroll"><div class="strip" id="strip"></div><svg id="viz" role="img" aria-label="Bubble stream of meant and interpreted needs"></svg></div></div>
+<div class="summary"><span id="sum-l">—</span><div class="track" id="track"><i class="c"></i><i class="x"></i><i class="n"></i></div><span id="sum-r">—</span></div>
+<p class="foot"><span>Counts are needs, not lines; a need meant twice counts twice. A line the builder never heard (private talk, or a relay path) has nothing interpreted, so everything in it is missed.</span><a href="flow.html">Information flow replay ↗</a><a href="eight-paths.html">Study overview ↗</a><a href="../how-we-compare.html">How the comparison works ↗</a></p>
+<script type="module">
+import {PATHS,SCENARIOS} from './flow-model.mjs?v=6';
+import {FEATLABEL} from './flow-journey.mjs?v=2';
+const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const known=xs=>(xs||[]).filter(k=>k in FEATLABEL);
+let data,lines=[],index=0,timer=null,mode='run';
+const sel={path:'all',scen:'pairs',pair:0};
+function stop(){if(timer)clearInterval(timer);timer=null;$('play').textContent='▶ Play';}
+// Flatten one or many sessions into a list of human lines with builder replies attached.
+function build(){
+ const runs=mode==='run'?[data.sessions.find(s=>s.path===sel.path&&s.scenario===sel.scen&&s.pair===sel.pair)].filter(Boolean)
+  :data.sessions.filter(s=>s.path===sel.path).sort((a,b)=>Object.keys(SCENARIOS).indexOf(a.scenario)-Object.keys(SCENARIOS).indexOf(b.scenario)||a.pair-b.pair);
+ lines=[];let M=0,I=0,C=0,X=0,N=0;const cm=[],cx=[],cn=[];
+ runs.forEach((s,ri)=>{s.transcript.forEach((t,i)=>{
+  if(t.who!=='A'&&t.who!=='B')return;
+  const meant=known(t.meant),taken=t.unread?[]:known(t.taken);
+  const c=meant.filter(k=>taken.includes(k)),x=meant.filter(k=>!taken.includes(k)),n=taken.filter(k=>!meant.includes(k));
+  M+=meant.length;I+=taken.length;C+=c.length;X+=x.length;N+=n.length;cm.push(...c);cx.push(...x);cn.push(...n);
+  const reply=s.transcript.slice(i+1).find(r=>r.who==='machine');const nextHuman=s.transcript.slice(i+1).findIndex(r=>r.who!=='machine');
+  lines.push({s,ri,first:lines.length===0||lines[lines.length-1].s!==s,who:t.who,text:t.text,phase:t.phase,unread:!!t.unread,meant,taken,c,x,n,M,I,C,X,N,lc:[...cm],lx:[...cx],ln:[...cn],
+   reply:reply&&(nextHuman===-1||s.transcript.indexOf(reply)<i+1+nextHuman)?reply:null});
+ });});
+ index=0;render();$('scroll').scrollLeft=0;
+}
+let KR=9;const R=v=>10+KR*Math.sqrt(v);
+function geom(k){const L=lines[k],r1=R(L.M),r2=R(L.I),mn=Math.min(r1,r2),share=Math.min(L.M,L.I)?L.C/Math.min(L.M,L.I):0;return {r1,r2,d:(r1+r2)-2*mn*share};}
+function render(){
+ const n=lines.length;if(!n){$('strip').innerHTML='';$('viz').innerHTML='';return;}
+ const LL=lines[n-1];KR=84/Math.sqrt(Math.max(LL.M,LL.I,4));const G=lines.map((_,k)=>geom(k));const last=G[n-1];
+ const STEP=Math.max(200,Math.round(last.r1+last.r2+last.d+48)),PADL=40,W=PADL+n*STEP+60,CW=Math.round(STEP*.56);
+ const VY=150+Math.max(last.r1,last.r2)+16,RY0=VY+Math.max(last.r1,last.r2)+40,RH=120,H=RY0+RH+40;
+ const X=k=>PADL+k*STEP+STEP/2;
+ // the chat strip above the drawing
+ let strip='';
+ lines.forEach((L,k)=>{const x=PADL+k*STEP+8,on=k<=index?' on':'';
+  if(L.first&&mode==='path')strip+=`<div class="sep" style="left:${PADL+k*STEP}px"><span>${esc(SCENARIOS[L.s.scenario])} · run ${L.s.pair+1}</span></div>`;
+  const chips=[...L.c.map(w=>`<span class="chip c" title="meant and interpreted">${esc(w)}</span>`),...L.x.map(w=>`<span class="chip x" title="meant, not interpreted">${esc(w)}</span>`),...L.n.map(w=>`<span class="chip n" title="interpreted, never meant">${esc(w)}</span>`)].join('');
+  strip+=`<div class="cell ${L.who}${on}" style="left:${x}px;width:${CW}px"><p class="who">${L.who==='A'?'Role 1':'Role 2'}${L.phase==='confer'?'<small>· private</small>':L.unread?'<small>· not heard by the builder</small>':''}</p><div class="bubble${L.phase==='confer'?' private':''}" title="${esc(L.text)}">${esc(L.text)}</div><div class="chips">${chips||'<span class="chip" style="color:var(--muted);border-color:var(--line)">no needs</span>'}</div></div>`;
+  if(L.reply)strip+=`<div class="ai${on}" style="left:${x+CW+8}px;width:${STEP-CW-22}px" title="${esc(L.reply.say||'')}"><b>AI ${L.reply.changed?'rebuilt':'kept'}</b>${esc(L.reply.text)}</div>`;
+ });
+ $('strip').innerHTML=strip;
+ // Venn chain
+ let v='';
+ lines.forEach((L,k)=>{const g=G[k],x=X(k),on=k<=index?' on':'',x1=x-g.d/2,x2=x+g.d/2;
+  const tipx=`Missed so far (${L.X}): ${L.lx.map(w=>FEATLABEL[w]).join('; ')||'—'}`,tipc=`Carried so far (${L.C}): ${L.lc.map(w=>FEATLABEL[w]).join('; ')||'—'}`,tipn=`New so far (${L.N}): ${L.ln.map(w=>FEATLABEL[w]).join('; ')||'—'}`;
+  // the needs this line added, as small dots sitting in their region
+  const cxX=(x1-g.r1+Math.min(x2-g.r2,x1+g.r1))/2,cxC=(Math.max(x2-g.r2,x1-g.r1)+Math.min(x1+g.r1,x2+g.r2))/2,cxN=(Math.max(x1+g.r1,x2-g.r2)+x2+g.r2)/2;
+  const dots=[];const put=(arr,cls,cx0)=>arr.forEach((w,j)=>dots.push(`<circle class="dot ${cls}" r="3.2" cx="${cx0+(j-(arr.length-1)/2)*8}" cy="${VY+Math.max(g.r1,g.r2)+9}"><title>${esc(FEATLABEL[w])}</title></circle>`));
+  put(L.x,'x',cxX);put(L.c,'c',cxC);put(L.n,'n',cxN);
+  v+=`<g class="venn${on}"><circle class="cm" cx="${x1}" cy="${VY}" r="${g.r1}"><title>${esc(tipx)}</title></circle><circle class="ci" cx="${x2}" cy="${VY}" r="${g.r2}"><title>${esc(tipn)}</title></circle>`
+   +(L.X?`<text class="tx" x="${cxX}" y="${VY+4}">${L.X}</text>`:'')+(L.C?`<text class="tc" x="${cxC}" y="${VY+4}"><title>${esc(tipc)}</title>${L.C}</text>`:'')+(L.N?`<text class="tn" x="${cxN}" y="${VY+4}">${L.N}</text>`:'')
+   +`<text class="lab" x="${x}" y="${VY-Math.max(g.r1,g.r2)-8}">line ${k+1}</text>${dots.join('')}</g>`;
+ });
+ // river
+ const maxT=Math.max(1,LL.X+LL.C+LL.N),unit=RH/maxT;
+ const yTop=k=>RY0+(RH-(lines[k].X+lines[k].C+lines[k].N)*unit)/2;
+ const band=(key,below)=>{let top='',bot='';for(let k=0;k<=Math.min(index,n-1);k++){const L=lines[k],x=X(k),y0=yTop(k)+below(L)*unit,y1=y0+L[key]*unit;const xs=k===0?PADL+10:X(k-1);
+   if(k===0){top+=`M${PADL+10},${y0} L${x},${y0}`;bot=`L${x},${y1} L${PADL+10},${y1}`;}else{const pk=lines[k-1],py0=yTop(k-1)+below(pk)*unit,py1=py0+pk[key]*unit,m=(xs+x)/2;top+=` C${m},${py0} ${m},${y0} ${x},${y0}`;bot=` C${m},${y1} ${m},${py1} ${xs},${py1}`+bot;}}
+  return top+' '+bot+' Z';};
+ const bx=band('X',L=>0),bc=band('C',L=>L.X),bn=band('N',L=>L.X+L.C);
+ const kk=Math.min(index,n-1),Lk=lines[kk],xk=X(kk)+10,yk=yTop(kk);
+ const r=`<g class="river"><path class="bx" d="${bx}"/><path class="bc" d="${bc}"/><path class="bn" d="${bn}"/>`
+  +`<text class="rl" x="${xk}" y="${yk+Lk.X*unit/2+3}" fill="var(--missed)">missed ${Lk.X}</text><text class="rl" x="${xk}" y="${yk+(Lk.X+Lk.C/2)*unit+3}">carried ${Lk.C}</text><text class="rl" x="${xk}" y="${yk+(Lk.X+Lk.C+Lk.N/2)*unit+3}">new ${Lk.N}</text></g>`;
+ const axis=lines.map((L,k)=>`<line class="tick" x1="${X(k)}" x2="${X(k)}" y1="${RY0-14}" y2="${RY0+RH+14}"/>`).join('')+`<text class="axis" x="${PADL+10}" y="${RY0-20}">RUNNING COUNT ↓</text>`;
+ const svg=$('viz');svg.setAttribute('width',W);svg.setAttribute('height',H);svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+ svg.innerHTML=`<defs><pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="var(--new)" stroke-width="1.4"/></pattern></defs>${axis}${r}${v}`;
+ // controls, caption, summary
+ const L=lines[index];$('pos').textContent=`${index+1} / ${n}`;$('back').disabled=index===0;$('step').disabled=index===n-1;
+ $('caption').innerHTML=`<b>${esc(PATHS[sel.path])}</b> · ${mode==='run'?esc(SCENARIOS[sel.scen])+' · run '+(sel.pair+1):'all 20 runs, five scenarios × four runs, played as one conversation'} · ${n} line${n===1?'':'s'}. After line ${index+1}: <b>${L.M}</b> needs meant, <b>${L.I}</b> interpreted — carried <b>${L.C}</b>, missed <b>${L.X}</b>, new <b>${L.N}</b>.`;
+ const tot=Math.max(1,L.C+L.X+L.N);$('track').children[0].style.width=100*L.C/tot+'%';$('track').children[1].style.width=100*L.X/tot+'%';$('track').children[2].style.width=100*L.N/tot+'%';
+ $('sum-l').innerHTML=`<b>${L.M}</b> meant · <b>${L.I}</b> interpreted`;$('sum-r').innerHTML=`<b>${L.M?Math.round(100*L.C/L.M):0}%</b> of meant needs carried · <b>${L.N}</b> added`;
+ requestAnimationFrame(()=>{const sc=$('scroll'),target=Math.min(sc.scrollWidth-sc.clientWidth,X(index)+STEP/2+last.r2-sc.clientWidth+40);if(target>sc.scrollLeft)sc.scrollLeft=target;else if(X(index)-STEP<sc.scrollLeft)sc.scrollLeft=Math.max(0,X(index)-STEP);});
+}
+function seek(k){index=Math.max(0,Math.min(lines.length-1,k));render();if(index===lines.length-1)stop();}
+$('play').onclick=()=>{if(timer){stop();return;}if(index>=lines.length-1)seek(0);timer=setInterval(()=>seek(index+1),2200);$('play').textContent='Ⅱ Pause';};
+$('back').onclick=()=>{stop();seek(index-1);};$('step').onclick=()=>{stop();seek(index+1);};$('reset').onclick=()=>{stop();seek(0);};$('end').onclick=()=>{stop();seek(lines.length-1);};
+function setMode(m){mode=m;$('mode-run').setAttribute('aria-pressed',String(m==='run'));$('mode-path').setAttribute('aria-pressed',String(m==='path'));$('scen').disabled=$('pair').disabled=m==='path';stop();build();writeHash();}
+$('mode-run').onclick=()=>setMode('run');$('mode-path').onclick=()=>setMode('path');
+for(const k of ['path','scen','pair'])$(k).onchange=()=>{sel[k]=k==='pair'?Number($(k).value):$(k).value;stop();build();writeHash();};
+function writeHash(){history.replaceState(null,'',`#path=${sel.path}&scen=${sel.scen}&pair=${sel.pair}&mode=${mode}`);}
+document.addEventListener('keydown',e=>{if(e.target.closest('select,button,input'))return;if(e.code==='Space'){e.preventDefault();$('play').click();}else if(e.key==='ArrowRight'){stop();seek(index+1);}else if(e.key==='ArrowLeft'){stop();seek(index-1);}});
+async function init(){try{const r=await fetch('eight-paths.json');if(!r.ok)throw 0;data=await r.json();
+ $('path').innerHTML=data.paths.map(([p])=>`<option value="${p}">${PATHS[p]}</option>`).join('');$('scen').innerHTML=Object.keys(data.scenarios).map(k=>`<option value="${k}">${SCENARIOS[k]}</option>`).join('');$('pair').innerHTML=[...new Set(data.sessions.map(s=>s.pair))].sort().map(k=>`<option value="${k}">${String(k+1).padStart(2,'0')}</option>`).join('');
+ const p=new URLSearchParams(location.hash.slice(1));if(PATHS[p.get('path')])sel.path=p.get('path');if(SCENARIOS[p.get('scen')])sel.scen=p.get('scen');if(p.get('pair')!=null&&!isNaN(+p.get('pair')))sel.pair=+p.get('pair');
+ $('path').value=sel.path;$('scen').value=sel.scen;$('pair').value=String(sel.pair);setMode(p.get('mode')==='path'?'path':'run');}
+ catch(e){$('error').hidden=false;console.error(e);}}
+init();
+</script>
+</body></html>
