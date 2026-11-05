@@ -10,6 +10,7 @@
 
 .recording-context,#hide-controls{display:none}
 body.recording{background:#eeeee8}
+.recording:not(.controls-visible) .replay-controls{display:none}
 .recording .masthead,.recording .intro,.recording .routes,.recording .session-bar,.recording .stage-footer,.recording .chat-end{display:none}
 .recording .workspace{display:block;max-width:1600px;height:100dvh;padding:20px 24px;min-height:640px}.recording.controls-visible .workspace{padding-bottom:88px}
 .recording .stage{height:100%;display:flex;flex-direction:column}
