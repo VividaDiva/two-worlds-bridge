@@ -77,7 +77,7 @@ svg{display:block}
 <p class="foot"><span>Counts are needs, not lines; a need meant twice counts twice. A line the builder never heard (private talk, or a relay path) has nothing interpreted, so everything in it is missed.</span><a href="flow.html">Information flow replay ↗</a><a href="eight-paths.html">Study overview ↗</a><a href="../how-we-compare.html">How the comparison works ↗</a></p>
 <script type="module">
 import {PATHS,SCENARIOS} from './flow-model.mjs?v=6';
-import {FEATLABEL} from './flow-journey.mjs?v=2';
+import {FEATLABEL} from './flow-journey.mjs?v=3';
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const known=xs=>(xs||[]).filter(k=>k in FEATLABEL);
 let data,lines=[],index=0,timer=null,mode='run';

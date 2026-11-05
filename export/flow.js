@@ -1,5 +1,5 @@
 import {PATHS,SCENARIOS,recipients,selectSession,interpretationFrame,routeMessages,interpretationRecord} from './flow-model.mjs?v=6';
-import {journeyHTML} from './flow-journey.mjs?v=2';
+import {journeyHTML} from './flow-journey.mjs?v=3';
 const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const role={A:'Role 1',B:'Role 2',M:'AI builder',machine:'AI builder'};
 const notes={all:'Both roles and the builder share the conversation.',confer:'Private discussion → a summary to the builder.',both:'Each role speaks to the builder separately.',chain:'Role 1 → Role 2 → builder.','via-1':'Role 1 → builder → Role 2 → builder.','via-2':'Role 2 → builder → Role 1 → builder.','only-1':'Only Role 1 contributes.','only-2':'Only Role 2 contributes.'};

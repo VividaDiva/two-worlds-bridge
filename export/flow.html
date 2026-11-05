@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f3f2ed"><title>Communication Atlas · Two Worlds</title><link rel="stylesheet" href="flow.css?v=11"></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f3f2ed"><title>Communication Atlas · Two Worlds</title><link rel="stylesheet" href="flow.css?v=12"></head>
 <body>
 <script>if(new URLSearchParams(location.search).get("view")==="recording")document.body.classList.add("recording");</script>
 <header class="masthead"><a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">↗</span> TWO WORLDS<span class="brand-separator">/</span><span class="brand-sub">Research atlas</span></a><span class="archive-tag"><i></i> Simulation archive</span></header>
 <div class="intro"><div><h1>What makes it <em>through?</em></h1></div><div class="archive-stats" aria-label="Archive size"><span><b id="session-count">—</b> recorded runs</span><span><b>8</b> pathways</span><span><b>5</b> scenarios</span></div></div>
 <div id="error" role="alert" hidden>Could not load the archive. <button id="retry">Try again</button></div>
 <div class="workspace" id="workspace" aria-busy="true">
-<aside class="routes"><div class="section-label">Communication path</div><div id="paths" role="group" aria-label="Communication path"></div><a class="archive-link" href="stream.html">Bubble stream ↗</a><a class="archive-link" href="eight-paths.html">View study overview ↗</a></aside>
+<aside class="routes"><div class="section-label">Communication path</div><div id="paths" role="group" aria-label="Communication path"></div><a class="archive-link" href="journey.html">Where it went, full page ↗</a><a class="archive-link" href="stream.html">Bubble stream ↗</a><a class="archive-link" href="eight-paths.html">View study overview ↗</a></aside>
 <div class="stage">
 <div class="session-bar"><div class="selectors"><label>Scenario<select id="scen" disabled></select></label><label>Run<select id="pair" disabled></select></label></div><div class="session-caption"><span id="path-name">Loading archive</span><small id="route-note"></small></div></div>
 <div class="replay-controls" id="replay-controls"><span class="recording-context" id="recording-context"></span><button id="play" class="play primary" title="Play / pause (Space)" disabled>▶ Play</button><button id="back" aria-label="Previous turn" title="Previous turn (←)" disabled>←</button><button id="step" aria-label="Next turn" title="Next turn (→)" disabled>→</button><input id="scrub" type="range" min="0" max="1" value="0" aria-label="Replay position" disabled><span id="position" aria-live="polite">— / —</span><button id="reset" class="quiet" title="Restart replay (R)" disabled>↺</button><button id="result-jump" class="text-button" disabled>Final bridge ↗</button><button id="hide-controls" class="text-button" title="H: controls · Space: play/pause · ← / →: previous/next">Hide for recording</button><button id="recording-toggle" class="text-button" aria-pressed="false" title="Clean recording view · Space: play/pause · ← / →: step · H: controls">Recording view</button></div>
@@ -29,5 +29,5 @@
 </section></div>
 <footer class="stage-footer"><span>Recorded simulation. No live generation.</span><details><summary>Model details</summary><p id="model-details"></p></details></footer>
 </div></div>
-<script src="../agents/usertest/draw.js"></script><script type="module" src="flow.js?v=9"></script>
+<script src="../agents/usertest/draw.js"></script><script type="module" src="flow.js?v=10"></script>
 </body></html>

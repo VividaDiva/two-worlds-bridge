@@ -32,7 +32,7 @@ export function journeyHTML(session,index){
  cols.forEach((c,ci)=>c.keys.forEach(k=>{const s=[...c.sources].sort((a,b)=>b-a).find(s=>cols[s].keys.includes(k));if(s!=null){from[ci].set(k,s);onward[s].add(k);}}));
  const handedOn=cols.map((_,ci)=>cols.some(c=>c.sources.includes(ci)));
  const shown=ci=>cols[ci].at<=index;
- const COLW=84,LANEH=28,TOP=66,PADL=46;
+ const COLW=84,LANEH=32,TOP=66,PADL=46;
  const W=PADL+cols.length*COLW,H=TOP+lanes.length*LANEH+10;
  const X=ci=>PADL+ci*COLW,Y=li=>TOP+li*LANEH+LANEH/2;
  let bands='',heads='';
@@ -54,8 +54,8 @@ export function journeyHTML(session,index){
    const shape=c.kind==='built'?`<rect class="jn${added?' added':''}" x="${x-6.5}" y="${y-6.5}" width="13" height="13" rx="3"/>`:`<circle class="jn${added?' added':''}${c.not.has(k)?' not':''}" cx="${x}" cy="${y}" r="6.5"/>`+(c.not.has(k)?`<line class="jnot" x1="${x-4}" y1="${y}" x2="${x+4}" y2="${y}"/>`:'');
    M.push(`<g><title>${hx(tip)}</title>${shape}</g>`);});
   rows+=`<g class="lane" style="--h:${HUE[k]??0}">${L.join('')}${M.join('')}</g>`;});
- const LW=236;const seen=new Set(cols.filter((c,ci)=>shown(ci)).flatMap(c=>c.keys));
- const labels=`<svg class="jlabels" width="${LW}" height="${H}" viewBox="0 0 ${LW} ${H}"><text class="jline" x="12" y="18">NEED</text>${lanes.map((k,li)=>`<g class="lane${seen.has(k)?'':' ahead'}" style="--h:${HUE[k]??0}"><title>${hx(FEATLABEL[k])}</title><rect class="jsw" x="12" y="${Y(li)-5}" width="10" height="10" rx="2"/><text class="jlab" x="28" y="${Y(li)+4}">${hx(FEATLABEL[k])}</text></g>`).join('')}</svg>`;
+ const LW=226;const seen=new Set(cols.filter((c,ci)=>shown(ci)).flatMap(c=>c.keys));
+ const labels=`<svg class="jlabels" width="${LW}" height="${H}" viewBox="0 0 ${LW} ${H}"><text class="jline" x="12" y="18">NEED</text>${lanes.map((k,li)=>`<g class="lane${seen.has(k)?'':' ahead'}" style="--h:${HUE[k]??0}"><title>${hx(FEATLABEL[k])}</title><rect class="jsw" x="12" y="${Y(li)-5}" width="10" height="10" rx="2"/><text class="jlab" x="28" y="${Y(li)-1}">${hx(k)}</text><text class="jgloss" x="28" y="${Y(li)+10}">${hx(FEATLABEL[k])}</text></g>`).join('')}</svg>`;
  // The figures, for what is visible so far.
  const vis=cols.filter((c,ci)=>shown(ci));
  const meantSet=new Set(vis.filter(c=>c.kind==='meant').flatMap(c=>c.keys)),interpSet=new Set(vis.filter(c=>c.kind==='ai'||c.kind==='heard').flatMap(c=>c.keys));
@@ -65,5 +65,5 @@ export function journeyHTML(session,index){
  const pl=(n,one,many)=>`${n} ${n===1?one:many}`;
  const summary=done?`<b>${meantSet.size}</b> ${meantSet.size===1?'need was':'needs were'} meant along the way; <b>${reached}</b> ${reached===1?'is':'are'} in what was built. Missed at a hand-off <b>${missed}</b> time${missed===1?'':'s'}; the crossing has <b>${unasked}</b> ${unasked===1?'property':'properties'} nobody meant or interpreted.`
   :`So far <b>${meantSet.size}</b> ${meantSet.size===1?'need':'needs'} meant, <b>${interpSet.size}</b> interpreted, missed at a hand-off <b>${missed}</b> time${missed===1?'':'s'}. ${pl(lines,'line','lines')} in all.`;
- return `<div class="journey-head"><p>${summary}</p><p class="jlegend"><span><i class="lg-dot"></i>meant or interpreted</span><span><i class="lg-carried"></i>carried on</span><span><i class="lg-missed"></i>✗ missed at the next step</span><span><i class="lg-added"></i>interpreted, never meant</span><span><i class="lg-not"></i>ruled out</span><span><i class="lg-built"></i>in the crossing</span></p></div><div class="jwrap">${labels}<div class="jscroll"><svg class="journey" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Where each need went, step by step">${bands}${heads}${rows}</svg></div></div><p class="journey-note">Read left to right. Each column is one step: what a speaker meant (as needs), how the AI or the other person interpreted that line, and at the end what the built crossing has. A line along a row is that need carried on. Hover a mark. <a href="../how-we-compare.html">How the comparison works ↗</a></p>`;
+ return `<div class="journey-head"><p>${summary}</p></div><div class="jwrap">${labels}<div class="jscroll"><svg class="journey" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Where each need went, step by step">${bands}${heads}${rows}</svg></div></div><p class="journey-note">Read left to right. Each column is one step: what a speaker meant (as needs), how the AI or the other person interpreted that line, and at the end what the built crossing has. A line along a row is that need carried on. Hover a mark. <a href="journey.html#${hx(`path=${session.path}&scen=${session.scenario}&pair=${session.pair}`)}">Full page ↗</a> · <a href="../how-we-compare.html">How the comparison works ↗</a></p>`;
 }

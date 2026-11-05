@@ -96,7 +96,8 @@ body.recording{background:#eeeee8}
 .jhead.a{fill:var(--role-1)}.jhead.b{fill:var(--role-2)}.jhead.m{fill:var(--green)}
 .jhead.ahead,.jsub.ahead{opacity:.3}
 .jsub{font-family:var(--mono);font-size:9px;fill:var(--muted)}
-.jlab{font-family:var(--mono);font-size:10px;fill:var(--ink)}
+.jlab{font-family:var(--mono);font-size:10.5px;font-weight:600;fill:var(--ink)}
+.jgloss{font-family:var(--mono);font-size:8.5px;fill:var(--muted)}
 .jlabels .lane.ahead{opacity:.35;transition:opacity .4s}
 .lane .jsw{fill:hsl(var(--h) 55% var(--jl))}
 .lane .jl{stroke-width:3;stroke-linecap:round}
