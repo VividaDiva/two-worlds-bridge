@@ -1,15 +1,15 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f3f2ed"><title>Need journeys · Two Worlds</title><link rel="stylesheet" href="journey.css?v=1"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f3f2ed"><title>Need journeys · Two Worlds</title><link rel="stylesheet" href="journey.css?v=2"><link rel="stylesheet" href="journey-story.css?v=1"></head>
 <body>
 <header class="site-header"><a class="brand" href="../index.html">Two Worlds</a><h1>Need journeys</h1><nav><button id="guide-toggle">Key guide</button><a id="to-flow" href="flow.html">Conversation ↗</a></nav></header>
 <main class="shell">
-<section class="controls" aria-label="Choose a recorded run"><div class="selectors"><label><span class="sr-only">Communication path</span><select id="path" disabled></select></label><label><span class="sr-only">Scenario</span><select id="scen" disabled></select></label><label><span>Run</span><select id="pair" disabled></select></label></div><div class="view-switch" role="group" aria-label="View"><button id="mode-run" aria-pressed="true" disabled>One path</button><button id="mode-paths" aria-pressed="false" disabled>Compare paths</button></div></section>
+<section class="controls" aria-label="Choose a recorded run"><div class="selectors"><label><span class="sr-only">Communication path</span><select id="path" disabled></select></label><label><span class="sr-only">Scenario</span><select id="scen" disabled></select></label><label><span>Run</span><select id="pair" disabled></select></label></div><div class="view-switch" role="group" aria-label="View"><button id="mode-run" aria-pressed="true" disabled>Replay</button><button id="mode-paths" aria-pressed="false" disabled>Compare paths</button></div></section>
 <section class="player" aria-label="Replay controls"><button id="play" class="primary" title="Play or pause (Space)" disabled>▶ Play</button><button id="back" class="icon-button" aria-label="Previous step" title="Previous step (←)" disabled>←</button><button id="next" class="icon-button" aria-label="Next step" title="Next step (→)" disabled>→</button><input id="scrub" type="range" min="0" max="1" value="0" aria-label="Replay step" disabled><output id="position" aria-live="polite">—</output><button id="reset" class="icon-button" aria-label="Restart" title="Restart (R)" disabled>↺</button><select id="speed" aria-label="Playback speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select></section>
 <div id="error" role="alert" hidden>Could not load this archive. <button id="retry">Try again</button></div>
 <div id="stage" aria-busy="true"></div>
 </main>
 <footer class="page-footer">Recorded simulation</footer>
 <dialog id="guide" aria-labelledby="guide-title"><div class="dialog-head"><h2 id="guide-title">Key guide</h2><button id="guide-close" class="close-button" aria-label="Close key guide">×</button></div><p>Keys are coded labels, not quotations. Lines connect matching keys in the recorded hand-offs. A match in the final bridge does not prove what caused it.</p><div id="key-list" class="key-list"></div></dialog>
-<script src="../agents/usertest/draw.js"></script><script type="module" src="journey.js?v=1"></script>
+<script src="../agents/usertest/draw.js"></script><script type="module" src="journey.js?v=2"></script>
 </body></html>
