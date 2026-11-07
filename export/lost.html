@@ -65,7 +65,7 @@ mark.cue{background:transparent;color:inherit;text-decoration:underline;text-dec
 .jwrap{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
 .jlabels{flex:none;border-right:1px solid var(--line);background:var(--panel);display:block}
 .jscroll{overflow-x:auto;flex:1;min-width:0}
-.journey{display:block;max-width:100%;height:auto}
+.journey{display:block}
 .jband{fill:var(--line-soft);opacity:.55}
 .jband.built{fill:var(--signal);opacity:.12}
 .jline,.jhead,.jsub{font-family:var(--mono)}
@@ -203,7 +203,7 @@ function renderLanes(m){
  const lanes=[];cols.forEach(c=>c.keys.forEach(k=>{if(!lanes.includes(k))lanes.push(k);}));
  lanes.sort((a,b)=>AXIS_ORDER.indexOf((AXIS_OF[a]||{}).axis)-AXIS_ORDER.indexOf((AXIS_OF[b]||{}).axis));
  if(!lanes.length){$('#lanes').innerHTML='<p class="none">Nothing in this run was coded as a need.</p>';return;}
- const COLW=100,LANEH=50,TOP=68,PADL=46,W=PADL+cols.length*COLW,H=TOP+lanes.length*LANEH+12;
+ const LW=330,PADL=46,avail=($("#lanes").clientWidth||1184)-LW-2,COLW=Math.max(64,Math.min(100,Math.floor((avail-PADL)/cols.length))),LANEH=50,TOP=68,W=PADL+cols.length*COLW,H=TOP+lanes.length*LANEH+12;
  const X=ci=>PADL+ci*COLW,Y=li=>TOP+li*LANEH+LANEH/2;
  let bands='',heads='';
  for(let a=0;a<cols.length;){let b=a;while(b+1<cols.length&&cols[b+1].line===cols[a].line)b++;const x0=X(a)-COLW/2+4,x1=X(b)+COLW/2-4;
@@ -228,7 +228,7 @@ function renderLanes(m){
    M.push(`<g><title>${hx(tip)}</title>${shape}</g>`);});
   if(li>0&&(AXIS_OF[k]||{}).axis!==(AXIS_OF[lanes[li-1]]||{}).axis)rows+=`<line class="jsep" x1="0" y1="${y-LANEH/2}" x2="${W}" y2="${y-LANEH/2}"/>`;
  rows+=`<g class="lane" style="--h:${HUE[k]??0}">${L.join('')}${M.join('')}</g>`;});
- const LW=330,src=needSources(m);
+ const src=needSources(m);
  const labels=`<svg class="jlabels" width="${LW}" height="${H}" viewBox="0 0 ${LW} ${H}"><text class="jline" x="14" y="20">NEED · FROM THE PERSON'S WORDS</text>${lanes.map((k,li)=>`<g class="lane${m.meantSet.has(k)&&!m.built.includes(k)?' lost':''}${m.privSet.has(k)?' private':''}" style="--h:${HUE[k]??0}"><title>${hx(FEATLABEL[k])}</title><rect class="jsw" x="14" y="${Y(li)-14}" width="12" height="12" rx="2"/><text class="jlab" x="34" y="${Y(li)-10}">${hx(k)}</text><text class="jgloss" x="34" y="${Y(li)+3}">${hx(FEATLABEL[k])}</text><text class="jcue" x="34" y="${Y(li)+17}">${(()=>{const e=src.get(k);return e?hx(e.cues.length?e.cues.slice(0,3).map(w=>'“'+w+'”').join(' ')+(e.cues.length>3?' …':''):'(whole line '+e.lines[0]+')'):'nobody said it';})()}</text><text class="jaxis" x="${LW-12}" y="${Y(li)-10}" text-anchor="end">${hx((AXIS_OF[k]||{}).axis||'')} · ${hx((AXIS_OF[k]||{}).pos||'')}</text></g>${li>0&&(AXIS_OF[k]||{}).axis!==(AXIS_OF[lanes[li-1]]||{}).axis?`<line class="jsep" x1="0" y1="${Y(li)-LANEH/2}" x2="${LW}" y2="${Y(li)-LANEH/2}"/>`:''}`).join('')}</svg>`;
  $('#lanes').innerHTML=`<div class="jwrap">${labels}<div class="jscroll"><svg class="journey" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Where each need went">${bands}${heads}${rows}</svg></div></div>`;
 }
