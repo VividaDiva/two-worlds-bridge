@@ -158,8 +158,8 @@ mark.cue{background:transparent;color:inherit;text-decoration:underline;text-dec
 <span><i class="lg dot"></i>carried to the next step</span>
 <span><i class="lg x">✗</i>lost here: the builder did not read it as a key</span>
 <span><i class="lg sq"></i>in the built crossing (a switch position)</span>
-<span><i class="lg sqo"></i>no switch for it · nothing could be built</span>
-<span><i class="lg sqd"></i>there by default, not because of the words</span>
+<span><i class="lg sqo"></i>nothing built for it</span>
+<span><i class="lg sqd"></i>there anyway, by default</span>
 </div>
 <p class="board-note">Rows are phrases from the lines below. For this run they were picked by hand from the transcript; for other runs only the phrases that matched a key are shown.</p>
 <h2>2 · The <b>lines</b> in full <span style="font-weight:400">· what each line said, and what survived the coding</span></h2>
@@ -218,6 +218,8 @@ function phrasesFor(s,m){
  const cur=PHRASES[`${s.path}/${s.scenario}/${s.pair}`];if(cur)return cur;
  const out=[];m.lines.forEach(l=>l.meant.forEach(k=>{const c=cuesOf(l.text,k);out.push({line:l.n,phrase:c.length?c.join(' · '):'(the whole line)',gloss:FEATLABEL[k],key:k});}));return out;
 }
+const DONE={level:{at:'kept level with the banks',raised:'raised above the banks'},hand:{none:'no rail',rail:'a rail was added'},middle:{none:'nothing in the gap',post:'a post stands in the gap',tower:'a tower stands in the gap'},width:{one:'one person wide',two:'made two wide'},bracing:{none:'no bracing',struts:'struts driven into the banks'},surface:{bare:'bare surface',rough:'a rough surface was laid'},ends:{rested:'ends just rest on the banks',footed:'ends dug into the banks'},cover:{open:'no roof',roof:'a roof put over it'}};
+const STAY={level:'still level',hand:'no rail',middle:'nothing in the gap',width:'still one wide',bracing:'no bracing',surface:'surface left bare',ends:'ends left resting',cover:'no roof'};
 function renderJourney(m,s){
  const node=(cls,txt,m2)=>`<span class="node ${cls}">${cls==='x'?'✗':''}</span><div class="t${m2?' m':''}">${txt}</div>`;
  const chip=k=>`<span class="chip" style="--h:${HUE[k]}"><i></i>${k}</span>`;
@@ -229,10 +231,11 @@ function renderJourney(m,s){
   const c1=node('dot',l.taken==null?'said · private':coded?'meant · '+chip(p.key):'said',true);
   const c3=!coded?node('x','no key for it',true):kept?node('dot',chip(p.key)):node('x','not read as a key',true);
   let c4;
-  if(!p.key)c4=node('sqo','no switch · no parameter',true);
-  else if(kept&&built)c4=node('sq',`${ax.axis} → ${ax.pos}`);
-  else if(built)c4=node('sqd',`${ax.axis} → ${ax.pos}<br>there by default`,true);
-  else c4=node('sqo',`${ax.axis} stays ${(AXES.find(a=>a.name===ax.axis)||{opts:[[]]}).opts[0][0]}`,true);
+  const axId=ax?(AXES.find(a=>a.name===ax.axis)||{}).id:null;
+  if(!p.key)c4=node('sqo','nothing built for it',true);
+  else if(kept&&built)c4=node('sq',DONE[axId]?.[ax.pos]||ax.pos);
+  else if(built)c4=node('sqd',`${DONE[axId]?.[ax.pos]||ax.pos}<br>by default, not for this`,true);
+  else c4=node('sqo',`${STAY[axId]||ax.axis} · untouched`,true);
   const seg23=coded?(kept?'':' out-lost'):' out-lost';
   return `<div class="jr${nl?' newline':''}"><div class="lab"><div class="who ${l.role==='A'?'a':'b'}">${name(l.role)}<span>line ${p.line}</span></div><div class="ph">“${hx(p.phrase)}”</div><div class="gl">${hx(p.gloss)}</div></div>
   <div class="st in-none${kept?'':' out-lost'}">${c1}</div>
