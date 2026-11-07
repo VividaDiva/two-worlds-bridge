@@ -282,10 +282,10 @@ function renderJourney(m,s){
   const c3=!coded?node('x','no key for it',true):kept?node('dot',chip(p.key)):node('x','not read as a key',true);
   let c4,pic;
   const id='pr-'+(ri++);
-  if(!p.key){c4=node('sqo','nothing built for it',true);draws.push({id,shape:F,mode:'none'});pic='<span class="x">✗</span> nothing of this is in it';}
+  if(!p.key){c4=node('sqo','nothing built for it',true);draws.push({id,shape:F,mode:'none'});pic='<span class="x">✗ nothing built</span> · the whole bridge is faded: none of it comes from these words';}
   else if(kept&&built){c4=node('sq',DONE[axId]?.[ax.pos]||ax.pos);draws.push({id,shape:F,mode:'part',axId,pos:ax.pos});pic=`<span class="d">in green:</span> ${hx(DONE[axId]?.[ax.pos]||ax.pos)}`;}
-  else if(built){c4=node('sqd',`${DONE[axId]?.[ax.pos]||ax.pos}<br>by default, not for this`,true);draws.push({id,shape:F,mode:'default',axId,pos:ax.pos});pic='in grey: there anyway, not for these words';}
-  else{c4=node('sqo',`${STAY[axId]||ax.axis} · untouched`,true);draws.push({id,shape:F,mode:'ghost',axId,pos:ax.pos});pic=`<span class="x">✗</span> faded: ${hx(DONE[axId]?.[ax.pos]||ax.pos)}, never built`;}
+  else if(built){c4=node('sqd',`${DONE[axId]?.[ax.pos]||ax.pos}<br>by default, not for this`,true);draws.push({id,shape:F,mode:'default',axId,pos:ax.pos});pic='<span>grey: it is there anyway</span>, not because of these words';}
+  else{c4=node('sqo',`${STAY[axId]||ax.axis} · untouched`,true);draws.push({id,shape:F,mode:'ghost',axId,pos:ax.pos});pic=`<span class="x">✗ never built</span> · the faded part is what it would have been: ${hx(DONE[axId]?.[ax.pos]||ax.pos)}`;}
   return `<div class="jr${nl?' newline':''}"><div class="lab"><div class="who ${l.role==='A'?'a':'b'}">${name(l.role)}<span>line ${p.line}</span></div><div class="ph">“${hx(p.phrase)}”</div><div class="gl">${hx(p.gloss)}</div></div>
   <div class="st in-none${kept?'':' out-lost'}">${c1}</div>
   <div class="st${kept?'':' in-lost'}${kept&&built?'':' out-grey'}">${c3}</div>
