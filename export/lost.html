@@ -61,7 +61,7 @@ mark.cue{background:transparent;color:inherit;text-decoration:underline;text-dec
 .jcue{font-family:var(--mono);font-size:11px;fill:var(--ink)}
 :root{--lost:#E3B341}
 .journey{border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden}
-.jr{display:grid;grid-template-columns:280px repeat(3,1fr) 250px;align-items:center;border-top:1px solid var(--line-soft)}
+.jr{display:grid;grid-template-columns:280px repeat(3,1fr) 230px;align-items:center;border-top:1px solid var(--line-soft)}
 .jg{display:grid;grid-template-columns:280px repeat(3,1fr) 250px;align-items:center;border-top:1px solid var(--line)}
 .jg .pr{display:contents}
 .jg .pr+.pr>*{border-top:1px solid var(--line-soft)}
@@ -75,6 +75,16 @@ mark.cue{background:transparent;color:inherit;text-decoration:underline;text-dec
 .jg .st::before,.jg .st::after{top:50%;margin-top:-20px}
 .jg .st .node{margin-top:0}.jg .st .node.dot{margin-top:2px}.jg .st .node.sq,.jg .st .node.sqo,.jg .st .node.sqd{margin-top:3px}
 .jg .st .wrap{position:relative;transform:translateY(-6px)}
+.jr .pic{padding:10px 14px 10px 8px;border-left:1px solid var(--line-soft);align-self:stretch;display:flex;flex-direction:column;justify-content:center}
+.jr .pic canvas{width:100%;display:block;border-radius:6px}
+.jr .pic .cap{font-size:11px;margin-top:5px;line-height:1.35;color:var(--muted)}
+.jr .pic .cap .d{color:var(--signal)}.jr .pic .cap .x{color:var(--lost)}
+.grow{grid-column:1/-1;display:flex;gap:10px;padding:0 14px 14px;border-top:1px solid var(--line-soft);padding-top:12px}
+.grow>div{flex:1;min-width:0}
+.grow canvas{width:100%;display:block;border-radius:6px}
+.grow .cap{font-size:10.5px;color:var(--muted);margin-top:4px;line-height:1.35}
+.grow .cap b{color:var(--ink);font-weight:600}
+.grow .cap .d{color:var(--signal)}
 .br{grid-column:5;align-self:stretch;padding:12px 14px 12px 10px;border-left:1px solid var(--line-soft);display:flex;flex-direction:column;justify-content:center}
 .br canvas{width:100%;display:block;border-radius:6px}
 .br .cap{font-size:11px;color:var(--muted);margin-top:7px;line-height:1.4}
@@ -125,7 +135,7 @@ mark.cue{background:transparent;color:inherit;text-decoration:underline;text-dec
 .lg.sq{width:11px;height:11px;border-radius:3px;background:var(--signal)}
 .lg.sqo{width:11px;height:11px;border-radius:3px;border:1.5px solid var(--muted)}
 .lg.sqd{width:11px;height:11px;border-radius:3px;border:1.5px dashed var(--signal)}
-@media(max-width:900px){.jr,.jg{grid-template-columns:1fr 1fr 1fr}.jr .lab,.jg .lab{grid-column:1/-1;padding-bottom:0}.br{grid-column:1/-1;grid-row:auto!important;border-left:0;border-top:1px solid var(--line-soft)}}
+@media(max-width:900px){.jr,.jg{grid-template-columns:1fr 1fr 1fr}.jr .lab,.jg .lab{grid-column:1/-1;padding-bottom:0}.jr .pic{grid-column:1/-1;border-left:0}.grow{flex-wrap:wrap}.grow>div{flex:1 1 40%}}
 .lane.private .jcue{fill:var(--muted)}
 .none.unread{color:var(--fault)}
 /* lanes */
@@ -192,6 +202,9 @@ mark.cue{background:transparent;color:inherit;text-decoration:underline;text-dec
 <span><i class="lg sq"></i>in the built crossing (a switch position)</span>
 <span><i class="lg sqo"></i>nothing built for it</span>
 <span><i class="lg sqd"></i>there anyway, by default</span>
+<span><i class="lg" style="width:14px;height:4px;background:#1E9A8C;border-radius:2px"></i>green sticks: what these words became</span>
+<span><i class="lg" style="width:14px;height:4px;background:#8DA096;border-radius:2px"></i>grey: there anyway</span>
+<span><i class="lg" style="width:14px;height:4px;background:#b9b3a6;opacity:.5;border-radius:2px"></i>faded: what was never built</span>
 </div>
 <p class="board-note">Rows are phrases from the lines below. For this run they were picked by hand from the transcript; for other runs only the phrases that matched a key are shown.</p>
 <h2>2 · The <b>lines</b> in full <span style="font-weight:400">· what each line said, and what survived the coding</span></h2>
@@ -256,35 +269,46 @@ function phrasesFor(s,m){
 const DONE={level:{at:'kept level with the banks',raised:'raised above the banks'},hand:{none:'no rail',rail:'a rail was added'},middle:{none:'nothing in the gap',post:'a post stands in the gap',tower:'a tower stands in the gap'},width:{one:'one person wide',two:'made two wide'},bracing:{none:'no bracing',struts:'struts driven into the banks'},surface:{bare:'bare surface',rough:'a rough surface was laid'},ends:{rested:'ends just rest on the banks',footed:'ends dug into the banks'},cover:{open:'no roof',roof:'a roof put over it'}};
 const STAY={level:'still level',hand:'no rail',middle:'nothing in the gap',width:'still one wide',bracing:'no bracing',surface:'surface left bare',ends:'ends left resting',cover:'no roof'};
 function renderJourney(m,s){
- const node=(cls,txt,m2)=>`<div class="wrap"><span class="node ${cls}">${cls==='x'?'✗':''}</span><div class="t${m2?' m':''}">${txt}</div></div>`;
+ const node=(cls,txt,m2)=>`<span class="node ${cls}">${cls==='x'?'✗':''}</span><div class="t${m2?' m':''}">${txt}</div>`;
  const chip=k=>`<span class="chip" style="--h:${HUE[k]}"><i></i>${k}</span>`;
- const world=s.outcome.world||{};
- const groups=new Map();phrasesFor(s,m).forEach(p=>{if(!groups.has(p.line))groups.set(p.line,[]);groups.get(p.line).push(p);});
- let prev=null;const canvases=[];
- const html=[...groups.entries()].map(([ln,ps])=>{
-  const l=m.lines[ln-1]||{};
-  const rows=ps.map(p=>{
-   const coded=p.key&&(l.meant||[]).includes(p.key);const kept=coded&&(l.taken||[]).includes(p.key);
-   const built=p.key&&m.built.includes(p.key);const ax=p.key?AXIS_OF[p.key]:null;const axId=ax?(AXES.find(a=>a.name===ax.axis)||{}).id:null;
-   const c1=node('dot',l.taken==null?'said · private':coded?'meant · '+chip(p.key):'said',true);
-   const c3=!coded?node('x','no key for it',true):kept?node('dot',chip(p.key)):node('x','not read as a key',true);
-   let c4;
-   if(!p.key)c4=node('sqo','nothing built for it',true);
-   else if(kept&&built)c4=node('sq',DONE[axId]?.[ax.pos]||ax.pos);
-   else if(built)c4=node('sqd',`${DONE[axId]?.[ax.pos]||ax.pos}<br>by default, not for this`,true);
-   else c4=node('sqo',`${STAY[axId]||ax.axis} · untouched`,true);
-   return `<div class="pr"><div class="lab"><div class="who ${l.role==='A'?'a':'b'}">${name(l.role)}<span>line ${ln}</span></div><div class="ph">“${hx(p.phrase)}”</div><div class="gl">${hx(p.gloss)}</div></div><div class="st in-none${kept?'':' out-lost'}">${c1}</div><div class="st${kept?'':' in-lost'}${kept&&built?'':' out-grey'}">${c3}</div><div class="st${kept&&built?'':' in-grey'} out-none">${c4}</div></div>`;}).join('');
-  // the crossing after the builder's reply to this line
-  const af=l.after,before=prev;let cap,shape=prev||bare8(),deaf=false;
-  if(!af){deaf=true;cap=`<span class="no">${l.taken==null?'the builder did not hear this line':'no reply recorded'}</span>`;}
-  else{shape=af.shape||prev||bare8();const first=!prev;const diff=first?[]:AXES8.filter(k=>shape[k]!==prev[k]);
-   cap=`<b>${hx(af.name)}</b>${first?'<span class="d">laid across the gap</span>':af.changed===false?'<span class="no">no change</span>':diff.length?diff.map(k=>`<span class="d">+ ${hx((DONE[k]||{})[shape[k]]||shape[k])}</span>`).join('<br>'):'<span class="no">rebuilt the same</span>'}`;prev=shape;}
-  const id='br-'+ln;canvases.push({id,shape,before:deaf?shape:before});
-  return `<div class="jg">${rows}<div class="br${deaf?' deaf':''}" style="grid-row:1 / span ${ps.length}"><canvas id="${id}" aria-label="The crossing after line ${ln}"></canvas><div class="cap">${cap}</div></div></div>`;}).join('');
- const shape=s.outcome.shape||{},bare=bare8();
- const final=`<div class="built"><div class="lab"><div class="who">What was built</div><div class="ph">${hx(s.outcome.name||'')}</div><div class="gl">${hx(s.outcome.ground||'')}</div></div><div class="sum">${AXES.map(a=>`<div${shape[a.id]!==bare[a.id]?' class="on"':''}><b>${a.name}</b> · ${hx((DONE[a.id]||{})[shape[a.id]]||shape[a.id]||'')}${shape[a.id]!==bare[a.id]?'':' <span style="opacity:.6">(default)</span>'}</div>`).join('')}</div><div class="pic"><canvas id="bridge" aria-label="The crossing that was built"></canvas></div></div>`;
- $('#journey').innerHTML=`<div class="jr h"><div>Phrase</div><div><b>Said</b>and what the person meant by it</div><div><b>Read</b>what the builder made of it</div><div><b>Built</b>the switch position</div><div><b>Bridge</b>after the builder's reply · new sticks in green</div></div>${html||'<div class="jr"><div class="lab"><span class="none">Nothing in this run was coded as a need.</span></div></div>'}${final}`;
- if(window.drawCrossing)requestAnimationFrame(()=>{canvases.forEach(c=>{const key=m=>[m.x1,m.y1,m.x2,m.y2].map(v=>Math.round(v)).join(",");const seen=new Set(c.before?crossingMatches(c.before,world,[]).map(key):[]);const colors={};crossingMatches(c.shape,world,[]).forEach(m=>{if(!seen.has(key(m)))colors[m.id]="#1E9A8C";});drawCrossing($("#"+c.id),c.shape,world,[],{colors});});drawCrossing($('#bridge'),shape,world,[]);});
+ const world=s.outcome.world||{},F=s.outcome.shape||bare8(),bare=bare8();
+ const GREEN='#1E9A8C',GHOST='rgba(238,232,220,.78)',GREY='#8DA096';
+ const draws=[];let last=0,ri=0;
+ const rows=phrasesFor(s,m).map(p=>{
+  const l=m.lines[p.line-1]||{};const nl=p.line!==last;last=p.line;
+  const coded=p.key&&(l.meant||[]).includes(p.key);const kept=coded&&(l.taken||[]).includes(p.key);
+  const built=p.key&&m.built.includes(p.key);const ax=p.key?AXIS_OF[p.key]:null;const axId=ax?(AXES.find(a=>a.name===ax.axis)||{}).id:null;
+  const c1=node('dot',l.taken==null?'said · private':coded?'meant · '+chip(p.key):'said',true);
+  const c3=!coded?node('x','no key for it',true):kept?node('dot',chip(p.key)):node('x','not read as a key',true);
+  let c4,pic;
+  const id='pr-'+(ri++);
+  if(!p.key){c4=node('sqo','nothing built for it',true);draws.push({id,shape:F,mode:'none'});pic='<span class="x">✗</span> nothing of this is in it';}
+  else if(kept&&built){c4=node('sq',DONE[axId]?.[ax.pos]||ax.pos);draws.push({id,shape:F,mode:'part',axId,pos:ax.pos});pic=`<span class="d">in green:</span> ${hx(DONE[axId]?.[ax.pos]||ax.pos)}`;}
+  else if(built){c4=node('sqd',`${DONE[axId]?.[ax.pos]||ax.pos}<br>by default, not for this`,true);draws.push({id,shape:F,mode:'default',axId,pos:ax.pos});pic='in grey: there anyway, not for these words';}
+  else{c4=node('sqo',`${STAY[axId]||ax.axis} · untouched`,true);draws.push({id,shape:F,mode:'ghost',axId,pos:ax.pos});pic=`<span class="x">✗</span> faded: ${hx(DONE[axId]?.[ax.pos]||ax.pos)}, never built`;}
+  return `<div class="jr${nl?' newline':''}"><div class="lab"><div class="who ${l.role==='A'?'a':'b'}">${name(l.role)}<span>line ${p.line}</span></div><div class="ph">“${hx(p.phrase)}”</div><div class="gl">${hx(p.gloss)}</div></div>
+  <div class="st in-none${kept?'':' out-lost'}">${c1}</div>
+  <div class="st${kept?'':' in-lost'}${kept&&built?'':' out-grey'}">${c3}</div>
+  <div class="st${kept&&built?'':' in-grey'} out-none">${c4}</div>
+  <div class="pic"><canvas id="${id}"></canvas><div class="cap">${pic}</div></div></div>`;}).join('');
+ // how the crossing grew, one builder reply at a time
+ let prev=null;const steps=[];
+ m.lines.forEach(l=>{if(!l.after)return;const sh=l.after.shape||prev||bare8();const first=!prev;const diff=first?[]:AXES8.filter(k=>sh[k]!==prev[k]);
+  steps.push({id:'gr-'+l.n,shape:sh,before:first?null:prev,cap:`<b>after line ${l.n}</b> ${hx(l.after.name)}<br>${first?'<span class="d">laid across the gap</span>':l.after.changed===false?'no change':diff.length?diff.map(k=>`<span class="d">+ ${hx((DONE[k]||{})[sh[k]]||sh[k])}</span>`).join('<br>'):'rebuilt the same'}`});prev=sh;});
+ const final=`<div class="built"><div class="lab"><div class="who">What was built</div><div class="ph">${hx(s.outcome.name||'')}</div><div class="gl">${hx(s.outcome.ground||'')}</div></div><div class="sum">${AXES.map(a=>`<div${F[a.id]!==bare[a.id]?' class="on"':''}><b>${a.name}</b> · ${hx((DONE[a.id]||{})[F[a.id]]||F[a.id]||'')}${F[a.id]!==bare[a.id]?'':' <span style="opacity:.6">(default)</span>'}</div>`).join('')}</div><div class="pic"><canvas id="bridge" aria-label="The crossing that was built"></canvas></div>${steps.length?`<div class="grow">${steps.map(st=>`<div><canvas id="${st.id}"></canvas><div class="cap">${st.cap}</div></div>`).join('')}</div>`:''}</div>`;
+ $('#journey').innerHTML=`<div class="jr h"><div>Phrase</div><div><b>Said</b>and what the person meant by it</div><div><b>Read</b>what the builder made of it</div><div><b>Built</b>the switch position</div><div><b>In the bridge</b>what of this phrase is there</div></div>${rows||'<div class="jr"><div class="lab"><span class="none">Nothing in this run was coded as a need.</span></div></div>'}${final}`;
+ if(!window.drawCrossing)return;
+ const key=x=>[x.x1,x.y1,x.x2,x.y2].map(v=>Math.round(v)).join(',');
+ const sticks=sh=>crossingMatches(sh,world,[]);
+ requestAnimationFrame(()=>{
+  draws.forEach(d=>{const colors={};let sh=d.shape;
+   if(d.mode==='none'){sticks(sh).forEach(x=>colors[x.id]=GHOST);}
+   else if(d.mode==='part'||d.mode==='default'){const without={...sh,[d.axId]:bare[d.axId]};const seen=new Set(sticks(without).map(key));sticks(sh).forEach(x=>{if(!seen.has(key(x)))colors[x.id]=d.mode==='part'?GREEN:GREY;});}
+   else if(d.mode==='ghost'){sh={...sh,[d.axId]:d.pos};const seen=new Set(sticks(d.shape).map(key));sticks(sh).forEach(x=>{if(!seen.has(key(x)))colors[x.id]=GHOST;});}
+   drawCrossing($('#'+d.id),sh,world,[],{colors});});
+  steps.forEach(st=>{const colors={};const seen=new Set(st.before?sticks(st.before).map(key):[]);sticks(st.shape).forEach(x=>{if(!seen.has(key(x)))colors[x.id]=GREEN;});drawCrossing($('#'+st.id),st.shape,world,[],{colors});});
+  drawCrossing($('#bridge'),F,world,[]);
+ });
 }
 const bare8=()=>({level:'at',hand:'none',middle:'none',width:'one',bracing:'none',surface:'bare',ends:'rested',cover:'open'});
 function renderNeeds(m){
