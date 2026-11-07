@@ -113,7 +113,7 @@ mark.cue{background:transparent;color:inherit;text-decoration:underline;text-dec
 .st .node.x{color:var(--lost);font-weight:700;font-size:16px;background:var(--surface);line-height:18px}
 .st .node.sq{width:13px;height:13px;border-radius:3px;background:var(--signal);margin-top:17px;box-shadow:0 0 0 3px var(--surface)}
 .st .node.sqo{width:13px;height:13px;border-radius:3px;border:1.5px solid var(--muted);margin-top:17px;background:var(--surface)}
-.st .node.sqd{width:13px;height:13px;border-radius:3px;border:1.5px dashed var(--signal);margin-top:17px;background:var(--surface)}
+.st .node.sqd{width:13px;height:13px;border-radius:3px;border:1.5px dashed var(--muted);margin-top:17px;background:var(--surface)}
 .st .t{font-size:11.5px;color:var(--ink);margin-top:4px;line-height:1.3}
 .st .t.m{color:var(--muted)}
 .st .t .chip{margin:0;font-size:11.5px}
@@ -134,7 +134,7 @@ mark.cue{background:transparent;color:inherit;text-decoration:underline;text-dec
 .lg.x{color:var(--lost);font-weight:700;font-style:normal}
 .lg.sq{width:11px;height:11px;border-radius:3px;background:var(--signal)}
 .lg.sqo{width:11px;height:11px;border-radius:3px;border:1.5px solid var(--muted)}
-.lg.sqd{width:11px;height:11px;border-radius:3px;border:1.5px dashed var(--signal)}
+.lg.sqd{width:11px;height:11px;border-radius:3px;border:1.5px dashed var(--muted)}
 @media(max-width:900px){.jr,.jg{grid-template-columns:1fr 1fr 1fr}.jr .lab,.jg .lab{grid-column:1/-1;padding-bottom:0}.jr .pic{grid-column:1/-1;border-left:0}.grow{flex-wrap:wrap}.grow>div{flex:1 1 40%}}
 .lane.private .jcue{fill:var(--muted)}
 .none.unread{color:var(--fault)}
@@ -201,9 +201,9 @@ mark.cue{background:transparent;color:inherit;text-decoration:underline;text-dec
 <span><i class="lg x">✗</i>lost here: the builder did not read it as a key</span>
 <span><i class="lg sq"></i>in the built crossing (a switch position)</span>
 <span><i class="lg sqo"></i>nothing built for it</span>
-<span><i class="lg sqd"></i>there anyway, by default</span>
+<span><i class="lg sqd"></i>there by chance, not because of the words</span>
 <span><i class="lg" style="width:14px;height:4px;background:#1E9A8C;border-radius:2px"></i>green sticks: what these words became</span>
-<span><i class="lg" style="width:14px;height:4px;background:#8DA096;border-radius:2px"></i>grey: there anyway</span>
+<span><i class="lg" style="width:14px;height:4px;background:#8DA096;border-radius:2px"></i>grey: there by chance</span>
 <span><i class="lg" style="width:14px;height:4px;background:#b9b3a6;opacity:.5;border-radius:2px"></i>faded: what was never built</span>
 </div>
 <p class="board-note">Rows are phrases from the lines below. For this run they were picked by hand from the transcript; for other runs only the phrases that matched a key are shown.</p>
@@ -284,7 +284,7 @@ function renderJourney(m,s){
   const id='pr-'+(ri++);
   if(!p.key){c4=node('sqo','nothing built for it',true);draws.push({id,shape:F,mode:'none'});pic='<span class="x">✗ nothing built</span> · the whole bridge is faded: none of it comes from these words';}
   else if(kept&&built){c4=node('sq',DONE[axId]?.[ax.pos]||ax.pos);draws.push({id,shape:F,mode:'part',axId,pos:ax.pos});pic=`<span class="d">in green:</span> ${hx(DONE[axId]?.[ax.pos]||ax.pos)}`;}
-  else if(built){c4=node('sqd',`${DONE[axId]?.[ax.pos]||ax.pos}<br>by default, not for this`,true);draws.push({id,shape:F,mode:'default',axId,pos:ax.pos});pic='<span>grey: it is there anyway</span>, not because of these words';}
+  else if(built){c4=node('sqd',`${DONE[axId]?.[ax.pos]||ax.pos}<br>by chance, not for these words`,true);draws.push({id,shape:F,mode:'default',axId,pos:ax.pos});pic='<span>grey: it is there anyway</span>, not because of these words';}
   else{c4=node('sqo',`${STAY[axId]||ax.axis} · untouched`,true);draws.push({id,shape:F,mode:'ghost',axId,pos:ax.pos});pic=`<span class="x">✗ never built</span> · the faded part is what it would have been: ${hx(DONE[axId]?.[ax.pos]||ax.pos)}`;}
   return `<div class="jr${nl?' newline':''}"><div class="lab"><div class="who ${l.role==='A'?'a':'b'}">${name(l.role)}<span>line ${p.line}</span></div><div class="ph">“${hx(p.phrase)}”</div><div class="gl">${hx(p.gloss)}</div></div>
   <div class="st in-none${kept?'':' out-lost'}">${c1}</div>
