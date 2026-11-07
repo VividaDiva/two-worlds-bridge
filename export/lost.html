@@ -61,7 +61,27 @@ mark.cue{background:transparent;color:inherit;text-decoration:underline;text-dec
 .jcue{font-family:var(--mono);font-size:11px;fill:var(--ink)}
 :root{--lost:#E3B341}
 .journey{border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden}
-.jr{display:grid;grid-template-columns:300px repeat(3,1fr);align-items:center;border-top:1px solid var(--line-soft)}
+.jr{display:grid;grid-template-columns:280px repeat(3,1fr) 250px;align-items:center;border-top:1px solid var(--line-soft)}
+.jg{display:grid;grid-template-columns:280px repeat(3,1fr) 250px;align-items:center;border-top:1px solid var(--line)}
+.jg .pr{display:contents}
+.jg .pr+.pr>*{border-top:1px solid var(--line-soft)}
+.jg .lab{padding:14px 14px 14px 18px;min-width:0;align-self:stretch;display:flex;flex-direction:column;justify-content:center}
+.jg .lab .who{font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;margin-bottom:4px}
+.jg .lab .who.a{color:var(--roleA)}.jg .lab .who.b{color:var(--roleB)}
+.jg .lab .who span{color:var(--muted);font-weight:400;margin-left:6px}
+.jg .lab .ph{font-size:13px;color:var(--ink);line-height:1.4}
+.jg .lab .gl{font-size:11px;color:var(--muted);margin-top:2px}
+.jg .st{align-self:stretch;display:flex;flex-direction:column;align-items:center;justify-content:center;height:auto;min-height:74px}
+.jg .st::before,.jg .st::after{top:50%;margin-top:-20px}
+.jg .st .node{margin-top:0}.jg .st .node.dot{margin-top:2px}.jg .st .node.sq,.jg .st .node.sqo,.jg .st .node.sqd{margin-top:3px}
+.jg .st .wrap{position:relative;transform:translateY(-6px)}
+.br{grid-column:5;align-self:stretch;padding:12px 14px 12px 10px;border-left:1px solid var(--line-soft);display:flex;flex-direction:column;justify-content:center}
+.br canvas{width:100%;display:block;border-radius:6px}
+.br .cap{font-size:11px;color:var(--muted);margin-top:7px;line-height:1.4}
+.br .cap b{color:var(--ink);font-weight:600;display:block}
+.br .cap .d{color:var(--signal)}
+.br .cap .no{color:var(--muted)}
+.br.deaf canvas{opacity:.35}
 .jr.h{border-top:0;background:var(--panel)}
 .jr.h>div{padding:10px 14px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 .jr.h>div b{display:block;font-size:12px;letter-spacing:.02em;text-transform:none;color:var(--ink);margin-bottom:2px}
@@ -87,7 +107,7 @@ mark.cue{background:transparent;color:inherit;text-decoration:underline;text-dec
 .st .t{font-size:11.5px;color:var(--ink);margin-top:4px;line-height:1.3}
 .st .t.m{color:var(--muted)}
 .st .t .chip{margin:0;font-size:11.5px}
-.built{display:grid;grid-template-columns:300px 1fr 380px;align-items:center;border-top:2px solid var(--line);background:var(--panel)}
+.built{display:grid;grid-template-columns:280px 1fr 380px;align-items:center;border-top:2px solid var(--line);background:var(--panel)}
 .built .lab{padding:16px 14px 16px 18px}
 .built .lab .who{font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--signal);margin-bottom:4px}
 .built .lab .ph{font-size:13px;color:var(--ink);line-height:1.4}
@@ -105,7 +125,7 @@ mark.cue{background:transparent;color:inherit;text-decoration:underline;text-dec
 .lg.sq{width:11px;height:11px;border-radius:3px;background:var(--signal)}
 .lg.sqo{width:11px;height:11px;border-radius:3px;border:1.5px solid var(--muted)}
 .lg.sqd{width:11px;height:11px;border-radius:3px;border:1.5px dashed var(--signal)}
-@media(max-width:900px){.jr{grid-template-columns:1fr 1fr 1fr}.jr .lab{grid-column:1/-1;padding-bottom:0}}
+@media(max-width:900px){.jr,.jg{grid-template-columns:1fr 1fr 1fr}.jr .lab,.jg .lab{grid-column:1/-1;padding-bottom:0}.br{grid-column:1/-1;grid-row:auto!important;border-left:0;border-top:1px solid var(--line-soft)}}
 .lane.private .jcue{fill:var(--muted)}
 .none.unread{color:var(--fault)}
 /* lanes */
@@ -185,6 +205,7 @@ mark.cue{background:transparent;color:inherit;text-decoration:underline;text-dec
 <script src="../agents/usertest/draw.js"></script>
 <script type="module">
 import {FEATLABEL,HUE} from './flow-journey.mjs?v=3';
+import {shapeOfName,AXES8} from './lost-shapes.mjs?v=1';
 const $=s=>document.querySelector(s);
 const hx=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const known=xs=>(xs||[]).filter(k=>k in FEATLABEL);
@@ -194,7 +215,8 @@ const words=t=>(t||'').trim().split(/\s+/).filter(Boolean).length;
 
 function model(s){
  const turns=s.transcript.map((t,i)=>({...t,i})).filter(t=>t.who==='A'||t.who==='B');
- const lines=turns.map((t,k)=>({n:k+1,role:t.who,text:t.text||'',words:words(t.text),meant:minus(t.meant,t.meantRefuses),taken:t.unread?null:minus(t.taken,t.takenRefuses)}));
+ const lines=turns.map((t,k)=>{let after=null;for(let j=t.i+1;j<s.transcript.length;j++){const u=s.transcript[j];if(u.who==='A'||u.who==='B')break;if(u.who==='machine'){after={name:u.text,say:u.say,changed:u.changed,shape:shapeOfName(u.text)};break;}}
+  return {n:k+1,role:t.who,text:t.text||'',words:words(t.text),meant:minus(t.meant,t.meantRefuses),taken:t.unread?null:minus(t.taken,t.takenRefuses),after};});
  const built=[...known(s.outcome.has)];const w=s.outcome.world||{};if(w.rock&&!built.includes('rock'))built.unshift('rock');if(w.water&&!built.includes('water'))built.unshift('water');
  const told=lines.filter(l=>l.taken!=null),priv=lines.filter(l=>l.taken==null);
  const meantSet=new Set(told.flatMap(l=>l.meant)),aiSet=new Set(told.flatMap(l=>l.taken)),privSet=new Set(priv.flatMap(l=>l.meant).filter(k=>!meantSet.has(k)));
@@ -234,31 +256,37 @@ function phrasesFor(s,m){
 const DONE={level:{at:'kept level with the banks',raised:'raised above the banks'},hand:{none:'no rail',rail:'a rail was added'},middle:{none:'nothing in the gap',post:'a post stands in the gap',tower:'a tower stands in the gap'},width:{one:'one person wide',two:'made two wide'},bracing:{none:'no bracing',struts:'struts driven into the banks'},surface:{bare:'bare surface',rough:'a rough surface was laid'},ends:{rested:'ends just rest on the banks',footed:'ends dug into the banks'},cover:{open:'no roof',roof:'a roof put over it'}};
 const STAY={level:'still level',hand:'no rail',middle:'nothing in the gap',width:'still one wide',bracing:'no bracing',surface:'surface left bare',ends:'ends left resting',cover:'no roof'};
 function renderJourney(m,s){
- const node=(cls,txt,m2)=>`<span class="node ${cls}">${cls==='x'?'✗':''}</span><div class="t${m2?' m':''}">${txt}</div>`;
+ const node=(cls,txt,m2)=>`<div class="wrap"><span class="node ${cls}">${cls==='x'?'✗':''}</span><div class="t${m2?' m':''}">${txt}</div></div>`;
  const chip=k=>`<span class="chip" style="--h:${HUE[k]}"><i></i>${k}</span>`;
- let last=0;
- const rows=phrasesFor(s,m).map(p=>{
-  const l=m.lines[p.line-1]||{};const nl=p.line!==last;last=p.line;
-  const coded=p.key&&(l.meant||[]).includes(p.key);const kept=coded&&(l.taken||[]).includes(p.key);
-  const built=p.key&&m.built.includes(p.key);const ax=p.key?AXIS_OF[p.key]:null;
-  const c1=node('dot',l.taken==null?'said · private':coded?'meant · '+chip(p.key):'said',true);
-  const c3=!coded?node('x','no key for it',true):kept?node('dot',chip(p.key)):node('x','not read as a key',true);
-  let c4;
-  const axId=ax?(AXES.find(a=>a.name===ax.axis)||{}).id:null;
-  if(!p.key)c4=node('sqo','nothing built for it',true);
-  else if(kept&&built)c4=node('sq',DONE[axId]?.[ax.pos]||ax.pos);
-  else if(built)c4=node('sqd',`${DONE[axId]?.[ax.pos]||ax.pos}<br>by default, not for this`,true);
-  else c4=node('sqo',`${STAY[axId]||ax.axis} · untouched`,true);
-  const seg23=coded?(kept?'':' out-lost'):' out-lost';
-  return `<div class="jr${nl?' newline':''}"><div class="lab"><div class="who ${l.role==='A'?'a':'b'}">${name(l.role)}<span>line ${p.line}</span></div><div class="ph">“${hx(p.phrase)}”</div><div class="gl">${hx(p.gloss)}</div></div>
-  <div class="st in-none${kept?'':' out-lost'}">${c1}</div>
-  <div class="st${kept?'':' in-lost'}${kept&&built?'':' out-grey'}">${c3}</div>
-  <div class="st${kept&&built?'':' in-grey'} out-none">${c4}</div></div>`;}).join('');
- const shape=s.outcome.shape||{},bare={level:'at',hand:'none',middle:'none',width:'one',bracing:'none',surface:'bare',ends:'rested',cover:'open'};
+ const world=s.outcome.world||{};
+ const groups=new Map();phrasesFor(s,m).forEach(p=>{if(!groups.has(p.line))groups.set(p.line,[]);groups.get(p.line).push(p);});
+ let prev=null;const canvases=[];
+ const html=[...groups.entries()].map(([ln,ps])=>{
+  const l=m.lines[ln-1]||{};
+  const rows=ps.map(p=>{
+   const coded=p.key&&(l.meant||[]).includes(p.key);const kept=coded&&(l.taken||[]).includes(p.key);
+   const built=p.key&&m.built.includes(p.key);const ax=p.key?AXIS_OF[p.key]:null;const axId=ax?(AXES.find(a=>a.name===ax.axis)||{}).id:null;
+   const c1=node('dot',l.taken==null?'said · private':coded?'meant · '+chip(p.key):'said',true);
+   const c3=!coded?node('x','no key for it',true):kept?node('dot',chip(p.key)):node('x','not read as a key',true);
+   let c4;
+   if(!p.key)c4=node('sqo','nothing built for it',true);
+   else if(kept&&built)c4=node('sq',DONE[axId]?.[ax.pos]||ax.pos);
+   else if(built)c4=node('sqd',`${DONE[axId]?.[ax.pos]||ax.pos}<br>by default, not for this`,true);
+   else c4=node('sqo',`${STAY[axId]||ax.axis} · untouched`,true);
+   return `<div class="pr"><div class="lab"><div class="who ${l.role==='A'?'a':'b'}">${name(l.role)}<span>line ${ln}</span></div><div class="ph">“${hx(p.phrase)}”</div><div class="gl">${hx(p.gloss)}</div></div><div class="st in-none${kept?'':' out-lost'}">${c1}</div><div class="st${kept?'':' in-lost'}${kept&&built?'':' out-grey'}">${c3}</div><div class="st${kept&&built?'':' in-grey'} out-none">${c4}</div></div>`;}).join('');
+  // the crossing after the builder's reply to this line
+  const af=l.after;let cap,shape=prev||bare8(),deaf=false;
+  if(!af){deaf=true;cap=`<span class="no">${l.taken==null?'the builder did not hear this line':'no reply recorded'}</span>`;}
+  else{shape=af.shape||prev||bare8();const first=!prev;const diff=first?[]:AXES8.filter(k=>shape[k]!==prev[k]);
+   cap=`<b>${hx(af.name)}</b>${first?'<span class="d">laid across the gap</span>':af.changed===false?'<span class="no">no change</span>':diff.length?diff.map(k=>`<span class="d">+ ${hx((DONE[k]||{})[shape[k]]||shape[k])}</span>`).join('<br>'):'<span class="no">rebuilt the same</span>'}`;prev=shape;}
+  const id='br-'+ln;canvases.push({id,shape});
+  return `<div class="jg">${rows}<div class="br${deaf?' deaf':''}" style="grid-row:1 / span ${ps.length}"><canvas id="${id}" aria-label="The crossing after line ${ln}"></canvas><div class="cap">${cap}</div></div></div>`;}).join('');
+ const shape=s.outcome.shape||{},bare=bare8();
  const final=`<div class="built"><div class="lab"><div class="who">What was built</div><div class="ph">${hx(s.outcome.name||'')}</div><div class="gl">${hx(s.outcome.ground||'')}</div></div><div class="sum">${AXES.map(a=>`<div${shape[a.id]!==bare[a.id]?' class="on"':''}><b>${a.name}</b> · ${hx((DONE[a.id]||{})[shape[a.id]]||shape[a.id]||'')}${shape[a.id]!==bare[a.id]?'':' <span style="opacity:.6">(default)</span>'}</div>`).join('')}</div><div class="pic"><canvas id="bridge" aria-label="The crossing that was built"></canvas></div></div>`;
- $('#journey').innerHTML=`<div class="jr h"><div>Phrase</div><div><b>Said</b>and what the person meant by it</div><div><b>Read</b>what the builder made of it</div><div><b>Built</b>the switch position</div></div>${rows}${final}`;
- if(window.drawCrossing)requestAnimationFrame(()=>drawCrossing($('#bridge'),shape,s.outcome.world||{},[]));
+ $('#journey').innerHTML=`<div class="jr h"><div>Phrase</div><div><b>Said</b>and what the person meant by it</div><div><b>Read</b>what the builder made of it</div><div><b>Built</b>the switch position</div><div><b>Bridge</b>after the builder's reply to this line</div></div>${html||'<div class="jr"><div class="lab"><span class="none">Nothing in this run was coded as a need.</span></div></div>'}${final}`;
+ if(window.drawCrossing)requestAnimationFrame(()=>{canvases.forEach(c=>drawCrossing($('#'+c.id),c.shape,world,[]));drawCrossing($('#bridge'),shape,world,[]);});
 }
+const bare8=()=>({level:'at',hand:'none',middle:'none',width:'one',bracing:'none',surface:'bare',ends:'rested',cover:'open'});
 function renderNeeds(m){
  const src=needSources(m);
  const rows=[...src.entries()].map(([k,e])=>`<div class="nrow${e.priv?' priv':''}"><div class="src"><span class="who ${e.role==='A'?'a':'b'}">${name(e.role)}<span> · line ${e.lines.join(', ')}${e.priv?' · private':''}</span></span>${e.cues.length?e.cues.map(w=>`<span class="q">“${hx(w)}”</span>`).join(''):'<span class="q none">no single cue word · read from the whole line</span>'}</div><div class="arr">→</div><div class="need"><span class="chip" style="--h:${HUE[k]}"><i></i>${k}</span><span class="gloss">${hx(FEATLABEL[k])}</span><span class="ax">${hx((AXIS_OF[k]||{}).axis||'')} · ${hx((AXIS_OF[k]||{}).pos||'')}</span></div></div>`).join('');
