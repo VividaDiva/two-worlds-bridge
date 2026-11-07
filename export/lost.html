@@ -44,6 +44,22 @@ h2 b{color:var(--ink)}
 .chip.new i{background:transparent;border:1.5px dashed hsl(var(--h) 55% var(--jl))}
 .chip .x{color:var(--fault);text-decoration:none;font-weight:600}
 .none{color:var(--muted);font-size:12px}
+mark.cue{background:transparent;color:inherit;text-decoration:underline;text-decoration-color:hsl(var(--h) 55% var(--jl));text-decoration-thickness:2px;text-underline-offset:3px}
+.needs{border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden}
+.nrow{display:grid;grid-template-columns:minmax(0,1.3fr) 34px minmax(0,1fr);align-items:center;padding:10px 16px;border-top:1px solid var(--line-soft)}
+.nrow.h{border-top:0;background:var(--panel);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:9px 16px}
+.nrow .src .who{font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;margin-right:8px}
+.nrow .src .who.a{color:var(--roleA)}.nrow .src .who.b{color:var(--roleB)}
+.nrow .src .who span{color:var(--muted);font-weight:400}
+.nrow .q{font-size:13px;color:var(--ink);margin-right:8px;white-space:nowrap}
+.nrow .q.none{font-size:12px;color:var(--muted)}
+.nrow .arr{color:var(--muted);text-align:center}
+.nrow .need .chip{font-size:13px;font-weight:600;margin:0 10px 0 0}
+.nrow .need .gloss{font-size:11.5px;color:var(--muted)}
+.nrow .need .ax{display:block;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+.nrow.priv .q,.nrow.priv .need .chip{color:var(--muted)}
+.jcue{font-family:var(--mono);font-size:11px;fill:var(--ink)}
+.lane.private .jcue{fill:var(--muted)}
 .none.unread{color:var(--fault)}
 /* lanes */
 .jwrap{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
@@ -101,12 +117,15 @@ h2 b{color:var(--ink)}
 <p class="lede">The first version of the study, without the toolkit. Each line a person said was coded into at most three keys from a list of fifteen, and only those keys reached the builder. Two things were lost on the way: the words, and then the needs.</p>
 <div class="controls"><label for="path">Path</label><select id="path"></select><label for="scen">Scenario</label><select id="scen"></select><label for="pair">Run</label><select id="pair"></select></div>
 <div id="found" class="found"></div>
-<h2>1 · <b>Words</b> → keys <span style="font-weight:400">· what each line said, and what survived the coding</span></h2>
+<h2>1 · The person's <b>words</b> → a need <span style="font-weight:400">· which words in a line pointed to which need</span></h2>
+<div id="needs" class="needs"></div>
+<p class="board-note">Underlined words are the cues in the line that point to the need. They are shown to make the need traceable; the coding itself read the whole sentence, and anything in it without a matching key had nowhere to go.</p>
+<h2>2 · <b>Words</b> → keys <span style="font-weight:400">· what each line said, and what survived the coding</span></h2>
 <div id="said" class="said"></div>
-<h2>2 · <b>Keys</b> = switch positions <span style="font-weight:400">· the builder's eight switches, and the name each position gets</span></h2>
+<h2>3 · <b>Keys</b> = switch positions <span style="font-weight:400">· the builder's eight switches, and the name each position gets</span></h2>
 <div id="board" class="board"></div>
 <p class="board-note">The 15 keys are not categories of need: each one is the name of a switch position. Hearing a key means flipping that switch; the crossing "has" a key when its switch sits there. <b style="color:var(--ink)">minimal</b> = every switch at its first position. <b style="color:var(--ink)">water</b> / <b style="color:var(--ink)">rock</b> describe the ground, not the bridge. The filled dot is where this run's crossing ended.</p>
-<h2>3 · <b>Needs</b> → crossing <span style="font-weight:400">· where each coded need went, grouped by switch</span></h2>
+<h2>4 · <b>Needs</b> → crossing <span style="font-weight:400">· where each coded need went, grouped by switch</span></h2>
 <div id="lanes"></div>
 <div class="legend">
 <span><svg width="26" height="10"><line x1="2" y1="5" x2="24" y2="5" stroke="#9fd" stroke-width="3" stroke-linecap="round"/></svg>carried on</span>
@@ -142,11 +161,22 @@ function model(s){
 
 function chips(keys,cls,mark){return keys.length?keys.map(k=>`<span class="chip ${cls(k)}" style="--h:${HUE[k]}" title="${hx(FEATLABEL[k])}"><i></i>${k}${mark&&mark(k)?' <span class="x">✗</span>':''}</span>`).join(''):'<span class="none">—</span>';}
 
+const CUES={grip:['slipping','slippery','slip','slick','grip','traction','wet','rain','biting','bite','rough','non-slip','footing'],sheltered:['no matter the weather','weather','rain','roof','covered','cover','storm','wind','shelter','sheltered','dry','snow','elements','over my head','overhead'],guarded:['put a hand on','hand on','hands','hand','hold','handrail','rails','rail','railing','edges','edge','sides','catches','going over','fall off','divider','barrier','safe'],low:['flat','level','low','step'],exposed:['nothing at the edge','drop','going over','edge','open sides','fall'],steady:['wobble','wobbly','shift','still','steady','solid','sway','bounce','firm','doesn’t move','does not move'],sways:['sway','swing','bounce','wobble','moving'],light:['alone','myself','one person','dog','walking','walk','on foot','bike'],heavy:['cars','car','driving','drive','trucks','truck','carts','cart','loads','load','wheels','vehicles','vehicle','van','commute'],many:['two','both','wide','pass','traffic','lanes','side by side','shoulder to shoulder'],high:['higher','high','raised','above','climb','clearance'],inGap:['posts','post','pillars','pillar','middle','supports','support','legs'],footed:['banks','bank','softens','soften','anchored','ends','washed','mud','erode','footing','dug'],minimal:['small','little','simple','cheap','least','minimal','nothing fancy','plain'],open:['see','view','sky','open','look'],water:['stream','river','water','creek','brook'],rock:['rock','cleft','gorge','ravine','gap']};
+const esc=t=>t.replace(/[.*+?^${}()|[\]\\]/g,'\\function renderSaid(m){');
+function cueRanges(text,keys){const out=[];keys.forEach(k=>{(CUES[k]||[]).forEach(c=>{const re=new RegExp('(?<![\\w’])'+esc(c)+'(?![\\w])','gi');let mm;while((mm=re.exec(text))){const a=mm.index,b=a+mm[0].length;if(!out.some(r=>a<r.b&&b>r.a))out.push({a,b,k,w:mm[0]});}});});return out.sort((x,y)=>x.a-y.a);}
+function cuesOf(text,k){const seen=new Set();return cueRanges(text,[k]).map(r=>r.w.toLowerCase()).filter(w=>!seen.has(w)&&seen.add(w));}
+function markup(text,keys){const rs=cueRanges(text,keys);let o='',p=0;rs.forEach(r=>{o+=hx(text.slice(p,r.a))+`<mark class="cue" style="--h:${HUE[r.k]}">${hx(text.slice(r.a,r.b))}</mark>`;p=r.b;});return o+hx(text.slice(p));}
+function needSources(m){const src=new Map();m.lines.forEach(l=>l.meant.forEach(k=>{if(!src.has(k))src.set(k,{role:l.role,lines:[],cues:[],priv:true});const e=src.get(k);e.lines.push(l.n);if(l.taken!=null)e.priv=false;cuesOf(l.text,k).forEach(w=>{if(!e.cues.includes(w))e.cues.push(w);});}));return src;}
+function renderNeeds(m){
+ const src=needSources(m);
+ const rows=[...src.entries()].map(([k,e])=>`<div class="nrow${e.priv?' priv':''}"><div class="src"><span class="who ${e.role==='A'?'a':'b'}">${name(e.role)}<span> · line ${e.lines.join(', ')}${e.priv?' · private':''}</span></span>${e.cues.length?e.cues.map(w=>`<span class="q">“${hx(w)}”</span>`).join(''):'<span class="q none">no single cue word · read from the whole line</span>'}</div><div class="arr">→</div><div class="need"><span class="chip" style="--h:${HUE[k]}"><i></i>${k}</span><span class="gloss">${hx(FEATLABEL[k])}</span><span class="ax">${hx((AXIS_OF[k]||{}).axis||'')} · ${hx((AXIS_OF[k]||{}).pos||'')}</span></div></div>`).join('');
+ $('#needs').innerHTML=`<div class="nrow h"><div>The person's words</div><div></div><div>The need, as a key</div></div>${rows||'<div class="nrow"><span class="none">Nothing in this run was coded as a need.</span></div>'}`;
+}
 function renderSaid(m){
  const rows=m.lines.map(l=>{
   const takenSet=new Set(l.taken||[]);
   const ai=l.taken==null?`<span class="none">private · not sent to the AI</span>`:chips([...l.taken,...l.meant.filter(k=>!takenSet.has(k))],k=>takenSet.has(k)?(l.meant.includes(k)?'':'new'):'lost',k=>!takenSet.has(k));
-  return `<div><div class="who ${l.role==='A'?'a':'b'}">${name(l.role)}<span>line ${l.n}</span></div><p>${hx(l.text)}</p></div><div><div class="n"><b>${l.words}</b> words → <b>${l.meant.length}</b> keys</div>${chips(l.meant,()=>'')}</div><div><div class="n">→ <b>${l.taken?l.taken.length:0}</b> kept</div>${ai}</div>`;}).join('');
+  return `<div><div class="who ${l.role==='A'?'a':'b'}">${name(l.role)}<span>line ${l.n}</span></div><p>${markup(l.text,l.meant)}</p></div><div><div class="n"><b>${l.words}</b> words → <b>${l.meant.length}</b> keys</div>${chips(l.meant,()=>'')}</div><div><div class="n">→ <b>${l.taken?l.taken.length:0}</b> kept</div>${ai}</div>`;}).join('');
  $('#said').innerHTML=`<div class="h">What was said</div><div class="h">What they meant, as keys</div><div class="h">What the AI kept</div>${rows}`;
 }
 
@@ -173,7 +203,7 @@ function renderLanes(m){
  const lanes=[];cols.forEach(c=>c.keys.forEach(k=>{if(!lanes.includes(k))lanes.push(k);}));
  lanes.sort((a,b)=>AXIS_ORDER.indexOf((AXIS_OF[a]||{}).axis)-AXIS_ORDER.indexOf((AXIS_OF[b]||{}).axis));
  if(!lanes.length){$('#lanes').innerHTML='<p class="none">Nothing in this run was coded as a need.</p>';return;}
- const COLW=100,LANEH=36,TOP=68,PADL=46,W=PADL+cols.length*COLW,H=TOP+lanes.length*LANEH+12;
+ const COLW=100,LANEH=50,TOP=68,PADL=46,W=PADL+cols.length*COLW,H=TOP+lanes.length*LANEH+12;
  const X=ci=>PADL+ci*COLW,Y=li=>TOP+li*LANEH+LANEH/2;
  let bands='',heads='';
  for(let a=0;a<cols.length;){let b=a;while(b+1<cols.length&&cols[b+1].line===cols[a].line)b++;const x0=X(a)-COLW/2+4,x1=X(b)+COLW/2-4;
@@ -198,8 +228,8 @@ function renderLanes(m){
    M.push(`<g><title>${hx(tip)}</title>${shape}</g>`);});
   if(li>0&&(AXIS_OF[k]||{}).axis!==(AXIS_OF[lanes[li-1]]||{}).axis)rows+=`<line class="jsep" x1="0" y1="${y-LANEH/2}" x2="${W}" y2="${y-LANEH/2}"/>`;
  rows+=`<g class="lane" style="--h:${HUE[k]??0}">${L.join('')}${M.join('')}</g>`;});
- const LW=330;
- const labels=`<svg class="jlabels" width="${LW}" height="${H}" viewBox="0 0 ${LW} ${H}"><text class="jline" x="14" y="20">NEED</text>${lanes.map((k,li)=>`<g class="lane${m.meantSet.has(k)&&!m.built.includes(k)?' lost':''}${m.privSet.has(k)?' private':''}" style="--h:${HUE[k]??0}"><title>${hx(FEATLABEL[k])}</title><rect class="jsw" x="14" y="${Y(li)-6}" width="12" height="12" rx="2"/><text class="jlab" x="34" y="${Y(li)-2}">${hx(k)}</text><text class="jgloss" x="34" y="${Y(li)+11}">${hx(FEATLABEL[k])}</text><text class="jaxis" x="${LW-12}" y="${Y(li)-2}" text-anchor="end">${hx((AXIS_OF[k]||{}).axis||'')} · ${hx((AXIS_OF[k]||{}).pos||'')}</text></g>${li>0&&(AXIS_OF[k]||{}).axis!==(AXIS_OF[lanes[li-1]]||{}).axis?`<line class="jsep" x1="0" y1="${Y(li)-LANEH/2}" x2="${LW}" y2="${Y(li)-LANEH/2}"/>`:''}`).join('')}</svg>`;
+ const LW=330,src=needSources(m);
+ const labels=`<svg class="jlabels" width="${LW}" height="${H}" viewBox="0 0 ${LW} ${H}"><text class="jline" x="14" y="20">NEED · FROM THE PERSON'S WORDS</text>${lanes.map((k,li)=>`<g class="lane${m.meantSet.has(k)&&!m.built.includes(k)?' lost':''}${m.privSet.has(k)?' private':''}" style="--h:${HUE[k]??0}"><title>${hx(FEATLABEL[k])}</title><rect class="jsw" x="14" y="${Y(li)-14}" width="12" height="12" rx="2"/><text class="jlab" x="34" y="${Y(li)-10}">${hx(k)}</text><text class="jgloss" x="34" y="${Y(li)+3}">${hx(FEATLABEL[k])}</text><text class="jcue" x="34" y="${Y(li)+17}">${(()=>{const e=src.get(k);return e?hx(e.cues.length?e.cues.slice(0,3).map(w=>'“'+w+'”').join(' ')+(e.cues.length>3?' …':''):'(whole line '+e.lines[0]+')'):'nobody said it';})()}</text><text class="jaxis" x="${LW-12}" y="${Y(li)-10}" text-anchor="end">${hx((AXIS_OF[k]||{}).axis||'')} · ${hx((AXIS_OF[k]||{}).pos||'')}</text></g>${li>0&&(AXIS_OF[k]||{}).axis!==(AXIS_OF[lanes[li-1]]||{}).axis?`<line class="jsep" x1="0" y1="${Y(li)-LANEH/2}" x2="${LW}" y2="${Y(li)-LANEH/2}"/>`:''}`).join('')}</svg>`;
  $('#lanes').innerHTML=`<div class="jwrap">${labels}<div class="jscroll"><svg class="journey" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Where each need went">${bands}${heads}${rows}</svg></div></div>`;
 }
 
@@ -220,7 +250,7 @@ data.paths.forEach(p=>pathSel.add(new Option(p[2]||p[1]||p[0],p[0])));
 Object.entries(data.scenarios).forEach(([id,v])=>scenSel.add(new Option(v[0]||id,id)));
 function fillPairs(){const ps=data.sessions.filter(s=>s.path===pathSel.value&&s.scenario===scenSel.value).map(s=>s.pair).sort((a,b)=>a-b);const keep=pairSel.value;pairSel.innerHTML='';ps.forEach(p=>pairSel.add(new Option('Run '+(p+1),p)));if(ps.map(String).includes(keep))pairSel.value=keep;}
 function fromHash(){const h=new URLSearchParams(location.hash.slice(1));if(h.get('path'))pathSel.value=h.get('path');if(h.get('scen'))scenSel.value=h.get('scen');fillPairs();if(h.get('pair'))pairSel.value=h.get('pair');}
-function render(){const s=data.sessions.find(s=>s.path===pathSel.value&&s.scenario===scenSel.value&&String(s.pair)===pairSel.value)||data.sessions[0];const m=model(s);renderFound(m);renderSaid(m);renderBoard(m,s.outcome.shape||{});renderLanes(m);history.replaceState(null,'',`#path=${s.path}&scen=${s.scenario}&pair=${s.pair}`);}
+function render(){const s=data.sessions.find(s=>s.path===pathSel.value&&s.scenario===scenSel.value&&String(s.pair)===pairSel.value)||data.sessions[0];const m=model(s);renderFound(m);renderNeeds(m);renderSaid(m);renderBoard(m,s.outcome.shape||{});renderLanes(m);history.replaceState(null,'',`#path=${s.path}&scen=${s.scenario}&pair=${s.pair}`);}
 pathSel.onchange=scenSel.onchange=()=>{fillPairs();render();};pairSel.onchange=render;
 addEventListener('hashchange',()=>{fromHash();render();});
 fromHash();render();renderAll(data.sessions);
