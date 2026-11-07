@@ -275,16 +275,16 @@ function renderJourney(m,s){
    else c4=node('sqo',`${STAY[axId]||ax.axis} · untouched`,true);
    return `<div class="pr"><div class="lab"><div class="who ${l.role==='A'?'a':'b'}">${name(l.role)}<span>line ${ln}</span></div><div class="ph">“${hx(p.phrase)}”</div><div class="gl">${hx(p.gloss)}</div></div><div class="st in-none${kept?'':' out-lost'}">${c1}</div><div class="st${kept?'':' in-lost'}${kept&&built?'':' out-grey'}">${c3}</div><div class="st${kept&&built?'':' in-grey'} out-none">${c4}</div></div>`;}).join('');
   // the crossing after the builder's reply to this line
-  const af=l.after;let cap,shape=prev||bare8(),deaf=false;
+  const af=l.after,before=prev;let cap,shape=prev||bare8(),deaf=false;
   if(!af){deaf=true;cap=`<span class="no">${l.taken==null?'the builder did not hear this line':'no reply recorded'}</span>`;}
   else{shape=af.shape||prev||bare8();const first=!prev;const diff=first?[]:AXES8.filter(k=>shape[k]!==prev[k]);
    cap=`<b>${hx(af.name)}</b>${first?'<span class="d">laid across the gap</span>':af.changed===false?'<span class="no">no change</span>':diff.length?diff.map(k=>`<span class="d">+ ${hx((DONE[k]||{})[shape[k]]||shape[k])}</span>`).join('<br>'):'<span class="no">rebuilt the same</span>'}`;prev=shape;}
-  const id='br-'+ln;canvases.push({id,shape});
+  const id='br-'+ln;canvases.push({id,shape,before:deaf?shape:before});
   return `<div class="jg">${rows}<div class="br${deaf?' deaf':''}" style="grid-row:1 / span ${ps.length}"><canvas id="${id}" aria-label="The crossing after line ${ln}"></canvas><div class="cap">${cap}</div></div></div>`;}).join('');
  const shape=s.outcome.shape||{},bare=bare8();
  const final=`<div class="built"><div class="lab"><div class="who">What was built</div><div class="ph">${hx(s.outcome.name||'')}</div><div class="gl">${hx(s.outcome.ground||'')}</div></div><div class="sum">${AXES.map(a=>`<div${shape[a.id]!==bare[a.id]?' class="on"':''}><b>${a.name}</b> · ${hx((DONE[a.id]||{})[shape[a.id]]||shape[a.id]||'')}${shape[a.id]!==bare[a.id]?'':' <span style="opacity:.6">(default)</span>'}</div>`).join('')}</div><div class="pic"><canvas id="bridge" aria-label="The crossing that was built"></canvas></div></div>`;
- $('#journey').innerHTML=`<div class="jr h"><div>Phrase</div><div><b>Said</b>and what the person meant by it</div><div><b>Read</b>what the builder made of it</div><div><b>Built</b>the switch position</div><div><b>Bridge</b>after the builder's reply to this line</div></div>${html||'<div class="jr"><div class="lab"><span class="none">Nothing in this run was coded as a need.</span></div></div>'}${final}`;
- if(window.drawCrossing)requestAnimationFrame(()=>{canvases.forEach(c=>drawCrossing($('#'+c.id),c.shape,world,[]));drawCrossing($('#bridge'),shape,world,[]);});
+ $('#journey').innerHTML=`<div class="jr h"><div>Phrase</div><div><b>Said</b>and what the person meant by it</div><div><b>Read</b>what the builder made of it</div><div><b>Built</b>the switch position</div><div><b>Bridge</b>after the builder's reply · new sticks in green</div></div>${html||'<div class="jr"><div class="lab"><span class="none">Nothing in this run was coded as a need.</span></div></div>'}${final}`;
+ if(window.drawCrossing)requestAnimationFrame(()=>{canvases.forEach(c=>{const key=m=>[m.x1,m.y1,m.x2,m.y2].map(v=>Math.round(v)).join(",");const seen=new Set(c.before?crossingMatches(c.before,world,[]).map(key):[]);const colors={};crossingMatches(c.shape,world,[]).forEach(m=>{if(!seen.has(key(m)))colors[m.id]="#1E9A8C";});drawCrossing($("#"+c.id),c.shape,world,[],{colors});});drawCrossing($('#bridge'),shape,world,[]);});
 }
 const bare8=()=>({level:'at',hand:'none',middle:'none',width:'one',bracing:'none',surface:'bare',ends:'rested',cover:'open'});
 function renderNeeds(m){
