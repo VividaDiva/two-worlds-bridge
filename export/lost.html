@@ -59,6 +59,22 @@ h2 b{color:var(--ink)}
 .jsub{font-size:10.5px;fill:var(--muted)}
 .jlab{font-family:var(--mono);font-size:12px;font-weight:600;fill:var(--ink)}
 .jgloss{font-family:var(--mono);font-size:10.5px;fill:var(--muted)}
+.jaxis{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;fill:var(--muted);text-transform:uppercase}
+.jgroup{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;fill:var(--muted);text-transform:uppercase}
+.jsep{stroke:var(--line);stroke-width:1}
+.board{display:grid;grid-template-columns:repeat(8,1fr);gap:8px}
+.sw{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 10px 6px;min-width:0}
+.sw .ax{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);font-weight:600;margin-bottom:8px}
+.sw .pos{display:flex;align-items:flex-start;gap:7px;padding:5px 6px;border-radius:5px;margin:0 -6px 2px;font-size:11.5px;color:var(--muted);line-height:1.35}
+.sw .pos.on{background:color-mix(in srgb,var(--signal) 18%,transparent);color:var(--ink)}
+.sw .pos i{flex:none;width:8px;height:8px;border-radius:50%;border:1.5px solid var(--muted);margin-top:5px}
+.sw .pos.on i{background:var(--signal);border-color:var(--signal)}
+.sw .pos .k{display:block}
+.sw .pos .k .chip{font-size:11px;margin:2px 6px 0 0}
+.sw .pos .k .chip i{border:0;margin:0;width:9px;height:9px;border-radius:2px}
+.board-note{font-size:11.5px;color:var(--muted);margin:8px 2px 0}
+@media(max-width:1000px){.board{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:600px){.board{grid-template-columns:repeat(2,1fr)}}
 .lane .jsw{fill:hsl(var(--h) 55% var(--jl))}
 .lane .jl{stroke-width:3;stroke-linecap:round}
 .lane .jl.carried{stroke:hsl(var(--h) 55% var(--jl));opacity:.85}
@@ -87,7 +103,10 @@ h2 b{color:var(--ink)}
 <div id="found" class="found"></div>
 <h2>1 · <b>Words</b> → keys <span style="font-weight:400">· what each line said, and what survived the coding</span></h2>
 <div id="said" class="said"></div>
-<h2>2 · <b>Needs</b> → crossing <span style="font-weight:400">· where each coded need went</span></h2>
+<h2>2 · <b>Keys</b> = switch positions <span style="font-weight:400">· the builder's eight switches, and the name each position gets</span></h2>
+<div id="board" class="board"></div>
+<p class="board-note">The 15 keys are not categories of need: each one is the name of a switch position. Hearing a key means flipping that switch; the crossing "has" a key when its switch sits there. <b style="color:var(--ink)">minimal</b> = every switch at its first position. <b style="color:var(--ink)">water</b> / <b style="color:var(--ink)">rock</b> describe the ground, not the bridge. The filled dot is where this run's crossing ended.</p>
+<h2>3 · <b>Needs</b> → crossing <span style="font-weight:400">· where each coded need went, grouped by switch</span></h2>
 <div id="lanes"></div>
 <div class="legend">
 <span><svg width="26" height="10"><line x1="2" y1="5" x2="24" y2="5" stroke="#9fd" stroke-width="3" stroke-linecap="round"/></svg>carried on</span>
@@ -131,11 +150,28 @@ function renderSaid(m){
  $('#said').innerHTML=`<div class="h">What was said</div><div class="h">What they meant, as keys</div><div class="h">What the AI kept</div>${rows}`;
 }
 
+const AXES=[
+ {id:'level',name:'Height',opts:[['at','at the banks',['low']],['raised','raised up',['high']]]},
+ {id:'hand',name:'Hand',opts:[['none','nothing',['exposed','open']],['rail','a rail',['guarded']]]},
+ {id:'middle',name:'Middle',opts:[['none','nothing',[]],['post','a post',['inGap']],['tower','a tower',['inGap','steady','heavy']]]},
+ {id:'width',name:'Width',opts:[['one','one wide',['light']],['two','two wide',['many']]]},
+ {id:'bracing',name:'Bracing',opts:[['none','none',['sways']],['struts','struts',['steady','heavy']]]},
+ {id:'surface',name:'Surface',opts:[['bare','bare',[]],['rough','rough',['grip']]]},
+ {id:'ends',name:'Ends',opts:[['rested','rested',[]],['footed','dug in',['footed']]]},
+ {id:'cover',name:'Cover',opts:[['open','open',[]],['roof','a roof',['sheltered']]]},
+];
+const AXIS_OF={};AXES.forEach(a=>a.opts.forEach(([v,,ks])=>ks.forEach(k=>{if(!AXIS_OF[k])AXIS_OF[k]={axis:a.name,pos:v};})));
+AXIS_OF.minimal={axis:'all',pos:'first'};AXIS_OF.water={axis:'ground',pos:'water'};AXIS_OF.rock={axis:'ground',pos:'rock'};
+const AXIS_ORDER=[...AXES.map(a=>a.name),'all','ground'];
+function renderBoard(m,shape){
+ $('#board').innerHTML=AXES.map(a=>`<div class="sw"><div class="ax">${a.name}</div>${a.opts.map(([v,label,ks])=>`<div class="pos${shape[a.id]===v?' on':''}"><i></i><span><span>${label}</span><span class="k">${ks.map(k=>`<span class="chip" style="--h:${HUE[k]}" title="${hx(FEATLABEL[k])}"><i></i>${k}</span>`).join('')}</span></span></div>`).join('')}</div>`).join('');
+}
 function renderLanes(m){
  const cols=[];
  m.lines.forEach(l=>{cols.push({kind:'meant',role:l.role,line:l.n,keys:l.meant});if(l.taken)cols.push({kind:'ai',line:l.n,keys:l.taken,meant:l.meant});});
  cols.push({kind:'built',line:null,keys:m.built});
  const lanes=[];cols.forEach(c=>c.keys.forEach(k=>{if(!lanes.includes(k))lanes.push(k);}));
+ lanes.sort((a,b)=>AXIS_ORDER.indexOf((AXIS_OF[a]||{}).axis)-AXIS_ORDER.indexOf((AXIS_OF[b]||{}).axis));
  if(!lanes.length){$('#lanes').innerHTML='<p class="none">Nothing in this run was coded as a need.</p>';return;}
  const COLW=100,LANEH=36,TOP=68,PADL=46,W=PADL+cols.length*COLW,H=TOP+lanes.length*LANEH+12;
  const X=ci=>PADL+ci*COLW,Y=li=>TOP+li*LANEH+LANEH/2;
@@ -160,9 +196,10 @@ function renderLanes(m){
    if(dropped){L.push(`<line class="jl dropped" x1="${x+9}" y1="${y}" x2="${x+28}" y2="${y}"/>`);M.push(`<text class="jx" x="${x+31}" y="${y+4}">✗</text>`);}
    const shape=c.kind==='built'?`<rect class="jn${added?' added':''}" x="${x-7}" y="${y-7}" width="14" height="14" rx="3"/>`:`<circle class="jn${added?' added':''}${priv?' private':''}" cx="${x}" cy="${y}" r="7"/>`;
    M.push(`<g><title>${hx(tip)}</title>${shape}</g>`);});
-  rows+=`<g class="lane" style="--h:${HUE[k]??0}">${L.join('')}${M.join('')}</g>`;});
- const LW=270;
- const labels=`<svg class="jlabels" width="${LW}" height="${H}" viewBox="0 0 ${LW} ${H}"><text class="jline" x="14" y="20">NEED</text>${lanes.map((k,li)=>`<g class="lane${m.meantSet.has(k)&&!m.built.includes(k)?' lost':''}${m.privSet.has(k)?' private':''}" style="--h:${HUE[k]??0}"><title>${hx(FEATLABEL[k])}</title><rect class="jsw" x="14" y="${Y(li)-6}" width="12" height="12" rx="2"/><text class="jlab" x="34" y="${Y(li)-2}">${hx(k)}</text><text class="jgloss" x="34" y="${Y(li)+11}">${hx(FEATLABEL[k])}</text></g>`).join('')}</svg>`;
+  if(li>0&&(AXIS_OF[k]||{}).axis!==(AXIS_OF[lanes[li-1]]||{}).axis)rows+=`<line class="jsep" x1="0" y1="${y-LANEH/2}" x2="${W}" y2="${y-LANEH/2}"/>`;
+ rows+=`<g class="lane" style="--h:${HUE[k]??0}">${L.join('')}${M.join('')}</g>`;});
+ const LW=330;
+ const labels=`<svg class="jlabels" width="${LW}" height="${H}" viewBox="0 0 ${LW} ${H}"><text class="jline" x="14" y="20">NEED</text>${lanes.map((k,li)=>`<g class="lane${m.meantSet.has(k)&&!m.built.includes(k)?' lost':''}${m.privSet.has(k)?' private':''}" style="--h:${HUE[k]??0}"><title>${hx(FEATLABEL[k])}</title><rect class="jsw" x="14" y="${Y(li)-6}" width="12" height="12" rx="2"/><text class="jlab" x="34" y="${Y(li)-2}">${hx(k)}</text><text class="jgloss" x="34" y="${Y(li)+11}">${hx(FEATLABEL[k])}</text><text class="jaxis" x="${LW-12}" y="${Y(li)-2}" text-anchor="end">${hx((AXIS_OF[k]||{}).axis||'')} · ${hx((AXIS_OF[k]||{}).pos||'')}</text></g>${li>0&&(AXIS_OF[k]||{}).axis!==(AXIS_OF[lanes[li-1]]||{}).axis?`<line class="jsep" x1="0" y1="${Y(li)-LANEH/2}" x2="${LW}" y2="${Y(li)-LANEH/2}"/>`:''}`).join('')}</svg>`;
  $('#lanes').innerHTML=`<div class="jwrap">${labels}<div class="jscroll"><svg class="journey" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Where each need went">${bands}${heads}${rows}</svg></div></div>`;
 }
 
@@ -183,7 +220,7 @@ data.paths.forEach(p=>pathSel.add(new Option(p[2]||p[1]||p[0],p[0])));
 Object.entries(data.scenarios).forEach(([id,v])=>scenSel.add(new Option(v[0]||id,id)));
 function fillPairs(){const ps=data.sessions.filter(s=>s.path===pathSel.value&&s.scenario===scenSel.value).map(s=>s.pair).sort((a,b)=>a-b);const keep=pairSel.value;pairSel.innerHTML='';ps.forEach(p=>pairSel.add(new Option('Run '+(p+1),p)));if(ps.map(String).includes(keep))pairSel.value=keep;}
 function fromHash(){const h=new URLSearchParams(location.hash.slice(1));if(h.get('path'))pathSel.value=h.get('path');if(h.get('scen'))scenSel.value=h.get('scen');fillPairs();if(h.get('pair'))pairSel.value=h.get('pair');}
-function render(){const s=data.sessions.find(s=>s.path===pathSel.value&&s.scenario===scenSel.value&&String(s.pair)===pairSel.value)||data.sessions[0];const m=model(s);renderFound(m);renderSaid(m);renderLanes(m);history.replaceState(null,'',`#path=${s.path}&scen=${s.scenario}&pair=${s.pair}`);}
+function render(){const s=data.sessions.find(s=>s.path===pathSel.value&&s.scenario===scenSel.value&&String(s.pair)===pairSel.value)||data.sessions[0];const m=model(s);renderFound(m);renderSaid(m);renderBoard(m,s.outcome.shape||{});renderLanes(m);history.replaceState(null,'',`#path=${s.path}&scen=${s.scenario}&pair=${s.pair}`);}
 pathSel.onchange=scenSel.onchange=()=>{fillPairs();render();};pairSel.onchange=render;
 addEventListener('hashchange',()=>{fromHash();render();});
 fromHash();render();renderAll(data.sessions);
