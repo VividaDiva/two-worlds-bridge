@@ -59,6 +59,41 @@ mark.cue{background:transparent;color:inherit;text-decoration:underline;text-dec
 .nrow .need .ax{display:block;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:2px}
 .nrow.priv .q,.nrow.priv .need .chip{color:var(--muted)}
 .jcue{font-family:var(--mono);font-size:11px;fill:var(--ink)}
+:root{--lost:#E3B341}
+.journey{border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden}
+.jr{display:grid;grid-template-columns:300px repeat(4,1fr);align-items:center;border-top:1px solid var(--line-soft)}
+.jr.h{border-top:0;background:var(--panel)}
+.jr.h>div{padding:10px 14px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.jr.h>div b{display:block;font-size:12px;letter-spacing:.02em;text-transform:none;color:var(--ink);margin-bottom:2px}
+.jr.newline{border-top:1px solid var(--line)}
+.jr .lab{padding:14px 14px 14px 18px;min-width:0}
+.jr .lab .who{font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;margin-bottom:4px}
+.jr .lab .who.a{color:var(--roleA)}.jr .lab .who.b{color:var(--roleB)}
+.jr .lab .who span{color:var(--muted);font-weight:400;margin-left:6px}
+.jr .lab .ph{font-size:13px;color:var(--ink);line-height:1.4}
+.jr .lab .gl{font-size:11px;color:var(--muted);margin-top:2px}
+.st{position:relative;height:74px;text-align:center}
+.st::before,.st::after{content:"";position:absolute;top:22px;height:0;border-top:3px solid var(--signal);opacity:.9}
+.st::before{left:0;right:50%}.st::after{left:50%;right:0}
+.st.in-none::before,.st.out-none::after{display:none}
+.st.in-lost::before,.st.out-lost::after{border-top:2px dashed var(--lost);opacity:.8}
+.st.in-grey::before,.st.out-grey::after{border-top:2px dashed var(--line);opacity:1}
+.st .node{position:relative;z-index:1;display:inline-block;margin-top:14px;width:16px;height:16px;line-height:16px}
+.st .node.dot{width:14px;height:14px;border-radius:50%;background:var(--signal);margin-top:16px;box-shadow:0 0 0 3px var(--surface)}
+.st .node.x{color:var(--lost);font-weight:700;font-size:16px;background:var(--surface);line-height:18px}
+.st .node.sq{width:13px;height:13px;border-radius:3px;background:var(--signal);margin-top:17px;box-shadow:0 0 0 3px var(--surface)}
+.st .node.sqo{width:13px;height:13px;border-radius:3px;border:1.5px solid var(--muted);margin-top:17px;background:var(--surface)}
+.st .node.sqd{width:13px;height:13px;border-radius:3px;border:1.5px dashed var(--signal);margin-top:17px;background:var(--surface)}
+.st .t{font-size:11.5px;color:var(--ink);margin-top:4px;line-height:1.3}
+.st .t.m{color:var(--muted)}
+.st .t .chip{margin:0;font-size:11.5px}
+.lg{display:inline-block;vertical-align:-2px;margin-right:6px}
+.lg.dot{width:12px;height:12px;border-radius:50%;background:var(--signal)}
+.lg.x{color:var(--lost);font-weight:700;font-style:normal}
+.lg.sq{width:11px;height:11px;border-radius:3px;background:var(--signal)}
+.lg.sqo{width:11px;height:11px;border-radius:3px;border:1.5px solid var(--muted)}
+.lg.sqd{width:11px;height:11px;border-radius:3px;border:1.5px dashed var(--signal)}
+@media(max-width:900px){.jr{grid-template-columns:1fr 1fr 1fr 1fr}.jr .lab{grid-column:1/-1;padding-bottom:0}}
 .lane.private .jcue{fill:var(--muted)}
 .none.unread{color:var(--fault)}
 /* lanes */
@@ -117,23 +152,21 @@ mark.cue{background:transparent;color:inherit;text-decoration:underline;text-dec
 <p class="lede">The first version of the study, without the toolkit. Each line a person said was coded into at most three keys from a list of fifteen, and only those keys reached the builder. Two things were lost on the way: the words, and then the needs.</p>
 <div class="controls"><label for="path">Path</label><select id="path"></select><label for="scen">Scenario</label><select id="scen"></select><label for="pair">Run</label><select id="pair"></select></div>
 <div id="found" class="found"></div>
-<h2>1 · The person's <b>words</b> → a need <span style="font-weight:400">· which words in a line pointed to which need</span></h2>
-<div id="needs" class="needs"></div>
-<p class="board-note">Underlined words are the cues in the line that point to the need. They are shown to make the need traceable; the coding itself read the whole sentence, and anything in it without a matching key had nowhere to go.</p>
-<h2>2 · <b>Words</b> → keys <span style="font-weight:400">· what each line said, and what survived the coding</span></h2>
+<h2>1 · Each thing a person said → what became of it <span style="font-weight:400">· the same words, step by step</span></h2>
+<div id="journey" class="journey"></div>
+<div class="legend">
+<span><i class="lg dot"></i>carried to the next step</span>
+<span><i class="lg x">✗</i>lost here</span>
+<span><i class="lg sq"></i>in the built crossing (a switch position)</span>
+<span><i class="lg sqo"></i>no switch for it · nothing could be built</span>
+<span><i class="lg sqd"></i>there by default, not because of the words</span>
+</div>
+<p class="board-note">Rows are phrases from the lines below. For this run they were picked by hand from the transcript; for other runs only the phrases that matched a key are shown.</p>
+<h2>2 · The <b>lines</b> in full <span style="font-weight:400">· what each line said, and what survived the coding</span></h2>
 <div id="said" class="said"></div>
 <h2>3 · <b>Keys</b> = switch positions <span style="font-weight:400">· the builder's eight switches, and the name each position gets</span></h2>
 <div id="board" class="board"></div>
 <p class="board-note">The 15 keys are not categories of need: each one is the name of a switch position. Hearing a key means flipping that switch; the crossing "has" a key when its switch sits there. <b style="color:var(--ink)">minimal</b> = every switch at its first position. <b style="color:var(--ink)">water</b> / <b style="color:var(--ink)">rock</b> describe the ground, not the bridge. The filled dot is where this run's crossing ended.</p>
-<h2>4 · <b>Needs</b> → crossing <span style="font-weight:400">· where each coded need went, grouped by switch</span></h2>
-<div id="lanes"></div>
-<div class="legend">
-<span><svg width="26" height="10"><line x1="2" y1="5" x2="24" y2="5" stroke="#9fd" stroke-width="3" stroke-linecap="round"/></svg>carried on</span>
-<span><svg width="26" height="10"><line x1="2" y1="5" x2="18" y2="5" stroke="#DF6C5E" stroke-width="1.6" stroke-dasharray="2 3"/><text x="20" y="9" fill="#DF6C5E" font-size="11" font-family="IBM Plex Mono,monospace">✗</text></svg>lost at this step</span>
-<span><svg width="26" height="12"><circle cx="13" cy="6" r="5" fill="none" stroke="#9fd" stroke-dasharray="3 2"/></svg>appeared with no source</span>
-<span><svg width="26" height="12"><circle cx="13" cy="6" r="5" fill="none" stroke="#8DA096" stroke-width="1.5"/></svg>said privately, not sent to the AI (path setting)</span>
-<span><svg width="26" height="12"><rect x="8" y="1" width="11" height="11" rx="3" fill="#9fd"/></svg>in the crossing</span>
-</div>
 <div id="all" class="all"></div>
 <p class="foot">Keys are the fifteen coded labels of the first study, not quotations. Hover a mark for its line. <a href="journey.html">Need journeys, animated ↗</a> · <a href="stream.html">Bubble stream ↗</a> · <a href="../how-we-compare.html">How the comparison works ↗</a></p>
 </div>
@@ -167,6 +200,48 @@ function cueRanges(text,keys){const out=[];keys.forEach(k=>{(CUES[k]||[]).forEac
 function cuesOf(text,k){const seen=new Set();return cueRanges(text,[k]).map(r=>r.w.toLowerCase()).filter(w=>!seen.has(w)&&seen.add(w));}
 function markup(text,keys){const rs=cueRanges(text,keys);let o='',p=0;rs.forEach(r=>{o+=hx(text.slice(p,r.a))+`<mark class="cue" style="--h:${HUE[r.k]}">${hx(text.slice(r.a,r.b))}</mark>`;p=r.b;});return o+hx(text.slice(p));}
 function needSources(m){const src=new Map();m.lines.forEach(l=>l.meant.forEach(k=>{if(!src.has(k))src.set(k,{role:l.role,lines:[],cues:[],priv:true});const e=src.get(k);e.lines.push(l.n);if(l.taken!=null)e.priv=false;cuesOf(l.text,k).forEach(w=>{if(!e.cues.includes(w))e.cues.push(w);});}));return src;}
+const PHRASES={'all/pairs/0':[
+ {line:1,phrase:'keeps us from slipping during rain',gloss:'footing when wet',key:'grip'},
+ {line:1,phrase:'no matter the weather',gloss:'use in any weather',key:'sheltered'},
+ {line:1,phrase:'my kids',gloss:'children will cross',key:null},
+ {line:2,phrase:'something at the sides I can put a hand on',gloss:'an edge to hold',key:'guarded'},
+ {line:2,phrase:'flat is a start, I’ll take flat',gloss:'keep it level',key:'low'},
+ {line:2,phrase:'high enough that it catches me and not just my knees',gloss:'rail height',key:null},
+ {line:2,phrase:'a dog pulling ahead of me',gloss:'a dog on a lead',key:null},
+ {line:3,phrase:'slippery without something to grip onto',gloss:'footing, again',key:'grip'},
+ {line:4,phrase:'grip without cutting',gloss:'rough, but not sharp',key:null},
+ {line:4,phrase:'my dog’s got bare pads, not boots',gloss:'paws on the surface',key:null},
+ {line:4,phrase:'rough like wet stone rather than rough like a rasp',gloss:'texture, not a degree of roughness',key:null},
+ {line:4,phrase:'your kids’ hands are fine on it when they fall',gloss:'hands on the surface',key:null},
+]};
+function phrasesFor(s,m){
+ const cur=PHRASES[`${s.path}/${s.scenario}/${s.pair}`];if(cur)return cur;
+ const out=[];m.lines.forEach(l=>l.meant.forEach(k=>{const c=cuesOf(l.text,k);out.push({line:l.n,phrase:c.length?c.join(' · '):'(the whole line)',gloss:FEATLABEL[k],key:k});}));return out;
+}
+function renderJourney(m,s){
+ const node=(cls,txt,m2)=>`<span class="node ${cls}">${cls==='x'?'✗':''}</span><div class="t${m2?' m':''}">${txt}</div>`;
+ const chip=k=>`<span class="chip" style="--h:${HUE[k]}"><i></i>${k}</span>`;
+ let last=0;
+ const rows=phrasesFor(s,m).map(p=>{
+  const l=m.lines[p.line-1]||{};const nl=p.line!==last;last=p.line;
+  const coded=p.key&&(l.meant||[]).includes(p.key);const kept=coded&&(l.taken||[]).includes(p.key);
+  const built=p.key&&m.built.includes(p.key);const ax=p.key?AXIS_OF[p.key]:null;
+  const c1=node('dot',l.taken==null?'said · private':'said',true);
+  const c2=coded?node('dot',chip(p.key)):node('x','no key for it',true);
+  const c3=!coded?node('x','nothing to pass',true):kept?node('dot','kept · '+chip(p.key)):node('x','not kept',true);
+  let c4;
+  if(!p.key)c4=node('sqo','no switch · no parameter',true);
+  else if(kept&&built)c4=node('sq',`${ax.axis} → ${ax.pos}`);
+  else if(built)c4=node('sqd',`${ax.axis} → ${ax.pos}<br>there by default`,true);
+  else c4=node('sqo',`${ax.axis} stays ${(AXES.find(a=>a.name===ax.axis)||{opts:[[]]}).opts[0][0]}`,true);
+  const seg23=coded?(kept?'':' out-lost'):' out-lost';
+  return `<div class="jr${nl?' newline':''}"><div class="lab"><div class="who ${l.role==='A'?'a':'b'}">${name(l.role)}<span>line ${p.line}</span></div><div class="ph">“${hx(p.phrase)}”</div><div class="gl">${hx(p.gloss)}</div></div>
+  <div class="st in-none${coded?'':' out-lost'}">${c1}</div>
+  <div class="st${coded?'':' in-lost'}${seg23}">${c2}</div>
+  <div class="st${coded&&kept?'':' in-lost'}${kept&&built?'':(built?' out-grey':' out-grey')}">${c3}</div>
+  <div class="st${kept&&built?'':' in-grey'} out-none">${c4}</div></div>`;}).join('');
+ $('#journey').innerHTML=`<div class="jr h"><div>Phrase</div><div><b>Said</b>the same words</div><div><b>Read</b>as a key, or not</div><div><b>Passed on</b>what the builder got</div><div><b>Built</b>the switch position</div></div>${rows}`;
+}
 function renderNeeds(m){
  const src=needSources(m);
  const rows=[...src.entries()].map(([k,e])=>`<div class="nrow${e.priv?' priv':''}"><div class="src"><span class="who ${e.role==='A'?'a':'b'}">${name(e.role)}<span> · line ${e.lines.join(', ')}${e.priv?' · private':''}</span></span>${e.cues.length?e.cues.map(w=>`<span class="q">“${hx(w)}”</span>`).join(''):'<span class="q none">no single cue word · read from the whole line</span>'}</div><div class="arr">→</div><div class="need"><span class="chip" style="--h:${HUE[k]}"><i></i>${k}</span><span class="gloss">${hx(FEATLABEL[k])}</span><span class="ax">${hx((AXIS_OF[k]||{}).axis||'')} · ${hx((AXIS_OF[k]||{}).pos||'')}</span></div></div>`).join('');
@@ -250,7 +325,7 @@ data.paths.forEach(p=>pathSel.add(new Option(p[2]||p[1]||p[0],p[0])));
 Object.entries(data.scenarios).forEach(([id,v])=>scenSel.add(new Option(v[0]||id,id)));
 function fillPairs(){const ps=data.sessions.filter(s=>s.path===pathSel.value&&s.scenario===scenSel.value).map(s=>s.pair).sort((a,b)=>a-b);const keep=pairSel.value;pairSel.innerHTML='';ps.forEach(p=>pairSel.add(new Option('Run '+(p+1),p)));if(ps.map(String).includes(keep))pairSel.value=keep;}
 function fromHash(){const h=new URLSearchParams(location.hash.slice(1));if(h.get('path'))pathSel.value=h.get('path');if(h.get('scen'))scenSel.value=h.get('scen');fillPairs();if(h.get('pair'))pairSel.value=h.get('pair');}
-function render(){const s=data.sessions.find(s=>s.path===pathSel.value&&s.scenario===scenSel.value&&String(s.pair)===pairSel.value)||data.sessions[0];const m=model(s);renderFound(m);renderNeeds(m);renderSaid(m);renderBoard(m,s.outcome.shape||{});renderLanes(m);history.replaceState(null,'',`#path=${s.path}&scen=${s.scenario}&pair=${s.pair}`);}
+function render(){const s=data.sessions.find(s=>s.path===pathSel.value&&s.scenario===scenSel.value&&String(s.pair)===pairSel.value)||data.sessions[0];const m=model(s);renderFound(m);renderJourney(m,s);renderSaid(m);renderBoard(m,s.outcome.shape||{});history.replaceState(null,'',`#path=${s.path}&scen=${s.scenario}&pair=${s.pair}`);}
 pathSel.onchange=scenSel.onchange=()=>{fillPairs();render();};pairSel.onchange=render;
 addEventListener('hashchange',()=>{fromHash();render();});
 fromHash();render();renderAll(data.sessions);
