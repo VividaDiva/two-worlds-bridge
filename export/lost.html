@@ -61,7 +61,7 @@ mark.cue{background:transparent;color:inherit;text-decoration:underline;text-dec
 .jcue{font-family:var(--mono);font-size:11px;fill:var(--ink)}
 :root{--lost:#E3B341}
 .journey{border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden}
-.jr{display:grid;grid-template-columns:300px repeat(4,1fr);align-items:center;border-top:1px solid var(--line-soft)}
+.jr{display:grid;grid-template-columns:300px repeat(3,1fr);align-items:center;border-top:1px solid var(--line-soft)}
 .jr.h{border-top:0;background:var(--panel)}
 .jr.h>div{padding:10px 14px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 .jr.h>div b{display:block;font-size:12px;letter-spacing:.02em;text-transform:none;color:var(--ink);margin-bottom:2px}
@@ -93,7 +93,7 @@ mark.cue{background:transparent;color:inherit;text-decoration:underline;text-dec
 .lg.sq{width:11px;height:11px;border-radius:3px;background:var(--signal)}
 .lg.sqo{width:11px;height:11px;border-radius:3px;border:1.5px solid var(--muted)}
 .lg.sqd{width:11px;height:11px;border-radius:3px;border:1.5px dashed var(--signal)}
-@media(max-width:900px){.jr{grid-template-columns:1fr 1fr 1fr 1fr}.jr .lab{grid-column:1/-1;padding-bottom:0}}
+@media(max-width:900px){.jr{grid-template-columns:1fr 1fr 1fr}.jr .lab{grid-column:1/-1;padding-bottom:0}}
 .lane.private .jcue{fill:var(--muted)}
 .none.unread{color:var(--fault)}
 /* lanes */
@@ -156,7 +156,7 @@ mark.cue{background:transparent;color:inherit;text-decoration:underline;text-dec
 <div id="journey" class="journey"></div>
 <div class="legend">
 <span><i class="lg dot"></i>carried to the next step</span>
-<span><i class="lg x">✗</i>lost here</span>
+<span><i class="lg x">✗</i>lost here: the builder did not read it as a key</span>
 <span><i class="lg sq"></i>in the built crossing (a switch position)</span>
 <span><i class="lg sqo"></i>no switch for it · nothing could be built</span>
 <span><i class="lg sqd"></i>there by default, not because of the words</span>
@@ -226,9 +226,8 @@ function renderJourney(m,s){
   const l=m.lines[p.line-1]||{};const nl=p.line!==last;last=p.line;
   const coded=p.key&&(l.meant||[]).includes(p.key);const kept=coded&&(l.taken||[]).includes(p.key);
   const built=p.key&&m.built.includes(p.key);const ax=p.key?AXIS_OF[p.key]:null;
-  const c1=node('dot',l.taken==null?'said · private':'said',true);
-  const c2=coded?node('dot',chip(p.key)):node('x','no key for it',true);
-  const c3=!coded?node('x','nothing to pass',true):kept?node('dot','kept · '+chip(p.key)):node('x','not kept',true);
+  const c1=node('dot',l.taken==null?'said · private':coded?'meant · '+chip(p.key):'said',true);
+  const c3=!coded?node('x','no key for it',true):kept?node('dot',chip(p.key)):node('x','not read as a key',true);
   let c4;
   if(!p.key)c4=node('sqo','no switch · no parameter',true);
   else if(kept&&built)c4=node('sq',`${ax.axis} → ${ax.pos}`);
@@ -236,11 +235,10 @@ function renderJourney(m,s){
   else c4=node('sqo',`${ax.axis} stays ${(AXES.find(a=>a.name===ax.axis)||{opts:[[]]}).opts[0][0]}`,true);
   const seg23=coded?(kept?'':' out-lost'):' out-lost';
   return `<div class="jr${nl?' newline':''}"><div class="lab"><div class="who ${l.role==='A'?'a':'b'}">${name(l.role)}<span>line ${p.line}</span></div><div class="ph">“${hx(p.phrase)}”</div><div class="gl">${hx(p.gloss)}</div></div>
-  <div class="st in-none${coded?'':' out-lost'}">${c1}</div>
-  <div class="st${coded?'':' in-lost'}${seg23}">${c2}</div>
-  <div class="st${coded&&kept?'':' in-lost'}${kept&&built?'':(built?' out-grey':' out-grey')}">${c3}</div>
+  <div class="st in-none${kept?'':' out-lost'}">${c1}</div>
+  <div class="st${kept?'':' in-lost'}${kept&&built?'':' out-grey'}">${c3}</div>
   <div class="st${kept&&built?'':' in-grey'} out-none">${c4}</div></div>`;}).join('');
- $('#journey').innerHTML=`<div class="jr h"><div>Phrase</div><div><b>Said</b>the same words</div><div><b>Read</b>as a key, or not</div><div><b>Passed on</b>what the builder got</div><div><b>Built</b>the switch position</div></div>${rows}`;
+ $('#journey').innerHTML=`<div class="jr h"><div>Phrase</div><div><b>Said</b>and what the person meant by it</div><div><b>Read</b>what the builder made of it</div><div><b>Built</b>the switch position</div></div>${rows}`;
 }
 function renderNeeds(m){
  const src=needSources(m);
