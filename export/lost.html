@@ -87,6 +87,18 @@ mark.cue{background:transparent;color:inherit;text-decoration:underline;text-dec
 .st .t{font-size:11.5px;color:var(--ink);margin-top:4px;line-height:1.3}
 .st .t.m{color:var(--muted)}
 .st .t .chip{margin:0;font-size:11.5px}
+.built{display:grid;grid-template-columns:300px 1fr 380px;align-items:center;border-top:2px solid var(--line);background:var(--panel)}
+.built .lab{padding:16px 14px 16px 18px}
+.built .lab .who{font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--signal);margin-bottom:4px}
+.built .lab .ph{font-size:13px;color:var(--ink);line-height:1.4}
+.built .lab .gl{font-size:11px;color:var(--muted);margin-top:2px}
+.built .sum{padding:14px;font-size:11.5px;color:var(--muted);columns:2;column-gap:18px}
+.built .sum div{break-inside:avoid;padding:2px 0}
+.built .sum b{color:var(--ink);font-weight:600}
+.built .sum .on{color:var(--ink)}
+.built .pic{padding:12px 14px 12px 0}
+.built canvas{width:100%;display:block;border-radius:8px}
+@media(max-width:900px){.built{grid-template-columns:1fr}.built .pic{padding:0 14px 14px}}
 .lg{display:inline-block;vertical-align:-2px;margin-right:6px}
 .lg.dot{width:12px;height:12px;border-radius:50%;background:var(--signal)}
 .lg.x{color:var(--lost);font-weight:700;font-style:normal}
@@ -170,6 +182,7 @@ mark.cue{background:transparent;color:inherit;text-decoration:underline;text-dec
 <div id="all" class="all"></div>
 <p class="foot">Keys are the fifteen coded labels of the first study, not quotations. Hover a mark for its line. <a href="journey.html">Need journeys, animated ↗</a> · <a href="stream.html">Bubble stream ↗</a> · <a href="../how-we-compare.html">How the comparison works ↗</a></p>
 </div>
+<script src="../agents/usertest/draw.js"></script>
 <script type="module">
 import {FEATLABEL,HUE} from './flow-journey.mjs?v=3';
 const $=s=>document.querySelector(s);
@@ -241,7 +254,10 @@ function renderJourney(m,s){
   <div class="st in-none${kept?'':' out-lost'}">${c1}</div>
   <div class="st${kept?'':' in-lost'}${kept&&built?'':' out-grey'}">${c3}</div>
   <div class="st${kept&&built?'':' in-grey'} out-none">${c4}</div></div>`;}).join('');
- $('#journey').innerHTML=`<div class="jr h"><div>Phrase</div><div><b>Said</b>and what the person meant by it</div><div><b>Read</b>what the builder made of it</div><div><b>Built</b>the switch position</div></div>${rows}`;
+ const shape=s.outcome.shape||{},bare={level:'at',hand:'none',middle:'none',width:'one',bracing:'none',surface:'bare',ends:'rested',cover:'open'};
+ const final=`<div class="built"><div class="lab"><div class="who">What was built</div><div class="ph">${hx(s.outcome.name||'')}</div><div class="gl">${hx(s.outcome.ground||'')}</div></div><div class="sum">${AXES.map(a=>`<div${shape[a.id]!==bare[a.id]?' class="on"':''}><b>${a.name}</b> · ${hx((DONE[a.id]||{})[shape[a.id]]||shape[a.id]||'')}${shape[a.id]!==bare[a.id]?'':' <span style="opacity:.6">(default)</span>'}</div>`).join('')}</div><div class="pic"><canvas id="bridge" aria-label="The crossing that was built"></canvas></div></div>`;
+ $('#journey').innerHTML=`<div class="jr h"><div>Phrase</div><div><b>Said</b>and what the person meant by it</div><div><b>Read</b>what the builder made of it</div><div><b>Built</b>the switch position</div></div>${rows}${final}`;
+ if(window.drawCrossing)requestAnimationFrame(()=>drawCrossing($('#bridge'),shape,s.outcome.world||{},[]));
 }
 function renderNeeds(m){
  const src=needSources(m);
