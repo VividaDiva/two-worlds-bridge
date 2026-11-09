@@ -119,9 +119,16 @@ $('back').href=assetURL(`/j/${encodeURIComponent(room)}/both`);
 $('context').textContent=`${h.argument==='refs'?'Two references':h.argument==='pairs'?'Two lives':h.argument||'Bridge study'} · ${source.agent==='toolkit'?'Toolkit':'Control'} · Session ${room}`;
 }
 try{h=await fetchState(room);setSource();}catch(e){status(e.message);connectionError(e.message);return;}
-try{const us=await apiFetch('/api/users').then(r=>r.json());const arr=Array.isArray(us)?us:us.users||us.profiles||[];pair=arr.find(u=>u.sessions?.some(s=>s.room===room));if(pair?.participants)$('role').options[1].textContent=`Role ${pair.participants[1]}`;}catch{}
+try{const us=await apiFetch('/api/users').then(r=>r.json());const arr=Array.isArray(us)?us:us.users||us.profiles||[];pair=arr.find(u=>u.sessions?.some(s=>s.room===room));if(pair?.roleParticipants){$('role').options[0].textContent='Role 1';$('role').options[1].textContent='Role 2';}else if(pair?.participants)$('role').options[1].textContent=`Role ${pair.participants[1]}`;}catch{}
+// Participant numbers identify people; A/B and Role 1/2 identify their seats in this conversation.
+function feedbackIdentity(){
+ const participantLabel=$('role').selectedOptions[0].textContent,participantId=pair?.roleParticipants?.[$('role').value];
+ return Number.isInteger(participantId)&&participantId>0
+  ?{participantId,studyProfileId:pair.id,participantLabel:`Participant ${participantId} · ${participantLabel}`}
+  :{participantLabel};
+}
 if(resumeReceipt&&!pair?.sessions?.some(s=>s.room===resumeRoom)){connectionError('This continuation link does not belong to this study.');return;}
-if(participant){document.title=$('role').selectedOptions[0].textContent+' · Bridge feedback';$('participant-badge').hidden=false;$('participant-badge').textContent=$('role').selectedOptions[0].textContent;}
+if(participant){const {participantLabel}=feedbackIdentity();document.title=participantLabel+' · Bridge feedback';$('participant-badge').hidden=false;$('participant-badge').textContent=participantLabel;}
 function feedbackPaths(sessions){const seen=new Set();const replaySources=new Set(sessions.filter(s=>s.agent==='toolkit'&&!s.historical).map(s=>s.replay?.sourceRoom).filter(Boolean));return sessions.filter(s=>['keys','toolkit'].includes(s.agent)&&(s.agent==='keys'||!s.historical)&&s.hasContent&&s.argument==='pairs').sort((a,b)=>Number(replaySources.has(b.room))-Number(replaySources.has(a.room))).filter(s=>{const key=s.agent+':'+s.argument+':'+s.route;if(seen.has(key))return false;seen.add(key);return true;}).sort((a,b)=>a.agent.localeCompare(b.agent)||a.argument.localeCompare(b.argument)||routeOrder.indexOf(a.route)-routeOrder.indexOf(b.route));}
 function completedSummary(r){return r.role===$('role').value&&r.complete===true&&(r.respondentId===respondentId||ownReceipts.has(r.id));}
 function renderPaths(){
@@ -190,7 +197,7 @@ function showConversation(){
  if(!context.lines.length)$('feedback-chat').textContent='No conversation recorded for this result.';
  if(variant==='control')$('chat-help').textContent='Original participant messages for the Control comparison. Toolkit AI replies are excluded.';
 }
-function fresh(){return {version:2,respondentId,ratingScale:{id:'bridge-satisfaction-5-v1',scores:Object.fromEntries(bridgeRatingKeys.map((key,i)=>[key,i+1])),labels:Object.fromEntries(bridgeRatingKeys.map(key=>[key,labels[key]])),unrated:'Cannot judge / not rated'},bridgePalette:{...bridgeColors},rebuildBasis:'original-independent-of-ratings',palette:{...colors},ratingLabels:{...labels},coordinateSpace:{width:1200,height:700},role:$('role').value,participantLabel:$('role').selectedOptions[0].textContent,source:clone(source),ratings:{},added:[],strokes:[],annotations:[],overallScores:[null,null,null],overallScoreScale:{min:-3,max:3,neutral:0,unknown:'cannot-judge',targets:['original bridge','rebuilt bridge','sketch']},notes:['','',''],visited:[true,false,false]};}
+function fresh(){return {version:2,respondentId,ratingScale:{id:'bridge-satisfaction-5-v1',scores:Object.fromEntries(bridgeRatingKeys.map((key,i)=>[key,i+1])),labels:Object.fromEntries(bridgeRatingKeys.map(key=>[key,labels[key]])),unrated:'Cannot judge / not rated'},bridgePalette:{...bridgeColors},rebuildBasis:'original-independent-of-ratings',palette:{...colors},ratingLabels:{...labels},coordinateSpace:{width:1200,height:700},role:$('role').value,...feedbackIdentity(),source:clone(source),ratings:{},added:[],strokes:[],annotations:[],overallScores:[null,null,null],overallScoreScale:{min:-3,max:3,neutral:0,unknown:'cannot-judge',targets:['original bridge','rebuilt bridge','sketch']},notes:['','',''],visited:[true,false,false]};}
 let editRevision=0;
 let submissionAttempt=null;
 let confirmedCurrent=false,showingSaved=false,hasReceipt=false;
