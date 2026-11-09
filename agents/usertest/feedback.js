@@ -129,7 +129,7 @@ function feedbackIdentity(){
 }
 if(resumeReceipt&&!pair?.sessions?.some(s=>s.room===resumeRoom)){connectionError('This continuation link does not belong to this study.');return;}
 if(participant){const {participantLabel}=feedbackIdentity();document.title=participantLabel+' · Bridge feedback';$('participant-badge').hidden=false;$('participant-badge').textContent=participantLabel;}
-function feedbackPaths(sessions){const seen=new Set();const replaySources=new Set(sessions.filter(s=>s.agent==='toolkit'&&!s.historical).map(s=>s.replay?.sourceRoom).filter(Boolean));return sessions.filter(s=>['keys','toolkit'].includes(s.agent)&&(s.agent==='keys'||!s.historical)&&s.hasContent&&s.feedbackReady!==false&&s.argument==='pairs').sort((a,b)=>Number(replaySources.has(b.room))-Number(replaySources.has(a.room))).filter(s=>{const key=s.agent+':'+s.argument+':'+s.route;if(seen.has(key))return false;seen.add(key);return true;}).sort((a,b)=>a.agent.localeCompare(b.agent)||a.argument.localeCompare(b.argument)||routeOrder.indexOf(a.route)-routeOrder.indexOf(b.route));}
+function feedbackPaths(sessions,profile=null,role=null){const configured=profile?.feedbackExcludedRoutesByRole?.[role];const excluded=new Set(Array.isArray(configured)?configured:[]);const seen=new Set();const replaySources=new Set(sessions.filter(s=>s.agent==='toolkit'&&!s.historical).map(s=>s.replay?.sourceRoom).filter(Boolean));return sessions.filter(s=>['keys','toolkit'].includes(s.agent)&&(s.agent==='keys'||!s.historical)&&s.hasContent&&s.feedbackReady!==false&&!excluded.has(s.route)&&s.argument==='pairs').sort((a,b)=>Number(replaySources.has(b.room))-Number(replaySources.has(a.room))).filter(s=>{const key=s.agent+':'+s.argument+':'+s.route;if(seen.has(key))return false;seen.add(key);return true;}).sort((a,b)=>a.agent.localeCompare(b.agent)||a.argument.localeCompare(b.argument)||routeOrder.indexOf(a.route)-routeOrder.indexOf(b.route));}
 function completedSummary(r){return r.role===$('role').value&&r.complete===true&&(r.respondentId===respondentId||ownReceipts.has(r.id));}
 function renderPaths(){
  if(!pathItems.length)return;
@@ -167,13 +167,13 @@ $('continue-path').onclick=()=>{if(pathProgress.get(room)!==true||pendingRooms.h
 $('condition-switch').onclick=e=>{const b=e.target.closest('[data-condition]');if(!b)return;const options=pathItems.filter(p=>p.agent===b.dataset.condition);const target=options.find(p=>p.argument===h.argument&&p.route===h.route)||options.find(p=>pathProgress.get(p.room)!==true)||options[0];if(target)switchPath(target.room);};
 // Two references is paused for feedback; preserve its sessions and submissions.
 if(h.argument==='refs'){
- const available=feedbackPaths(pair?.sessions||[]),agent=source.agent==='toolkit'?'toolkit':'keys';
+ const available=feedbackPaths(pair?.sessions||[],pair,$('role').value),agent=source.agent==='toolkit'?'toolkit':'keys';
  const target=available.find(p=>p.agent===agent&&p.route===h.route)||available.find(p=>p.agent===agent)||available[0];
  if(!target){$('context').textContent='Two references feedback is paused.';$('receipt').textContent='Please ask the facilitator for a Two lives feedback link. Existing records are preserved.';document.querySelector('nav').hidden=true;return;}
  try{const next=await fetchState(target.room);room=target.room;variant=null;h=next;setSource();const url=new URL(location.href);url.searchParams.set('room',room);url.searchParams.delete('variant');history.replaceState(null,'',url);}
  catch(e){connectionError(e.message);return;}
 }
-if(participant&&!variant&&pair){pathItems=feedbackPaths(pair.sessions||[]);renderPaths();}
+if(participant&&!variant&&pair){pathItems=feedbackPaths(pair.sessions||[],pair,$('role').value);renderPaths();}
 function showConversation(){
  const context=draft.source.conversation||source.conversation;
  $('chat-help').textContent='Original transcript; includes private messages.';
