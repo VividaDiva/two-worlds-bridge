@@ -408,7 +408,7 @@ export async function propose({ line, took, before, after, props, changed, alt, 
 // could not hold. Drawn by hand, on paper, because a rendering would claim a
 // precision the words never had.
 const SKETCH_MODEL = process.env.SKETCH_MODEL || "gemini-2.5-flash-image";
-export async function sketch({ title, ground, lines, references = [], outcome = "" }) {
+export async function sketch({ title, ground, lines, references = [], outcome = "", process = "keys" }) {
   const said = lines.map(l => `${l.who}: "${l.text}"`).join("\n");
   const prompt = references.length ? `Draw one graphite pencil line sketch on plain white paper of a bridge from the submitted reference images and recorded AI outcome. No text or labels. Use the outcome when references disagree. This is a visualization of the saved result, not a new design decision. Saved outcome: ${outcome || "Not recorded"}.` : [
     `A quick pencil sketch on paper, drawn by hand, of a bridge — as described only by what two people said.`,
@@ -417,6 +417,7 @@ export async function sketch({ title, ground, lines, references = [], outcome = 
     ground ? `The ground between the banks: ${ground}.` : `Nothing was said about what is under it.`,
     `The case: ${title}.`,
     ``,
+    ...(process === "toolkit" ? [`Visualize the Toolkit builder’s recorded decisions using the following interpretation and outcome. Keep unaccepted additions and unresolved needs unconfirmed; do not invent resolved agreement.`, outcome, ``] : []),
     `What they said, in order:`,
     said || "(nothing yet)",
   ].join("\n");
@@ -567,10 +568,28 @@ Set clarificationNeeded=true when the speaker leaves alternatives unresolved tha
   };
 }
 
+// ── named parts ──────────────────────────────────────────────────────────
+// What the kit cannot make is not translated into a part the kit has. It is
+// named in the speaker's words and placed with one of seven drawing primitives
+// at one of a few positions. The noun is theirs; only the placing is ours.
+export const PRIMITIVES = ["band", "deck", "post", "edge", "wash", "sign", "end"];
+export const POSITIONS = ["beside", "above", "below", "along", "between", "ends", "overhead", "onwalk"];
+export const PRIMITIVE_GLOSS = {
+  band:  "a second strip running the length of the crossing — a lane, a footway, a dog path (position: beside)",
+  deck:  "another level of walk — an upper or a lower deck (position: above or below)",
+  post:  "upright things standing on it — lights, signs on poles, posts (position: along the edge, or at the ends)",
+  edge:  "a continuous line along the walk — a wall, a barrier, a kerb, a high rail (position: along the near edge, or between the walk and a band)",
+  wash:  "the surface of the walk itself — cement, grass, paint, a sealed surface (position: onwalk)",
+  sign:  "a plate with words: an operating rule — hours, no trucks, no cars (position: ends)",
+  end:   "something at the two ends — a gate, a ramp, steps (position: ends)",
+};
+
 const DECIDE_JSON = { type:"object", properties:{
   decisions:{ type:"array", items:{ type:"object", properties:{
-    id:{type:"string"}, response:{type:"string"}, what:{type:"string"}, uncertainty:{type:"string"} },
-    required:["id","response","what","uncertainty"] } },
+    id:{type:"string"}, response:{type:"string"}, what:{type:"string"}, uncertainty:{type:"string"},
+    // A named part: the thing in the speaker's own words, and the one way the drawing can place it.
+    label:{type:"string"}, primitive:{type:"string", enum:["", ...PRIMITIVES]}, position:{type:"string", enum:["", ...POSITIONS]} },
+    required:["id","response","what","uncertainty","label","primitive","position"] } },
   conflicts:{ type:"array", items:{ type:"object", properties:{ a:{type:"string"}, b:{type:"string"}, note:{type:"string"} }, required:["a","b","note"] } },
   checks:{ type:"object", properties:{ nothingLost:{type:"boolean"}, inferencesLabelled:{type:"boolean"}, noFalseConflicts:{type:"boolean"}, defaultsChecked:{type:"boolean"}, buildNotConsent:{type:"boolean"}, kindsDistinct:{type:"boolean"} },
     required:["nothingLost","inferencesLabelled","noFalseConflicts","defaultsChecked","buildNotConsent","kindsDistinct"] } },
@@ -602,6 +621,19 @@ const DECIDE = [
   `Never use the word "user".`,
 ].join("\n");
 
+// With the toolkit on, "new" means "name it": the thing stays in their words and
+// is placed, not translated. Rules are placed too — as a sign.
+const NAME_IT = [
+  `- "new": the kit has no part for it, but it can be placed on the drawing. Then name it: "label" is the`,
+  `  thing in the speaker's own words — a short noun phrase lifted from their quote ("dog passage", "lights`,
+  `  for night walks", "wall between cars and dogs"), never your paraphrase; "primitive" is the one way the`,
+  `  drawing can show it, and "position" where:`,
+  ...Object.entries(PRIMITIVE_GLOSS).map(([k, v]) => `    ${k}: ${v}`),
+  `  Several lanes or paths side by side are one "band" each. A two-level crossing is a "deck" above or`,
+  `  below. It is drawn at once as a proposal, in their words, dashed; its owner confirms the position.`,
+  `  For "rule", also give label (the rule in their words), primitive "sign" and position "ends".`,
+].join("\n");
+
 export async function wallDecide({ wall, standing, props, pureToolkit = false }) {
   const list = ks => ks.length ? ks.map(f => FEATURES[f]).join("; ") : "nothing";
   const cards = wall.cards.filter(c => !c.withdrawn);
@@ -615,14 +647,23 @@ export async function wallDecide({ wall, standing, props, pureToolkit = false })
     ...(pureToolkit ? [`Current canonical needs and revision history (pending changes are NOT accepted): ${JSON.stringify(cards.map(({keys,rulesOut,versions,...c})=>c))}`, `Clarification status: ${JSON.stringify(wall.question || null)}. Unanswered means uncertain, not consent.`] : []),
     `Write the decision record.`,
   ].join("\n");
-  const instruction = pureToolkit ? DECIDE.replace("a part you can make delivers it — the card's keys name what.", "a described part in the available workshop could address this need; cite the part and preserve uncertainty.") + "\nAvailable workshop:\n" + kitForChoosing().map(k=>k.id + ": " + k.props).join("\n") : DECIDE;
+  const instruction = pureToolkit ? DECIDE
+      .replace("a part you can make delivers it — the card's keys name what.", "a described part in the available workshop could address this need; cite the part and preserve uncertainty.")
+      .replace(/- "new": a physical part[\s\S]*?Both people must accept it before it counts\./, NAME_IT)
+      .replace(`- "none": neither a part, a rule nor a new part can answer it. Say so; it stays on the wall.`,
+               `- "none": only for what cannot be placed on a drawing at all — a quality (quiet, pretty, cheap), a purpose (for families), a wish about the far side of the river. Say so; it stays on the wall and is read back in words.`)
+      + "\nAvailable workshop:\n" + kitForChoosing().map(k=>k.id + ": " + k.props).join("\n")
+      + "\nGlosses, so the workshop is read in their terms: \"two abreast\" is wide enough for two people side by side or one car; \"takes loads and carts\" bears vehicles; \"something at the hand\" is a railing; \"a coarse surface\" is grip underfoot, not a smooth or sealed one."
+    : DECIDE;
   const out = await ask(instruction, user, DECIDE_JSON);
   const str = x => typeof x === "string" ? x.trim() : "";
   const ids = new Set(cards.map(c => c.id));
   return {
     decisions: (Array.isArray(out.decisions) ? out.decisions : []).map(d => ({
-      id: str(d.id), response: /rule/i.test(str(d.response)) ? "rule" : /new/i.test(str(d.response)) ? "new" : /none|^no/i.test(str(d.response)) ? "none" : "part",
-      what: str(d.what).slice(0, 140), uncertainty: str(d.uncertainty).slice(0, 140) })).filter(d => ids.has(d.id)),
+      id: str(d.id), response: /rule/i.test(str(d.response)) ? "rule" : /new|name|place/i.test(str(d.response)) ? "new" : /none|^no/i.test(str(d.response)) ? "none" : "part",
+      what: str(d.what).slice(0, 140), uncertainty: str(d.uncertainty).slice(0, 140),
+      label: str(d.label).slice(0, 60), primitive: PRIMITIVES.includes(str(d.primitive)) ? str(d.primitive) : "",
+      position: POSITIONS.includes(str(d.position)) ? str(d.position) : "" })).filter(d => ids.has(d.id)),
     conflicts: (Array.isArray(out.conflicts) ? out.conflicts : []).map(c => ({ a: str(c.a), b: str(c.b), note: str(c.note).slice(0, 140) })).filter(c => ids.has(c.a) && ids.has(c.b)),
     checks: out.checks && typeof out.checks === "object" ? {
       nothingLost: !!out.checks.nothingLost, inferencesLabelled: !!out.checks.inferencesLabelled,
@@ -660,6 +701,8 @@ const CHOOSE_T = kit => [
   ``,
   `What you can make, and what each one is actually like:`,
   ...kit.map(k => `  ${k.id} — ${k.props}`),
+  `In their terms: "two abreast" is wide enough for two people side by side or one car; "takes loads and`,
+  `carts" bears vehicles; "something at the hand" is a railing; "a coarse surface" is grip underfoot.`,
   ``,
   `Rules:`,
   `- Pick exactly one id from that list. Use the id exactly as written.`,
@@ -712,7 +755,7 @@ export async function readPictureToolkit(base64, media) {
   const out = await ask("Describe the visible crossing for a two-person design collaboration. Preserve distinctive features, relationships and uncertainties. Do not infer the owner's motives or emit feature keys. This is visual evidence, not confirmed needs.", {text:"Describe this reference image.",images:[base64],media}, {type:"object",properties:{description:{type:"string"}},required:["description"]});
   return {description:String(out.description || ""),saw:String(out.description || "")};
 }
-export async function toolkitReply({cards,record,before,after,change,question,relayTo}) {
-  const out = await ask("You are an AI builder collaborating with two people using a design toolkit. Explain your contribution from their stated needs and the decision record. Preserve whose words they are, distinguish hypotheses, and name unresolved needs. Do not invent tool use or claim acceptance. Do not output feature keys. If relaying, pass on the needs to the named person without claiming a build. Otherwise briefly state what changed, why, and what remains open. A checked explicit revision confirms the person’s requirement, not approval of the design: do not relabel that requirement as a hypothesis. When not relaying, after is the actual base geometry already built; state it accurately. Rule and new-part decisions are proposals, not installed geometry. Ask at most the supplied question. Return a short text.", JSON.stringify({needs:cards.map(({who,quote,need,why,concern,when,readings,story,checked,changes})=>({who,quote,need,why,concern,when,readings,story,checked,changes})),decisions:record,before,after,change,question,relayTo}), {type:"object",properties:{text:{type:"string"}},required:["text"]});
+export async function toolkitReply({cards,record,before,after,change,question,relayTo,named=[]}) {
+  const out = await ask("You are an AI builder collaborating with two people using a design toolkit. Explain your contribution from their stated needs and the decision record. Preserve whose words they are, distinguish hypotheses, and name unresolved needs. Do not invent tool use or claim acceptance. Do not output feature keys. If relaying, pass on the needs to the named person without claiming a build. Otherwise briefly state what changed, why, and what remains open. A checked explicit revision confirms the person’s requirement, not approval of the design: do not relabel that requirement as a hypothesis. When not relaying, after is the actual base geometry already built; state it accurately. Rule decisions are proposals, not installed geometry. Named parts (in `named`) are drawn on the picture already, dashed, as proposals, each under its owner's own word: for each one not yet confirmed, say in one sentence where you placed it using that word (\"I drew your dog passage beside the walk, dashed\"), and if its owner can hear you (canHear), ask that owner whether that is where it goes — one question covering all of theirs; never ask the other person to confirm it, and never say it is built. Ask at most the supplied question besides. Return a short text.", JSON.stringify({needs:cards.map(({who,quote,need,why,concern,when,readings,story,checked,changes})=>({who,quote,need,why,concern,when,readings,story,checked,changes})),decisions:record,named,before,after,change,question,relayTo}), {type:"object",properties:{text:{type:"string"}},required:["text"]});
   return String(out.text || "");
 }

@@ -120,7 +120,7 @@ export const ROUTES = {
     // `hearsTalk`: unlike confer, the AI is in the room for all of it. It reads
     // every message from both of them as it arrives, and builds from all of it
     // whenever either of them confirms a decision.
-    note: "All three of you in one conversation. The AI hears everything both of you say; whenever either of you confirms a decision, it builds from all of it, in front of you both.",
+    note: "All three of you in one conversation. The AI hears everything both of you say. Once you have both said something it builds, and then revises after every message, in front of you both; confirming a decision marks it as one.",
     script: ["A", "B", "A", "B"], see: { A: BOTH, B: BOTH }, open: true, hearsTalk: true,
   },
   // `develop`: condition B. All three in one conversation, with the bridge in

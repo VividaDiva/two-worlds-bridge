@@ -10,6 +10,7 @@
 //
 // The key lives in this process. Participants never hold it and never see it.
 import http from "node:http";
+import {createAutoToolkit,REPLAY_EXCLUDED_ROUTES} from "./auto-toolkit.mjs";
 import {feedbackHandler,feedbackFiles,readFeedback} from "./feedback.mjs";
 import {applyNeedUpdates,publishClarification} from "./toolkit-state.mjs";
 import fs from "node:fs";
@@ -54,6 +55,7 @@ function publicUrl() {
 
 const modeOf = room => room.agent || "both";
 const rooms = new Map();
+let autoToolkit = null;
 // Profiles associate independent conversations without mixing their transcripts.
 const PROFILES = path.join(SESSIONS, "..", "profiles.json");
 let profiles = fs.existsSync(PROFILES) ? JSON.parse(fs.readFileSync(PROFILES,"utf8")) : [
@@ -100,6 +102,7 @@ function view(room, role) {
   const open = !!route.open, dev = !!route.develop;
   const turn = open ? null : (room.turn < script.length ? script[room.turn] : null);
   return {
+    autoToolkit: autoToolkit?.latest(room.id) || null, replayOf: room.replayOf || null,
     room: room.id, argument: room.argument, route: room.route, archived:!!room.archived,
     title: arg.title, blurb: arg.blurb, arrow: route.arrow, note: route.note,
     role,
@@ -220,6 +223,7 @@ function record(room) {
   const rec = {
     room: room.id, argument: room.argument, title: arg.title,
     route: room.route, arrow: route.arrow, version: route.develop ? "B" : "A",
+    autoReplayEnabled:!!room.autoReplayEnabled, replayOf:room.replayOf || null,
     agent: modeOf(room), wall: room.wall || null, retro: room.retro || {},
     sheetDrawn: room.wall ? sheetDrawn(room) : null,
     control: room.control ? { standingId: room.control.standing, lines: room.control.lines,
@@ -304,6 +308,7 @@ const enqueue = (room, fn) => (room.queue = (room.queue || Promise.resolve()).th
 function push(roomId) {
   const room = rooms.get(roomId);
   try { record(room); } catch (e) { console.error(`could not save ${roomId}: ${e.message}`); }
+  autoToolkit?.observe(room);
   for (const s of streams.get(roomId) || [])
     s.res.write(`data: ${JSON.stringify(view(room, s.role))}\n\n`);
 }
@@ -330,8 +335,16 @@ const newWall = () => ({ cards: [], log: [], record: null, sheet: [] });
 // toolkit agent; the control agent's lines are kept for the desk.
 const newControl = () => ({ ctx: mkCtx(), standing: null, lines: [], seenPicture: {} });
 const FACILITATOR_TOOLS = new Set(["dot-voting", "priority-check", "card-sort", "repertory-grid", "wizard-of-oz"]);
-// What is on the sheet and still waiting for both of them.
-const pending = room => (room.wall?.sheet || []).filter(p => !(p.accepted.A && p.accepted.B) && !p.declined);
+// When a sheet item counts. With the toolkit on, a named part is the owner's
+// word placed on the drawing, so the owner's yes confirms it — the other person
+// can agree or object, and an objection is kept, not a veto. With the wall
+// beside the keys (the older design) both people must accept.
+const ownerOf = (room, p) => p.owner || room.wall?.cards.find(c => c.id === p.cardId)?.who || null;
+const confirmed = (room, p) => modeOf(room) === "toolkit"
+  ? !!(ownerOf(room, p) ? p.accepted[ownerOf(room, p)] : (p.accepted.A && p.accepted.B))
+  : !!(p.accepted.A && p.accepted.B);
+// What is on the sheet and not yet confirmed.
+const pending = room => (room.wall?.sheet || []).filter(p => !confirmed(room, p) && !p.declined);
 
 // Which of the route's people this speaker may be asked a question: only where
 // the route lets them hear the builder at all, and only where the conversation
@@ -425,7 +438,21 @@ const activeCards = room => room.wall ? room.wall.cards.filter(c => !c.withdrawn
 // Accepted sheet items the drawing can show: a footway, a gate, a kerb, a
 // sealed surface. Everything else accepted is listed as not drawable.
 function sheetDrawn(room) {
-  const out = { footway: false, gate: false, kerb: false, sealed: false, drawn: [], other: [] };
+  const out = { footway: false, gate: false, kerb: false, sealed: false, drawn: [], other: [], named: [] };
+  if (modeOf(room) === "toolkit") {
+    // Named parts: drawn as soon as they are proposed, dashed and labelled with
+    // the owner's word; solid once the owner confirms the position. A rule is a
+    // sign. Anything without a primitive is listed as not drawable.
+    for (const p of room.wall?.sheet || []) {
+      if (p.declined) continue;
+      const who = ownerOf(room, p);
+      const status = confirmed(room, p) ? "confirmed" : p.objection ? "objected" : "proposed";
+      if (p.primitive) out.named.push({ id: p.id, label: p.label || p.what, what: p.what, kind: p.kind, primitive: p.primitive, position: p.position || "", who, status, objection: p.objection || null });
+      else out.other.push({ what: p.label || p.what, kind: p.kind });
+    }
+    out.drawn = out.named.map(n => ({ what: n.label, as: n.primitive, who: n.who, status: n.status }));
+    return out;
+  }
   for (const p of room.wall?.sheet || []) {
     if (p.declined || !(p.accepted.A && p.accepted.B)) continue;
     const w = p.what.toLowerCase(); let hit = null;
@@ -461,15 +488,28 @@ async function decideWall(room) {
     // Declined once is declined: it is not put back on the sheet, and the
     // record says "none" for that card until somebody raises it again.
     if (room.wall.sheet.some(p => p.cardId === d.id && p.declined && !p.superseded)) { d.response = "none"; continue; }
+    // With the toolkit on, the item is named and placed: the label is the owner's
+    // word (never overwritten once they have renamed it), a rule is a sign.
+    const toolkit = modeOf(room) === "toolkit";
+    const placed = toolkit ? {
+      label: d.label || d.what, owner: byId[d.id].who,
+      primitive: d.response === "rule" ? "sign" : d.primitive || "",
+      position: d.response === "rule" ? "ends" : d.position || "",
+    } : {};
     const had = room.wall.sheet.find(p => p.cardId === d.id && !p.declined);
-    if (had) { had.kind = d.response; had.what = d.what; continue; }
+    if (had) {
+      had.kind = d.response; had.what = d.what;
+      if (toolkit) { if (!had.renamed) had.label = placed.label; had.owner = placed.owner;
+                     if (!confirmed(room, had)) { had.primitive = placed.primitive; had.position = placed.position; } }
+      continue;
+    }
     room.wall.sheet.push({ id: "s" + (room.wall.sheet.length + 1), cardId: d.id, kind: d.response, what: d.what,
-                           by: "AI", proposedAt: Date.now(), accepted: {}, declined: false });
+                           by: "AI", proposedAt: Date.now(), accepted: {}, declined: false, ...placed });
   }
   const record = rec.decisions.map(d => `  [${d.id}] ${byId[d.id].need} → ${d.response}: ${d.what}${d.uncertainty ? " (unsure: " + d.uncertainty + ")" : ""}`).join("\n")
     + (rec.conflicts.length ? "\n  conflicts: " + rec.conflicts.map(c => `${c.a}×${c.b} ${c.note}`).join("; ") : "");
   const unsupported = rec.decisions.filter(d => d.response === "none").map(d => byId[d.id].need);
-  return { record, unsupported, proposals: pending(room).map(p => ({ kind: p.kind, what: p.what })) };
+  return { record, unsupported, proposals: pending(room).map(p => ({ kind: p.kind, what: p.what, label: p.label, primitive: p.primitive, position: p.position, who: ownerOf(room, p) })) };
 }
 
 // After a build: every card against what stands. Met only when every key it
@@ -477,9 +517,12 @@ async function decideWall(room) {
 function linkWall(room) {
   if (!room.wall) return;
   if (modeOf(room) === "toolkit") {
+    // A named part is "confirmed" when its owner says the position is right,
+    // "objected" when the other person says no, otherwise "proposed" — drawn in
+    // every case but the declined one. Nothing here is "met": that is theirs to say.
     for (const c of room.wall.cards) {
       const item = (room.wall.sheet || []).find(p=>p.cardId===c.id && !p.declined);
-      c.met = c.withdrawn ? null : item ? (item.accepted.A && item.accepted.B ? "accepted-proposal" : "proposed") : "unverified";
+      c.met = c.withdrawn ? null : item ? (confirmed(room, item) ? "confirmed" : item.objection ? "objected" : "proposed") : "unverified";
     }
     return;
   }
@@ -530,9 +573,12 @@ async function builderTurn(room, line) {
       hear(room.ctx, line.who, "want", line.picture);
     }
     if(line.upload && modeOf(room) === "keys") captureReading(room,line,{kind:"keys",asks:line.picture || [],refuses:[],beyond:""});
-    // Talk the AI can hear is taken in and remembered, and nothing is built from
-    // it yet; the next confirmed decision builds from everything heard so far.
-    if (line.talk) { room.thinking = false; return; }
+    // Talk the AI can hear is taken in and remembered. On the route where the AI
+    // is in the room for all of it (`all`), once both have spoken it also
+    // revises after every line, so what it heard is on the picture at once;
+    // Confirm still marks a decision. Elsewhere the next confirmed decision
+    // builds from everything heard so far.
+    if (line.talk && !(route.hearsTalk && bothSpoke(room))) { room.thinking = false; return; }
     // Deferred and relay routes build once, after the last line. On a relay route
     // every line before that is passed on instead: the AI tells the one who could
     // not hear it what it understood, in its own words, and builds nothing.
@@ -583,7 +629,8 @@ async function layExclusive(room,line,develop,clarification) {
     : await chooseBuild({wants:[...room.ctx.wants.keys()],avoids:[...room.ctx.avoids.keys()],standing:before ? NAME(before):null,said,pictures:Object.entries(room.uploads).filter(([r])=>room.seenPicture?.[r]).map(([r,p])=>({who:WHO[r],needs:p.needs || []}))});
   if (choose.id) room.ctx.design = KIT.find(k=>k.id===choose.id) || room.ctx.design;
   room.standing = room.ctx.design?.id || null;
-  const text = toolkit ? await toolkitReply({cards:activeCards(room),record:room.wall.record,before:before ? NAME(before):null,after:room.standing ? NAME(room.standing):null,change:clarification || line?.text,question:""})
+  const named = toolkit ? pending(room).filter(p => p.primitive).map(p => ({ label: p.label || p.what, kind: p.kind, primitive: p.primitive, position: p.position, owner: WHO[ownerOf(room, p)], canHear: canAskOn(room, ownerOf(room, p)) })) : [];
+  const text = toolkit ? await toolkitReply({cards:activeCards(room),record:room.wall.record,before:before ? NAME(before):null,after:room.standing ? NAME(room.standing):null,change:clarification || line?.text,question:"",named})
     : await speak({said:clarification || line?.text || said.map(x=>x.text).join(" "),took:line?.taken || [],before:before ? NAME(before):null,after:room.standing ? NAME(room.standing):null,props:room.ctx.design?.has || [],wants:[...room.ctx.wants.keys()],avoids:[...room.ctx.avoids.keys()],changed:before!==room.standing});
   if (toolkit) linkWall(room);
   room.transcript.push({who:"builder",text,phase:"main",built:room.standing ? NAME(room.standing):null,proposal:develop,at:Date.now(),...(toolkit ? {decisionSnapshot:structuredClone({at:Date.now(),sourceLine:line ? room.transcript.indexOf(line):null,cards:room.wall.cards,record:room.wall.record,sheet:room.wall.sheet,before:before ? NAME(before):null,after:room.standing ? NAME(room.standing):null}),steps:stepsFor(room,line || {})} : {diff:diffOf(room,beforeHas,room.ctx.design?.has || [])})});
@@ -659,7 +706,7 @@ function openBeyond(room) {
 // out, and anything asked for that nothing in the kit can make. Shown to both
 // at the end. Silence is not agreement, so nothing here is closed by default.
 function unresolved(room) {
-  if (modeOf(room) === "toolkit") return activeCards(room).map(c=>({kind:"unverified",who:WHO[c.who],text:c.need})).concat(pending(room).map(p=>({kind:"pending",what:p.what,pkind:p.kind,accepted:Object.keys(p.accepted).filter(k=>p.accepted[k]).map(k=>WHO[k])})));
+  if (modeOf(room) === "toolkit") return activeCards(room).map(c=>({kind:"unverified",who:WHO[c.who],text:c.need})).concat(pending(room).map(p=>({kind:"pending",what:p.label || p.what,pkind:p.kind,owner:WHO[ownerOf(room,p)],accepted:Object.keys(p.accepted).filter(k=>p.accepted[k]).map(k=>WHO[k])})));
 
   const want = new Map(), refuse = new Map();
   for (const e of room.transcript) {
@@ -773,7 +820,7 @@ function stepsFor(room, line) {
   return {
     heard: mine.map(c => c.need), tools: (line.tools || []).map(t => t.tool), asked: line.ask || "",
     decided: rec ? { part: count("part"), rule: count("rule"), new: count("new"), none: count("none") } : null,
-    proposed: pending(room).map(p => ({ id: p.id, kind: p.kind, what: p.what })),
+    proposed: pending(room).map(p => ({ id: p.id, kind: p.kind, what: p.label || p.what, primitive: p.primitive || "", position: p.position || "" })),
     unsupported: room.wall.cards.filter(c => !c.withdrawn && c.met === "unsupported").map(c => c.need),
   };
 }
@@ -831,6 +878,7 @@ function restore() {
         turn: rec.turn ?? rec.transcript.filter(e => e.who !== "builder").length,
         transcript: rec.transcript, uploads, standing: rec.standingId ?? null, thinking: false,
         finished: !!rec.finished, score: rec.finished ? rec.score : undefined,
+        autoReplayEnabled:!!rec.autoReplayEnabled,replayOf:rec.replayOf || null,
         claimed: rec.claimed || {}, createdAt: rec.createdAt, seenPicture,
         wall: rec.wall || null, retro: rec.retro || {},
         control: rec.control ? (() => { const c = newControl();
@@ -852,7 +900,7 @@ const srv = http.createServer(async (req, res) => {
   // Explicitly approved study UI origin; no wildcard or credentialed CORS.
   const studyOrigin = req.headers.origin === 'https://vividadiva.github.io';
   const studyRead = ['/api/state','/api/users','/api/feedback','/api/options','/api/sessions','/api/export','/events'].includes(url.pathname) || /^\/sketch\/[a-z0-9]+\/\d+\.png$/.test(url.pathname);
-  const studyWrite = ['/api/feedback','/api/users','/api/switch','/api/create','/api/claim','/api/upload','/api/say','/api/sketch','/api/correct','/api/prefer','/api/retro','/api/accept','/api/finish'].includes(url.pathname);
+  const studyWrite = ['/api/auto-toolkit/retry','/api/feedback','/api/users','/api/switch','/api/create','/api/claim','/api/upload','/api/say','/api/sketch','/api/correct','/api/prefer','/api/retro','/api/accept','/api/finish'].includes(url.pathname);
   if(studyOrigin && ((studyRead&&['GET','HEAD'].includes(req.method))||(studyWrite&&req.method==='POST')||((studyRead||studyWrite)&&req.method==='OPTIONS'))){
     res.setHeader('Access-Control-Allow-Origin','https://vividadiva.github.io');res.setHeader('Vary','Origin');
     if(req.method==='OPTIONS'){res.setHeader('Access-Control-Allow-Methods',studyWrite?'GET, POST, OPTIONS':'GET, OPTIONS');res.setHeader('Access-Control-Allow-Headers','Content-Type');res.writeHead(204);res.end();return;}
@@ -926,6 +974,10 @@ const srv = http.createServer(async (req, res) => {
     return json(res,200,{...entry,user:profile.id});
   }
 
+  if (p === "/api/auto-toolkit/retry" && req.method === "POST") {
+    const {room}=await body(req);
+    try {return json(res,200,autoToolkit.retry(room));}catch(e){return json(res,409,{error:e.message});}
+  }
   if (p === "/api/options") return json(res, 200, {
     publicUrl: publicUrl(),
     arguments: Object.entries(ARGUMENTS).filter(([k]) => STUDY.includes(k)).map(([k, v]) => ({ id: k, title: v.title, blurb: v.blurb, upload: !!v.upload })),
@@ -1080,6 +1132,8 @@ const srv = http.createServer(async (req, res) => {
     if (!r) return json(res, 404, { error: "no such room" });
     if (r.finished) return json(res, 409, { error: "this session is over" });
 
+    if (r.agent === "keys") r.autoReplayEnabled = true;
+
     // Condition B. No turns and no Confirm: every line goes to everyone and is
     // read at once; the AI revises after each, once both have spoken. A line may
     // be about a part of what stands, or build on the other person's line.
@@ -1164,28 +1218,12 @@ const srv = http.createServer(async (req, res) => {
     const { room: id } = await body(req);
     const r = rooms.get(id);
     if (!r) return json(res, 404, { error: "no such room" });
-    if (r.sketching) return json(res, 409, { error: "still drawing the last one" });
-    const lines = r.transcript.filter(e => e.who !== "builder" && !e.upload && e.text)
-      .map(e => ({ who: WHO[e.who], text: e.text }));
-    const references = [...new Set(r.transcript.filter(e=>e.upload && (!ROUTES[r.route].reads || ROUTES[r.route].reads===e.who)).map(e=>e.who))].map(role=>({who:WHO[role],media:r.uploads[role]?.media,data:r.uploads[role]?.dataUrl?.split(",")[1]})).filter(x=>x.data);
-    if (!lines.length && !references.length) return json(res, 409, { error: "Add a message or submit a reference image first" });
-    r.sketching = true; push(id);
-    json(res, 200, { ok: true });
-    try {
-      const arg = ARGUMENTS[r.argument];
-      const ground = r.ctx.world.water ? "water" : r.ctx.world.rock ? "a drop in rock" : "";
-      const out = await sketch({ title: arg.title, ground, lines, references, outcome:r.transcript.filter(e=>e.who==="builder"&&e.text&&!e.clarification&&!e.understandingUpdate).at(-1)?.text || "" });
-      const n = (r.sketches || []).length + 1;
-      fs.writeFileSync(path.join(UPLOADS, `${id}-sketch-${n}.png`), Buffer.from(out.base64, "base64"));
-      (r.sketches ||= []).push({ n, at: Date.now(), turn: r.turn, lines: lines.length, media: out.media, prompt: out.prompt, source:references.length ? "reference assets" : "conversation", references:references.length });
-      r.sketchError = null;
-    } catch (e) {
-      // Not a line in the conversation: the drawing is the facilitator's check,
-      // and a failed check must not appear in the record as something the AI said.
-      r.sketchError = e.message;
-    } finally { r.sketching = false; }
-    return push(id);
+    if (r.sketching) return json(res,409,{error:"Still drawing the last sketch"});
+    json(res,200,{ok:true});
+    try { await generateSketch(r); } catch(e) { console.error(`sketch ${id}: ${e.message}`); }
+    return;
   }
+
   const sk = p.match(/^\/sketch\/([a-z0-9]+)\/(\d+)\.png$/);
   if (sk && req.method === "GET") {
     const file = path.join(UPLOADS, `${sk[1]}-sketch-${sk[2]}.png`);
@@ -1294,13 +1332,35 @@ const srv = http.createServer(async (req, res) => {
   // A rule or a new part on the sheet counts only once both have accepted it.
   // A decline is recorded as a decline — not silence, not consent.
   if (p === "/api/accept" && req.method === "POST") {
-    const { room: id, role, item, ok } = await body(req);
+    const { room: id, role, item, ok, label } = await body(req);
     const r = rooms.get(id);
     if (!r || !r.wall) return json(res, 404, { error: "no such room, or no wall" });
     if (role !== "A" && role !== "B") return json(res, 400, { error: "unknown role" });
     if (r.finished) return json(res, 409, { error: "this session is over" });
     const it = (r.wall.sheet || []).find(p => p.id === item);
     if (!it) return json(res, 404, { error: "nothing by that name on the sheet" });
+    if (modeOf(r) === "toolkit") {
+      // Named parts. The owner's word, the owner's yes.
+      const owner = ownerOf(r, it), mine = owner === role;
+      const newLabel = typeof label === "string" ? label.trim().slice(0, 60) : "";
+      if (newLabel && mine) {
+        (it.renamed ||= []).push({ from: it.label || it.what, to: newLabel, by: role, at: Date.now() });
+        it.label = newLabel;
+        r.transcript.push({ who: role, text: `Call it: ${newLabel}.`, phase: "main", talk: true, sheet: it.id, at: Date.now() });
+      } else if (newLabel) return json(res, 403, { error: "only its owner can rename it" });
+      if (ok === false && mine) { it.declined = true; it.declinedBy = role; it.accepted = {}; }
+      else if (ok === false) { it.objection = { by: role, at: Date.now() }; }
+      else if (ok !== undefined && ok !== null) { it.accepted = { ...it.accepted, [role]: true }; if (!mine) it.objection = null; }
+      if (ok !== undefined && ok !== null) {
+        it.decidedAt = Date.now();
+        const name = it.label || it.what;
+        r.transcript.push({ who: role, text: mine ? (ok === false ? `Not there: ${name}.` : `That is where it goes: ${name}.`)
+                                                  : (ok === false ? `I object to: ${name}.` : `Fine by me: ${name}.`),
+                            phase: "main", talk: true, sheet: it.id, at: Date.now() });
+      }
+      linkWall(r); push(id);
+      return json(res, 200, { ok: true, status: it.declined ? "declined" : confirmed(r, it) ? "confirmed" : it.objection ? "objected" : "proposed", label: it.label || it.what });
+    }
     if (ok === false) { it.declined = true; it.declinedBy = role; it.accepted = {}; }
     else { it.accepted = { ...it.accepted, [role]: true }; }
     it.decidedAt = Date.now();
@@ -1325,7 +1385,66 @@ const srv = http.createServer(async (req, res) => {
   res.writeHead(404); res.end("not found");
 });
 
+async function runAutoToolkit(job, update) {
+  if(REPLAY_EXCLUDED_ROUTES.has(job.route))throw Error('AI relay routes require a new live Toolkit conversation and are not replayed.');
+  let target = job.target && rooms.get(job.target);
+  // A completed input replay can resume just its image step after an image error.
+  if (!target?.replayOf?.inputComplete || target.replayOf.hash !== job.id) {
+    const id = profileRoom(job.argument, job.route, 'toolkit');
+    target = rooms.get(id);
+    target.finished = true; // Replay is a comparison record, never a live participant conversation.
+    target.replayOf = {room:job.source,hash:job.id,kind:'fixed-transcript',inputComplete:false,
+      note:'Human words replayed from Control. AI responses are newly generated. Participants did not respond to these Toolkit replies.'};
+    record(target); update({target:id,progress:0});
+    const owner=profiles.find(p=>p.sessions.some(s=>s.room===job.source));
+    if(owner){owner.sessions.unshift({argument:job.argument,route:job.route,agent:'toolkit',room:id,label:'Auto replay · '+new Date().toLocaleString(),replaySource:job.source});saveProfiles();}
+    const indices=new Map();
+    for (const original of job.lines) {
+      const line={...original,at:Date.now(),sourceAt:original.at};
+      indices.set(original.sourceIndex,target.transcript.length);
+      if(Number.isInteger(line.replyTo))line.replyTo=indices.get(line.replyTo);
+      target.transcript.push(line);target.turn++;
+      const before=target.transcript.length;
+      // Corrections are input, not Control's prior interpretation.
+      if(line.corrected)line.text=original.text+' — clarified: '+line.corrected;
+      try { if(ROUTES[target.route].develop) await developTurn(target,line); else await builderTurn(target,line); }
+      finally {line.text=original.text;}
+      const failure=target.transcript.slice(before).find(e=>e.failed);
+      if(failure){push(target.id);throw Error('Toolkit reading/build failed: '+failure.failed);}
+      update({progress:target.turn});push(target.id);
+    }
+    if(!target.standing)throw Error('Toolkit did not produce a bridge. The replay is preserved for inspection.');
+    target.replayOf.inputComplete=true;push(target.id);
+  }
+  update({status:'sketching'});
+  if(!target.sketches?.length)await generateSketch(target);
+  if(target.sketchError||!target.sketches?.length)throw Error('Toolkit sketch failed: '+(target.sketchError||'no saved image'));
+  target.replayOf.completedAt=new Date().toISOString();push(target.id);
+}
+
+async function generateSketch(r) {
+  if(r.sketching)throw Error('Still drawing the last sketch');
+  const route=ROUTES[r.route];
+  // Preserve the same hearing boundary as the builder (especially private discussion).
+  const heard=r.transcript.filter(e=>['A','B'].includes(e.who)&&e.phase!=='confer'&&(!route.reads||route.reads===e.who));
+  const lines=heard.filter(e=>!e.upload&&e.text).map(e=>({who:WHO[e.who],text:e.text+(e.corrected?' — clarified: '+e.corrected:'')}));
+  const references=[...new Set(heard.filter(e=>e.upload).map(e=>e.who))].map(role=>({who:WHO[role],media:r.uploads[role]?.media,data:r.uploads[role]?.dataUrl?.split(',')[1]})).filter(x=>x.data);
+  if(!lines.length&&!references.length)throw Error('No input has reached the AI on this route yet');
+  r.sketching=true;r.sketchError=null;push(r.id);
+  try {
+    const latest=r.transcript.filter(e=>e.who==='builder'&&e.built&&!e.failed&&!e.clarification&&!e.understandingUpdate).at(-1)?.text||'';
+    const toolkit=r.agent==='toolkit'?'\nToolkit interpretation and decisions (uncertain or unaccepted proposals remain proposals):\n'+JSON.stringify({cards:r.wall?.cards,record:r.wall?.record,sheet:r.wall?.sheet}):'';
+    const out=await sketch({title:ARGUMENTS[r.argument].title,ground:r.ctx.world.water?'water':r.ctx.world.rock?'a drop in rock':'',lines,references,process:r.agent,outcome:latest+toolkit});
+    const n=(r.sketches||[]).length+1;
+    const file=path.join(UPLOADS,`${r.id}-sketch-${n}.png`);
+    fs.writeFileSync(file+'.tmp',Buffer.from(out.base64,'base64'));fs.renameSync(file+'.tmp',file);
+    (r.sketches||=[]).push({n,at:Date.now(),turn:r.turn,lines:lines.length,media:out.media,prompt:out.prompt,source:r.agent==='toolkit'?'toolkit interpretation + route-visible conversation':'route-visible conversation',references:references.length});
+  }catch(e){r.sketchError=e.message;throw e;}finally{r.sketching=false;push(r.id);}
+}
+
 const back = restore();
+autoToolkit=createAutoToolkit({file:path.join(SESSIONS,'automation','toolkit-jobs.json'),execute:runAutoToolkit,delay:Number(process.env.AUTO_TOOLKIT_DELAY_MS||2500),onChange:source=>{if(rooms.has(source))push(source);}});
+autoToolkit.start();
 srv.listen(PORT, () => {
   console.log(`\n  Two worlds, one builder — user test`);
   console.log(`  ${back} room${back === 1 ? "" : "s"} brought back from sessions/`);

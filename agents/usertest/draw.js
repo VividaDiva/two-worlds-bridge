@@ -22,6 +22,8 @@
 
   const C = { land:"#d9d2c4", land2:"#c9c1b1", water:"#a9c4d2",
               wood:"#b07a3c", woodDark:"#7d5227", head:"#3d2a15", paper:"#eee8dc" };
+  // Named parts are drawn in the colour of the person whose word they carry.
+  const WHO = { A: "#b4441f", B: "#2d5470" }, WHO_NAME = { A: "Role 1", B: "Role 2" }, SHEET = "#4a6b4f";
 
   const bedOf = world => world && world.rock ? BED_CLEFT
                        : world && world.water ? BED_STREAM
@@ -68,8 +70,8 @@
   // builder and accepted by both people. They are drawn as an added layer, in
   // another colour, and change nothing about the kit, the choosing or the score.
   function assemble(d, world, extras) {
-    const list = [], strokes = [];
-    if (!d) return { list, strokes };
+    const list = [], strokes = [], labels = [];
+    if (!d) return { list, strokes, labels };
     const deck = d.level === "raised" ? DECK_HIGH : DECK_LOW;
     const bed = bedOf(world);
     const MID = (GAP_L + GAP_R) / 2;
@@ -129,12 +131,79 @@
     } else if (X.kerb) seg(GAP_L, deck - 7, DW, GAP_R, deck - 7, DW, { width: 4 });
     // a gate at each end: an upright and a bar across the near edge
     if (X.gate) for (const x of [GAP_L + 6, GAP_R - 6]) { seg(x, deck, 0, x, deck - 40, 0, { width: 4 }); seg(x, deck - 30, 0, x, deck - 30, DW, { width: 3 }); }
-    return { list, strokes };
+
+    // ── named parts ──
+    // What the kit has no part for is not translated into one. It is placed
+    // with one of seven primitives and labelled with the speaker's own word,
+    // dashed while it is a proposal, solid once its owner has confirmed where
+    // it goes. The noun is theirs; only the placing is the drawing's.
+    let bands = 0, decksAbove = 0, decksBelow = 0, signs = 0, washes = 0, edgesBetween = 0, postsAlong = 0;
+    // Each named part gets one small numbered marker on the picture; the words
+    // live in the legend under it, keyed by the same number. (`extras.words`
+    // writes the words on the picture instead, for an export.) A sign is the
+    // one exception: a sign without words is nothing.
+    let k = 0;
+    const label = (x, y, z, n, o) => labels.push({ ...P(x, y, z), n: k, text: n.label, who: n.who, status: n.status, ...o });
+    for (const n of X.named || []) {
+      k++;
+      const o = { who: n.who, dash: n.status === "confirmed" ? null : [7, 6] };
+      const pos = n.position || "";
+      switch (n.primitive) {
+        case "band": {                      // a lane or path running beside the walk, on the far side
+          const z0 = DW + 16 + bands * 44, z1 = z0 + 28; bands++;
+          seg(GAP_L, deck, z0, GAP_R, deck, z0, o); seg(GAP_L, deck, z1, GAP_R, deck, z1, o);
+          for (let i = 0; i <= 4; i++) { const x = GAP_L + SPAN * i / 4; seg(x, deck, z0, x, deck, z1, { ...o, dash: o.dash ? [4, 5] : null }); }
+          label(GAP_R + 8, deck + 4, (z0 + z1) / 2, n, { align: "left" });
+          break; }
+        case "deck": {                      // another level, above or below the walk
+          const above = pos !== "below";
+          const y = above ? deck - 96 - decksAbove * 60 : deck + 64 + decksBelow * 50; above ? decksAbove++ : decksBelow++;
+          for (const z of [0, DW]) seg(GAP_L, y, z, GAP_R, y, z, o);
+          for (let i = 0; i <= 3; i++) { const x = GAP_L + SPAN * i / 3; seg(x, y, 0, x, y, DW, { ...o, dash: o.dash ? [4, 5] : null }); }
+          for (const x of [GAP_L, GAP_R]) for (const z of [0, DW]) seg(x, deck, z, x, y, z, { ...o, width: 2 });
+          label(GAP_R + 8, y + 4, DW / 2, n, { align: "left" });
+          break; }
+        case "post": {                      // uprights with a head: lights, poles
+          const xs = pos === "ends" ? [GAP_L + 12, GAP_R - 12] : [GAP_L + SPAN * 0.2, GAP_L + SPAN * 0.5, GAP_L + SPAN * 0.8];
+          const z = pos === "ends" ? 0 : DW, h = 64 + postsAlong * 14; postsAlong++;
+          for (const x of xs) { seg(x, deck, z, x, deck - h, z, { ...o, width: 3 }); strokes.push({ dot: P(x, deck - h, z), who: n.who, dash: o.dash }); }
+          label(xs[xs.length - 1] + 8, deck - h - 6, z, n, { align: "left" });
+          break; }
+        case "edge": {                      // a wall, barrier, kerb or high rail: a line with uprights
+          const z = pos === "between" ? DW + 8 + edgesBetween * 44 : 0; if (pos === "between") edgesBetween++;
+          const h = 34;
+          seg(GAP_L + 10, deck - h, z, GAP_R - 10, deck - h, z, { ...o, width: 4 });
+          for (const x of [GAP_L + 10, MID, GAP_R - 10]) seg(x, deck, z, x, deck - h, z, { ...o, width: 3 });
+          label(GAP_L + 10, deck - h - 14, z, n, { align: "left" });
+          break; }
+        case "wash": {                      // the surface of the walk itself
+          const inset = washes * 6; washes++;
+          poly([[GAP_L + inset, deck, inset], [GAP_R - inset, deck, inset], [GAP_R - inset, deck, DW - inset], [GAP_L + inset, deck, DW - inset]], { fill: (WHO[n.who] || SHEET) + (n.status === "confirmed" ? "33" : "1f"), who: n.who });
+          label(MID, deck + 96 + washes * 18, DW / 2, n, { align: "center" });
+          break; }
+        case "sign": {                      // a plate with words on a post on the bank: a rule
+          const x = GAP_L - 70 - signs * 100, top = GROUND_Y - 84 - (signs % 2) * 40; signs++;
+          seg(x, GROUND_Y, 0, x, top, 0, { who: n.who, width: 3 });
+          const words = String(n.label || "").length > 24 ? String(n.label).slice(0, 23).trim() + "…" : String(n.label || "");
+          const w = Math.max(60, Math.min(170, 14 + words.length * 6.4));
+          strokes.push({ plate: { x: x - w / 2, y: top - 30, w, h: 30 }, who: n.who, dash: o.dash });
+          label(x, top - 15, 0, n, { align: "center", plate: true, words });
+          break; }
+        case "end": {                       // gates, ramps, steps: something at the two ends
+          for (const x of [GAP_L + 6, GAP_R - 6]) { seg(x, deck, 0, x, deck - 44, 0, { ...o, width: 4 }); seg(x, deck - 32, 0, x, deck - 32, DW, { ...o, width: 3 }); }
+          label(GAP_R + 8, deck - 46, 0, n, { align: "left" });
+          break; }
+      }
+    }
+    return { list, strokes, labels };
   }
 
   // Draws into the canvas given, sized to its own box. `shape` may be null,
   // which draws the gap with nothing across it — which is the honest picture
   // before anybody has been understood.
+  // The three layers, un-drawn — for tests and for anything that wants to list
+  // what the picture would show.
+  global.crossingLayers = (shape, world, extras) => assemble(shape, world, extras);
   global.crossingMatches = function(shape, world, extras) {
     return assemble(shape, world, extras).list.map((m,i) => {
       const cx=(m.x1+m.x2)/2, cy=(m.y1+m.y2)/2, a=wob(i);
@@ -163,19 +232,50 @@
     ctx.fillRect(GAP_R, GROUND_Y, W - GAP_R, H - GROUND_Y);
     ctx.fillStyle = C.land2; ctx.fillRect(GAP_L, bed, SPAN, H - bed);
     if (world && world.water) { ctx.fillStyle = C.water; ctx.fillRect(GAP_L, WATER_Y, SPAN, bed - WATER_Y); }
-    const { list, strokes } = assemble(shape, world, extras);
+    const { list, strokes, labels } = assemble(shape, world, extras);
     list.forEach((m, i) => {
       if(feedback?.removed?.includes(String(i))) return;
       drawMatch(ctx,m,i);
       const color=feedback?.colors?.[String(i)];
       if(color){ const old={...C}; C.wood=color;C.woodDark=color;C.head=color;drawMatch(ctx,m,i);Object.assign(C,old); }
     });
-    // what both people accepted onto the sheet, in the wall's colour
+    // the sheet's layer: legacy extras in the wall's colour, named parts in the
+    // colour of the person whose word they carry
     for (const st of strokes) {
+      const col = WHO[st.who] || SHEET;
       ctx.save();
       if (st.poly) { ctx.fillStyle = st.fill; ctx.beginPath(); st.poly.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.closePath(); ctx.fill(); }
-      else { ctx.strokeStyle = "#4a6b4f"; ctx.lineWidth = st.width || 2.5; ctx.lineCap = "round"; if (st.dash) ctx.setLineDash(st.dash);
+      else if (st.dot) { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(st.dot.x, st.dot.y, 6, 0, Math.PI * 2); ctx.fill(); }
+      else if (st.plate) { ctx.fillStyle = C.paper; ctx.strokeStyle = col; ctx.lineWidth = 2.5; if (st.dash) ctx.setLineDash(st.dash);
+             ctx.beginPath(); ctx.rect(st.plate.x, st.plate.y, st.plate.w, st.plate.h); ctx.fill(); ctx.stroke(); }
+      else { ctx.strokeStyle = col; ctx.lineWidth = st.width || 2.5; ctx.lineCap = "round"; if (st.dash) ctx.setLineDash(st.dash);
              ctx.beginPath(); ctx.moveTo(st.x1, st.y1); ctx.lineTo(st.x2, st.y2); ctx.stroke(); }
+      ctx.restore();
+    }
+    // the words on a sign; a numbered marker for everything else (or the words
+    // themselves, when asked for)
+    const words = !!(extras && extras.words);
+    for (const l of labels) {
+      const col = WHO[l.who] || SHEET;
+      ctx.save();
+      ctx.textBaseline = "middle";
+      if (l.plate) {
+        ctx.font = `600 11px system-ui, -apple-system, "Helvetica Neue", sans-serif`; ctx.textAlign = "center";
+        ctx.fillStyle = col; ctx.fillText(l.words, l.x, l.y);
+      } else if (words) {
+        const text = `${l.text} · ${WHO_NAME[l.who] || "sheet"}${l.status === "confirmed" ? "" : l.status === "objected" ? " · objected" : " · proposed"}`;
+        ctx.font = `600 13px system-ui, -apple-system, "Helvetica Neue", sans-serif`; ctx.textAlign = l.align || "left";
+        ctx.lineWidth = 4; ctx.strokeStyle = C.paper; ctx.lineJoin = "round"; ctx.strokeText(text, l.x, l.y);
+        ctx.fillStyle = col; ctx.fillText(text, l.x, l.y);
+      } else {
+        // a circled number: filled once its owner has confirmed, hollow while proposed
+        const x = l.align === "right" ? l.x - 10 : l.align === "center" ? l.x : l.x + 10, y = l.y, r = 9;
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = l.status === "confirmed" ? col : C.paper; ctx.fill();
+        ctx.lineWidth = 2; ctx.strokeStyle = col; if (l.status === "objected") ctx.setLineDash([3, 3]); ctx.stroke();
+        ctx.setLineDash([]); ctx.font = `700 11px system-ui, -apple-system, "Helvetica Neue", sans-serif`; ctx.textAlign = "center";
+        ctx.fillStyle = l.status === "confirmed" ? C.paper : col; ctx.fillText(String(l.n), x, y + 0.5);
+      }
       ctx.restore();
     }
   };

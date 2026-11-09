@@ -471,6 +471,9 @@ details.every .act{margin-top:12px}
 .readings .lbl{font-family:var(--mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint)}
 .met.met-by-rule,.met.met-by-new{background:rgba(74,107,79,.14); color:var(--moss)}
 .met.proposed{background:transparent; border-color:var(--moss); color:var(--moss)}
+.met.confirmed{background:rgba(74,107,79,.14); color:var(--moss)} .met.objected{background:transparent; border-color:var(--rust); color:var(--rust)}
+.sitem .lab{font-weight:600} .sitem .place{font-size:12.5px; color:var(--faint)} .sitem.ra .kind{color:var(--rust)} .sitem.rb .kind{color:var(--blue)}
+.sitem.obj{border-color:var(--rust)}
 table{width:100%; border-collapse:collapse; font-size:14.5px; margin-top:8px}
 td{padding:7px 10px 7px 0; border-top:1px solid var(--rule-2)}
 td.y{color:var(--moss); font-weight:600} td.n{color:var(--rust)}
@@ -694,8 +697,31 @@ function devExtras(s, l){
 
 // The sheet: rules and new parts the AI proposed for this room. Each counts
 // only when both people have accepted it; a decline is a decline.
+// Where a named part sits, in words, for the sheet and the legend.
+const PLACE = { band: "a strip beside the walk", post: { along: "uprights along the far edge", ends: "uprights at the ends" }, deck: { above: "an upper level", below: "a lower level" },
+  edge: { along: "a line along the near edge", between: "a line between the walk and what is beside it" }, wash: "the surface of the walk", sign: "a sign at the end", end: "at both ends" };
+function placeText(p){ const v = PLACE[p.primitive]; return !v ? "not drawable" : typeof v === "string" ? v : v[p.position] || Object.values(v)[0]; }
+// Named parts: the toolkit's sheet. Each is the owner's word, placed by the AI
+// and drawn at once as a proposal; the owner confirms the position (or says
+// "not there", or renames it); the other person may agree or object.
+function namedList(s, items, canAct){
+  const me = s.role;
+  return `<div class="sheet"><p class="eyebrow">On the sheet — your words, placed on the drawing</p>${items.map(p => {
+    const owner = p.owner, mine = me === owner, conf = !!p.accepted[owner], obj = p.objection;
+    const state = p.declined ? `taken off by ${p.declinedBy === me ? "you" : roleName(p.declinedBy)}`
+      : conf ? `position confirmed by ${mine ? "you" : roleName(owner)}${obj ? " · " + (obj.by === me ? "you object" : roleName(obj.by) + " objects") : ""}`
+      : obj ? `${obj.by === me ? "you object" : roleName(obj.by) + " objects"} — ${mine ? "yours to settle" : "waiting for " + roleName(owner)}`
+      : p.accepted[owner === "A" ? "B" : "A"] ? `${roleName(owner === "A" ? "B" : "A") === roleName(me) ? "you agree" : roleName(owner === "A" ? "B" : "A") + " agrees"} — waiting for ${mine ? "you" : roleName(owner)}`
+      : `drawn as proposed — ${mine ? "is that where it goes?" : "waiting for " + roleName(owner)}`;
+    const acts = !canAct || p.declined ? "" : mine
+      ? `<span class="acts">${conf ? "" : `<button class="handle go" data-acc="${p.id}">That’s where it goes</button>`}<button class="handle" data-ren="${p.id}" data-label="${esc(p.label || p.what)}">Rename…</button>${conf ? "" : `<button class="handle" data-dec="${p.id}">Not there</button>`}</span>`
+      : me !== "host" && !p.accepted[me] && !(obj && obj.by === me) ? `<span class="acts"><button class="handle go" data-acc="${p.id}">Fine by me</button><button class="handle" data-dec="${p.id}">I object</button></span>` : "";
+    return `<div class="sitem ${owner === "A" ? "ra" : "rb"}${conf ? " done" : ""}${p.declined ? " off" : ""}${obj && !conf ? " obj" : ""}"><span class="kind">${p.kind === "rule" ? "rule · sign" : "named part"}</span><b class="lab">${esc(p.label || p.what)}</b><span class="place">${esc(roleName(owner))}’s word · ${esc(placeText(p))}</span><span class="state">${esc(state)}</span>${acts}</div>`;
+  }).join("")}</div>`;
+}
 function sheetList(s, items, canAct){
   if (!items || !items.length) return "";
+  if (items.some(p => p.owner)) return namedList(s, items, canAct);
   const me = s.role;
   return `<div class="sheet"><p class="eyebrow">On the sheet — proposed by the AI, yours to accept</p>${items.map(p => {
     const done = p.accepted.A && p.accepted.B, mineDone = me !== "host" && p.accepted[me];
@@ -722,6 +748,9 @@ const DRAWN = { footway: "footway (dashed, beside the walk)", gate: "gate at eac
 function sheetLegend(sd, dark){
   if (!sd || (!sd.drawn.length && !sd.other.length)) return "";
   const c = dark ? "rgba(245,240,230,.7)" : "var(--soft)";
+  // Numbered to match the markers on the picture: hollow while proposed, filled once confirmed.
+  const circled = i => i < 20 ? String.fromCharCode(0x2460 + i) : String(i + 1);
+  if (sd.named) return `<p style="font-size:12.5px; color:${c}; margin:8px 0 0; line-height:1.5">${sd.named.length ? `<b>In their words:</b> ${sd.named.map((n, i) => `<span style="color:${n.who === "A" ? "var(--rust)" : "var(--blue)"}">${circled(i)} ${esc(n.label)}</span> <span style="opacity:.8">(${esc(roleName(n.who))}, ${esc(placeText(n))}${n.status === "confirmed" ? "" : n.status === "objected" ? ", objected" : ", proposed"})</span>`).join(" · ")}` : ""}${sd.named.length && sd.other.length ? "<br>" : ""}${sd.other.length ? `<b>On the sheet, not drawable:</b> ${sd.other.map(o => esc(o.what)).join(" · ")}` : ""}</p>`;
   return `<p style="font-size:12.5px; color:${c}; margin:8px 0 0; line-height:1.5">${sd.drawn.length ? `<b style="color:#4a6b4f">Drawn from the sheet, accepted by both:</b> ${sd.drawn.map(d => esc(DRAWN[d.as] || d.what)).join(" · ")}` : ""}${sd.drawn.length && sd.other.length ? "<br>" : ""}${sd.other.length ? `<b>On the sheet, not drawable:</b> ${sd.other.map(o => esc(o.what)).join(" · ")}` : ""}</p>`;
 }
 
@@ -795,7 +824,7 @@ function panel(s, people){
     : absent ? `${roleName(r)} has no part in this route. Only ${other} speaks.`
     : spent ? "Everyone has had their say. Nothing more to add."
     : s.needsUpload ? "Add your picture first."
-    : mine && s.open ? (s.route === "all" ? `Talk with ${other} and AI. AI reads each message; Confirm to build updates the bridge.` : `Talk privately to ${other}. AI only receives what you Confirm to build.`)
+    : mine && s.open ? (s.route === "all" ? `Talk with ${other} and AI. AI reads each message and, once you have both spoken, revises the bridge after each one. Confirm to build marks a decision.` : `Talk privately to ${other}. AI only receives what you Confirm to build.`)
     : mine ? "What do you need of it, and what happens to you when it is wrong?"
     : s.step === 0 ? `${roleName(s.turn)} goes first on this route. Waiting for them…`
     : `Waiting for ${roleName(s.turn)}…`;
@@ -831,7 +860,7 @@ function panel(s, people){
         <div class="composer">
           <textarea id="say-${r}" ${mine ? "" : "disabled"} placeholder="${esc(ph)}">${esc(drafts[r] || "")}</textarea>
           <button class="send" id="send-${r}" ${mine ? "" : "disabled"}
-            aria-label="${dev ? "Send to everyone" : s.route === "all" ? "Send to everyone" : s.open ? `Send to ${other}` : "Send"}" title="${dev ? "Send — everyone hears it, and the AI revises" : s.route === "all" ? "Send — AI reads this; building waits for Confirm to build" : s.open ? `Send to ${other} (the builder does not hear it)` : "Send"}">&uarr;</button>
+            aria-label="${dev ? "Send to everyone" : s.route === "all" ? "Send to everyone" : s.open ? `Send to ${other}` : "Send"}" title="${dev ? "Send — everyone hears it, and the AI revises" : s.route === "all" ? "Send — AI reads this and revises once you have both spoken" : s.open ? `Send to ${other} (the builder does not hear it)` : "Send"}">&uarr;</button>
           ${s.open && !dev ? `<button class="confirm" id="confirm-${r}" ${mine && !s.thinking ? "" : "disabled"}
             title="Hand this message to the builder as your decision">Confirm to build</button>` : ""}
         </div>
@@ -964,6 +993,14 @@ function wire(s){
       const { ok, j } = await post("/api/accept", { room: s.room, role: r, item: b.dataset.acc || b.dataset.dec, ok: !!b.dataset.acc });
       if (!ok) { const note = document.getElementById("err-" + r); if (note) note.innerHTML = `<div class="warn">${esc(j.error || "that did not send")}</div>`; b.disabled = false; }
     });
+    // Renaming a named part: the word is the owner's, so only the owner is offered this.
+    document.querySelectorAll(`${scope}[data-ren]`).forEach(b => b.onclick = async () => {
+      const label = window.prompt("Call it what? In your own words.", b.dataset.label || "");
+      if (label == null || !label.trim() || label.trim() === b.dataset.label) return;
+      b.disabled = true;
+      const { ok, j } = await post("/api/accept", { room: s.room, role: r, item: b.dataset.ren, label: label.trim() });
+      if (!ok) { const note = document.getElementById("err-" + r); if (note) note.innerHTML = `<div class="warn">${esc(j.error || "that did not send")}</div>`; b.disabled = false; }
+    });
     document.querySelectorAll(`#chat-${r} [data-rd]`).forEach(b => b.onclick = async () => {
       b.disabled = true;
       const { ok } = await post("/api/correct", { room: s.room, role: r, index: Number(b.dataset.rd), text: b.dataset.text });
@@ -1070,7 +1107,7 @@ function watchBoth(room){
 // Every use case, always switchable. Picking one opens a fresh room on that
 // combination — a route cannot be changed underneath a conversation that is
 // already running, so switching starts a new one.
-const ROUTE_NAMES = {develop:"Build together · automatic updates",all:"Build together · confirm to update",confer:"Discuss privately, then ask AI to build",chain:"One person passes the other's needs to AI",both:"Tell AI separately", "via-1":"AI relays Role 1's needs to Role 2","via-2":"AI relays Role 2's needs to Role 1","only-1":"Role 1 only","only-2":"Role 2 only"};
+const ROUTE_NAMES = {develop:"Build together · automatic updates",all:"Build together · updates as you talk",confer:"Discuss privately, then ask AI to build",chain:"One person passes the other's needs to AI",both:"Tell AI separately", "via-1":"AI relays Role 1's needs to Role 2","via-2":"AI relays Role 2's needs to Role 1","only-1":"Role 1 only","only-2":"Role 2 only"};
 let setupDraft = null, setupRoom = null;
 function sessionSetup(current){
   if(!opts) return "";
@@ -1096,7 +1133,7 @@ function communicationBar(a){
  return `<section class="communication-bar" aria-label="Communication settings"><div class="communication-fields"><div><label for="setup-route">1 · How you communicate</label><select id="setup-route">${COMMUNICATION_CHOICES.map(([id,label])=>choice(id,label)).join('')}<optgroup label="Research comparisons · single participant">${choice('only-1','Role 1 only')}${choice('only-2','Role 2 only')}</optgroup></select></div><div><label for="setup-timing">2 · When AI builds</label>${shared && !images ? `<select id="setup-timing"><option value="all" ${a.route==='all'?'selected':''}>On confirmation · recommended</option><option value="develop" ${a.route==='develop'?'selected':''}>Automatically after messages</option></select>` : `<div class="fixed-timing" id="setup-timing">${esc(timing)}</div>`}</div></div><p class="control-help">Changing either setting opens its separate saved conversation.</p></section>`;
 }
 const PATH_GUIDES = {
- all:['Both people see each other’s messages and the AI reply.','Either person can speak at any time.','AI reads each message. It builds only when someone presses Confirm to build.'],
+ all:['Both people see each other’s messages and the AI reply.','Either person can speak at any time.','AI reads each message. Once both have spoken it builds, then revises after every message; Confirm to build marks a decision.'],
  develop:['Both people see each other’s messages and the AI reply.','Either person can speak at any time.','After both have contributed, each new message triggers a revision.'],
  confer:['Both people see their discussion. AI does not receive that private discussion.','Discuss freely, then one person submits the agreed message.','Only the message sent with Confirm to build reaches AI and triggers a build.'],
  both:['Each person sends to AI separately; neither sees the other’s words or AI replies in their participant view.','Role 1 contributes first, then Role 2.','AI builds once after both contributions. The facilitator sees the shared result.'],
@@ -1135,6 +1172,14 @@ async function switchProcess(agent,argument=both.A?.argument||"pairs",user=selec
   if(switchBusy)return;
   switchBusy=true;
   try {
+    if(!user){
+      const current=both.host;
+      const target=agent==='toolkit'?current?.autoToolkit?.target:current?.replayOf?.room;
+      if(target && (!route || route===current.route) && argument===current.argument){
+        selectedProcess=agent;history.pushState(null,'',`/j/${target}/both`);watchBoth(target);return;
+      }
+      throw Error('This is an independent Pair Lab record. Start new rounds in Pair Lab, or select a collaboration pair above.');
+    }
     // A saved run supplies its own path. Process tabs retain the current path;
     // another user or starting point can resume that record's existing default.
     const sameContext=user===selectedUser && argument===both.A?.argument;
@@ -1175,7 +1220,7 @@ function filterBar(cur, pending){
 // whose it is, how it reached the builder, the words, the need, the reason or
 // the labelled guess, the keys, and whether what stands meets it.
 const VIA = { direct: ["said to it", ""], "reported-by-A": ["reported by Role 1", "rep"], "reported-by-B": ["reported by Role 2", "rep"], inferred: ["the AI's inference", "inf"] };
-const METL = { unverified:"not yet verified", "accepted-proposal":"proposal accepted by both", met: "met", partial: "partly met", no: "not met", unsupported: "no part for it", proposed: "on the sheet — awaiting both", "met-by-rule": "met by a rule", "met-by-new": "met by a new part" };
+const METL = { unverified:"not yet verified", "accepted-proposal":"proposal accepted by both", confirmed:"placed — position confirmed by its owner", objected:"placed — the other person objects", met: "met", partial: "partly met", no: "not met", unsupported: "no part for it", proposed: "on the sheet — proposed", "met-by-rule": "met by a rule", "met-by-new": "met by a new part" };
 const KINDL = { rule: "a rule", new: "a new part" };
 function wallCard(c, small){
   const [vl, vc] = VIA[c.via] || [c.via, ""];
@@ -1513,19 +1558,20 @@ function resultBar(h){
 function sketchPanel(h){
   const ks = h.sketches || [], last = ks[ks.length - 1];
   const said = h.lines.filter(l => l.who !== "builder" && !l.upload && l.text).length;
-  const fromRefs = last?.source === "reference assets";
+  const fromRefs = last?.source === "reference assets" || (last?.references || 0)>0;
+  const fromToolkit = last?.source?.startsWith("toolkit interpretation");
   const canDraw = said > 0 || h.lines.some(l=>l.upload);
-  const stale = !fromRefs && last && said > last.lines;
+  const stale = !fromRefs && last && (last.turn != null ? h.step > last.turn : said > last.lines);
   return `<div class="sketch" role="tabpanel" aria-label="Line sketch">
     <div>${last
-      ? `<img src="/sketch/${esc(h.room)}/${last.n}.png" alt="${fromRefs ? 'Bridge line sketch reconstructed from the saved reference images' : 'Bridge line sketch drawn from the saved conversation'}">`
+      ? `<img src="/sketch/${esc(h.room)}/${last.n}.png" alt="${fromToolkit ? 'Bridge line sketch generated from Toolkit interpretation and decisions' : fromRefs ? 'Bridge line sketch reconstructed from the saved reference images' : 'Bridge line sketch drawn from the saved conversation'}">`
       : `<div class="empty">${h.sketching ? "Drawing from what they said…" : "No line sketch saved for this conversation yet."}</div>`}</div>
     <div>
       ${h.archived && !last ? `<p class="note">This historical record has no saved sketch.</p>` : ""}
-      <p class="eyebrow">${fromRefs ? (last?.retrospective ? "Generated later from saved reference images" : "Drawn from the submitted reference images") : last?.retrospective ? "Generated later from the saved conversation" : "Sketched from the chat alone"}</p>
+      <p class="eyebrow">${fromToolkit ? "Drawn from Toolkit interpretation & decisions" : fromRefs ? (last?.retrospective ? "Generated later from saved reference images" : "Drawn from the submitted reference images") : last?.retrospective ? "Generated later from the saved conversation" : "Sketched from the chat alone"}</p>
       <p class="what ${last ? "" : "none"}">${last ? `Drawn from ${fromRefs ? `${last.references} reference image${last.references===1?"":"s"}` : `${last.lines} line${last.lines === 1 ? "" : "s"}`}${ks.length > 1 ? ` · sketch ${last.n} of ${ks.length}` : ""}` : "nothing drawn yet"}</p>
       ${h.sketchError ? `<p class="note" style="color:#f2b8a6"><b>Could not draw it:</b> ${esc(h.sketchError)}</p>` : ""}
-      <p class="note">This sketch is a separate drawing from ${fromRefs ? "the saved reference images and recorded AI outcome" : "the conversation"}, not a tracing of the matchstick bridge.${stale ? ` <b>${said - last.lines} more line${said - last.lines === 1 ? " has" : "s have"} been said since this was drawn.</b>` : ""}</p>
+      <p class="note">This sketch is a separate drawing from ${fromToolkit ? "the route-visible conversation and Toolkit decision record" : fromRefs ? "the saved reference images and recorded AI outcome" : "the conversation"}, not a tracing of the matchstick bridge.${stale ? ` <b>The conversation has changed since this was drawn.</b>` : ""}</p>
       ${h.archived || h.finished === undefined || h.role !== "host" || !document.getElementById || location.pathname.startsWith("/history") ? "" : `<div class="row">
         <button class="go" id="sketch" ${h.sketching || !canDraw ? "disabled" : ""}>${h.sketching ? "Drawing…" : last ? "Generate another sketch" : "Generate line sketch"}</button>
         ${ks.length > 1 ? ks.slice(0, -1).map(k => `<a class="mini" href="/sketch/${esc(h.room)}/${k.n}.png" target="_blank" rel="noopener">sketch ${k.n}</a>`).join("") : ""}
@@ -1572,6 +1618,16 @@ function restoreStudioFocus(f){
   const el = f && document.getElementById(f.id);
   if (el && !el.disabled) { el.focus({preventScroll:true}); el.setSelectionRange(f.start,f.end); }
 }
+function autoReplayPanel(h){
+  if(h.replayOf)return `<section class="card" style="padding:16px;margin:12px 0"><b>Toolkit · replay of the same Control conversation</b><p>AI interpretations, bridge and sketch are generated again using Toolkit. Human replies are fixed; this is not a second live participant session.</p><a href="/j/${esc(h.replayOf.room)}/both">View original Control →</a></section>`;
+  if(h.agent!=='keys')return '';
+  if(['via-1','via-2'].includes(h.route))return '<section class="card" style="padding:16px;margin:12px 0"><b>AI relay · manual Toolkit session</b><p>This path is excluded from automatic copying. Run a fresh conversation in Toolkit so participants can respond to its own relay.</p></section>';
+  const j=h.autoToolkit;
+  const labels={queued:'Waiting to replay',running:'Toolkit is reading the conversation',sketching:'Bridge built · generating sketch',complete:'Toolkit bridge and sketch saved',failed:'Replay needs attention'};
+  return `<section class="card" style="padding:16px;margin:12px 0"><b>Automatic Toolkit comparison</b><p>${j?esc(labels[j.status]||j.status)+(j.status==='running'?` · ${j.progress||0}/${j.total} contributions`:''):'After Control builds, the same conversation is replayed through Toolkit on this communication path.'}</p>${j?.error?`<p role="alert">${esc(j.error)}</p><button onclick="retryAutoToolkit('${esc(h.room)}')">Retry generation</button>`:''}${j?.target?` <a href="/j/${esc(j.target)}/both">Open Toolkit replay →</a>`:''}<small style="display:block;margin-top:8px">Original recordings stay intact. New Control revisions create separate comparison records.</small></section>`;
+}
+async function retryAutoToolkit(room){const {ok,j}=await post('/api/auto-toolkit/retry',{room});if(!ok)alert(j.error||'Retry failed');}
+
 function bothView(){
   const a = both.A, b = both.B, h = both.host;
   if (!a || !b || !h) return;
@@ -1588,6 +1644,7 @@ function bothView(){
     <div class="study-controls">${communicationBar(a)}${processTabs(a)}</div>
     <div class="study-status"><span class="status-dot"></span>${h.archived?'Viewing a saved session':h.thinking?'AI is building…':'Ready to collaborate'}<span>${a.argument==='refs'?'Two reference images':'Two perspectives'} · ${selectedProcess==='keys'?'Control':'Toolkit'}</span></div>
     <div class="study-mode" role="group" aria-label="Workspace mode"><button data-study-mode="collaborate" aria-pressed="${studyMode==='collaborate'}">Collaborate</button><button data-study-mode="feedback" aria-pressed="${studyMode==='feedback'}">Feedback</button><small>${studyMode==='feedback'?'Review and annotate this pair’s current result.':'Talk, build and explore together.'}</small></div>
+    ${autoReplayPanel(h)}
     ${pathGuide(a,h)}
     <main class="studio-grid">
       <section class="workspace-art" aria-label="Shared work">
@@ -1654,29 +1711,36 @@ function bothView(){
 // proxies pass straight through; takes the stream when the stream flows; and
 // polls when it does not.
 function listen(room, role, onState){
-  let last = "", streamed = false, stopped = false, es = null;
-  // Only repaint on a real change. Repainting on every poll rebuilt the
-  // composer every two seconds and would have thrown away half a sentence.
-  // A room that is gone used to be skipped in silence, which left the page
-  // blank for good. Say so instead.
-  const apply = s => {
-    // A room left behind by a tab switch must not paint over the new one.
-    if (stopped) return;
-    if (s && s.error) { gone(room); return; }
-    if (!s) return;
-    const k = JSON.stringify(s);
-    if (k === last) return;
-    last = k; onState(s);
+  // HTTP/1 browsers limit connections per origin. Three permanent streams per
+  // facilitator tab exhausted that pool and blocked new pages from loading.
+  // Short, non-overlapping polls release connections for navigation and sends.
+  let last = "", stopped = false, timer = null, controller = null;
+  const pull = async () => {
+    controller = new AbortController();
+    const deadline = setTimeout(() => controller?.abort(), 8000);
+    try {
+      const response = await fetch(`/api/state?room=${room}&role=${role}`, {
+        signal: controller.signal, cache: "no-store"
+      });
+      if (!response.ok) throw Error(`State request failed: ${response.status}`);
+      const s = await response.json();
+      if (stopped) return;
+      if (s?.error) { gone(room); return; }
+      if (!s) return;
+      const key = JSON.stringify(s);
+      if (key !== last) { last = key; onState(s); }
+    } catch {} finally {
+      clearTimeout(deadline);
+      controller = null;
+      if (!stopped) timer = setTimeout(pull, 2000);
+    }
   };
-  const pull = () => fetch(`/api/state?room=${room}&role=${role}`)
-    .then(r => r.json()).then(apply).catch(() => {});
   pull();
-  try {
-    es = new EventSource(`/events?room=${room}&role=${role}`);
-    es.onmessage = e => { streamed = true; apply(JSON.parse(e.data)); };
-  } catch {}
-  const timer = setInterval(() => { if (!streamed) pull(); }, 2000);
-  return () => { stopped = true; clearInterval(timer); if (es) es.close(); };
+  return () => {
+    stopped = true;
+    clearTimeout(timer);
+    controller?.abort();
+  };
 }
 
 // Painted once. Polling keeps hearing that the room is gone, and repainting on
@@ -2000,8 +2064,12 @@ document.addEventListener('click',e=>{
     selectedUser=owner?.id || users.find(u=>u.id===remembered)?.id || "user2";
     selectedProcess=owner?.sessions.find(x=>x.room===ROOM)?.agent || "keys";
     userNav();
-    if(owner)watchBoth(ROOM);
-    else await switchProcess(selectedProcess,"pairs");
+    if(!owner){
+      const exact=await fetch('/api/state?role=host&room='+encodeURIComponent(ROOM)).then(r=>r.json());
+      if(exact.error)throw Error(exact.error);
+      selectedUser='';selectedProcess=exact.agent==='toolkit'?'toolkit':'keys';userNav();
+    }
+    watchBoth(ROOM);
     // Rooms are switched in place, so Back has to be handled here: go to the
     // room the address now names.
     window.onpopstate = () => location.reload();

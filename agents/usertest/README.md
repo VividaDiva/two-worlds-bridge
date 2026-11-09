@@ -167,6 +167,32 @@ counts only once both have accepted, a decline is recorded as a decline (by
 whom), and a declined proposal is not put back. The card's status follows:
 *proposed*, *met by a rule*, *met by a new part*, or *no part for it*.
 
+### Named parts (the toolkit builder)
+
+With the `toolkit` builder the "new part" answer is **name it**. The kit still
+has no part for a dog path or a lamp, but the need is not translated into a
+part the kit has, and it does not wait for anyone to accept a new part. The AI
+takes the speaker's own word for it — a short noun phrase lifted from their
+quote (`label`) — and places it with one of seven drawing primitives at one
+position: a **band** (a strip beside the walk: a lane, a footway, a dog path),
+a **deck** (another level, above or below), a **post** (uprights with a head:
+lights, poles), an **edge** (a wall, barrier, kerb or high rail, along the
+near edge or between the walk and a band), a **wash** (the surface of the walk
+itself), a **sign** (a plate with words: every rule is placed this way, at the
+ends) or an **end** (gates, ramps, steps). The noun is theirs; only the placing
+is the drawing's. "None" is kept for what cannot be placed at all — a quality,
+a purpose.
+
+A named part is drawn at once, dashed and labelled with the word and whose it
+is, in that person's colour. It is the **owner's** yes that confirms it ("that's
+where it goes" → solid); the owner may also rename it or take it off ("not
+there"). The other person may agree or object; an objection is kept on the
+sheet and in the legend, not treated as a veto. The AI's reply after a build
+says where it placed each unconfirmed word and, where the owner can hear it,
+asks that owner whether that is where it goes — the member check, reduced to
+the one thing that was translated: the position. The card's status follows:
+*proposed*, *confirmed*, *objected*, or *not yet verified*.
+
 Under each of the AI's answers on the `develop` route, and in the facilitator's
 trace on every route, is what it did that turn: what it heard as needs, which
 tools fired, what it decided (so many from the kit, so many rules, so many new
@@ -184,3 +210,8 @@ kerb as a raised edge, a sealed surface as a wash. Rules stay as text. The
 layer changes nothing about the kit, the choosing or the score; the control
 agent's bridge never carries it. Under the drawing, a legend says what was
 drawn from the sheet and what on the sheet cannot be drawn.
+
+With the toolkit builder the layer is the named parts (above), drawn from the
+moment they are proposed: dashed until the owner confirms, in the owner's
+colour, each with its label on the picture. The legend lists them as "drawn in
+their words", with whose word and where it was placed.

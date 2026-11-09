@@ -102,7 +102,8 @@ test('exclusive pipelines: real prompts, corrections, images, restart, and legac
  await post('/api/say',{room:rev.room,role:'B',text:'REV_OTHER'});rh=await settled(rev.room);
  assert.equal(rh.wall.cards[0].need,'Open all day');assert.equal(rh.wall.question.status,'pending');
  await post('/api/say',{room:rev.room,role:'A',text:'REV_OWNER'});rh=await settled(rev.room);
- assert.equal(rh.wall.cards[0].need,'Open 07:00–23:00');assert.equal(rh.wall.question.status,'answered');assert.ok(!rh.shape);
+ // On `all` the AI is in the room for all of it: once both have spoken it revises after every line, so a shape stands here without a Confirm.
+ assert.equal(rh.wall.cards[0].need,'Open 07:00–23:00');assert.equal(rh.wall.question.status,'answered');assert.ok(rh.shape);
  assert.equal(JSON.stringify(rh.lines[0].interpretations),frozen);
  const next=calls().length;
  await post('/api/say',{room:rev.room,role:'A',text:'REV_BUILD',mode:'build'});rh=await settled(rev.room);assert.ok(rh.shape);
