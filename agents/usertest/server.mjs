@@ -1101,7 +1101,9 @@ const srv = http.createServer(async (req, res) => {
     const origin = from && rooms.get(from);
     const family = origin ? (origin.family || origin.id) : null;
     if (family) {
-      const sibling = [...rooms.values()].find(x => (x.family || x.id) === family && x.route === route && (x.agent || "both") === agent && (x.place || "confirm") === place && x.argument === argument && !x.finished);
+      // the one with the most said in it, so an empty duplicate never hides the real conversation
+      const sibling = [...rooms.values()].filter(x => (x.family || x.id) === family && x.route === route && (x.agent || "both") === agent && (x.place || "confirm") === place && x.argument === argument && !x.finished)
+        .sort((a, b) => b.transcript.length - a.transcript.length)[0];
       if (sibling) return json(res, 200, { room: sibling.id, existing: true });
     }
     // Never reuse the name of a session already on disk, or its record goes.
