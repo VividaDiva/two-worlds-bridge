@@ -1375,11 +1375,11 @@ const srv = http.createServer(async (req, res) => {
       // Named parts. The owner's word, the owner's yes.
       const owner = ownerOf(r, it), mine = owner === role;
       const newLabel = typeof label === "string" ? label.trim().slice(0, 60) : "";
-      if (newLabel && mine) {
+      if (newLabel && mine && newLabel !== (it.label || it.what)) {
         (it.renamed ||= []).push({ from: it.label || it.what, to: newLabel, by: role, at: Date.now() });
         it.label = newLabel;
         r.transcript.push({ who: role, text: `Call it: ${newLabel}.`, phase: "main", talk: true, sheet: it.id, at: Date.now() });
-      } else if (newLabel) return json(res, 403, { error: "only its owner can rename it" });
+      } else if (newLabel && !mine) return json(res, 403, { error: "only its owner can rename it" });
       // Moving it is the owner saying where it goes: the new position, confirmed.
       if (typeof position === "string" && position) {
         if (!mine) return json(res, 403, { error: "only its owner can move it" });

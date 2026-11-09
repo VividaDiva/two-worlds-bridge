@@ -964,7 +964,7 @@ function wire(s){
   if (rb) {
     const act = async (el, payload) => { el.disabled = true; const { ok, j } = await post("/api/accept", { room: s.room, role: r, ...payload }); if (!ok) { const note = document.getElementById("err-" + r); if (note) note.innerHTML = `<div class="warn">${esc(j.error || "that did not send")}</div>`; el.disabled = false; } };
     const id = rb.dataset.item, input = rb.querySelector("input");
-    const rename = () => { const v = input.value.trim(); if (v && v !== rb.dataset.label) act(input, { item: id, label: v }); };
+    const rename = () => { const v = input.value.trim(); if (v && v !== rb.dataset.label) { rb.dataset.label = v; act(input, { item: id, label: v }); } };
     rb.querySelector("[data-rb-yes]").onclick = () => { const v = input.value.trim(); act(rb, v && v !== rb.dataset.label ? { item: id, label: v, ok: true } : { item: id, ok: true }); };
     rb.querySelector("[data-rb-off]").onclick = () => act(rb, { item: id, ok: false });
     input.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); rename(); } };
