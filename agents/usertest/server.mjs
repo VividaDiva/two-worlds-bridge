@@ -229,7 +229,7 @@ function record(room) {
     room: room.id, argument: room.argument, title: arg.title,
     route: room.route, arrow: route.arrow, version: route.develop ? "B" : "A",
     autoReplayEnabled:!!room.autoReplayEnabled, replayOf:room.replayOf || null,
-    agent: modeOf(room), place: room.place || "confirm", wall: room.wall || null, retro: room.retro || {},
+    agent: modeOf(room), place: room.place || "confirm", family: room.family || null, wall: room.wall || null, retro: room.retro || {},
     sheetDrawn: room.wall ? sheetDrawn(room) : null,
     control: room.control ? { standingId: room.control.standing, lines: room.control.lines,
                               standing: room.control.standing ? NAME(room.control.standing) : null,
@@ -978,7 +978,7 @@ function restore() {
         uploads[role] = { ...u, media, dataUrl: pic
           ? `data:${media};base64,${fs.readFileSync(path.join(pics, pic)).toString("base64")}` : null };
       }
-      rooms.set(rec.room, { id: rec.room, argument: rec.argument, route: rec.route, agent: rec.agent || "both", place: rec.place || "confirm", ctx,
+      rooms.set(rec.room, { id: rec.room, argument: rec.argument, route: rec.route, agent: rec.agent || "both", place: rec.place || "confirm", ...(rec.family ? { family: rec.family } : {}), ctx,
         turn: rec.turn ?? rec.transcript.filter(e => e.who !== "builder").length,
         transcript: rec.transcript, uploads, standing: rec.standingId ?? null, thinking: false,
         finished: !!rec.finished, score: rec.finished ? rec.score : undefined,
@@ -1089,16 +1089,25 @@ const srv = http.createServer(async (req, res) => {
   });
 
   if (p === "/api/create" && req.method === "POST") {
-    const { argument, route, agent = "toolkit", place = "confirm" } = await body(req);
+    const { argument, route, agent = "toolkit", place = "confirm", from } = await body(req);
     if (!["toolkit","keys"].includes(agent)) return json(res, 400, {error:"choose toolkit or keys for a new room"});
     // How a named part lands: "confirm" draws it dashed and asks its owner;
     // "direct" draws it solid at once — the process is updated, nobody is asked.
     if (!["confirm","direct"].includes(place)) return json(res, 400, {error:"place is confirm or direct"});
     if (!ARGUMENTS[argument] || !ROUTES[route]) return json(res, 400, { error: "unknown argument or route" });
+    // Rooms opened from one another on their own form a family: switching path
+    // or process returns to the family's existing room for it instead of
+    // starting an empty one, so nothing said in either is left behind.
+    const origin = from && rooms.get(from);
+    const family = origin ? (origin.family || origin.id) : null;
+    if (family) {
+      const sibling = [...rooms.values()].find(x => (x.family || x.id) === family && x.route === route && (x.agent || "both") === agent && (x.place || "confirm") === place && x.argument === argument && !x.finished);
+      if (sibling) return json(res, 200, { room: sibling.id, existing: true });
+    }
     // Never reuse the name of a session already on disk, or its record goes.
     let id = code();
     while (rooms.has(id) || fs.existsSync(path.join(SESSIONS, `${id}.json`))) id = code();
-    rooms.set(id, { id, argument, route, agent, place, ctx: mkCtx(), turn: 0, transcript: [],
+    rooms.set(id, { id, argument, route, agent, place, ...(family ? { family } : {}), ctx: mkCtx(), turn: 0, transcript: [],
                     uploads: {}, standing: null, thinking: false, finished: false,
                     sketches: [], wall: agent === "toolkit" ? newWall() : null, control: null, retro: {}, createdAt: new Date().toISOString() });
     streams.set(id, new Set());

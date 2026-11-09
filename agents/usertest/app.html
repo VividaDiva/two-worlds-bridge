@@ -1236,7 +1236,7 @@ async function switchProcess(agent,argument=both.A?.argument||"pairs",user=selec
       }
       // A room opened on its own (not under a collaboration pair): another path
       // or process opens a fresh room of its own, keeping how parts are placed.
-      const {ok,j}=await post("/api/create",{argument,route:route||current?.route||"all",agent,place:current?.place||"confirm"});
+      const {ok,j}=await post("/api/create",{argument,route:route||current?.route||"all",agent,place:current?.place||"confirm",from:current?.room});
       if(!ok)throw Error(j.error||"Unable to open a new room");
       selectedProcess=agent;history.pushState(null,'',`/j/${j.room}/both`);watchBoth(j.room);return;
     }
