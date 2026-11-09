@@ -19,7 +19,7 @@ import { fileURLToPath } from "node:url";
 import { mkCtx, hear, newTurn, build, provenance } from "../engine.mjs";
 import { ARGUMENTS, ROUTES, NAME, FEATURES, KIT, propsOf } from "./kit.mjs";
 import { readLine, chooseBuild, speak, readPicture, relay, sketch, readLineB, chooseBuildB, propose,
-         wallHear, wallDecide, relayFromWall, chooseBuildT, readPictureToolkit, toolkitReply, POSITIONS } from "./builder.mjs";
+         wallHear, wallDecide, relayFromWall, chooseBuildT, readPictureToolkit, toolkitReply, sameNeed, POSITIONS } from "./builder.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 8780);
@@ -392,10 +392,20 @@ async function hearLine(room, line) {
   const at = Date.now(), index = room.transcript.indexOf(line);
   const ids = [];
   const norm = t => String(t || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
-  for (const c of heard.cards) {
-    // Said again by the same person: a note on the card that is already there.
-    const again = modeOf(room) === "toolkit" && room.wall.cards.find(x => !x.withdrawn && x.who === c.who && (norm(x.need) === norm(c.need) || (norm(c.need).length > 12 && (norm(x.need).includes(norm(c.need)) || norm(c.need).includes(norm(x.need))))));
+  // One thing is one card per person. Each need just heard is checked against
+  // the wall: the same thing said again by its owner is a note on their card;
+  // the other person's word for the same thing is a card of its own that will
+  // share the part (sameAs). The wording check is a fallback for the model's.
+  let same = heard.cards.map(() => "");
+  if (modeOf(room) === "toolkit" && heard.cards.length && activeCards(room).length) {
+    try { same = await sameNeed({ wall: room.wall, cards: heard.cards }); } catch (e) { console.error(`same-need check ${room.id}: ${e.message}`); }
+  }
+  for (const [k, c] of heard.cards.entries()) {
+    const twin = same[k] ? room.wall.cards.find(x => x.id === same[k] && !x.withdrawn) : null;
+    const again = modeOf(room) === "toolkit" && ((twin && twin.who === c.who) ? twin
+      : room.wall.cards.find(x => !x.withdrawn && x.who === c.who && (norm(x.need) === norm(c.need) || (norm(c.need).length > 12 && (norm(x.need).includes(norm(c.need)) || norm(c.need).includes(norm(x.need)))))));
     if (again) { again.changes.push({ at, line: index, change: "said again: " + c.quote, status: "note" }); continue; }
+    if (twin) c.sameAs = twin.id;
     const id = "n" + (room.wall.cards.length + 1);
     // On a route where this speaker cannot have heard the other, a card about
     // the other person can only be reported or inferred — never direct.
@@ -560,6 +570,10 @@ async function decideWall(room) {
     // Another word for a part already on the sheet: one part, both words.
     // The model says so with sameAs; failing that, the same primitive at the
     // same place with mostly the same words is taken as the same thing.
+    if (toolkit && !d.sameAs && byId[d.id].sameAs) {
+      const viaCard = room.wall.sheet.find(p => !p.declined && (p.cardId === byId[d.id].sameAs || (p.aliases || []).some(a => a.cardId === byId[d.id].sameAs)));
+      if (viaCard) d.sameAs = viaCard.id;
+    }
     if (toolkit && !d.sameAs && placed.primitive) {
       const twin = room.wall.sheet.find(p => !p.declined && p.primitive === placed.primitive && p.position === placed.position && sameWords(p.label || p.what, placed.label));
       if (twin && twin.cardId !== d.id) d.sameAs = twin.id;

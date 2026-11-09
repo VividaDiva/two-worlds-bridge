@@ -623,6 +623,33 @@ const DECIDE = [
   `Never use the word "user".`,
 ].join("\n");
 
+// Same thing? A small, separate question the model answers far better than it
+// does inside the hearing's ten-field card: for each need just heard, is it a
+// need already on the wall — said again, or said by the other person in other
+// words? Different lanes for different users are different things.
+const SAME_JSON = { type:"object", properties:{ same:{ type:"array", items:{ type:"object", properties:{ index:{type:"integer"}, id:{type:"string"} }, required:["index","id"] } } }, required:["same"] };
+export async function sameNeed({ wall, cards }) {
+  const live = wall.cards.filter(c => !c.withdrawn);
+  if (!live.length || !cards.length) return cards.map(() => "");
+  const user = [
+    `Two people are describing one bridge to a builder. Needs already on the wall:`,
+    ...live.map(c => `  [${c.id}] ${c.who === "A" ? "Role 1" : "Role 2"}: ${c.need}`),
+    ``,
+    `Needs just heard:`,
+    ...cards.map((c, i) => `  (${i}) ${c.who === "A" ? "Role 1" : "Role 2"}: ${c.need} — "${c.quote}"`),
+    ``,
+    `For each need just heard, give the id of the need on the wall that is the same thing — the same lane,`,
+    `wall, barrier, rule or light, said again or said by the other person in other words — or "" if it is a`,
+    `different thing. A lane for dogs and a lane for trucks are different things; "a wall between cars and`,
+    `dogs" and "a strong separation to protect the dog path from cars" are the same thing; "no trucks" and`,
+    `"trucks only in the centre lane" are the same rule, revised.`,
+  ].join("\n");
+  const out = await ask("Answer only what is asked, as JSON. Never use the word \"user\".", user, SAME_JSON);
+  const ids = new Set(live.map(c => c.id)), same = cards.map(() => "");
+  for (const x of Array.isArray(out.same) ? out.same : []) if (Number.isInteger(x.index) && same[x.index] !== undefined && ids.has(String(x.id))) same[x.index] = String(x.id);
+  return same;
+}
+
 // With the toolkit on, "new" means "name it": the thing stays in their words and
 // is placed, not translated. Rules are placed too — as a sign.
 const NAME_IT = [
