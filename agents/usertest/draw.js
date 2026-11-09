@@ -64,8 +64,14 @@
   // two — and anything beside the walk can be seen. A side view could not show
   // a footway at all; it drew two abreast as a second line below the first.
   // z runs across the deck: 0 at the near edge, DW at the far one.
-  const AX = 0.55, AY = 0.32;                 // the oblique: right and up, per unit of z
+  // The oblique: right and up, per unit of z. With named parts beside the walk
+  // it opens wider and the view pulls back, so lanes, walls and lights beside
+  // the walk sit apart instead of on top of it. Without them the picture is
+  // exactly what it always was, so older records and their marks still line up.
+  let AX = 0.55, AY = 0.32;
   const P = (x, y, z) => ({ x: x + z * AX, y: y - z * AY });
+  const viewOf = extras => { const n = (extras && extras.named || []).length; return n ? { ax: 0.9, ay: 0.42, k: 1.08, dx: -30, dy: 26 } : { ax: 0.55, ay: 0.32, k: 1.4, dx: -40, dy: 10 }; };
+  const setView = extras => { const v = viewOf(extras); AX = v.ax; AY = v.ay; return v; };
   function lay3(list, x1, y1, z1, x2, y2, z2) {
     const p = P(x1, y1, z1), q = P(x2, y2, z2);
     lay(list, p.x, p.y, q.x, q.y);
@@ -75,6 +81,7 @@
   // another colour, and change nothing about the kit, the choosing or the score.
   function assemble(d, world, extras) {
     const list = [], strokes = [], labels = [];
+    setView(extras);
     if (!d) return { list, strokes, labels };
     const deck = d.level === "raised" ? DECK_HIGH : DECK_LOW;
     const bed = bedOf(world);
@@ -144,6 +151,9 @@
     // once its owner has confirmed it or it was placed directly. A numbered
     // marker in the owner's colour ties it to the legend.
     let bands = 0, decksAbove = 0, decksBelow = 0, signs = 0, washes = 0, edgesBetween = 0, postsAlong = 0;
+    const GAPZ = 58, BANDW = 30;                 // space between strips, and a strip's own width
+    const nBands = (X.named || []).filter(n => n.primitive === "band").length;
+    const outerZ = DW + (nBands ? 14 + nBands * GAPZ - (GAPZ - BANDW) : 0);   // the far edge of the last strip
     let k = 0;
     const label = (x, y, z, n, o) => labels.push({ ...P(x, y, z), n: k, text: n.label, who: n.who, status: n.status, ...o });
     for (const n of X.named || []) {
@@ -154,9 +164,9 @@
       const pos = n.position || "";
       switch (n.primitive) {
         case "band": {                      // a lane or path running beside the walk, on the far side
-          const z0 = DW + 16 + bands * 44, z1 = z0 + 28; bands++;
+          const z0 = DW + 14 + bands * GAPZ, z1 = z0 + BANDW; bands++;
           stick(GAP_L, deck, z0, GAP_R, deck, z0); stick(GAP_L, deck, z1, GAP_R, deck, z1);
-          for (let i = 0; i <= 4; i++) { const x = GAP_L + SPAN * i / 4; stick(x, deck, z0, x, deck, z1); }
+          for (let i = 0; i <= 2; i++) { const x = GAP_L + SPAN * i / 2; stick(x, deck, z0, x, deck, z1); }
           label(GAP_R + 8, deck + 4, (z0 + z1) / 2, n, { align: "left" });
           break; }
         case "deck": {                      // another level, above or below the walk
@@ -169,12 +179,14 @@
           break; }
         case "post": {                      // uprights with their heads up: lights, poles
           const xs = pos === "ends" ? [GAP_L + 12, GAP_R - 12] : [GAP_L + SPAN * 0.2, GAP_L + SPAN * 0.5, GAP_L + SPAN * 0.8];
-          const z = pos === "ends" ? 0 : DW, h = 64 + postsAlong * 14; postsAlong++;
+          const z = pos === "ends" ? 0 : outerZ + 10 + postsAlong * 12, h = 64 + postsAlong * 14; postsAlong++;
           for (const x of xs) stick(x, deck, z, x, deck - h, z, "p2");
           label(xs[xs.length - 1] + 8, deck - h - 6, z, n, { align: "left" });
           break; }
         case "edge": {                      // a wall, barrier, kerb or high rail: a rail with uprights
-          const z = pos === "between" ? DW + 8 + edgesBetween * 44 : 0; if (pos === "between") edgesBetween++;
+          // "along": the far edge of the walk, where it meets what is beside it;
+          // "between": in the gaps between the strips, one gap per wall.
+          const z = pos === "between" ? DW + 14 + (edgesBetween + 1) * GAPZ - (GAPZ - BANDW) / 2 : DW; if (pos === "between") edgesBetween++;
           const h = 34;
           stick(GAP_L + 10, deck - h, z, GAP_R - 10, deck - h, z);
           for (const x of [GAP_L + 10, MID, GAP_R - 10]) stick(x, deck, z, x, deck - h, z);
@@ -210,9 +222,10 @@
   // what the picture would show.
   global.crossingLayers = (shape, world, extras) => assemble(shape, world, extras);
   global.crossingMatches = function(shape, world, extras) {
+    const v = viewOf(extras);
     return assemble(shape, world, extras).list.map((m,i) => {
       const cx=(m.x1+m.x2)/2, cy=(m.y1+m.y2)/2, a=wob(i);
-      const pt=(x,y)=>({x:600+1.4*(cx+(x-cx)*Math.cos(a)-(y-cy)*Math.sin(a)-640),y:370+1.4*(cy+(x-cx)*Math.sin(a)+(y-cy)*Math.cos(a)-360)});
+      const pt=(x,y)=>({x:600+v.k*(cx+(x-cx)*Math.cos(a)-(y-cy)*Math.sin(a)-600+v.dx),y:370+v.k*(cy+(x-cx)*Math.sin(a)+(y-cy)*Math.cos(a)-370+v.dy)});
       const a1=pt(m.x1,m.y1), b1=pt(m.x2,m.y2);
       return {id:String(i),x1:a1.x,y1:a1.y,x2:b1.x,y2:b1.y};
     });
@@ -229,7 +242,8 @@
     ctx.scale(scale * dpr, scale * dpr);
     // Closer in on the gap: the turned view sits smaller in the scene than the
     // side view did, and the banks are not what anybody is looking at.
-    ctx.translate(600, 370); ctx.scale(1.4, 1.4); ctx.translate(-600 - 40, -370 + 10);
+    const v = setView(extras);
+    ctx.translate(600, 370); ctx.scale(v.k, v.k); ctx.translate(-600 + v.dx, -370 + v.dy);
     const bed = bedOf(world);
     ctx.fillStyle = C.paper; ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = C.land;
