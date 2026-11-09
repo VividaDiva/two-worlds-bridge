@@ -19,7 +19,7 @@ import { fileURLToPath } from "node:url";
 import { mkCtx, hear, newTurn, build, provenance } from "../engine.mjs";
 import { ARGUMENTS, ROUTES, NAME, FEATURES, KIT, propsOf } from "./kit.mjs";
 import { readLine, chooseBuild, speak, readPicture, relay, sketch, readLineB, chooseBuildB, propose,
-         wallHear, wallDecide, relayFromWall, chooseBuildT, readPictureToolkit, toolkitReply } from "./builder.mjs";
+         wallHear, wallDecide, relayFromWall, chooseBuildT, readPictureToolkit, toolkitReply, POSITIONS } from "./builder.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 8780);
@@ -158,6 +158,10 @@ function view(room, role) {
     // What both people accepted onto the sheet, sorted into what the drawing
     // can show as an added layer and what it cannot (rules, mostly).
     sheetDrawn: room.wall && (role === "host" || dev) ? sheetDrawn(room) : null,
+    // The read-back, as a card rather than a sentence: the named parts this
+    // person owns that are drawn but not yet confirmed, numbered as on the
+    // picture. Only where the route lets them hear the builder at all.
+    readback: readbackFor(room, role),
     retro: role === "host" ? (room.retro || {}) : room.retro && room.retro[role] ? { [role]: room.retro[role] } : {},
     bothSpoke: dev ? bothSpoke(room) : null,
     props: dev && room.ctx.design ? room.ctx.design.has.map(f => ({ key: f, text: FEATURES[f] })) : [],
@@ -463,6 +467,16 @@ function sheetDrawn(room) {
     if (hit) { out[hit] = true; out.drawn.push({ what: p.what, as: hit }); } else out.other.push({ what: p.what, kind: p.kind });
   }
   return out;
+}
+
+// What a person is asked to confirm: their own named parts, drawn as proposals,
+// with the number each carries on the picture. Nothing where the route keeps
+// the builder's words from them.
+function readbackFor(room, role) {
+  if (modeOf(room) !== "toolkit" || !room.wall || (role !== "A" && role !== "B")) return null;
+  if (!ROUTES[room.route].see?.[role]?.echo || room.finished) return null;
+  const named = sheetDrawn(room).named;
+  return named.map((n, i) => ({ ...n, n: i + 1 })).filter(n => n.who === role && n.status !== "confirmed");
 }
 
 // The decision record, before a build; rendered for the chooser as well.
@@ -1350,7 +1364,7 @@ const srv = http.createServer(async (req, res) => {
   // A rule or a new part on the sheet counts only once both have accepted it.
   // A decline is recorded as a decline — not silence, not consent.
   if (p === "/api/accept" && req.method === "POST") {
-    const { room: id, role, item, ok, label } = await body(req);
+    const { room: id, role, item, ok, label, position } = await body(req);
     const r = rooms.get(id);
     if (!r || !r.wall) return json(res, 404, { error: "no such room, or no wall" });
     if (role !== "A" && role !== "B") return json(res, 400, { error: "unknown role" });
@@ -1366,6 +1380,15 @@ const srv = http.createServer(async (req, res) => {
         it.label = newLabel;
         r.transcript.push({ who: role, text: `Call it: ${newLabel}.`, phase: "main", talk: true, sheet: it.id, at: Date.now() });
       } else if (newLabel) return json(res, 403, { error: "only its owner can rename it" });
+      // Moving it is the owner saying where it goes: the new position, confirmed.
+      if (typeof position === "string" && position) {
+        if (!mine) return json(res, 403, { error: "only its owner can move it" });
+        if (!POSITIONS.includes(position)) return json(res, 400, { error: "no such position" });
+        it.position = position; it.accepted = { ...it.accepted, [role]: true }; it.decidedAt = Date.now();
+        r.transcript.push({ who: role, text: `Put it ${position}: ${it.label || it.what}.`, phase: "main", talk: true, sheet: it.id, at: Date.now() });
+        linkWall(r); push(id);
+        return json(res, 200, { ok: true, status: "confirmed", position });
+      }
       if (ok === false && mine) { it.declined = true; it.declinedBy = role; it.accepted = {}; }
       else if (ok === false) { it.objection = { by: role, at: Date.now() }; }
       else if (ok !== undefined && ok !== null) { it.accepted = { ...it.accepted, [role]: true }; if (!mine) it.objection = null; }

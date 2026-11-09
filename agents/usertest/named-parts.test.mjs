@@ -75,13 +75,21 @@ test('the toolkit names, places and draws what the kit cannot make; the owner co
   // the reply was told what to read back, and to whom
   const reply=calls().filter(c=>c.schema.properties.text).at(-1);const sent=JSON.parse(reply.contents);
   assert.equal(sent.named.length,2);assert.ok(sent.named.some(n=>n.label==='dog passage'&&n.owner==='Role 2'&&n.canHear===true));
-  assert.ok(reply.system.includes('where you placed it'));
+  assert.ok(reply.system.includes('do NOT ask that in your text'),'the question is a card, not a sentence');
+  // the read-back is data for a card: the owner sees their own unconfirmed parts, numbered as drawn; the other sees none of them
+  const vb=await get(`/api/state?room=${room}&role=B`), va=await get(`/api/state?room=${room}&role=A`);
+  assert.deepEqual(vb.readback.map(i=>[i.id,i.n,i.label]),[[dog.id,2,'dog passage']]);
+  assert.deepEqual(va.readback.map(i=>i.id),[trucks.id]);
+  // the owner may move it, which confirms it at the new place; the other may not
+  await post('/api/accept',{room,role:'A',item:dog.id,position:'above'},403);
+  await post('/api/accept',{room,role:'B',item:dog.id,position:'nowhere'},400);
   // the other person agreeing does not confirm it; the owner's yes does
   await post('/api/accept',{room,role:'A',item:dog.id,ok:true});h=await settled(room);
   assert.equal(h.sheetDrawn.named.find(n=>n.id===dog.id).status,'proposed');
   await post('/api/accept',{room,role:'B',item:dog.id,ok:true});h=await settled(room);
   assert.equal(h.sheetDrawn.named.find(n=>n.id===dog.id).status,'confirmed');
   assert.equal(h.wall.cards.find(c=>c.who==='B').met,'confirmed');
+  assert.deepEqual((await get(`/api/state?room=${room}&role=B`)).readback,[]);
   // only the owner renames; the word stays theirs through the next decision
   await post('/api/accept',{room,role:'A',item:dog.id,label:'sidewalk'},403);
   await post('/api/accept',{room,role:'B',item:dog.id,label:'dog lane'});h=await settled(room);
