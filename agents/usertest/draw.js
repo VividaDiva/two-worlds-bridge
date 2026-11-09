@@ -185,7 +185,7 @@
           const x = GAP_L - 70 - signs * 100, top = GROUND_Y - 84 - (signs % 2) * 40; signs++;
           seg(x, GROUND_Y, 0, x, top, 0, { who: n.who, width: 3 });
           const words = String(n.label || "").length > 24 ? String(n.label).slice(0, 23).trim() + "…" : String(n.label || "");
-          const w = Math.max(60, Math.min(170, 14 + words.length * 6.4));
+          const w = X.words ? Math.max(60, Math.min(170, 14 + words.length * 6.4)) : 44;
           strokes.push({ plate: { x: x - w / 2, y: top - 30, w, h: 30 }, who: n.who, dash: o.dash });
           label(x, top - 15, 0, n, { align: "center", plate: true, words });
           break; }
@@ -259,7 +259,7 @@
       const col = WHO[l.who] || SHEET;
       ctx.save();
       ctx.textBaseline = "middle";
-      if (l.plate) {
+      if (l.plate && words) {
         ctx.font = `600 11px system-ui, -apple-system, "Helvetica Neue", sans-serif`; ctx.textAlign = "center";
         ctx.fillStyle = col; ctx.fillText(l.words, l.x, l.y);
       } else if (words) {
@@ -269,7 +269,7 @@
         ctx.fillStyle = col; ctx.fillText(text, l.x, l.y);
       } else {
         // a circled number: filled once its owner has confirmed, hollow while proposed
-        const x = l.align === "right" ? l.x - 10 : l.align === "center" ? l.x : l.x + 10, y = l.y, r = 9;
+        const x = l.plate || l.align === "center" ? l.x : l.align === "right" ? l.x - 10 : l.x + 10, y = l.y, r = 9;
         ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
         ctx.fillStyle = l.status === "confirmed" ? col : C.paper; ctx.fill();
         ctx.lineWidth = 2; ctx.strokeStyle = col; if (l.status === "objected") ctx.setLineDash([3, 3]); ctx.stroke();
