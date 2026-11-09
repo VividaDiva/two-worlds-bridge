@@ -1055,7 +1055,10 @@ const srv = http.createServer(async (req, res) => {
     res.writeHead(302, { location: `/j/${live.id}/both`, "cache-control": "no-store" }); return res.end();
   }
 
-  if (p === "/api/users" && req.method === "GET") return json(res,200,profiles.map(u=>({...u,sessions:u.sessions.map(x=>({...x,hasContent:!!rooms.get(x.room)?.transcript.length}))})));
+  if (p === "/api/users" && req.method === "GET") return json(res,200,profiles.map(u=>({...u,sessions:u.sessions.map(x=>{
+    const room=rooms.get(x.room);
+    return {...x,hasContent:!!room?.transcript.length,feedbackReady:room ? !!room.standing&&!!room.sketches?.length : undefined};
+  })})));
   if (p === "/api/users" && req.method === "POST") {
     const n=profiles.length+1;
     const nextRole=Math.max(1,...profiles.flatMap(u=>u.participants))+1;

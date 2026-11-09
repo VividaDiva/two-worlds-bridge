@@ -1213,7 +1213,7 @@ function userNav(){
   const target=document.getElementById("user-records");
   if(!target || !users.length) return;
   const pairOf=u=>u.participants || [1,u.id==='user2'?2:3];
-  const pairName=u=>pairOf(u).map(n=>`Role ${n}`).join(' & ');
+  const pairName=u=>u.roleParticipants ? ['A','B'].map((role,i)=>`${u.roleParticipants[role]===1?'You':'Participant '+u.roleParticipants[role]} · Role ${i+1}`).join(' / ') : pairOf(u).map(n=>`Role ${n}`).join(' & ');
   const current=users.find(u=>u.id===selectedUser);
   const ordered=[...users].sort((a,b)=>pairOf(a)[1]-pairOf(b)[1]);
   target.innerHTML=`<div class="profile-label"><span>COLLABORATION PAIR</span><b>${esc(current ? pairName(current) : 'Choose a pair')}</b></div><div class="profile-icons" role="group" aria-label="Collaboration pairs">${ordered.map(u=>`<button class="pair-profile" data-user="${esc(u.id)}" aria-pressed="${u.id===selectedUser}" aria-label="${esc(pairName(u))}${u.sessions.some(x=>x.hasContent)?' · Saved conversations':' · Not started'}" title="${esc(pairName(u))}"><span class="pair-avatars" aria-hidden="true">${pairOf(u).map(n=>`<span class="pair-avatar" style="--avatar-hue:${n===1?145:28+(n-2)*70}"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg><small>${n}</small></span>`).join('')}</span><span class="pair-caption">${esc(pairName(u))}</span></button>`).join('')}<button class="profile-icon add-profile" id="add-user" aria-label="New collaboration pair" title="New collaboration pair">+</button></div>`;
@@ -1679,7 +1679,14 @@ function restoreStudioFocus(f){
   if (el && !el.disabled) { el.focus({preventScroll:true}); el.setSelectionRange(f.start,f.end); }
 }
 function autoReplayPanel(h){
-  if(h.replayOf)return `<section class="card" style="padding:16px;margin:12px 0"><b>Toolkit · replay of the same Control conversation</b><p>AI interpretations, bridge and sketch are generated again using Toolkit. Human replies are fixed; this is not a second live participant session.</p><a href="/j/${esc(h.replayOf.room)}/both">View original Control →</a></section>`;
+  if(h.replayOf){
+    const seeded=h.replayOf.kind==='seeded-live-continuation';
+    const target=h.agent==='keys'?'Control':'Toolkit';
+    const source=h.replayOf.sourceAgent==='keys'?'Control':h.replayOf.sourceAgent==='toolkit'||seeded||h.agent==='keys'?'Toolkit':'Control';
+    const heading=seeded ? (h.turn==='B'&&!h.finished?'Role 1 prefilled · reply as Role 2':'Role 1 prefilled · conversation continued') : `${target} · replay of the same ${source} conversation`;
+    const explanation=seeded ? `${target} AI relays the saved Role 1 message. Your Role 2 reply continues this conversation.` : `AI responses and outputs use ${target}. Human replies are fixed; this is not a second live participant session.`;
+    return `<section class="card" style="padding:16px;margin:12px 0"><b>${esc(heading)}</b><p>${esc(explanation)}</p><a href="/j/${esc(h.replayOf.room)}/both">View original ${source} →</a></section>`;
+  }
   if(h.agent!=='keys')return '';
   if(['via-1','via-2'].includes(h.route))return '<section class="card" style="padding:16px;margin:12px 0"><b>AI relay · manual Toolkit session</b><p>This path is excluded from automatic copying. Run a fresh conversation in Toolkit so participants can respond to its own relay.</p></section>';
   const j=h.autoToolkit;
