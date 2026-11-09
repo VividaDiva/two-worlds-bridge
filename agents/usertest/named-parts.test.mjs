@@ -48,12 +48,14 @@ test('the toolkit names, places and draws what the kit cannot make; the owner co
  fs.appendFileSync(${JSON.stringify(log)},JSON.stringify({system:req.config.systemInstruction,contents:req.contents,schema:req.config.responseJsonSchema})+'\\n');
  const p=req.config.responseJsonSchema.properties;let out={};
  const text=typeof req.contents==='string'?req.contents:JSON.stringify(req.contents);
- if(p.same){const nb=(text.match(/\\[(n\\d+)\\] Role 2: a dog passage/)||[])[1];const hit=text.includes('REPEAT_B')||text.includes('ALIAS_A');out={same:hit&&nb?[{index:0,id:nb}]:[]};}
+ if(p.groups){const a=(text.match(/(s\\d+) · Role 2 · "dog lane"/)||[])[1],b=(text.match(/(s\\d+) · Role 2 · "path for dogs"/)||[])[1];out={groups:a&&b?[[a,b]]:[]};}
+ else if(p.same){const nb=(text.match(/\\[(n\\d+)\\] Role 2: a dog passage/)||[])[1];const hit=text.includes('REPEAT_B')||text.includes('ALIAS_A');out={same:hit&&nb?[{index:0,id:nb}]:[]};}
+ else if(p.cards&&text.includes('said: "TWIN_B"')){out={cards:[{who:'Role 2',via:'direct',quote:'TWIN_B',need:'a lane where dogs can walk',why:'',theme:'dog walking',concern:'',when:'',readings:[],hmw:'',story:'',conflictsWith:[]}],updates:[],tools:[],ask:'',answeredQuestion:false,clarificationNeeded:false};}
  else if(p.cards&&text.includes('said: "REPEAT_B"')){out={cards:[{who:'Role 2',via:'direct',quote:'REPEAT_B',need:'a dog passage separate from pedestrians',why:'',theme:'dog walking',concern:'',when:'',readings:[],hmw:'',story:'',conflictsWith:[]}],updates:[],tools:[],ask:'',answeredQuestion:false,clarificationNeeded:false};}
  else if(p.cards&&text.includes('said: "ALIAS_A"')){out={cards:[{who:'Role 1',via:'direct',quote:'ALIAS_A',need:'a lane for the dogs away from the cars',why:'',theme:'lanes',concern:'',when:'',readings:[],hmw:'',story:'',conflictsWith:[]}],updates:[],tools:[],ask:'',answeredQuestion:false,clarificationNeeded:false};}
  else if(p.cards){const b=text.includes('Role 2 said');out={cards:[b?{who:'Role 2',via:'direct',quote:'a dedicated passage for walking dogs, separate from people',need:'a dog passage separate from pedestrians',why:'',theme:'dog walking',concern:'',when:'',readings:[],hmw:'',story:'',conflictsWith:[]}
    :{who:'Role 1',via:'direct',quote:'no trucks on the bridge',need:'no trucks allowed',why:'',theme:'traffic',concern:'',when:'',readings:[],hmw:'',story:'',conflictsWith:[]}],updates:[],tools:[],ask:'',answeredQuestion:false,clarificationNeeded:false};}
- else if(p.decisions){const ids=[...text.matchAll(/\\[(n\\d+)\\] ([AB]) \\(/g)].map(m=>[m[1],m[2]]);const band=(text.match(/(s\\d+) · B · "[^"]*" · band/)||[])[1]||'';out={decisions:ids.map(([id,who])=>text.includes('['+id+'] A (direct): "ALIAS_A"')?{id,response:'new',what:'the same lane',uncertainty:'',label:'lane for the dogs',primitive:'band',position:'beside',sameAs:band}:who==='B'?{id,response:'new',what:'a dog passage beside the walk',uncertainty:'',label:'dog passage',primitive:'band',position:'beside',sameAs:''}:{id,response:'rule',what:'no trucks',uncertainty:'',label:'no trucks on the bridge',primitive:'',position:'',sameAs:''}),conflicts:[],checks:{nothingLost:true,inferencesLabelled:true,noFalseConflicts:true,defaultsChecked:true,buildNotConsent:true,kindsDistinct:true}};}
+ else if(p.decisions){const ids=[...text.matchAll(/\\[(n\\d+)\\] ([AB]) \\(/g)].map(m=>[m[1],m[2]]);const band=(text.match(/(s\\d+) · B · "[^"]*" · band/)||[])[1]||'';out={decisions:ids.map(([id,who])=>text.includes('['+id+'] B (direct): "TWIN_B"')?{id,response:'new',what:'a path for dogs',uncertainty:'',label:'path for dogs',primitive:'band',position:'beside',sameAs:''}:text.includes('['+id+'] A (direct): "ALIAS_A"')?{id,response:'new',what:'the same lane',uncertainty:'',label:'lane for the dogs',primitive:'band',position:'beside',sameAs:band}:who==='B'?{id,response:'new',what:'a dog passage beside the walk',uncertainty:'',label:'dog passage',primitive:'band',position:'beside',sameAs:''}:{id,response:'rule',what:'no trucks',uncertainty:'',label:'no trucks on the bridge',primitive:'',position:'',sameAs:''}),conflicts:[],checks:{nothingLost:true,inferencesLabelled:true,noFalseConflicts:true,defaultsChecked:true,buildNotConsent:true,kindsDistinct:true}};}
  else if(p.build)out={build:'A crossing with a rail and two abreast',why:'wide and guarded',alt:'',altWhy:''};
  else if(p.text)out={text:'REPLY'};
  else if(p.say)out={say:'SAY'};
@@ -134,6 +136,12 @@ test('the toolkit names, places and draws what the kit cannot make; the owner co
   const conf=await post('/api/create',{argument:'pairs',route:'confer',agent:'toolkit'});
   await post('/api/say',{room:conf.room,role:'A',text:'no trucks on the bridge'});await post('/api/say',{room:conf.room,role:'B',text:'a dedicated passage for walking dogs, separate from people'});
   const hc=await settled(conf.room);assert.ok(!hc.shape,'the AI heard none of it');
+  // a second word the line-by-line check missed is folded in after the build: one band, the new word hanging on it
+  const bandsBefore=h.sheet.filter(p=>p.primitive==='band'&&!p.declined).length;
+  await post('/api/say',{room,role:'B',text:'TWIN_B'});h=await settled(room);
+  assert.equal(h.sheet.filter(p=>p.primitive==='band'&&!p.declined).length,bandsBefore,'consolidated into one band');
+  const kept=h.sheet.find(p=>p.primitive==='band'&&!p.declined);assert.ok(kept.aliases.some(a=>a.label==='path for dogs'),JSON.stringify(kept.aliases));
+  assert.ok(h.sheet.some(p=>p.mergedInto===kept.id));assert.equal(h.wall.cards.find(c=>c.quote==='TWIN_B').met,'confirmed');
   // direct placing: drawn solid at once, nobody asked, nothing to confirm
   const direct=await post('/api/create',{argument:'pairs',route:'develop',agent:'toolkit',place:'direct'});
   await post('/api/say',{room:direct.room,role:'A',text:'no trucks on the bridge'});await settled(direct.room);
@@ -150,7 +158,7 @@ test('the toolkit names, places and draws what the kit cannot make; the owner co
   await post('/api/say',{room,role:'A',text:'ALIAS_A'});h=await settled(room);
   assert.equal(h.sheet.filter(p=>p.primitive==='band').length,bands,'no second band for the same lane');
   const shared=h.sheet.find(p=>p.primitive==='band');assert.ok(shared.aliases.some(a=>a.who==='A'&&a.label==='lane for the dogs'),JSON.stringify(shared));
-  assert.ok(h.sheetDrawn.named.find(n=>n.id===shared.id).aliases.length===1);
+  assert.ok(h.sheetDrawn.named.find(n=>n.id===shared.id).aliases.some(a=>a.who==='A'&&a.label==='lane for the dogs'),'the other person\'s word shows on the drawn part');
   const aliasCard=h.wall.cards.find(c=>c.quote==='ALIAS_A');assert.equal(aliasCard.met,'confirmed','the alias takes the part\'s status');
   // it survives a restart
   await stop();await start();h=await settled(room);

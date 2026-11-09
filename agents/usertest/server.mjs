@@ -19,7 +19,7 @@ import { fileURLToPath } from "node:url";
 import { mkCtx, hear, newTurn, build, provenance } from "../engine.mjs";
 import { ARGUMENTS, ROUTES, NAME, FEATURES, KIT, propsOf } from "./kit.mjs";
 import { readLine, chooseBuild, speak, readPicture, relay, sketch, readLineB, chooseBuildB, propose,
-         wallHear, wallDecide, relayFromWall, chooseBuildT, readPictureToolkit, toolkitReply, sameNeed, POSITIONS } from "./builder.mjs";
+         wallHear, wallDecide, relayFromWall, chooseBuildT, readPictureToolkit, toolkitReply, sameNeed, consolidate, POSITIONS } from "./builder.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 8780);
@@ -466,7 +466,7 @@ function sheetDrawn(room) {
       if (p.declined) continue;
       const who = ownerOf(room, p);
       const status = room.place === "direct" ? "placed" : confirmed(room, p) ? "confirmed" : p.objection ? "objected" : "proposed";
-      if (p.primitive) out.named.push({ id: p.id, label: p.label || p.what, what: p.what, kind: p.kind, primitive: p.primitive, position: p.position || "", who, status, objection: p.objection || null, aliases: (p.aliases || []).map(a => ({ who: a.who, label: a.label })) });
+      if (p.primitive) out.named.push({ id: p.id, label: p.label || p.what, what: p.what, kind: p.kind, primitive: p.primitive, position: p.position || "", who, status, objection: p.objection || null, aliases: (p.aliases || []).filter(a => a.label).map(a => ({ who: a.who, label: a.label })) });
       else out.other.push({ what: p.label || p.what, kind: p.kind });
     }
     out.drawn = out.named.map(n => ({ what: n.label, as: n.primitive, who: n.who, status: n.status }));
@@ -581,12 +581,33 @@ async function decideWall(room) {
     if (toolkit && d.sameAs) {
       const same = room.wall.sheet.find(p => p.id === d.sameAs && !p.declined);
       if (same && same.cardId !== d.id) {
-        (same.aliases ||= []).push({ cardId: d.id, who: byId[d.id].who, label: placed.label, at: Date.now() });
+        // the card follows the part; its word is kept only when it is a different word
+        (same.aliases ||= []).push({ cardId: d.id, who: byId[d.id].who, label: placed.label === (same.label || same.what) ? "" : placed.label, at: Date.now() });
         continue;
       }
     }
     room.wall.sheet.push({ id: "s" + (room.wall.sheet.length + 1), cardId: d.id, kind: d.response, what: d.what,
                            by: "AI", proposedAt: Date.now(), accepted: {}, declined: false, ...placed });
+  }
+  // One thing, one part. The sheet is read as a whole and parts that are the
+  // same thing fold into one: the earliest (or a confirmed one) stays, the
+  // others' words hang on it as aliases, and their cards follow it.
+  if (modeOf(room) === "toolkit" && room.wall.sheet.filter(p => !p.declined && p.primitive).length >= 2) {
+    try {
+      for (const g of await consolidate({ sheet: room.wall.sheet })) {
+        const items = g.map(id => room.wall.sheet.find(p => p.id === id)).filter(p => p && !p.declined);
+        if (items.length < 2) continue;
+        const keep = items.find(p => confirmed(room, p)) || items[0];
+        for (const p of items) {
+          if (p === keep) continue;
+          (keep.aliases ||= []).push({ cardId: p.cardId, who: p.owner, label: p.label || p.what, at: Date.now() },
+                                     ...(p.aliases || []));
+          p.declined = true; p.superseded = true; p.mergedInto = keep.id;
+        }
+        // The same person's second word for the same thing is not a second word, just the same thing said again.
+        keep.aliases = (keep.aliases || []).filter((a, i, all) => a.who !== keep.owner || (a.label && a.label !== (keep.label || keep.what))).filter((a, i, all) => all.findIndex(b => b.who === a.who && b.label === a.label) === i);
+      }
+    } catch (e) { console.error(`consolidate ${room.id}: ${e.message}`); }
   }
   const record = rec.decisions.map(d => `  [${d.id}] ${byId[d.id].need} → ${d.response}: ${d.what}${d.uncertainty ? " (unsure: " + d.uncertainty + ")" : ""}`).join("\n")
     + (rec.conflicts.length ? "\n  conflicts: " + rec.conflicts.map(c => `${c.a}×${c.b} ${c.note}`).join("; ") : "");

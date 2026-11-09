@@ -650,6 +650,32 @@ export async function sameNeed({ wall, cards }) {
   return same;
 }
 
+// After a build, the sheet is read as a whole: which of the named parts are
+// one thing? With every word in view at once this is an easier question than
+// the one asked line by line, and it catches what that one missed.
+const GROUPS_JSON = { type:"object", properties:{ groups:{ type:"array", items:{ type:"array", items:{type:"string"} } } }, required:["groups"] };
+export async function consolidate({ sheet }) {
+  const live = sheet.filter(p => !p.declined && p.primitive);
+  if (live.length < 2) return [];
+  const user = [
+    `Two people have been describing one bridge. These parts stand on it, each in the word of the person who asked for it:`,
+    ...live.map(p => `  ${p.id} · ${p.owner === "A" ? "Role 1" : "Role 2"} · "${p.label || p.what}" · ${p.primitive} · ${p.position || "-"}${p.aliases?.length ? " · also called " + p.aliases.map(a => `"${a.label}"`).join(", ") : ""}`),
+    ``,
+    `Which of these are the same thing — the same lane, wall, barrier, rule or light, asked for twice or`,
+    `named differently by the two people? List each such set as an array of ids (two or more). A lane for`,
+    `dogs and a lane for trucks are different things; "2 lanes", "many lanes" and "wide enough for an SUV"`,
+    `from the same person are one thing (the car lanes); "solid wall" and "protective barrier" between the`,
+    `same two lanes are one thing; "no trucks" and "trucks only in the centre lane" are one rule. Parts of`,
+    `different kinds (a lane and a sign) are never one thing. Return [] if every part is its own thing.`,
+  ].join("\n");
+  const out = await ask("Answer only what is asked, as JSON. Never use the word \"user\".", user, GROUPS_JSON);
+  const ids = new Set(live.map(p => p.id)), kind = Object.fromEntries(live.map(p => [p.id, p.primitive]));
+  return (Array.isArray(out.groups) ? out.groups : [])
+    .map(g => [...new Set((Array.isArray(g) ? g : []).map(String).filter(id => ids.has(id)))])
+    .map(g => g.filter(id => kind[id] === kind[g[0]]))           // one kind per group
+    .filter(g => g.length >= 2);
+}
+
 // With the toolkit on, "new" means "name it": the thing stays in their words and
 // is placed, not translated. Rules are placed too — as a sign.
 const NAME_IT = [
