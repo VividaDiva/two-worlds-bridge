@@ -470,6 +470,24 @@ async function decideWall(room) {
   if (!room.wall) return { record: "", unsupported: [], proposals: [] };
   const rec = await wallDecide({ wall: room.wall, standing: room.standing ? NAME(room.standing) : null,
                                  props: room.ctx.design ? room.ctx.design.has : [], pureToolkit: modeOf(room) === "toolkit" });
+  // Every card gets a decision. A model that drops cards is asked once more
+  // about just those; what it still leaves out is recorded as undecided, so the
+  // record never silently shrinks the wall.
+  if (modeOf(room) === "toolkit") {
+    const decided = new Set(rec.decisions.map(d => d.id));
+    const missing = activeCards(room).filter(c => !decided.has(c.id)).map(c => c.id);
+    if (missing.length) {
+      try {
+        const more = await wallDecide({ wall: room.wall, standing: room.standing ? NAME(room.standing) : null,
+                                        props: room.ctx.design ? room.ctx.design.has : [], pureToolkit: true, only: missing });
+        for (const d of more.decisions) if (!decided.has(d.id)) { rec.decisions.push(d); decided.add(d.id); }
+        rec.conflicts.push(...more.conflicts);
+      } catch (e) { console.error(`second decision pass ${room.id}: ${e.message}`); }
+      for (const id of missing) if (!decided.has(id)) rec.decisions.push({ id, response: "none", what: "left undecided by the builder", uncertainty: "no decision was returned for this card", label: "", primitive: "", position: "", undecided: true });
+      if (rec.checks) rec.checks.nothingLost = rec.decisions.filter(d => d.undecided).length === 0;
+      rec.secondPass = { asked: missing, decided: missing.filter(id => decided.has(id)) };
+    }
+  }
   // A card no key carries cannot be answered with a part, whatever the record
   // says: the link to what stands is structural, and the record must agree.
   const keyless = new Set(room.wall.cards.filter(c => !c.keys.length).map(c => c.id));

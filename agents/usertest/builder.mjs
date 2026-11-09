@@ -540,7 +540,7 @@ export async function wallHear({ routeNote, canAsk, wall, line, speaker, pureToo
     delete schema.properties.cards.items.properties.rulesOut;
     schema.properties.cards.items.required = schema.properties.cards.items.required.filter(k => !["keys","rulesOut"].includes(k));
   }
-  const instruction = pureToolkit ? HEAR.replace(/- keys:[\s\S]*?(?=Tools\.)/, "Describe needs in natural language, including explicit prohibitions. Do not translate them into feature codes. Use theme to group related needs.\n\n") : HEAR;
+  const instruction = pureToolkit ? HEAR.replace(/- keys:[\s\S]*?(?=Tools\.)/, "Describe needs in natural language, including explicit prohibitions. Do not translate them into feature codes. Use theme to group related needs.\n  One need per card: \"wide enough for an SUV\", \"two-way\" and \"no trucks\" are three cards, not one. A rule — what is not allowed, who may use it, when it is open — is always its own card. A thing to be placed (a path, lights, a wall) is its own card too, never folded into another.\n\n") : HEAR;
   const updateRules = pureToolkit ? `
 For an existing need, use updates, not a duplicate card. action=revise only for an explicit replacement or clarification by its owner; return the COMPLETE updated need, why, concern and when, preserving unchanged details. action=withdraw only for an explicit owner withdrawal. evidence must be an exact substring of the NEW line. Never treat a teammate's report, a suggestion, acknowledgement, or your hypothesis as an owner revision: use action=note, explicit=false. Pending changes are unconfirmed, not active requirements. An explicit owner reply may confirm or reject an earlier pending proposal; express the resulting complete requirement in an owner revision.
 Set clarificationNeeded=true when the speaker leaves alternatives unresolved that would produce different builds (for example painted markings versus a physical barrier), or explicitly requests clarification about such uncertainty. Then provide one concrete question in ask when allowed. Do not treat unresolved alternatives as an agreed requirement. Set it false for mere stylistic preferences or already answered questions. Set answeredQuestion=true only if the NEW line is from the pending question's addressee and actually answers that question. Unrelated messages and another person's answer do not resolve it. Incorporate the answer into the relevant card using an update. Ask at most one question to the current speaker, only if the ambiguity changes a build. If a pending question exists, or you just received its answer, leave ask empty. Never assume consent to a design from a clarification.` : "";
@@ -634,9 +634,9 @@ const NAME_IT = [
   `  For "rule", also give label (the rule in their words), primitive "sign" and position "ends".`,
 ].join("\n");
 
-export async function wallDecide({ wall, standing, props, pureToolkit = false }) {
+export async function wallDecide({ wall, standing, props, pureToolkit = false, only = null }) {
   const list = ks => ks.length ? ks.map(f => FEATURES[f]).join("; ") : "nothing";
-  const cards = wall.cards.filter(c => !c.withdrawn);
+  const cards = wall.cards.filter(c => !c.withdrawn && (!only || only.includes(c.id)));
   if (!cards.length) return { decisions: [], conflicts: [], checks: null };
   const user = [
     `The wall:`,
@@ -645,6 +645,7 @@ export async function wallDecide({ wall, standing, props, pureToolkit = false })
     standing ? `What stands now: ${standing} — ${list(props)}.` : `Nothing stands yet.`,
     ``,
     ...(pureToolkit ? [`Current canonical needs and revision history (pending changes are NOT accepted): ${JSON.stringify(cards.map(({keys,rulesOut,versions,...c})=>c))}`, `Clarification status: ${JSON.stringify(wall.question || null)}. Unanswered means uncertain, not consent.`] : []),
+    ...(only ? [`These cards were left out of your record. Decide each of them now — one decision per id.`] : []),
     `Write the decision record.`,
   ].join("\n");
   const instruction = pureToolkit ? DECIDE
@@ -652,6 +653,7 @@ export async function wallDecide({ wall, standing, props, pureToolkit = false })
       .replace(/- "new": a physical part[\s\S]*?Both people must accept it before it counts\./, NAME_IT)
       .replace(`- "none": neither a part, a rule nor a new part can answer it. Say so; it stays on the wall.`,
                `- "none": only for what cannot be placed on a drawing at all — a quality (quiet, pretty, cheap), a purpose (for families), a wish about the far side of the river. Say so; it stays on the wall and is read back in words.`)
+      + "\nReturn exactly one decision for every card listed, with its id, in the order given. Never skip a card: a card the kit cannot serve is answered \"new\" with a label, primitive and position, or \"rule\" with a label — not left out and not forced into \"part\"."
       + "\nAvailable workshop:\n" + kitForChoosing().map(k=>k.id + ": " + k.props).join("\n")
       + "\nGlosses, so the workshop is read in their terms: \"two abreast\" is wide enough for two people side by side or one car; \"takes loads and carts\" bears vehicles; \"something at the hand\" is a railing; \"a coarse surface\" is grip underfoot, not a smooth or sealed one."
     : DECIDE;
