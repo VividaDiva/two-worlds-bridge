@@ -391,7 +391,11 @@ async function hearLine(room, line) {
   });
   const at = Date.now(), index = room.transcript.indexOf(line);
   const ids = [];
+  const norm = t => String(t || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
   for (const c of heard.cards) {
+    // Said again by the same person: a note on the card that is already there.
+    const again = modeOf(room) === "toolkit" && room.wall.cards.find(x => !x.withdrawn && x.who === c.who && (norm(x.need) === norm(c.need) || (norm(c.need).length > 12 && (norm(x.need).includes(norm(c.need)) || norm(c.need).includes(norm(x.need))))));
+    if (again) { again.changes.push({ at, line: index, change: "said again: " + c.quote, status: "note" }); continue; }
     const id = "n" + (room.wall.cards.length + 1);
     // On a route where this speaker cannot have heard the other, a card about
     // the other person can only be reported or inferred — never direct.
@@ -452,7 +456,7 @@ function sheetDrawn(room) {
       if (p.declined) continue;
       const who = ownerOf(room, p);
       const status = room.place === "direct" ? "placed" : confirmed(room, p) ? "confirmed" : p.objection ? "objected" : "proposed";
-      if (p.primitive) out.named.push({ id: p.id, label: p.label || p.what, what: p.what, kind: p.kind, primitive: p.primitive, position: p.position || "", who, status, objection: p.objection || null });
+      if (p.primitive) out.named.push({ id: p.id, label: p.label || p.what, what: p.what, kind: p.kind, primitive: p.primitive, position: p.position || "", who, status, objection: p.objection || null, aliases: (p.aliases || []).map(a => ({ who: a.who, label: a.label })) });
       else out.other.push({ what: p.label || p.what, kind: p.kind });
     }
     out.drawn = out.named.map(n => ({ what: n.label, as: n.primitive, who: n.who, status: n.status }));
@@ -530,12 +534,24 @@ async function decideWall(room) {
       primitive: d.response === "rule" ? "sign" : d.primitive || "",
       position: d.response === "rule" ? "ends" : d.position || "",
     } : {};
-    const had = room.wall.sheet.find(p => p.cardId === d.id && !p.declined);
+    const had = room.wall.sheet.find(p => p.cardId === d.id && !p.declined)
+             || room.wall.sheet.find(p => !p.declined && (p.aliases || []).some(a => a.cardId === d.id));
     if (had) {
-      had.kind = d.response; had.what = d.what;
-      if (toolkit) { if (!had.renamed) had.label = placed.label; had.owner = placed.owner;
-                     if (!confirmed(room, had)) { had.primitive = placed.primitive; had.position = placed.position; } }
+      if (had.cardId === d.id) {
+        had.kind = d.response; had.what = d.what;
+        // Once placed (direct) or confirmed, a part stays where it is; its word stays theirs.
+        if (toolkit) { if (!had.renamed) had.label = placed.label; had.owner = placed.owner;
+                       if (!confirmed(room, had) && room.place !== "direct") { had.primitive = placed.primitive; had.position = placed.position; } }
+      }
       continue;
+    }
+    // Another word for a part already on the sheet: one part, both words.
+    if (toolkit && d.sameAs) {
+      const same = room.wall.sheet.find(p => p.id === d.sameAs && !p.declined);
+      if (same && same.cardId !== d.id) {
+        (same.aliases ||= []).push({ cardId: d.id, who: byId[d.id].who, label: placed.label, at: Date.now() });
+        continue;
+      }
     }
     room.wall.sheet.push({ id: "s" + (room.wall.sheet.length + 1), cardId: d.id, kind: d.response, what: d.what,
                            by: "AI", proposedAt: Date.now(), accepted: {}, declined: false, ...placed });
@@ -555,7 +571,8 @@ function linkWall(room) {
     // "objected" when the other person says no, otherwise "proposed" — drawn in
     // every case but the declined one. Nothing here is "met": that is theirs to say.
     for (const c of room.wall.cards) {
-      const item = (room.wall.sheet || []).find(p=>p.cardId===c.id && !p.declined);
+      const item = (room.wall.sheet || []).find(p=>p.cardId===c.id && !p.declined)
+                || (room.wall.sheet || []).find(p=>!p.declined && (p.aliases || []).some(a => a.cardId === c.id));
       c.met = c.withdrawn ? null : item ? (room.place === "direct" ? "placed" : confirmed(room, item) ? "confirmed" : item.objection ? "objected" : "proposed") : "unverified";
     }
     return;

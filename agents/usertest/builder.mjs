@@ -588,8 +588,10 @@ const DECIDE_JSON = { type:"object", properties:{
   decisions:{ type:"array", items:{ type:"object", properties:{
     id:{type:"string"}, response:{type:"string"}, what:{type:"string"}, uncertainty:{type:"string"},
     // A named part: the thing in the speaker's own words, and the one way the drawing can place it.
-    label:{type:"string"}, primitive:{type:"string", enum:["", ...PRIMITIVES]}, position:{type:"string", enum:["", ...POSITIONS]} },
-    required:["id","response","what","uncertainty","label","primitive","position"] } },
+    label:{type:"string"}, primitive:{type:"string", enum:["", ...PRIMITIVES]}, position:{type:"string", enum:["", ...POSITIONS]},
+    // "sameAs": the id of a sheet item this card is another word for — the same thing, said again or said by the other person.
+    sameAs:{type:"string"} },
+    required:["id","response","what","uncertainty","label","primitive","position","sameAs"] } },
   conflicts:{ type:"array", items:{ type:"object", properties:{ a:{type:"string"}, b:{type:"string"}, note:{type:"string"} }, required:["a","b","note"] } },
   checks:{ type:"object", properties:{ nothingLost:{type:"boolean"}, inferencesLabelled:{type:"boolean"}, noFalseConflicts:{type:"boolean"}, defaultsChecked:{type:"boolean"}, buildNotConsent:{type:"boolean"}, kindsDistinct:{type:"boolean"} },
     required:["nothingLost","inferencesLabelled","noFalseConflicts","defaultsChecked","buildNotConsent","kindsDistinct"] } },
@@ -630,9 +632,22 @@ const NAME_IT = [
   `  drawing can show it, and "position" where:`,
   ...Object.entries(PRIMITIVE_GLOSS).map(([k, v]) => `    ${k}: ${v}`),
   `  Several lanes or paths side by side are one "band" each. A two-level crossing is a "deck" above or`,
-  `  below. It is drawn at once as a proposal, in their words, dashed; its owner confirms the position.`,
+  `  below. It is drawn at once, in their words; the label is at most six words.`,
   `  For "rule", also give label (the rule in their words), primitive "sign" and position "ends".`,
+  `  One thing is one part, however many times it is said. If a card is the same thing as an item already on`,
+  `  the sheet — the same need said again, or the other person's word for the same lane, wall or rule — answer`,
+  `  "new" or "rule" as before but set "sameAs" to that sheet item's id, so the two words share one part.`,
+  `  Otherwise "sameAs" is "". Never make a second band for the width the kit already gives.`,
 ].join("\n");
+
+// A label is their word, not their sentence: no leading article, at most
+// eight words and about fifty characters, cut on a word boundary.
+export function shortLabel(raw) {
+  const words = String(raw || "").trim().replace(/^(a|an|the)\s+/i, "").replace(/[.;:,]+$/, "").split(/\s+/).filter(Boolean);
+  let out = words.slice(0, 8).join(" ");
+  if (out.length > 52) { out = out.slice(0, 52); out = out.slice(0, out.lastIndexOf(" ") > 20 ? out.lastIndexOf(" ") : 52); }
+  return out + (words.length > 8 || String(raw || "").trim().length > out.length + 2 && out.length >= 52 ? "…" : "");
+}
 
 export async function wallDecide({ wall, standing, props, pureToolkit = false, only = null }) {
   const list = ks => ks.length ? ks.map(f => FEATURES[f]).join("; ") : "nothing";
@@ -645,6 +660,8 @@ export async function wallDecide({ wall, standing, props, pureToolkit = false, o
     standing ? `What stands now: ${standing} — ${list(props)}.` : `Nothing stands yet.`,
     ``,
     ...(pureToolkit ? [`Current canonical needs and revision history (pending changes are NOT accepted): ${JSON.stringify(cards.map(({keys,rulesOut,versions,...c})=>c))}`, `Clarification status: ${JSON.stringify(wall.question || null)}. Unanswered means uncertain, not consent.`] : []),
+    ...(pureToolkit && wall.sheet?.length ? [`On the sheet so far (id · whose word · label · primitive · position):`,
+      ...wall.sheet.filter(p => !p.declined).map(p => `  ${p.id} · ${p.owner || "?"} · "${p.label || p.what}" · ${p.primitive || "-"} · ${p.position || "-"}${p.aliases?.length ? " · also: " + p.aliases.map(a => `"${a.label}" (${a.who})`).join(", ") : ""}`)] : []),
     ...(only ? [`These cards were left out of your record. Decide each of them now — one decision per id.`] : []),
     `Write the decision record.`,
   ].join("\n");
@@ -664,8 +681,8 @@ export async function wallDecide({ wall, standing, props, pureToolkit = false, o
     decisions: (Array.isArray(out.decisions) ? out.decisions : []).map(d => ({
       id: str(d.id), response: /rule/i.test(str(d.response)) ? "rule" : /new|name|place/i.test(str(d.response)) ? "new" : /none|^no/i.test(str(d.response)) ? "none" : "part",
       what: str(d.what).slice(0, 140), uncertainty: str(d.uncertainty).slice(0, 140),
-      label: str(d.label).replace(/^(a|an|the)\s+/i, "").slice(0, 60), primitive: PRIMITIVES.includes(str(d.primitive)) ? str(d.primitive) : "",
-      position: POSITIONS.includes(str(d.position)) ? str(d.position) : "" })).filter(d => ids.has(d.id)),
+      label: shortLabel(str(d.label)), primitive: PRIMITIVES.includes(str(d.primitive)) ? str(d.primitive) : "",
+      position: POSITIONS.includes(str(d.position)) ? str(d.position) : "", sameAs: str(d.sameAs).slice(0, 12) })).filter(d => ids.has(d.id)),
     conflicts: (Array.isArray(out.conflicts) ? out.conflicts : []).map(c => ({ a: str(c.a), b: str(c.b), note: str(c.note).slice(0, 140) })).filter(c => ids.has(c.a) && ids.has(c.b)),
     checks: out.checks && typeof out.checks === "object" ? {
       nothingLost: !!out.checks.nothingLost, inferencesLabelled: !!out.checks.inferencesLabelled,
