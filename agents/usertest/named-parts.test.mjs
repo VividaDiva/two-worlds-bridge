@@ -32,7 +32,7 @@ test('draw.js builds a named part out of the same matchsticks, ghosted until set
   assert.ok(added.some(m=>m.part==='s3'),'a sign is a post and a plate of sticks');
   assert.ok(L.strokes.some(st=>st.poly&&st.who==='A'),'a wash is a surface, not sticks');
   const texts=L.labels.map(l=>l.text);for(const t of ['dog passage','lights for night walks','No trucks','upper deck for bikes','smooth cement'])assert.ok(texts.includes(t),t);
-  assert.deepEqual(L.labels.map(l=>l.n),[1,2,3,4,5]);assert.equal(L.labels.find(l=>l.text==='upper deck for bikes').status,'objected');
+  assert.equal(JSON.stringify(L.labels.map(l=>l.n)),'[1,2,3,4,5]');assert.equal(L.labels.find(l=>l.text==='upper deck for bikes').status,'objected');
   // the feedback page gets the named sticks too, after the kit's, so they can be rated and removed like any other
   const ids=vm.runInContext('crossingMatches',ctx)(shape,{water:true},{named}).map(m=>m.id);assert.equal(ids.length,L.list.length);
   // the older layer still draws
