@@ -664,7 +664,7 @@ export async function wallDecide({ wall, standing, props, pureToolkit = false, o
     decisions: (Array.isArray(out.decisions) ? out.decisions : []).map(d => ({
       id: str(d.id), response: /rule/i.test(str(d.response)) ? "rule" : /new|name|place/i.test(str(d.response)) ? "new" : /none|^no/i.test(str(d.response)) ? "none" : "part",
       what: str(d.what).slice(0, 140), uncertainty: str(d.uncertainty).slice(0, 140),
-      label: str(d.label).slice(0, 60), primitive: PRIMITIVES.includes(str(d.primitive)) ? str(d.primitive) : "",
+      label: str(d.label).replace(/^(a|an|the)\s+/i, "").slice(0, 60), primitive: PRIMITIVES.includes(str(d.primitive)) ? str(d.primitive) : "",
       position: POSITIONS.includes(str(d.position)) ? str(d.position) : "" })).filter(d => ids.has(d.id)),
     conflicts: (Array.isArray(out.conflicts) ? out.conflicts : []).map(c => ({ a: str(c.a), b: str(c.b), note: str(c.note).slice(0, 140) })).filter(c => ids.has(c.a) && ids.has(c.b)),
     checks: out.checks && typeof out.checks === "object" ? {
