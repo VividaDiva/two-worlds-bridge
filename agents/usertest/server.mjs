@@ -474,6 +474,16 @@ function sheetDrawn(room) {
   return out;
 }
 
+// Mostly the same words, once the small ones are dropped: "trucks in the center
+// lane" and "trucks allowed only in the center lane" are one thing.
+const SMALL = new Set("a an the and or of to in on at for with by from as is are be it its no not only so that this these those we i you my our your".split(" "));
+function sameWords(a, b) {
+  const w = t => new Set(String(t || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter(x => x && !SMALL.has(x)));
+  const A = w(a), B = w(b); if (!A.size || !B.size) return false;
+  const both = [...A].filter(x => B.has(x)).length;
+  return both / Math.min(A.size, B.size) >= 0.67 && both >= 2;
+}
+
 // What a person is asked to confirm: their own named parts, drawn as proposals,
 // with the number each carries on the picture. Nothing where the route keeps
 // the builder's words from them.
@@ -540,12 +550,20 @@ async function decideWall(room) {
       if (had.cardId === d.id) {
         had.kind = d.response; had.what = d.what;
         // Once placed (direct) or confirmed, a part stays where it is; its word stays theirs.
-        if (toolkit) { if (!had.renamed) had.label = placed.label; had.owner = placed.owner;
-                       if (!confirmed(room, had) && room.place !== "direct") { had.primitive = placed.primitive; had.position = placed.position; } }
+        if (toolkit) { had.owner = placed.owner;
+                       const settled = confirmed(room, had) || room.place === "direct";
+                       if (!settled && !had.renamed) had.label = placed.label;
+                       if (!settled) { had.primitive = placed.primitive; had.position = placed.position; } }
       }
       continue;
     }
     // Another word for a part already on the sheet: one part, both words.
+    // The model says so with sameAs; failing that, the same primitive at the
+    // same place with mostly the same words is taken as the same thing.
+    if (toolkit && !d.sameAs && placed.primitive) {
+      const twin = room.wall.sheet.find(p => !p.declined && p.primitive === placed.primitive && p.position === placed.position && sameWords(p.label || p.what, placed.label));
+      if (twin && twin.cardId !== d.id) d.sameAs = twin.id;
+    }
     if (toolkit && d.sameAs) {
       const same = room.wall.sheet.find(p => p.id === d.sameAs && !p.declined);
       if (same && same.cardId !== d.id) {
