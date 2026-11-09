@@ -1234,7 +1234,11 @@ async function switchProcess(agent,argument=both.A?.argument||"pairs",user=selec
       if(target && (!route || route===current.route) && argument===current.argument){
         selectedProcess=agent;history.pushState(null,'',`/j/${target}/both`);watchBoth(target);return;
       }
-      throw Error('This is an independent Pair Lab record. Start new rounds in Pair Lab, or select a collaboration pair above.');
+      // A room opened on its own (not under a collaboration pair): another path
+      // or process opens a fresh room of its own, keeping how parts are placed.
+      const {ok,j}=await post("/api/create",{argument,route:route||current?.route||"all",agent,place:current?.place||"confirm"});
+      if(!ok)throw Error(j.error||"Unable to open a new room");
+      selectedProcess=agent;history.pushState(null,'',`/j/${j.room}/both`);watchBoth(j.room);return;
     }
     // A saved run supplies its own path. Process tabs retain the current path;
     // another user or starting point can resume that record's existing default.
