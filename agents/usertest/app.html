@@ -267,7 +267,8 @@ textarea[disabled]{opacity:.5}
 .askcard .item.ra{color:var(--rust)} .askcard .item.rb{color:var(--blue)}
 .askcard .lab{color:var(--ink); font-weight:600} .askcard .where{color:var(--soft); font-size:13px}
 .askcard .acts{display:flex; flex-wrap:wrap; gap:5px; margin-left:auto}
-.askcard select{font:13px var(--body); padding:4px 6px; border:1px solid var(--rule); border-radius:7px; background:var(--paper-2); color:var(--ink)}
+.askcard input{flex:1; min-width:140px; font:600 15px var(--body); color:var(--ink); padding:6px 8px; border:1px solid var(--rule); border-radius:7px; background:var(--paper-2)}
+.askcard input:focus{outline:2px solid currentColor; outline-offset:-1px}
 .askcard .foot{display:flex; justify-content:space-between; gap:8px; margin:8px 0 0; font-size:12.5px; color:var(--faint)}
 .askcard .foot button{background:none; border:0; color:var(--faint); font:inherit; cursor:pointer; text-decoration:underline; padding:0}
 .foot{padding:0 15px 11px; font-size:12.5px; color:var(--faint)}
@@ -880,26 +881,21 @@ function panel(s, people){
     </div>`;
 }
 
-// Where each primitive can go, for the "move" choice.
-const MOVES = { band: ["beside"], deck: ["above", "below"], post: ["along", "ends"], edge: ["along", "between"], wash: ["onwalk"], sign: ["ends"], end: ["ends"] };
 const POSL = { beside: "beside the walk", above: "a level above", below: "a level below", along: "along the edge", between: "between the walk and what is beside it", ends: "at the ends", overhead: "overhead", onwalk: "on the walk" };
-// The read-back, as a card the way an assistant asks a clarifying question:
-// one question, the items under it, an answer per item by tapping, and the
-// box below for anything that does not fit. Hidden once answered, or put off.
-const rbHidden = {};
+// The read-back, as a card the way an assistant asks one clarifying question:
+// the newest part the AI placed in this person's words, the word itself in a
+// box they can edit, and two answers — that's it, or take it off. Anything
+// else goes in the chat box below. The next part follows once this one is answered.
 function readbackCard(s){
   const r = s.role, items = s.readback || [];
-  if (!items.length || s.finished) return "";
-  const key = items.map(i => i.id + i.position).join(",");
-  if (rbHidden[r] === key) return "";
-  const mine = ["A","B"].includes(r);
-  return `<div class="askcard" id="rb-${r}" data-key="${esc(key)}">
-    <p class="eyebrow">AI · a question for you</p>
-    <p class="q">I put ${items.length === 1 ? "this" : "these"} on the picture in your words. ${items.length === 1 ? "Is it" : "Is each one"} where it goes?</p>
-    ${items.map(i => `<div class="item ${i.who === "A" ? "ra" : "rb"}"><span class="num">${i.n}</span><span class="lab">${esc(i.label)}</span><span class="where">— ${esc(i.kind === "rule" ? "as a sign at the ends" : POSL[i.position] || placeText(i))}</span>
-      ${mine ? `<span class="acts"><button class="handle go" data-rb-yes="${i.id}">Yes, there</button>${(MOVES[i.primitive] || []).length > 1 ? `<select data-rb-move="${i.id}" aria-label="move it"><option value="">Move it…</option>${MOVES[i.primitive].filter(p => p !== i.position).map(p => `<option value="${p}">${esc(POSL[p])}</option>`).join("")}</select>` : ""}<button class="handle" data-rb-ren="${i.id}" data-label="${esc(i.label)}">Call it…</button><button class="handle" data-rb-off="${i.id}">Take it off</button></span>` : ""}
-    </div>`).join("")}
-    <p class="foot"><span>Anything else about them, say it in the box below.</span><button data-rb-later="${r}">Later</button></p>
+  if (!items.length || s.finished || !["A","B"].includes(r)) return "";
+  const i = items[items.length - 1];
+  return `<div class="askcard" id="rb-${r}" data-item="${i.id}" data-label="${esc(i.label)}">
+    <p class="eyebrow">AI · one question</p>
+    <p class="q">I put this on the picture, ${esc(i.kind === "rule" ? "as a sign at the ends" : POSL[i.position] || placeText(i))}. Is that it?</p>
+    <div class="item ${i.who === "A" ? "ra" : "rb"}"><span class="num">${i.n}</span><input type="text" value="${esc(i.label)}" aria-label="your word for it" maxlength="60">
+      <span class="acts"><button class="handle go" data-rb-yes title="That's it">✓ That's it</button><button class="handle" data-rb-off title="Take it off">✕ Take it off</button></span></div>
+    <p class="foot"><span>Edit the word if it isn't yours. Anything else — say it in the box below.</span>${items.length > 1 ? `<span>${items.length - 1} more after this</span>` : ""}</p>
   </div>`;
 }
 
@@ -963,6 +959,17 @@ function wire(s){
   if (send) send.onclick = () => say("talk", send);
   const confirmBtn = document.getElementById("confirm-" + r);
   if (confirmBtn) confirmBtn.onclick = () => say("build", confirmBtn);
+  // The read-back card: one part at a time, in the owner's words.
+  const rb = document.getElementById("rb-" + r);
+  if (rb) {
+    const act = async (el, payload) => { el.disabled = true; const { ok, j } = await post("/api/accept", { room: s.room, role: r, ...payload }); if (!ok) { const note = document.getElementById("err-" + r); if (note) note.innerHTML = `<div class="warn">${esc(j.error || "that did not send")}</div>`; el.disabled = false; } };
+    const id = rb.dataset.item, input = rb.querySelector("input");
+    const rename = () => { const v = input.value.trim(); if (v && v !== rb.dataset.label) act(input, { item: id, label: v }); };
+    rb.querySelector("[data-rb-yes]").onclick = () => { const v = input.value.trim(); act(rb, v && v !== rb.dataset.label ? { item: id, label: v, ok: true } : { item: id, ok: true }); };
+    rb.querySelector("[data-rb-off]").onclick = () => act(rb, { item: id, ok: false });
+    input.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); rename(); } };
+    input.onblur = rename;
+  }
   // The brief is clamped to two lines so the thread gets the room. Tapping it
   // opens the rest — some of them are three sentences long.
   const goal = document.getElementById("goal-" + r);
@@ -1028,16 +1035,6 @@ function wire(s){
       const { ok, j } = await post("/api/accept", { room: s.room, role: r, item: b.dataset.acc || b.dataset.dec, ok: !!b.dataset.acc });
       if (!ok) { const note = document.getElementById("err-" + r); if (note) note.innerHTML = `<div class="warn">${esc(j.error || "that did not send")}</div>`; b.disabled = false; }
     });
-    // The read-back card.
-    const rb = document.getElementById("rb-" + r);
-    if (rb) {
-      const act = async (b, payload) => { b.disabled = true; const { ok, j } = await post("/api/accept", { room: s.room, role: r, ...payload }); if (!ok) { const note = document.getElementById("err-" + r); if (note) note.innerHTML = `<div class="warn">${esc(j.error || "that did not send")}</div>`; b.disabled = false; } };
-      rb.querySelectorAll("[data-rb-yes]").forEach(b => b.onclick = () => act(b, { item: b.dataset.rbYes, ok: true }));
-      rb.querySelectorAll("[data-rb-off]").forEach(b => b.onclick = () => act(b, { item: b.dataset.rbOff, ok: false }));
-      rb.querySelectorAll("[data-rb-move]").forEach(sel => sel.onchange = () => { if (sel.value) act(sel, { item: sel.dataset.rbMove, position: sel.value }); });
-      rb.querySelectorAll("[data-rb-ren]").forEach(b => b.onclick = () => { const label = window.prompt("Call it what? In your own words.", b.dataset.label || ""); if (label && label.trim() && label.trim() !== b.dataset.label) act(b, { item: b.dataset.rbRen, label: label.trim() }); });
-      rb.querySelectorAll("[data-rb-later]").forEach(b => b.onclick = () => { rbHidden[r] = rb.dataset.key; rb.remove(); });
-    }
     // Renaming a named part: the word is the owner's, so only the owner is offered this.
     document.querySelectorAll(`${scope}[data-ren]`).forEach(b => b.onclick = async () => {
       const label = window.prompt("Call it what? In your own words.", b.dataset.label || "");
