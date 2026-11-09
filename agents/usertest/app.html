@@ -719,8 +719,9 @@ function placeText(p){ const v = PLACE[p.primitive]; return !v ? "not drawable" 
 function namedList(s, items, canAct){
   const me = s.role;
   return `<div class="sheet"><p class="eyebrow">On the sheet — your words, placed on the drawing</p>${items.map(p => {
-    const owner = p.owner, mine = me === owner, conf = !!p.accepted[owner], obj = p.objection;
+    const owner = p.owner, mine = me === owner, conf = s.place === "direct" || !!p.accepted[owner], obj = p.objection;
     const state = p.declined ? `taken off by ${p.declinedBy === me ? "you" : roleName(p.declinedBy)}`
+      : s.place === "direct" ? `placed, in ${mine ? "your" : roleName(owner) + "’s"} words`
       : conf ? `position confirmed by ${mine ? "you" : roleName(owner)}${obj ? " · " + (obj.by === me ? "you object" : roleName(obj.by) + " objects") : ""}`
       : obj ? `${obj.by === me ? "you object" : roleName(obj.by) + " objects"} — ${mine ? "yours to settle" : "waiting for " + roleName(owner)}`
       : p.accepted[owner === "A" ? "B" : "A"] ? `${roleName(owner === "A" ? "B" : "A") === roleName(me) ? "you agree" : roleName(owner === "A" ? "B" : "A") + " agrees"} — waiting for ${mine ? "you" : roleName(owner)}`
@@ -762,7 +763,7 @@ function sheetLegend(sd, dark){
   const c = dark ? "rgba(245,240,230,.7)" : "var(--soft)";
   // Numbered to match the markers on the picture: hollow while proposed, filled once confirmed.
   const circled = i => i < 20 ? String.fromCharCode(0x2460 + i) : String(i + 1);
-  if (sd.named) return `<p style="font-size:12.5px; color:${c}; margin:8px 0 0; line-height:1.5">${sd.named.length ? `<b>In their words:</b> ${sd.named.map((n, i) => `<span style="color:${n.who === "A" ? "var(--rust)" : "var(--blue)"}">${circled(i)} ${esc(n.label)}</span> <span style="opacity:.8">(${esc(roleName(n.who))}, ${esc(placeText(n))}${n.status === "confirmed" ? "" : n.status === "objected" ? ", objected" : ", proposed"})</span>`).join(" · ")}` : ""}${sd.named.length && sd.other.length ? "<br>" : ""}${sd.other.length ? `<b>On the sheet, not drawable:</b> ${sd.other.map(o => esc(o.what)).join(" · ")}` : ""}</p>`;
+  if (sd.named) return `<p style="font-size:12.5px; color:${c}; margin:8px 0 0; line-height:1.5">${sd.named.length ? `<b>In their words:</b> ${sd.named.map((n, i) => `<span style="color:${n.who === "A" ? "var(--rust)" : "var(--blue)"}">${circled(i)} ${esc(n.label)}</span> <span style="opacity:.8">(${esc(roleName(n.who))}, ${esc(placeText(n))}${n.status === "confirmed" || n.status === "placed" ? "" : n.status === "objected" ? ", objected" : ", proposed"})</span>`).join(" · ")}` : ""}${sd.named.length && sd.other.length ? "<br>" : ""}${sd.other.length ? `<b>On the sheet, not drawable:</b> ${sd.other.map(o => esc(o.what)).join(" · ")}` : ""}</p>`;
   return `<p style="font-size:12.5px; color:${c}; margin:8px 0 0; line-height:1.5">${sd.drawn.length ? `<b style="color:#4a6b4f">Drawn from the sheet, accepted by both:</b> ${sd.drawn.map(d => esc(DRAWN[d.as] || d.what)).join(" · ")}` : ""}${sd.drawn.length && sd.other.length ? "<br>" : ""}${sd.other.length ? `<b>On the sheet, not drawable:</b> ${sd.other.map(o => esc(o.what)).join(" · ")}` : ""}</p>`;
 }
 
@@ -1262,7 +1263,7 @@ function filterBar(cur, pending){
 // whose it is, how it reached the builder, the words, the need, the reason or
 // the labelled guess, the keys, and whether what stands meets it.
 const VIA = { direct: ["said to it", ""], "reported-by-A": ["reported by Role 1", "rep"], "reported-by-B": ["reported by Role 2", "rep"], inferred: ["the AI's inference", "inf"] };
-const METL = { unverified:"not yet verified", "accepted-proposal":"proposal accepted by both", confirmed:"placed — position confirmed by its owner", objected:"placed — the other person objects", met: "met", partial: "partly met", no: "not met", unsupported: "no part for it", proposed: "on the sheet — proposed", "met-by-rule": "met by a rule", "met-by-new": "met by a new part" };
+const METL = { unverified:"not yet verified", "accepted-proposal":"proposal accepted by both", confirmed:"placed — position confirmed by its owner", placed:"placed, in their words", objected:"placed — the other person objects", met: "met", partial: "partly met", no: "not met", unsupported: "no part for it", proposed: "on the sheet — proposed", "met-by-rule": "met by a rule", "met-by-new": "met by a new part" };
 const KINDL = { rule: "a rule", new: "a new part" };
 function wallCard(c, small){
   const [vl, vc] = VIA[c.via] || [c.via, ""];

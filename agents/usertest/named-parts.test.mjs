@@ -26,6 +26,7 @@ test('draw.js places a named part in the owner\'s colour, dashed until confirmed
   assert.ok(L.strokes.some(s=>s.plate&&s.who==='A'),'a rule is a sign plate');
   const texts=L.labels.map(l=>l.text);for(const t of ['dog passage','lights for night walks','No trucks','upper deck for bikes'])assert.ok(texts.includes(t),t);
   assert.equal(L.labels.find(l=>l.text==='upper deck for bikes').status,'objected');
+  const placed=vm.runInContext('crossingLayers',ctx)(shape,{},{named:[{id:'p',label:'x',primitive:'band',position:'beside',who:'A',status:'placed'}]});assert.ok(placed.strokes.every(st=>!st.dash),'placed parts are solid');
   // nothing of the kit changed: the sticks are the same with or without the layer
   assert.equal(L.list.length,vm.runInContext('crossingLayers',ctx)(shape,{water:true},null).list.length);
   // the older layer still draws
@@ -123,6 +124,15 @@ test('the toolkit names, places and draws what the kit cannot make; the owner co
   const conf=await post('/api/create',{argument:'pairs',route:'confer',agent:'toolkit'});
   await post('/api/say',{room:conf.room,role:'A',text:'no trucks on the bridge'});await post('/api/say',{room:conf.room,role:'B',text:'a dedicated passage for walking dogs, separate from people'});
   const hc=await settled(conf.room);assert.ok(!hc.shape,'the AI heard none of it');
+  // direct placing: drawn solid at once, nobody asked, nothing to confirm
+  const direct=await post('/api/create',{argument:'pairs',route:'develop',agent:'toolkit',place:'direct'});
+  await post('/api/say',{room:direct.room,role:'A',text:'no trucks on the bridge'});await settled(direct.room);
+  await post('/api/say',{room:direct.room,role:'B',text:'a dedicated passage for walking dogs, separate from people'});const hd=await settled(direct.room);
+  assert.equal(hd.place,'direct');assert.ok(hd.sheetDrawn.named.length>=2);assert.ok(hd.sheetDrawn.named.every(n=>n.status==='placed'));
+  assert.ok(hd.wall.cards.every(c=>c.met==='placed'));
+  assert.deepEqual((await get(`/api/state?room=${direct.room}&role=B`)).readback,[]);
+  const dreply=calls().filter(c=>c.schema.properties.text).at(-1);assert.ok(dreply.system.includes('nobody is asked to confirm'));
+  await post('/api/create',{argument:'pairs',route:'develop',agent:'toolkit',place:'sideways'},400);
   // it survives a restart
   await stop();await start();h=await settled(room);
   assert.equal(h.sheet.find(p=>p.id===dog.id).label,'dog lane');assert.equal(h.sheetDrawn.named.find(n=>n.id===dog.id).status,'confirmed');

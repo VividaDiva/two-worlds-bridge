@@ -146,7 +146,8 @@
     const label = (x, y, z, n, o) => labels.push({ ...P(x, y, z), n: k, text: n.label, who: n.who, status: n.status, ...o });
     for (const n of X.named || []) {
       k++;
-      const o = { who: n.who, dash: n.status === "confirmed" ? null : [7, 6] };
+      const settled = n.status === "confirmed" || n.status === "placed";
+      const o = { who: n.who, dash: settled ? null : [7, 6] };
       const pos = n.position || "";
       switch (n.primitive) {
         case "band": {                      // a lane or path running beside the walk, on the far side
@@ -178,7 +179,7 @@
           break; }
         case "wash": {                      // the surface of the walk itself
           const inset = washes * 6; washes++;
-          poly([[GAP_L + inset, deck, inset], [GAP_R - inset, deck, inset], [GAP_R - inset, deck, DW - inset], [GAP_L + inset, deck, DW - inset]], { fill: (WHO[n.who] || SHEET) + (n.status === "confirmed" ? "33" : "1f"), who: n.who });
+          poly([[GAP_L + inset, deck, inset], [GAP_R - inset, deck, inset], [GAP_R - inset, deck, DW - inset], [GAP_L + inset, deck, DW - inset]], { fill: (WHO[n.who] || SHEET) + (settled ? "33" : "1f"), who: n.who });
           label(MID, deck + 96 + washes * 18, DW / 2, n, { align: "center" });
           break; }
         case "sign": {                      // a plate with words on a post on the bank: a rule
@@ -263,7 +264,7 @@
         ctx.font = `600 11px system-ui, -apple-system, "Helvetica Neue", sans-serif`; ctx.textAlign = "center";
         ctx.fillStyle = col; ctx.fillText(l.words, l.x, l.y);
       } else if (words) {
-        const text = `${l.text} · ${WHO_NAME[l.who] || "sheet"}${l.status === "confirmed" ? "" : l.status === "objected" ? " · objected" : " · proposed"}`;
+        const text = `${l.text} · ${WHO_NAME[l.who] || "sheet"}${l.status === "confirmed" || l.status === "placed" ? "" : l.status === "objected" ? " · objected" : " · proposed"}`;
         ctx.font = `600 13px system-ui, -apple-system, "Helvetica Neue", sans-serif`; ctx.textAlign = l.align || "left";
         ctx.lineWidth = 4; ctx.strokeStyle = C.paper; ctx.lineJoin = "round"; ctx.strokeText(text, l.x, l.y);
         ctx.fillStyle = col; ctx.fillText(text, l.x, l.y);
@@ -271,10 +272,11 @@
         // a circled number: filled once its owner has confirmed, hollow while proposed
         const x = l.plate || l.align === "center" ? l.x : l.align === "right" ? l.x - 10 : l.x + 10, y = l.y, r = 9;
         ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
-        ctx.fillStyle = l.status === "confirmed" ? col : C.paper; ctx.fill();
+        const filled = l.status === "confirmed" || l.status === "placed";
+        ctx.fillStyle = filled ? col : C.paper; ctx.fill();
         ctx.lineWidth = 2; ctx.strokeStyle = col; if (l.status === "objected") ctx.setLineDash([3, 3]); ctx.stroke();
         ctx.setLineDash([]); ctx.font = `700 11px system-ui, -apple-system, "Helvetica Neue", sans-serif`; ctx.textAlign = "center";
-        ctx.fillStyle = l.status === "confirmed" ? C.paper : col; ctx.fillText(String(l.n), x, y + 0.5);
+        ctx.fillStyle = filled ? C.paper : col; ctx.fillText(String(l.n), x, y + 0.5);
       }
       ctx.restore();
     }

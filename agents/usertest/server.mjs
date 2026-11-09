@@ -145,6 +145,7 @@ function view(room, role) {
     // always sees the wall; on condition B both people do — it is the thing they
     // respond to. On the other routes a person's page stays as it was.
     agent: modeOf(room),
+    place: room.place || "confirm",
     control: room.control && (role === "host" || dev) ? {
       standing: room.control.standing ? NAME(room.control.standing) : null,
       shape: room.control.ctx.design ? room.control.ctx.design.shape : null,
@@ -228,7 +229,7 @@ function record(room) {
     room: room.id, argument: room.argument, title: arg.title,
     route: room.route, arrow: route.arrow, version: route.develop ? "B" : "A",
     autoReplayEnabled:!!room.autoReplayEnabled, replayOf:room.replayOf || null,
-    agent: modeOf(room), wall: room.wall || null, retro: room.retro || {},
+    agent: modeOf(room), place: room.place || "confirm", wall: room.wall || null, retro: room.retro || {},
     sheetDrawn: room.wall ? sheetDrawn(room) : null,
     control: room.control ? { standingId: room.control.standing, lines: room.control.lines,
                               standing: room.control.standing ? NAME(room.control.standing) : null,
@@ -450,7 +451,7 @@ function sheetDrawn(room) {
     for (const p of room.wall?.sheet || []) {
       if (p.declined) continue;
       const who = ownerOf(room, p);
-      const status = confirmed(room, p) ? "confirmed" : p.objection ? "objected" : "proposed";
+      const status = room.place === "direct" ? "placed" : confirmed(room, p) ? "confirmed" : p.objection ? "objected" : "proposed";
       if (p.primitive) out.named.push({ id: p.id, label: p.label || p.what, what: p.what, kind: p.kind, primitive: p.primitive, position: p.position || "", who, status, objection: p.objection || null });
       else out.other.push({ what: p.label || p.what, kind: p.kind });
     }
@@ -475,6 +476,7 @@ function sheetDrawn(room) {
 function readbackFor(room, role) {
   if (modeOf(room) !== "toolkit" || !room.wall || (role !== "A" && role !== "B")) return null;
   if (!ROUTES[room.route].see?.[role]?.echo || room.finished) return null;
+  if (room.place === "direct") return [];          // placed as said; nothing to ask
   const named = sheetDrawn(room).named;
   return named.map((n, i) => ({ ...n, n: i + 1 })).filter(n => n.who === role && n.status !== "confirmed");
 }
@@ -554,7 +556,7 @@ function linkWall(room) {
     // every case but the declined one. Nothing here is "met": that is theirs to say.
     for (const c of room.wall.cards) {
       const item = (room.wall.sheet || []).find(p=>p.cardId===c.id && !p.declined);
-      c.met = c.withdrawn ? null : item ? (confirmed(room, item) ? "confirmed" : item.objection ? "objected" : "proposed") : "unverified";
+      c.met = c.withdrawn ? null : item ? (room.place === "direct" ? "placed" : confirmed(room, item) ? "confirmed" : item.objection ? "objected" : "proposed") : "unverified";
     }
     return;
   }
@@ -662,7 +664,7 @@ async function layExclusive(room,line,develop,clarification) {
   if (choose.id) room.ctx.design = KIT.find(k=>k.id===choose.id) || room.ctx.design;
   room.standing = room.ctx.design?.id || null;
   const named = toolkit ? pending(room).filter(p => p.primitive).map(p => ({ label: p.label || p.what, kind: p.kind, primitive: p.primitive, position: p.position, owner: WHO[ownerOf(room, p)], canHear: canAskOn(room, ownerOf(room, p)) })) : [];
-  const text = toolkit ? await toolkitReply({cards:activeCards(room),record:room.wall.record,before:before ? NAME(before):null,after:room.standing ? NAME(room.standing):null,change:clarification || line?.text,question:"",named})
+  const text = toolkit ? await toolkitReply({cards:activeCards(room),record:room.wall.record,before:before ? NAME(before):null,after:room.standing ? NAME(room.standing):null,change:clarification || line?.text,question:"",named,direct:room.place === "direct"})
     : await speak({said:clarification || line?.text || said.map(x=>x.text).join(" "),took:line?.taken || [],before:before ? NAME(before):null,after:room.standing ? NAME(room.standing):null,props:room.ctx.design?.has || [],wants:[...room.ctx.wants.keys()],avoids:[...room.ctx.avoids.keys()],changed:before!==room.standing});
   if (toolkit) linkWall(room);
   room.transcript.push({who:"builder",text,phase:"main",built:room.standing ? NAME(room.standing):null,proposal:develop,at:Date.now(),...(toolkit ? {decisionSnapshot:structuredClone({at:Date.now(),sourceLine:line ? room.transcript.indexOf(line):null,cards:room.wall.cards,record:room.wall.record,sheet:room.wall.sheet,before:before ? NAME(before):null,after:room.standing ? NAME(room.standing):null}),steps:stepsFor(room,line || {})} : {diff:diffOf(room,beforeHas,room.ctx.design?.has || [])})});
@@ -906,7 +908,7 @@ function restore() {
         uploads[role] = { ...u, media, dataUrl: pic
           ? `data:${media};base64,${fs.readFileSync(path.join(pics, pic)).toString("base64")}` : null };
       }
-      rooms.set(rec.room, { id: rec.room, argument: rec.argument, route: rec.route, agent: rec.agent || "both", ctx,
+      rooms.set(rec.room, { id: rec.room, argument: rec.argument, route: rec.route, agent: rec.agent || "both", place: rec.place || "confirm", ctx,
         turn: rec.turn ?? rec.transcript.filter(e => e.who !== "builder").length,
         transcript: rec.transcript, uploads, standing: rec.standingId ?? null, thinking: false,
         finished: !!rec.finished, score: rec.finished ? rec.score : undefined,
@@ -1017,13 +1019,16 @@ const srv = http.createServer(async (req, res) => {
   });
 
   if (p === "/api/create" && req.method === "POST") {
-    const { argument, route, agent = "toolkit" } = await body(req);
+    const { argument, route, agent = "toolkit", place = "confirm" } = await body(req);
     if (!["toolkit","keys"].includes(agent)) return json(res, 400, {error:"choose toolkit or keys for a new room"});
+    // How a named part lands: "confirm" draws it dashed and asks its owner;
+    // "direct" draws it solid at once — the process is updated, nobody is asked.
+    if (!["confirm","direct"].includes(place)) return json(res, 400, {error:"place is confirm or direct"});
     if (!ARGUMENTS[argument] || !ROUTES[route]) return json(res, 400, { error: "unknown argument or route" });
     // Never reuse the name of a session already on disk, or its record goes.
     let id = code();
     while (rooms.has(id) || fs.existsSync(path.join(SESSIONS, `${id}.json`))) id = code();
-    rooms.set(id, { id, argument, route, agent, ctx: mkCtx(), turn: 0, transcript: [],
+    rooms.set(id, { id, argument, route, agent, place, ctx: mkCtx(), turn: 0, transcript: [],
                     uploads: {}, standing: null, thinking: false, finished: false,
                     sketches: [], wall: agent === "toolkit" ? newWall() : null, control: null, retro: {}, createdAt: new Date().toISOString() });
     streams.set(id, new Set());
