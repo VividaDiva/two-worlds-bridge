@@ -42,6 +42,10 @@
   }
 
   function drawMatch(ctx, m, i) {
+    if (m.ghost) { ctx.save(); ctx.globalAlpha = 0.42; drawMatchSolid(ctx, m, i); ctx.restore(); return; }
+    drawMatchSolid(ctx, m, i);
+  }
+  function drawMatchSolid(ctx, m, i) {
     const cx = (m.x1 + m.x2) / 2, cy = (m.y1 + m.y2) / 2, a = wob(i);
     const rot = (px, py) => ({ x: cx + (px - cx) * Math.cos(a) - (py - cy) * Math.sin(a),
                                y: cy + (px - cx) * Math.sin(a) + (py - cy) * Math.cos(a) });
@@ -51,7 +55,7 @@
     ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
     ctx.strokeStyle = C.wood; ctx.lineWidth = THICK;
     ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
-    const head = i % 2 ? p1 : p2;
+    const head = m.head === "p2" ? p2 : m.head === "p1" ? p1 : i % 2 ? p1 : p2;
     ctx.fillStyle = C.head;
     ctx.beginPath(); ctx.arc(head.x, head.y, HEAD, 0, Math.PI * 2); ctx.fill();
   }
@@ -134,67 +138,67 @@
 
     // ── named parts ──
     // What the kit has no part for is not translated into one. It is placed
-    // with one of seven primitives and labelled with the speaker's own word,
-    // dashed while it is a proposal, solid once its owner has confirmed where
-    // it goes. The noun is theirs; only the placing is the drawing's.
+    // with one of seven primitives and labelled with the speaker's own word.
+    // It is built of the same matchsticks as the rest — it is the same bridge,
+    // whoever's word it carries — ghosted while it is only a proposal, solid
+    // once its owner has confirmed it or it was placed directly. A numbered
+    // marker in the owner's colour ties it to the legend.
     let bands = 0, decksAbove = 0, decksBelow = 0, signs = 0, washes = 0, edgesBetween = 0, postsAlong = 0;
-    // Each named part gets one small numbered marker on the picture; the words
-    // live in the legend under it, keyed by the same number. (`extras.words`
-    // writes the words on the picture instead, for an export.) A sign is the
-    // one exception: a sign without words is nothing.
     let k = 0;
     const label = (x, y, z, n, o) => labels.push({ ...P(x, y, z), n: k, text: n.label, who: n.who, status: n.status, ...o });
     for (const n of X.named || []) {
       k++;
       const settled = n.status === "confirmed" || n.status === "placed";
-      const o = { who: n.who, dash: settled ? null : [7, 6] };
+      const from = list.length;
+      const stick = (x1, y1, z1, x2, y2, z2, head) => { const at = list.length; lay3(list, x1, y1, z1, x2, y2, z2); if (head) list[list.length - 1].head = head; return at; };
       const pos = n.position || "";
       switch (n.primitive) {
         case "band": {                      // a lane or path running beside the walk, on the far side
           const z0 = DW + 16 + bands * 44, z1 = z0 + 28; bands++;
-          seg(GAP_L, deck, z0, GAP_R, deck, z0, o); seg(GAP_L, deck, z1, GAP_R, deck, z1, o);
-          for (let i = 0; i <= 4; i++) { const x = GAP_L + SPAN * i / 4; seg(x, deck, z0, x, deck, z1, { ...o, dash: o.dash ? [4, 5] : null }); }
+          stick(GAP_L, deck, z0, GAP_R, deck, z0); stick(GAP_L, deck, z1, GAP_R, deck, z1);
+          for (let i = 0; i <= 4; i++) { const x = GAP_L + SPAN * i / 4; stick(x, deck, z0, x, deck, z1); }
           label(GAP_R + 8, deck + 4, (z0 + z1) / 2, n, { align: "left" });
           break; }
         case "deck": {                      // another level, above or below the walk
           const above = pos !== "below";
           const y = above ? deck - 96 - decksAbove * 60 : deck + 64 + decksBelow * 50; above ? decksAbove++ : decksBelow++;
-          for (const z of [0, DW]) seg(GAP_L, y, z, GAP_R, y, z, o);
-          for (let i = 0; i <= 3; i++) { const x = GAP_L + SPAN * i / 3; seg(x, y, 0, x, y, DW, { ...o, dash: o.dash ? [4, 5] : null }); }
-          for (const x of [GAP_L, GAP_R]) for (const z of [0, DW]) seg(x, deck, z, x, y, z, { ...o, width: 2 });
+          for (const z of [0, DW]) stick(GAP_L, y, z, GAP_R, y, z);
+          for (let i = 0; i <= 3; i++) { const x = GAP_L + SPAN * i / 3; stick(x, y, 0, x, y, DW); }
+          for (const x of [GAP_L, GAP_R]) for (const z of [0, DW]) stick(x, deck, z, x, y, z);
           label(GAP_R + 8, y + 4, DW / 2, n, { align: "left" });
           break; }
-        case "post": {                      // uprights with a head: lights, poles
+        case "post": {                      // uprights with their heads up: lights, poles
           const xs = pos === "ends" ? [GAP_L + 12, GAP_R - 12] : [GAP_L + SPAN * 0.2, GAP_L + SPAN * 0.5, GAP_L + SPAN * 0.8];
           const z = pos === "ends" ? 0 : DW, h = 64 + postsAlong * 14; postsAlong++;
-          for (const x of xs) { seg(x, deck, z, x, deck - h, z, { ...o, width: 3 }); strokes.push({ dot: P(x, deck - h, z), who: n.who, dash: o.dash }); }
+          for (const x of xs) stick(x, deck, z, x, deck - h, z, "p2");
           label(xs[xs.length - 1] + 8, deck - h - 6, z, n, { align: "left" });
           break; }
-        case "edge": {                      // a wall, barrier, kerb or high rail: a line with uprights
+        case "edge": {                      // a wall, barrier, kerb or high rail: a rail with uprights
           const z = pos === "between" ? DW + 8 + edgesBetween * 44 : 0; if (pos === "between") edgesBetween++;
           const h = 34;
-          seg(GAP_L + 10, deck - h, z, GAP_R - 10, deck - h, z, { ...o, width: 4 });
-          for (const x of [GAP_L + 10, MID, GAP_R - 10]) seg(x, deck, z, x, deck - h, z, { ...o, width: 3 });
+          stick(GAP_L + 10, deck - h, z, GAP_R - 10, deck - h, z);
+          for (const x of [GAP_L + 10, MID, GAP_R - 10]) stick(x, deck, z, x, deck - h, z);
           label(GAP_L + 10, deck - h - 14, z, n, { align: "left" });
           break; }
-        case "wash": {                      // the surface of the walk itself
+        case "wash": {                      // the surface of the walk itself: a wash over it
           const inset = washes * 6; washes++;
-          poly([[GAP_L + inset, deck, inset], [GAP_R - inset, deck, inset], [GAP_R - inset, deck, DW - inset], [GAP_L + inset, deck, DW - inset]], { fill: (WHO[n.who] || SHEET) + (settled ? "33" : "1f"), who: n.who });
+          poly([[GAP_L + inset, deck, inset], [GAP_R - inset, deck, inset], [GAP_R - inset, deck, DW - inset], [GAP_L + inset, deck, DW - inset]], { fill: settled ? "rgba(176,122,60,.30)" : "rgba(176,122,60,.14)", who: n.who });
           label(MID, deck + 96 + washes * 18, DW / 2, n, { align: "center" });
           break; }
-        case "sign": {                      // a plate with words on a post on the bank: a rule
+        case "sign": {                      // a plate on a post on the bank: a rule
           const x = GAP_L - 70 - signs * 100, top = GROUND_Y - 84 - (signs % 2) * 40; signs++;
-          seg(x, GROUND_Y, 0, x, top, 0, { who: n.who, width: 3 });
-          const words = String(n.label || "").length > 24 ? String(n.label).slice(0, 23).trim() + "…" : String(n.label || "");
-          const w = X.words ? Math.max(60, Math.min(170, 14 + words.length * 6.4)) : 44;
-          strokes.push({ plate: { x: x - w / 2, y: top - 30, w, h: 30 }, who: n.who, dash: o.dash });
-          label(x, top - 15, 0, n, { align: "center", plate: true, words });
+          stick(x, GROUND_Y, 0, x, top, 0);
+          const w = 44, h = 30;
+          stick(x - w / 2, top - h, 0, x + w / 2, top - h, 0); stick(x - w / 2, top, 0, x + w / 2, top, 0);
+          stick(x - w / 2, top - h, 0, x - w / 2, top, 0); stick(x + w / 2, top - h, 0, x + w / 2, top, 0);
+          label(x, top - h / 2, 0, n, { align: "center", plate: true, words: String(n.label || "") });
           break; }
         case "end": {                       // gates, ramps, steps: something at the two ends
-          for (const x of [GAP_L + 6, GAP_R - 6]) { seg(x, deck, 0, x, deck - 44, 0, { ...o, width: 4 }); seg(x, deck - 32, 0, x, deck - 32, DW, { ...o, width: 3 }); }
+          for (const x of [GAP_L + 6, GAP_R - 6]) { stick(x, deck, 0, x, deck - 44, 0); stick(x, deck - 32, 0, x, deck - 32, DW); }
           label(GAP_R + 8, deck - 46, 0, n, { align: "left" });
           break; }
       }
+      for (let i = from; i < list.length; i++) { list[i].part = n.id; list[i].who = n.who; if (!settled) list[i].ghost = true; }
     }
     return { list, strokes, labels };
   }
@@ -261,8 +265,8 @@
       ctx.save();
       ctx.textBaseline = "middle";
       if (l.plate && words) {
-        ctx.font = `600 11px system-ui, -apple-system, "Helvetica Neue", sans-serif`; ctx.textAlign = "center";
-        ctx.fillStyle = col; ctx.fillText(l.words, l.x, l.y);
+        ctx.font = `600 10px system-ui, -apple-system, "Helvetica Neue", sans-serif`; ctx.textAlign = "center";
+        ctx.fillStyle = col; ctx.fillText(l.words.slice(0, 9), l.x, l.y);
       } else if (words) {
         const text = `${l.text} · ${WHO_NAME[l.who] || "sheet"}${l.status === "confirmed" || l.status === "placed" ? "" : l.status === "objected" ? " · objected" : " · proposed"}`;
         ctx.font = `600 13px system-ui, -apple-system, "Helvetica Neue", sans-serif`; ctx.textAlign = l.align || "left";

@@ -12,25 +12,31 @@ import {once} from 'node:events';
 import {fileURLToPath} from 'node:url';
 const here=path.dirname(fileURLToPath(import.meta.url));
 
-test('draw.js places a named part in the owner\'s colour, dashed until confirmed, labelled with their word',()=>{
+test('draw.js builds a named part out of the same matchsticks, ghosted until settled, with a numbered marker in the owner\'s colour',()=>{
   const ctx=vm.createContext({window:{}});ctx.window=ctx;
   vm.runInContext(fs.readFileSync(path.join(here,'draw.js'),'utf8'),ctx);
   const shape={level:'at',hand:'rail',middle:'none',width:'two',bracing:'none',surface:'bare',ends:'rested',cover:'open'};
   const named=[{id:'s1',label:'dog passage',primitive:'band',position:'beside',who:'B',status:'proposed'},
                {id:'s2',label:'lights for night walks',primitive:'post',position:'along',who:'B',status:'confirmed'},
                {id:'s3',label:'No trucks',primitive:'sign',position:'ends',who:'A',status:'proposed',kind:'rule'},
-               {id:'s4',label:'upper deck for bikes',primitive:'deck',position:'above',who:'A',status:'objected'}];
-  const L=vm.runInContext('crossingLayers',ctx)(shape,{water:true},{named});
-  const band=L.strokes.filter(s=>s.who==='B'&&s.dash&&!s.dot);assert.ok(band.length>=6,'a band is two edges and ties, dashed while proposed');
-  assert.ok(L.strokes.some(s=>s.dot&&s.who==='B'&&!s.dash),'confirmed posts are solid and have heads');
-  assert.ok(L.strokes.some(s=>s.plate&&s.who==='A'),'a rule is a sign plate');
-  const texts=L.labels.map(l=>l.text);for(const t of ['dog passage','lights for night walks','No trucks','upper deck for bikes'])assert.ok(texts.includes(t),t);
-  assert.equal(L.labels.find(l=>l.text==='upper deck for bikes').status,'objected');
-  const placed=vm.runInContext('crossingLayers',ctx)(shape,{},{named:[{id:'p',label:'x',primitive:'band',position:'beside',who:'A',status:'placed'}]});assert.ok(placed.strokes.every(st=>!st.dash),'placed parts are solid');
-  // nothing of the kit changed: the sticks are the same with or without the layer
-  assert.equal(L.list.length,vm.runInContext('crossingLayers',ctx)(shape,{water:true},null).list.length);
+               {id:'s4',label:'upper deck for bikes',primitive:'deck',position:'above',who:'A',status:'objected'},
+               {id:'s5',label:'smooth cement',primitive:'wash',position:'onwalk',who:'A',status:'placed'}];
+  const layers=vm.runInContext('crossingLayers',ctx);
+  const kit=layers(shape,{water:true},null).list, L=layers(shape,{water:true},{named});
+  // the kit's own sticks come first and are untouched; the named parts are sticks after them
+  assert.deepEqual(L.list.slice(0,kit.length).map(m=>[m.x1,m.y1,m.x2,m.y2]),kit.map(m=>[m.x1,m.y1,m.x2,m.y2]));
+  const added=L.list.slice(kit.length);assert.ok(added.length>10);assert.ok(added.every(m=>m.part&&m.who));
+  assert.ok(added.filter(m=>m.part==='s1').every(m=>m.ghost),'a proposal is ghosted');
+  assert.ok(added.filter(m=>m.part==='s2').every(m=>!m.ghost&&m.head==='p2'),'confirmed lights are solid sticks with their heads up');
+  assert.ok(added.filter(m=>m.part==='s4').every(m=>m.ghost),'an objected part stays a proposal');
+  assert.ok(added.some(m=>m.part==='s3'),'a sign is a post and a plate of sticks');
+  assert.ok(L.strokes.some(st=>st.poly&&st.who==='A'),'a wash is a surface, not sticks');
+  const texts=L.labels.map(l=>l.text);for(const t of ['dog passage','lights for night walks','No trucks','upper deck for bikes','smooth cement'])assert.ok(texts.includes(t),t);
+  assert.deepEqual(L.labels.map(l=>l.n),[1,2,3,4,5]);assert.equal(L.labels.find(l=>l.text==='upper deck for bikes').status,'objected');
+  // the feedback page gets the named sticks too, after the kit's, so they can be rated and removed like any other
+  const ids=vm.runInContext('crossingMatches',ctx)(shape,{water:true},{named}).map(m=>m.id);assert.equal(ids.length,L.list.length);
   // the older layer still draws
-  const old=vm.runInContext('crossingLayers',ctx)(shape,{},{footway:true,gate:true});assert.ok(old.strokes.length>0);assert.equal(old.labels.length,0);
+  const old=layers(shape,{},{footway:true,gate:true});assert.ok(old.strokes.length>0);assert.equal(old.labels.length,0);
 });
 
 test('the toolkit names, places and draws what the kit cannot make; the owner confirms the position',async()=>{
