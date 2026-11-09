@@ -259,6 +259,10 @@ textarea[disabled]{opacity:.5}
 .relayto{display:block; font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
   color:var(--soft); margin-bottom:3px}
 .composer .hint{position:absolute}
+.viewrow{display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:8px 0 0; font-size:12.5px; color:var(--soft)}
+.viewrow .handle{font-size:12px; padding:3px 9px}
+.lnk{background:none; border:0; padding:0; font:inherit; cursor:pointer; text-decoration:underline dotted; text-underline-offset:3px}
+.lnk.on{background:rgba(0,0,0,.06); border-radius:4px; text-decoration:none}
 .askcard{margin:0 0 10px; padding:12px 14px 10px; background:var(--paper); border:1px solid var(--rule); border-left:4px solid var(--moss); border-radius:10px}
 .askcard .eyebrow{color:var(--moss); margin:0 0 4px}
 .askcard .q{margin:0 0 10px; font-size:15px}
@@ -594,6 +598,15 @@ let agentTab = "toolkit", bridgeTab = "toolkit";
 const byName = (s, by) => by === "both" ? "both of you" : by === "none" ? "the AI's own choice" : by === s.role ? "you" : roleName(by);
 const partText = (s, key) => (s.props || []).find(p => p.key === key)?.text || key;
 const repaint = r => { if (ROLE === "both") bothView(); else if (last[r]) playerView(last[r]); };
+// How the crossing is looked at: from the side (the oblique) or from above;
+// and one named part to pick out, the rest fading. Both are the viewer's own.
+let bridgeView = "oblique", bridgeFocus = null;
+const drawExtras = sd => (sd || bridgeView === "top") ? { ...(sd || {}), view: bridgeView, focus: bridgeFocus } : null;
+const repaintAll = () => { if (ROLE === "both") bothView(); else for (const r of ["A","B"]) if (last[r]) playerView(last[r]); };
+document.addEventListener("click", e => {
+  const v = e.target.closest("[data-view]"); if (v) { bridgeView = v.dataset.view; repaintAll(); return; }
+  const f = e.target.closest("[data-focus]"); if (f) { bridgeFocus = bridgeFocus === f.dataset.focus ? null : f.dataset.focus; repaintAll(); }
+});
 
 /* ── the facilitator, before a room exists ─────────────────────────────── */
 async function setup(){
@@ -763,7 +776,7 @@ function sheetLegend(sd, dark){
   const c = dark ? "rgba(245,240,230,.7)" : "var(--soft)";
   // Numbered to match the markers on the picture: hollow while proposed, filled once confirmed.
   const circled = i => i < 20 ? String.fromCharCode(0x2460 + i) : String(i + 1);
-  if (sd.named) return `<p style="font-size:12.5px; color:${c}; margin:8px 0 0; line-height:1.5">${sd.named.length ? `<b>In their words</b> <span style="white-space:nowrap">(<span style="color:var(--rust)">●</span> ${esc(roleName("A"))}’s word · <span style="color:var(--blue)">●</span> ${esc(roleName("B"))}’s word; hollow number = proposed, filled = confirmed or placed):</span> ${sd.named.map((n, i) => `<span style="color:${n.who === "A" ? "var(--rust)" : "var(--blue)"}">${circled(i)} ${esc(n.label)}</span> <span style="opacity:.8">(${esc(roleName(n.who))}${(n.aliases || []).map(a => `; ${esc(roleName(a.who))}: “${esc(a.label)}”`).join("")}, ${esc(placeText(n))}${n.status === "confirmed" || n.status === "placed" ? "" : n.status === "objected" ? ", objected" : ", proposed"})</span>`).join(" · ")}` : ""}${sd.named.length && sd.other.length ? "<br>" : ""}${sd.other.length ? `<b>On the sheet, not drawable:</b> ${sd.other.map(o => esc(o.what)).join(" · ")}` : ""}</p>`;
+  if (sd.named) return `${sd.named.length ? `<p class="viewrow"><span>Look at it</span><button class="handle${bridgeView === "oblique" ? " go" : ""}" data-view="oblique">from the side</button><button class="handle${bridgeView === "top" ? " go" : ""}" data-view="top">from above</button><span class="muted">· tap a word below to pick that part out</span></p>` : ""}<p style="font-size:12.5px; color:${c}; margin:8px 0 0; line-height:1.5">${sd.named.length ? `<b>In their words</b> <span style="white-space:nowrap">(<span style="color:var(--rust)">●</span> ${esc(roleName("A"))}’s word · <span style="color:var(--blue)">●</span> ${esc(roleName("B"))}’s word; hollow number = proposed, filled = confirmed or placed):</span> ${sd.named.map((n, i) => `<button class="lnk${bridgeFocus === n.id ? " on" : ""}" data-focus="${n.id}" style="color:${n.who === "A" ? "var(--rust)" : "var(--blue)"}">${circled(i)} ${esc(n.label)}</button> <span style="opacity:.8">(${esc(roleName(n.who))}${(n.aliases || []).map(a => `; ${esc(roleName(a.who))}: “${esc(a.label)}”`).join("")}, ${esc(placeText(n))}${n.status === "confirmed" || n.status === "placed" ? "" : n.status === "objected" ? ", objected" : ", proposed"})</span>`).join(" · ")}` : ""}${sd.named.length && sd.other.length ? "<br>" : ""}${sd.other.length ? `<b>On the sheet, not drawable:</b> ${sd.other.map(o => esc(o.what)).join(" · ")}` : ""}</p>`;
   return `<p style="font-size:12.5px; color:${c}; margin:8px 0 0; line-height:1.5">${sd.drawn.length ? `<b style="color:#4a6b4f">Drawn from the sheet, accepted by both:</b> ${sd.drawn.map(d => esc(DRAWN[d.as] || d.what)).join(" · ")}` : ""}${sd.drawn.length && sd.other.length ? "<br>" : ""}${sd.other.length ? `<b>On the sheet, not drawable:</b> ${sd.other.map(o => esc(o.what)).join(" · ")}` : ""}</p>`;
 }
 
@@ -997,7 +1010,7 @@ function wire(s){
     const scope = ROLE === "both" ? `#col-${r} ` : "";
     const cv = document.getElementById("crossing-" + r);
     const shownP = bridgeTab === "control" && s.control ? s.control : s;
-    if (cv && window.drawCrossing) drawCrossing(cv, shownP.shape, shownP.world, shownP === s ? s.sheetDrawn : null);
+    if (cv && window.drawCrossing) drawCrossing(cv, shownP.shape, shownP.world, shownP === s ? drawExtras(s.sheetDrawn) : null);
     document.querySelectorAll(`${scope}[data-pbtab]`).forEach(t => t.onclick = () => { bridgeTab = t.dataset.pbtab; repaint(r); });
     const box = () => document.getElementById("say-" + r);
     const prefill = text => { const b = box(); if (b && !b.value.trim()) { b.value = text; drafts[r] = text; } if (b) { b.focus(); b.setSelectionRange(b.value.length, b.value.length); } };
@@ -1719,7 +1732,7 @@ function bothView(){
   // again on resize, because the canvas is sized from its own box.
   const cv = document.getElementById("crossing");
   const shown = h.control && bridgeTab === "control" ? h.control : h;
-  if (cv && window.drawCrossing) drawCrossing(cv, shown.shape, shown.world, shown === h ? h.sheetDrawn : null);
+  if (cv && window.drawCrossing) drawCrossing(cv, shown.shape, shown.world, shown === h ? drawExtras(h.sheetDrawn) : null);
   app.querySelectorAll("[data-atab]").forEach(t => t.onclick = () => { agentTab = t.dataset.atab; bothView(); });
   app.querySelectorAll("[data-btab]").forEach(t => t.onclick = () => { bridgeTab = t.dataset.btab; bothView(); });
   app.querySelectorAll("[data-output]").forEach(t=>t.onclick=()=>{outputTabs.set(h.room,t.dataset.output);bothView();app.querySelector(`[data-output="${t.dataset.output}"]`)?.focus({preventScroll:true});});
@@ -2056,7 +2069,7 @@ async function historyView(id){
 
   const cv = document.getElementById("crossing");
   const shown = h.control && bridgeTab === "control" ? h.control : h;
-  if (cv && window.drawCrossing) drawCrossing(cv, shown.shape, shown.world, shown === h ? h.sheetDrawn : null);
+  if (cv && window.drawCrossing) drawCrossing(cv, shown.shape, shown.world, shown === h ? drawExtras(h.sheetDrawn) : null);
   app.querySelectorAll("[data-atab]").forEach(t => t.onclick = () => { agentTab = t.dataset.atab; historyView(id); });
   app.querySelectorAll("[data-btab]").forEach(t => t.onclick = () => { bridgeTab = t.dataset.btab; historyView(id); });
   app.querySelectorAll("[data-output]").forEach(t=>t.onclick=()=>{outputTabs.set(h.room,t.dataset.output);historyView(id);});

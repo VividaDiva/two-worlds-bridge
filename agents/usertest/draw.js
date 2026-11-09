@@ -25,6 +25,7 @@
   // Named parts are drawn in the colour of the person whose word they carry.
   const WHO = { A: "#b4441f", B: "#2d5470" }, WHO_NAME = { A: "Role 1", B: "Role 2" }, SHEET = "#4a6b4f";
 
+  const X_ID = l => l.id;
   const bedOf = world => world && world.rock ? BED_CLEFT
                        : world && world.water ? BED_STREAM
                        : GROUND_Y + 96;
@@ -42,7 +43,8 @@
   }
 
   function drawMatch(ctx, m, i) {
-    if (m.ghost) { ctx.save(); ctx.globalAlpha = 0.42; drawMatchSolid(ctx, m, i); ctx.restore(); return; }
+    const dim = FOCUS && m.part !== FOCUS;
+    if (m.ghost || dim) { ctx.save(); ctx.globalAlpha = dim ? (m.part ? 0.15 : 0.3) : 0.42; drawMatchSolid(ctx, m, i); ctx.restore(); return; }
     drawMatchSolid(ctx, m, i);
   }
   function drawMatchSolid(ctx, m, i) {
@@ -68,10 +70,18 @@
   // it opens wider and the view pulls back, so lanes, walls and lights beside
   // the walk sit apart instead of on top of it. Without them the picture is
   // exactly what it always was, so older records and their marks still line up.
-  let AX = 0.55, AY = 0.32;
-  const P = (x, y, z) => ({ x: x + z * AX, y: y - z * AY });
-  const viewOf = extras => { const n = (extras && extras.named || []).length; return n ? { ax: 0.9, ay: 0.42, k: 1.08, dx: -30, dy: 26 } : { ax: 0.55, ay: 0.32, k: 1.4, dx: -40, dy: 10 }; };
-  const setView = extras => { const v = viewOf(extras); AX = v.ax; AY = v.ay; return v; };
+  let AX = 0.55, AY = 0.32, TOP = false, FOCUS = null;
+  // From above (`extras.view === "top"`): x stays x, what is beside the walk
+  // goes up the page, height is ignored. Lanes, walls and lights beside the
+  // walk read at a glance; what is under the deck is left out of that view.
+  const PLAN_Y = 600;
+  const P = (x, y, z) => TOP ? { x, y: PLAN_Y - z * 1.5 } : { x: x + z * AX, y: y - z * AY };
+  const viewOf = extras => {
+    if (extras && extras.view === "top") return { ax: 0, ay: 0, k: 1, dx: 0, dy: 0, top: true };
+    const n = (extras && extras.named || []).length;
+    return n ? { ax: 0.9, ay: 0.42, k: 1.08, dx: -30, dy: 26, top: false } : { ax: 0.55, ay: 0.32, k: 1.4, dx: -40, dy: 10, top: false };
+  };
+  const setView = extras => { const v = viewOf(extras); AX = v.ax; AY = v.ay; TOP = v.top; FOCUS = extras && extras.focus || null; return v; };
   function lay3(list, x1, y1, z1, x2, y2, z2) {
     const p = P(x1, y1, z1), q = P(x2, y2, z2);
     lay(list, p.x, p.y, q.x, q.y);
@@ -95,7 +105,7 @@
     const ties = d.width === "two" ? 5 : 3;
     for (let i = 0; i <= ties; i++) { const x = GAP_L + SPAN * i / ties; lay3(list, x, deck, 0, x, deck, DW); }
     // raised: it has to be got up to, and held up — a post at each corner
-    if (d.level === "raised") for (const x of [GAP_L, GAP_R]) for (const z of [0, DW]) lay3(list, x, GROUND_Y, z, x, deck, z);
+    if (!TOP && d.level === "raised") for (const x of [GAP_L, GAP_R]) for (const z of [0, DW]) lay3(list, x, GROUND_Y, z, x, deck, z);
     // something at the hand, along the near edge
     if (d.hand === "rail") {
       const rh = 52;
@@ -103,9 +113,9 @@
       for (const x of [GAP_L + 18, MID, GAP_R - 18]) lay3(list, x, deck, 0, x, deck - rh, 0);
     }
     // something set down in the gap, under the middle of the walk
-    if (d.middle === "post") {
+    if (!TOP && d.middle === "post") {
       lay3(list, MID, deck, DW / 2, MID, bed, DW / 2);
-    } else if (d.middle === "tower") {
+    } else if (!TOP && d.middle === "tower") {
       const l = MID - SPAN * 0.17, r = MID + SPAN * 0.17, z = DW / 2;
       for (const x of [l, r]) lay3(list, x, deck, z, x, bed, z);
       lay3(list, l, bed, z, r, deck, z); lay3(list, r, bed, z, l, deck, z); lay3(list, l, bed, z, r, bed, z);
@@ -114,14 +124,14 @@
     if (d.surface === "rough")
       for (let i = 1; i < 8; i++) { const x = GAP_L + SPAN * i / 8; lay3(list, x, deck - 4, DW * 0.2, x + 8, deck - 4, DW * 0.8); }
     // ends carried down past the banks to something firmer
-    if (d.ends === "footed") for (const x of [GAP_L, GAP_R]) for (const z of [0, DW]) lay3(list, x, deck, z, x, GROUND_Y + 34, z);
+    if (!TOP && d.ends === "footed") for (const x of [GAP_L, GAP_R]) for (const z of [0, DW]) lay3(list, x, deck, z, x, GROUND_Y + 34, z);
     // a roof over the whole length: posts at the corners, eaves along both edges
     if (d.cover === "roof") {
       const rh = 74;
       for (const z of [0, DW]) { lay3(list, GAP_L, deck - rh, z, GAP_R, deck - rh, z); for (const x of [GAP_L, MID, GAP_R]) lay3(list, x, deck, z, x, deck - rh, z); }
     }
     // struts driven back into the banks, under both edges
-    if (d.bracing === "struts") for (const z of [0, DW]) {
+    if (!TOP && d.bracing === "struts") for (const z of [0, DW]) {
       lay3(list, GAP_L, deck, z, GAP_L + SPAN * 0.34, deck + 70, z);
       lay3(list, GAP_R, deck, z, GAP_R - SPAN * 0.34, deck + 70, z);
       lay3(list, GAP_L + SPAN * 0.34, deck + 70, z, GAP_R - SPAN * 0.34, deck + 70, z);
@@ -155,7 +165,7 @@
     const nBands = (X.named || []).filter(n => n.primitive === "band").length;
     const outerZ = DW + (nBands ? 14 + nBands * GAPZ - (GAPZ - BANDW) : 0);   // the far edge of the last strip
     let k = 0;
-    const label = (x, y, z, n, o) => labels.push({ ...P(x, y, z), n: k, text: n.label, who: n.who, status: n.status, ...o });
+    const label = (x, y, z, n, o) => labels.push({ ...P(x, y, z), n: k, id: n.id, text: n.label, who: n.who, status: n.status, ...o });
     for (const n of X.named || []) {
       k++;
       const settled = n.status === "confirmed" || n.status === "placed";
@@ -199,11 +209,18 @@
           break; }
         case "sign": {                      // a plate on a post on the bank: a rule
           const x = GAP_L - 70 - signs * 100, top = GROUND_Y - 84 - (signs % 2) * 40; signs++;
-          stick(x, GROUND_Y, 0, x, top, 0);
           const w = 44, h = 30;
-          stick(x - w / 2, top - h, 0, x + w / 2, top - h, 0); stick(x - w / 2, top, 0, x + w / 2, top, 0);
-          stick(x - w / 2, top - h, 0, x - w / 2, top, 0); stick(x + w / 2, top - h, 0, x + w / 2, top, 0);
-          label(x, top - h / 2, 0, n, { align: "center", plate: true, words: String(n.label || "") });
+          if (TOP) {                        // seen from above: a plate on the bank, beside the walk's line
+            const z0 = -20 - (signs % 2) * 40, z1 = z0 + 24;
+            stick(x - w / 2, deck, z0, x + w / 2, deck, z0); stick(x - w / 2, deck, z1, x + w / 2, deck, z1);
+            stick(x - w / 2, deck, z0, x - w / 2, deck, z1); stick(x + w / 2, deck, z0, x + w / 2, deck, z1);
+            label(x, deck, (z0 + z1) / 2, n, { align: "center", plate: true, words: String(n.label || "") });
+          } else {
+            stick(x, GROUND_Y, 0, x, top, 0);
+            stick(x - w / 2, top - h, 0, x + w / 2, top - h, 0); stick(x - w / 2, top, 0, x + w / 2, top, 0);
+            stick(x - w / 2, top - h, 0, x - w / 2, top, 0); stick(x + w / 2, top - h, 0, x + w / 2, top, 0);
+            label(x, top - h / 2, 0, n, { align: "center", plate: true, words: String(n.label || "") });
+          }
           break; }
         case "end": {                       // gates, ramps, steps: something at the two ends
           for (const x of [GAP_L + 6, GAP_R - 6]) { stick(x, deck, 0, x, deck - 44, 0); stick(x, deck - 32, 0, x, deck - 32, DW); }
@@ -246,11 +263,17 @@
     ctx.translate(600, 370); ctx.scale(v.k, v.k); ctx.translate(-600 + v.dx, -370 + v.dy);
     const bed = bedOf(world);
     ctx.fillStyle = C.paper; ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = C.land;
-    ctx.fillRect(0, GROUND_Y, GAP_L, H - GROUND_Y);
-    ctx.fillRect(GAP_R, GROUND_Y, W - GAP_R, H - GROUND_Y);
-    ctx.fillStyle = C.land2; ctx.fillRect(GAP_L, bed, SPAN, H - bed);
-    if (world && world.water) { ctx.fillStyle = C.water; ctx.fillRect(GAP_L, WATER_Y, SPAN, bed - WATER_Y); }
+    if (TOP) {
+      // the banks either side, the gap between them running top to bottom
+      ctx.fillStyle = C.land; ctx.fillRect(0, 0, GAP_L, H); ctx.fillRect(GAP_R, 0, W - GAP_R, H);
+      ctx.fillStyle = world && world.water ? C.water : C.land2; ctx.fillRect(GAP_L, 0, SPAN, H);
+    } else {
+      ctx.fillStyle = C.land;
+      ctx.fillRect(0, GROUND_Y, GAP_L, H - GROUND_Y);
+      ctx.fillRect(GAP_R, GROUND_Y, W - GAP_R, H - GROUND_Y);
+      ctx.fillStyle = C.land2; ctx.fillRect(GAP_L, bed, SPAN, H - bed);
+      if (world && world.water) { ctx.fillStyle = C.water; ctx.fillRect(GAP_L, WATER_Y, SPAN, bed - WATER_Y); }
+    }
     const { list, strokes, labels } = assemble(shape, world, extras);
     list.forEach((m, i) => {
       if(feedback?.removed?.includes(String(i))) return;
@@ -277,6 +300,7 @@
     for (const l of labels) {
       const col = WHO[l.who] || SHEET;
       ctx.save();
+      if (FOCUS && (X_ID(l) !== FOCUS)) ctx.globalAlpha = 0.3;
       ctx.textBaseline = "middle";
       if (l.plate && words) {
         ctx.font = `600 10px system-ui, -apple-system, "Helvetica Neue", sans-serif`; ctx.textAlign = "center";
