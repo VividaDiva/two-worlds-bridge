@@ -540,14 +540,14 @@ export async function wallHear({ routeNote, canAsk, wall, line, speaker, pureToo
     delete schema.properties.cards.items.properties.rulesOut;
     schema.properties.cards.items.required = schema.properties.cards.items.required.filter(k => !["keys","rulesOut"].includes(k));
   }
-  const instruction = pureToolkit ? HEAR.replace(/- keys:[\s\S]*?(?=Tools\.)/, "Describe needs in natural language, including explicit prohibitions. Do not translate them into feature codes. Use theme to group related needs.\n  One need per card: \"wide enough for an SUV\", \"two-way\" and \"no trucks\" are three cards, not one. A rule — what is not allowed, who may use it, when it is open — is always its own card. A thing to be placed (a path, lights, a wall) is its own card too, never folded into another.\n\n") : HEAR;
+  const instruction = pureToolkit ? HEAR.replace(/- keys:[\s\S]*?(?=Tools\.)/, "Describe needs in natural language, including explicit prohibitions. Do not translate them into feature codes. Use theme to group related needs.\n  One need per card: \"wide enough for an SUV\", \"two-way\" and \"no trucks\" are three cards, not one, and a line may add up to six cards. A rule — what is not allowed, who may use it, when it is open — is always its own card. A thing to be placed (a path, lights, a wall) is its own card too, never folded into another.\n\n") : HEAR;
   const updateRules = pureToolkit ? `
 For an existing need, use updates, not a duplicate card. action=revise only for an explicit replacement or clarification by its owner; return the COMPLETE updated need, why, concern and when, preserving unchanged details. action=withdraw only for an explicit owner withdrawal. evidence must be an exact substring of the NEW line. Never treat a teammate's report, a suggestion, acknowledgement, or your hypothesis as an owner revision: use action=note, explicit=false. Pending changes are unconfirmed, not active requirements. An explicit owner reply may confirm or reject an earlier pending proposal; express the resulting complete requirement in an owner revision.
 Set clarificationNeeded=true when the speaker leaves alternatives unresolved that would produce different builds (for example painted markings versus a physical barrier), or explicitly requests clarification about such uncertainty. Then provide one concrete question in ask when allowed. Do not treat unresolved alternatives as an agreed requirement. Set it false for mere stylistic preferences or already answered questions. Set answeredQuestion=true only if the NEW line is from the pending question's addressee and actually answers that question. Unrelated messages and another person's answer do not resolve it. Incorporate the answer into the relevant card using an update. Ask at most one question to the current speaker, only if the ambiguity changes a build. If a pending question exists, or you just received its answer, leave ask empty. Never assume consent to a design from a clarification.` : "";
   const out = await ask(instruction + updateRules, user, schema);
   const clean = xs => (Array.isArray(xs) ? xs : []).filter(k => k in FEATURES).slice(0, 3);
   const str = x => typeof x === "string" ? x.trim() : "";
-  const cards = (Array.isArray(out.cards) ? out.cards : []).slice(0, 3).map(c => ({
+  const cards = (Array.isArray(out.cards) ? out.cards : []).slice(0, pureToolkit ? 6 : 3).map(c => ({
     who: /2/.test(str(c.who)) ? "B" : "A",
     via: /reported by role 1/i.test(str(c.via)) ? "reported-by-A" : /reported by role 2/i.test(str(c.via)) ? "reported-by-B"
        : /infer/i.test(str(c.via)) ? "inferred" : "direct",
@@ -575,12 +575,12 @@ Set clarificationNeeded=true when the speaker leaves alternatives unresolved tha
 export const PRIMITIVES = ["band", "deck", "post", "edge", "wash", "sign", "end"];
 export const POSITIONS = ["beside", "above", "below", "along", "between", "ends", "overhead", "onwalk"];
 export const PRIMITIVE_GLOSS = {
-  band:  "a second strip running the length of the crossing — a lane, a footway, a dog path (position: beside)",
+  band:  "a second strip running the length of the crossing — a lane for the other direction, an extra lane, a footway, a dog path (position: beside)",
   deck:  "another level of walk — an upper or a lower deck (position: above or below)",
   post:  "upright things standing on it — lights, signs on poles, posts (position: along the edge, or at the ends)",
   edge:  "a continuous line along the walk — a wall, a barrier, a kerb, a high rail (position: along the near edge, or between the walk and a band)",
   wash:  "the surface of the walk itself — cement, grass, paint, a sealed surface (position: onwalk)",
-  sign:  "a plate with words: an operating rule — hours, no trucks, no cars (position: ends)",
+  sign:  "a plate with words: an operating rule — hours, no trucks, no cars, who goes first (position: ends). Two-way traffic or more lanes is not a rule: it is a band.",
   end:   "something at the two ends — a gate, a ramp, steps (position: ends)",
 };
 
