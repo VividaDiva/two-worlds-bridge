@@ -58,7 +58,7 @@ test('automatic replay: all paths, separate AI process, image prompt, persistenc
   assert.equal(tk.route,route);assert.equal(tk.agent,'toolkit');assert.ok(tk.shape);assert.equal(tk.sketches.length,1);assert.equal(tk.replayOf.room,room);
   assert.deepEqual(tk.lines.filter(l=>['A','B'].includes(l.who)).map(l=>[l.who,l.text,l.phase]),control.lines.filter(l=>['A','B'].includes(l.who)).map(l=>[l.who,l.text,l.phase]));
   assert.ok(tk.lines.filter(l=>l.interpretations).every(l=>l.interpretations.every(i=>i.kind==='toolkit')));
-  const original=await get('/api/export?room='+target+'&format=json');assert.match(original.sketches[0].prompt,/Toolkit builder/);assert.match(original.sketches[0].prompt,/Toolkit interpretation and decisions/);
+  const original=await get('/api/export?room='+target+'&format=json');assert.match(original.sketches[0].prompt,/as the Toolkit understood it/);assert.match(original.sketches[0].prompt,/What the toolkit understood/);assert.doesNotMatch(original.sketches[0].prompt,/"cards"/);
   if(route==='confer')assert.ok(!original.sketches[0].prompt.includes('A original confer'));
   if(route==='chain')assert.ok(!original.sketches[0].prompt.includes('A original chain'));
   const image=await fetch('http://localhost:'+port+'/sketch/'+target+'/1.png');assert.equal(image.status,200);assert.ok((await image.arrayBuffer()).byteLength>20);

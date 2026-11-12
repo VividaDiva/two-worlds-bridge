@@ -200,6 +200,12 @@ parts, so many with no part), what it proposed, what still has no part, and
 what it asked. When the AI is unsure what someone meant it gives two or three
 readings; the speaker taps one and the line is read again with it.
 
+### Kano, read from the talk (the toolkit builder)
+
+Before every toolkit build the builder answers Kano's two questions — how would they feel with it, and without it? — on each speaker's behalf, from the heard conversation alone, and records the evidence (`card.kano = {level, why}`: must · performance · attractive · indifferent). Nobody is asked. Each person is judged against their own way of speaking, and how often a thing is said is not by itself evidence.
+
+What it changes: the decision record sees each card's level; a must is never turned into a sign unless it really is an operating rule, and a must no primitive can show is answered "none" and listed as **Must-have, not on the drawing yet** (`sheetDrawn.mustOpen`) instead of being folded into another part. Consolidation keeps a must as the surviving part. Named parts are numbered most important first. The sketch is told the must-be needs first and to draw every one. Dot voting stays a facilitator activity, for when two people's musts collide.
+
 ### The sheet, drawn
 
 The crossing is drawn turned a little (an oblique view), so its width and

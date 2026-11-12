@@ -417,7 +417,7 @@ export async function sketch({ title, ground, lines, references = [], outcome = 
     ground ? `The ground between the banks: ${ground}.` : `Nothing was said about what is under it.`,
     `The case: ${title}.`,
     ``,
-    ...(process === "toolkit" ? [`Visualize the Toolkit builder’s recorded decisions using the following interpretation and outcome. Keep unaccepted additions and unresolved needs unconfirmed; do not invent resolved agreement.`, outcome, ``] : []),
+    ...(process === "toolkit" ? [`Draw the bridge as the Toolkit understood it, from the list below. Every must-have is in the picture. "Not yet confirmed" is a note, never a reason to leave a thing out. Draw nothing the list and their words do not ask for.`, outcome, ``] : []),
     `What they said, in order:`,
     said || "(nothing yet)",
   ].join("\n");
@@ -676,6 +676,45 @@ export async function consolidate({ sheet }) {
     .filter(g => g.length >= 2);
 }
 
+// ── Kano, read from the talk ─────────────────────────────────────────────
+// Which needs are non-negotiable? Kano asks two questions of each need — how
+// would you feel with it, and without it? — and sorts the answers into must-be,
+// performance (more is better), attractive (welcome extra) or indifferent.
+// Nobody is asked here: the builder answers both questions on the speaker's
+// behalf, from evidence in this conversation alone, and says what the evidence
+// is. A thing said once can be a must; a thing said three times need not be.
+export const KANO = ["must", "performance", "attractive", "indifferent"];
+const KANO_JSON = { type:"object", properties:{ ranks:{ type:"array", items:{ type:"object", properties:{
+  id:{type:"string"}, kano:{type:"string", enum:KANO}, evidence:{type:"string"} }, required:["id","kano","evidence"] } } }, required:["ranks"] };
+export async function readKano({ wall, lines = [] }) {
+  const live = wall.cards.filter(c => !c.withdrawn);
+  if (!live.length) return {};
+  const user = [
+    `Two people are telling a builder what one bridge must do. The conversation, in order:`,
+    ...lines.map((l, i) => `  ${i + 1}. ${l.who}: "${l.text}"`),
+    ``,
+    `The needs heard so far:`,
+    ...live.map(c => `  [${c.id}] ${c.who === "A" ? "Role 1" : "Role 2"}: ${c.need}${c.why ? " — " + c.why : ""} ("${c.quote}")${(c.changes || []).length ? " · later: " + c.changes.map(x => x.change).filter(Boolean).join("; ") : ""}`),
+    ``,
+    `Classify each need with the Kano model, answering its two questions on the speaker's behalf from this`,
+    `conversation only: how would they feel if the bridge had it, and if it did not?`,
+    `- "must": without it they would reject the bridge — it is what the bridge is for, it keeps someone safe,`,
+    `  or they held to it, clarified it when asked, or came back to it. Never trade a must away.`,
+    `- "performance": more of it is better and less is worse, but it is a matter of degree — wide enough, enough space.`,
+    `- "attractive": welcome, but its absence would not be a loss — an extra, a courtesy, a concession to the other.`,
+    `- "indifferent": said in passing, or agreement with the other person rather than a need of their own.`,
+    `Judge each person against their own way of speaking: someone who says "I hope" about everything has not`,
+    `ranked everything low. How often a thing is said is not by itself evidence. Each person may have more than`,
+    `one must, or none. "evidence": one short clause pointing to what in the conversation shows it.`,
+  ].join("\n");
+  const out = await ask("Answer only what is asked, as JSON. Never use the word \"user\".", user, KANO_JSON);
+  const ids = new Set(live.map(c => c.id)), got = {};
+  for (const r of Array.isArray(out.ranks) ? out.ranks : [])
+    if (ids.has(String(r.id)) && KANO.includes(r.kano)) got[String(r.id)] = { level: r.kano, why: String(r.evidence || "").trim().slice(0, 160) };
+  return got;
+}
+export const KANO_RANK = { must: 0, performance: 1, attractive: 2, indifferent: 3 };
+
 // With the toolkit on, "new" means "name it": the thing stays in their words and
 // is placed, not translated. Rules are placed too — as a sign.
 const NAME_IT = [
@@ -709,7 +748,7 @@ export async function wallDecide({ wall, standing, props, pureToolkit = false, o
   if (!cards.length) return { decisions: [], conflicts: [], checks: null };
   const user = [
     `The wall:`,
-    ...cards.map(c => `  [${c.id}] ${c.who} (${c.via}): "${c.quote}" → ${c.need}${c.why ? " — " + c.why : ""}${pureToolkit ? "" : c.keys.length ? " {" + c.keys.join(",") + "}" : " {no key}"}${c.concern ? " · concern: " + c.concern : ""}${c.when ? " · when: " + c.when : ""}${c.conflictsWith.length ? " · conflicts with " + c.conflictsWith.join(",") : ""}`),
+    ...cards.map(c => `  [${c.id}] ${c.who} (${c.via}): "${c.quote}" → ${c.need}${c.why ? " — " + c.why : ""}${pureToolkit ? "" : c.keys.length ? " {" + c.keys.join(",") + "}" : " {no key}"}${c.concern ? " · concern: " + c.concern : ""}${c.when ? " · when: " + c.when : ""}${c.conflictsWith.length ? " · conflicts with " + c.conflictsWith.join(",") : ""}${pureToolkit && c.kano ? " · Kano: " + c.kano.level + (c.kano.why ? " (" + c.kano.why + ")" : "") : ""}`),
     ``,
     standing ? `What stands now: ${standing} — ${list(props)}.` : `Nothing stands yet.`,
     ``,
@@ -725,6 +764,7 @@ export async function wallDecide({ wall, standing, props, pureToolkit = false, o
       .replace(`- "none": neither a part, a rule nor a new part can answer it. Say so; it stays on the wall.`,
                `- "none": only for what cannot be placed on a drawing at all — a quality (quiet, pretty, cheap), a purpose (for families), a wish about the far side of the river. Say so; it stays on the wall and is read back in words.`)
       + "\nReturn exactly one decision for every card listed, with its id, in the order given. Never skip a card: a card the kit cannot serve is answered \"new\" with a label, primitive and position, or \"rule\" with a label — not left out and not forced into \"part\"."
+      + "\nA card marked \"Kano: must\" is what that person will not do without. Never answer it \"rule\" or give it a sign unless it truly is an operating rule (hours, who goes first, what is allowed): a structure or a mechanism — a bridge that opens, splits, lifts, a separate deck — is never a sign. If no primitive can show a must, answer \"none\" and say in \"what\" that it is a must the drawing cannot show yet; never fold it into another part. Never set \"sameAs\" from a must to a part that is not the same thing."
       + "\nAvailable workshop:\n" + kitForChoosing().map(k=>k.id + ": " + k.props).join("\n")
       + "\nGlosses, so the workshop is read in their terms: \"two abreast\" is wide enough for two people side by side or one car; \"takes loads and carts\" bears vehicles; \"something at the hand\" is a railing; \"a coarse surface\" is grip underfoot, not a smooth or sealed one."
     : DECIDE;

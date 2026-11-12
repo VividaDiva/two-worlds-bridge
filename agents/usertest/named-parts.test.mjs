@@ -46,16 +46,19 @@ test('the toolkit names, places and draws what the kit cannot make; the owner co
  const log=path.join(dir,'calls.jsonl');fs.writeFileSync(log,'');
  const sdk=`import fs from 'node:fs';export class GoogleGenAI { models={generateContent:async req=>{
  fs.appendFileSync(${JSON.stringify(log)},JSON.stringify({system:req.config.systemInstruction,contents:req.contents,schema:req.config.responseJsonSchema})+'\\n');
+ if(!req.config.responseJsonSchema)return{candidates:[{content:{parts:[{inlineData:{mimeType:'image/png',data:'iVBORw0KGgo='}}]}}]};
  const p=req.config.responseJsonSchema.properties;let out={};
  const text=typeof req.contents==='string'?req.contents:JSON.stringify(req.contents);
- if(p.groups){const a=(text.match(/(s\\d+) · Role 2 · "dog lane"/)||[])[1],b=(text.match(/(s\\d+) · Role 2 · "path for dogs"/)||[])[1];out={groups:a&&b?[[a,b]]:[]};}
+ if(p.ranks){const ids=[...text.matchAll(/\\[(n\\d+)\\] (Role [12]): ([^\\n]*)/g)];out={ranks:ids.map(m=>({id:m[1],kano:/dog|split/.test(m[3])?'must':'attractive',evidence:/split/.test(m[3])?'clarified when asked':'safety for the dog'}))};}
+ else if(p.groups){const a=(text.match(/(s\\d+) · Role 2 · "dog lane"/)||[])[1],b=(text.match(/(s\\d+) · Role 2 · "path for dogs"/)||[])[1];out={groups:a&&b?[[a,b]]:[]};}
  else if(p.same){const nb=(text.match(/\\[(n\\d+)\\] Role 2: a dog passage/)||[])[1];const hit=text.includes('REPEAT_B')||text.includes('ALIAS_A');out={same:hit&&nb?[{index:0,id:nb}]:[]};}
+ else if(p.cards&&text.includes('said: "SPLIT_A"')){out={cards:[{who:'Role 1',via:'direct',quote:'SPLIT_A',need:'the bridge splits and lifts for ships',why:'so ships can pass',theme:'opening',concern:'',when:'',readings:[],hmw:'',story:'',conflictsWith:[]}],updates:[],tools:[],ask:'',answeredQuestion:false,clarificationNeeded:false};}
  else if(p.cards&&text.includes('said: "TWIN_B"')){out={cards:[{who:'Role 2',via:'direct',quote:'TWIN_B',need:'a lane where dogs can walk',why:'',theme:'dog walking',concern:'',when:'',readings:[],hmw:'',story:'',conflictsWith:[]}],updates:[],tools:[],ask:'',answeredQuestion:false,clarificationNeeded:false};}
  else if(p.cards&&text.includes('said: "REPEAT_B"')){out={cards:[{who:'Role 2',via:'direct',quote:'REPEAT_B',need:'a dog passage separate from pedestrians',why:'',theme:'dog walking',concern:'',when:'',readings:[],hmw:'',story:'',conflictsWith:[]}],updates:[],tools:[],ask:'',answeredQuestion:false,clarificationNeeded:false};}
  else if(p.cards&&text.includes('said: "ALIAS_A"')){out={cards:[{who:'Role 1',via:'direct',quote:'ALIAS_A',need:'a lane for the dogs away from the cars',why:'',theme:'lanes',concern:'',when:'',readings:[],hmw:'',story:'',conflictsWith:[]}],updates:[],tools:[],ask:'',answeredQuestion:false,clarificationNeeded:false};}
  else if(p.cards){const b=text.includes('Role 2 said');out={cards:[b?{who:'Role 2',via:'direct',quote:'a dedicated passage for walking dogs, separate from people',need:'a dog passage separate from pedestrians',why:'',theme:'dog walking',concern:'',when:'',readings:[],hmw:'',story:'',conflictsWith:[]}
    :{who:'Role 1',via:'direct',quote:'no trucks on the bridge',need:'no trucks allowed',why:'',theme:'traffic',concern:'',when:'',readings:[],hmw:'',story:'',conflictsWith:[]}],updates:[],tools:[],ask:'',answeredQuestion:false,clarificationNeeded:false};}
- else if(p.decisions){const ids=[...text.matchAll(/\\[(n\\d+)\\] ([AB]) \\(/g)].map(m=>[m[1],m[2]]);const band=(text.match(/(s\\d+) · B · "[^"]*" · band/)||[])[1]||'';out={decisions:ids.map(([id,who])=>text.includes('['+id+'] B (direct): "TWIN_B"')?{id,response:'new',what:'a path for dogs',uncertainty:'',label:'path for dogs',primitive:'band',position:'beside',sameAs:''}:text.includes('['+id+'] A (direct): "ALIAS_A"')?{id,response:'new',what:'the same lane',uncertainty:'',label:'lane for the dogs',primitive:'band',position:'beside',sameAs:band}:who==='B'?{id,response:'new',what:'a dog passage beside the walk',uncertainty:'',label:'dog passage',primitive:'band',position:'beside',sameAs:''}:{id,response:'rule',what:'no trucks',uncertainty:'',label:'no trucks on the bridge',primitive:'',position:'',sameAs:''}),conflicts:[],checks:{nothingLost:true,inferencesLabelled:true,noFalseConflicts:true,defaultsChecked:true,buildNotConsent:true,kindsDistinct:true}};}
+ else if(p.decisions){const ids=[...text.matchAll(/\\[(n\\d+)\\] ([AB]) \\(/g)].map(m=>[m[1],m[2]]);const band=(text.match(/(s\\d+) · B · "[^"]*" · band/)||[])[1]||'';out={decisions:ids.map(([id,who])=>text.includes('['+id+'] A (direct): "SPLIT_A"')?{id,response:'none',what:'a must the drawing cannot show yet',uncertainty:'',label:'',primitive:'',position:'',sameAs:''}:text.includes('['+id+'] B (direct): "TWIN_B"')?{id,response:'new',what:'a path for dogs',uncertainty:'',label:'path for dogs',primitive:'band',position:'beside',sameAs:''}:text.includes('['+id+'] A (direct): "ALIAS_A"')?{id,response:'new',what:'the same lane',uncertainty:'',label:'lane for the dogs',primitive:'band',position:'beside',sameAs:band}:who==='B'?{id,response:'new',what:'a dog passage beside the walk',uncertainty:'',label:'dog passage',primitive:'band',position:'beside',sameAs:''}:{id,response:'rule',what:'no trucks',uncertainty:'',label:'no trucks on the bridge',primitive:'',position:'',sameAs:''}),conflicts:[],checks:{nothingLost:true,inferencesLabelled:true,noFalseConflicts:true,defaultsChecked:true,buildNotConsent:true,kindsDistinct:true}};}
  else if(p.build)out={build:'A crossing with a rail and two abreast',why:'wide and guarded',alt:'',altWhy:''};
  else if(p.text)out={text:'REPLY'};
  else if(p.say)out={say:'SAY'};
@@ -78,10 +81,18 @@ test('the toolkit names, places and draws what the kit cannot make; the owner co
   const decide=calls().filter(c=>c.schema.properties.decisions).at(-1);
   assert.ok(decide.system.includes('Then name it'));assert.ok(decide.system.includes('"primitive"'));assert.ok(decide.system.includes('one car'));
   assert.ok(decide.schema.properties.decisions.items.properties.label);
+  // Kano is read from the talk before the decision, and the decision sees it
+  const kano=calls().filter(c=>c.schema.properties.ranks).at(-1);assert.ok(kano,'a Kano reading was asked for');
+  assert.ok(String(kano.contents).includes('a dedicated passage for walking dogs'),'the Kano reading sees the conversation');
+  assert.ok(String(kano.contents).includes('how would they feel if the bridge had it'));
+  assert.ok(String(decide.contents).includes('Kano: must (safety for the dog)'),'the decision sees the priority');
+  assert.ok(decide.system.includes('is never a sign'));
   // the sheet carries the word, the primitive, the place and the owner
   const dog=h.sheet.find(p=>p.label==='dog passage');assert.ok(dog,JSON.stringify(h.sheet));
   assert.equal(dog.owner,'B');assert.equal(dog.primitive,'band');assert.equal(dog.position,'beside');assert.equal(dog.kind,'new');
-  const trucks=h.sheet.find(p=>p.kind==='rule');assert.equal(trucks.primitive,'sign');assert.equal(trucks.position,'ends');assert.equal(trucks.owner,'A');
+  assert.equal(dog.kano,'must');assert.equal(h.wall.cards.find(c=>c.who==='B').kano.level,'must');
+  const trucks=h.sheet.find(p=>p.kind==='rule');assert.equal(trucks.kano,'attractive');
+  assert.deepEqual(h.sheetDrawn.named.map(n=>n.kano),['must','attractive'],'most important first');assert.equal(trucks.primitive,'sign');assert.equal(trucks.position,'ends');assert.equal(trucks.owner,'A');
   // drawn at once, as a proposal, before anyone has said yes
   assert.equal(h.sheetDrawn.named.length,2);assert.ok(h.sheetDrawn.named.every(n=>n.status==='proposed'));
   assert.ok(h.wall.cards.every(c=>c.met==='proposed'));
@@ -91,7 +102,7 @@ test('the toolkit names, places and draws what the kit cannot make; the owner co
   assert.ok(reply.system.includes('do NOT ask that in your text'),'the question is a card, not a sentence');
   // the read-back is data for a card: the owner sees their own unconfirmed parts, numbered as drawn; the other sees none of them
   const vb=await get(`/api/state?room=${room}&role=B`), va=await get(`/api/state?room=${room}&role=A`);
-  assert.deepEqual(vb.readback.map(i=>[i.id,i.n,i.label]),[[dog.id,2,'dog passage']]);
+  assert.deepEqual(vb.readback.map(i=>[i.id,i.n,i.label]),[[dog.id,1,'dog passage']],'the must-have is numbered first');
   assert.deepEqual(va.readback.map(i=>i.id),[trucks.id]);
   // the owner may move it, which confirms it at the new place; the other may not
   await post('/api/accept',{room,role:'A',item:dog.id,position:'above'},403);
@@ -160,6 +171,17 @@ test('the toolkit names, places and draws what the kit cannot make; the owner co
   const shared=h.sheet.find(p=>p.primitive==='band');assert.ok(shared.aliases.some(a=>a.who==='A'&&a.label==='lane for the dogs'),JSON.stringify(shared));
   assert.ok(h.sheetDrawn.named.find(n=>n.id===shared.id).aliases.some(a=>a.who==='A'&&a.label==='lane for the dogs'),'the other person\'s word shows on the drawn part');
   const aliasCard=h.wall.cards.find(c=>c.quote==='ALIAS_A');assert.equal(aliasCard.met,'confirmed','the alias takes the part\'s status');
+  // a must-have the drawing cannot show is never silently gone: it is listed, and never a sign
+  await post('/api/say',{room,role:'A',text:'SPLIT_A'});h=await settled(room);
+  const split=h.wall.cards.find(c=>c.quote==='SPLIT_A');assert.equal(split.kano.level,'must');
+  assert.ok(!h.sheet.some(p=>p.cardId===split.id&&!p.declined),'not turned into a part it is not');
+  assert.deepEqual(h.sheetDrawn.mustOpen.map(m=>m.need),['the bridge splits and lifts for ships']);
+  // the sketch is drawn from the toolkit's own understanding: musts first, no kit shape, no JSON, water from what was heard
+  await post('/api/sketch',{room});for(let i=0;i<100&&!calls().some(c=>!c.schema);i++)await new Promise(r=>setTimeout(r,20));
+  const sk=String(calls().filter(c=>!c.schema).at(-1).contents);
+  assert.ok(sk.includes('MUST-HAVE'),sk);assert.ok(sk.indexOf('the bridge splits and lifts for ships')<sk.indexOf('Nice to have'),'the must comes first');
+  assert.ok(!sk.includes('A crossing with a rail and two abreast'),'the kit shape is not handed to the sketch');
+  assert.ok(!sk.includes('"cards"'),'no JSON dump');assert.ok(sk.includes('banks: water'),'ships mean water');
   // it survives a restart
   await stop();await start();h=await settled(room);
   assert.equal(h.sheet.find(p=>p.id===dog.id).label,'dog lane');assert.equal(h.sheetDrawn.named.find(n=>n.id===dog.id).status,'confirmed');

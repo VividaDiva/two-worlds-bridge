@@ -19,7 +19,7 @@ import { fileURLToPath } from "node:url";
 import { mkCtx, hear, newTurn, build, provenance } from "../engine.mjs";
 import { ARGUMENTS, ROUTES, NAME, FEATURES, KIT, propsOf } from "./kit.mjs";
 import { readLine, chooseBuild, speak, readPicture, relay, sketch, readLineB, chooseBuildB, propose,
-         wallHear, wallDecide, relayFromWall, chooseBuildT, readPictureToolkit, toolkitReply, sameNeed, consolidate, POSITIONS } from "./builder.mjs";
+         wallHear, wallDecide, relayFromWall, chooseBuildT, readPictureToolkit, toolkitReply, sameNeed, consolidate, readKano, KANO_RANK, POSITIONS } from "./builder.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 8780);
@@ -453,6 +453,24 @@ function wallProvenance(room) {
     return { feature: f, description: FEATURES[f], byA: who.has("A"), byB: who.has("B") };
   });
 }
+// What reached the builder, in order: the same hearing boundary the builder and the sketch keep.
+function heardLines(room) {
+  const route = ROUTES[room.route];
+  return room.transcript.filter(e => ["A", "B"].includes(e.who) && e.phase !== "confer" && (!route.reads || route.reads === e.who) && !e.upload && e.text)
+    .map(e => ({ who: WHO[e.who], text: e.text + (e.corrected ? " — clarified: " + e.corrected : "") }));
+}
+// A part is as important as the most important card it carries.
+function kanoOf(room, p) {
+  const byId = Object.fromEntries((room.wall?.cards || []).map(c => [c.id, c]));
+  const levels = [p.cardId, ...(p.aliases || []).map(a => a.cardId)].map(id => byId[id]?.kano?.level).filter(Boolean);
+  return levels.sort((a, b) => KANO_RANK[a] - KANO_RANK[b])[0] || "";
+}
+// Musts the drawing does not carry: never silently gone, always listed.
+function mustOpen(room) {
+  if (modeOf(room) !== "toolkit" || !room.wall) return [];
+  const none = new Set((room.wall.record?.decisions || []).filter(d => d.response === "none").map(d => d.id));
+  return activeCards(room).filter(c => c.kano?.level === "must" && none.has(c.id)).map(c => ({ id: c.id, who: c.who, need: c.need, why: c.kano.why }));
+}
 const activeCards = room => room.wall ? room.wall.cards.filter(c => !c.withdrawn) : [];
 // Accepted sheet items the drawing can show: a footway, a gate, a kerb, a
 // sealed surface. Everything else accepted is listed as not drawable.
@@ -466,10 +484,14 @@ function sheetDrawn(room) {
       if (p.declined) continue;
       const who = ownerOf(room, p);
       const status = room.place === "direct" ? "placed" : confirmed(room, p) ? "confirmed" : p.objection ? "objected" : "proposed";
-      if (p.primitive) out.named.push({ id: p.id, label: p.label || p.what, what: p.what, kind: p.kind, primitive: p.primitive, position: p.position || "", who, status, objection: p.objection || null, aliases: (p.aliases || []).filter(a => a.label).map(a => ({ who: a.who, label: a.label })) });
+      if (p.primitive) out.named.push({ id: p.id, label: p.label || p.what, what: p.what, kind: p.kind, kano: kanoOf(room, p), primitive: p.primitive, position: p.position || "", who, status, objection: p.objection || null, aliases: (p.aliases || []).filter(a => a.label).map(a => ({ who: a.who, label: a.label })) });
       else out.other.push({ what: p.label || p.what, kind: p.kind });
     }
-    out.drawn = out.named.map(n => ({ what: n.label, as: n.primitive, who: n.who, status: n.status }));
+    // Most important first: the numbers on the picture follow the priority.
+    const rank = k => k in KANO_RANK ? KANO_RANK[k] : 2;
+    out.named = out.named.map((n, i) => [n, i]).sort((a, b) => rank(a[0].kano) - rank(b[0].kano) || a[1] - b[1]).map(x => x[0]);
+    out.mustOpen = mustOpen(room);
+    out.drawn = out.named.map(n => ({ what: n.label, as: n.primitive, who: n.who, status: n.status, kano: n.kano }));
     return out;
   }
   for (const p of room.wall?.sheet || []) {
@@ -508,6 +530,14 @@ function readbackFor(room, role) {
 // The decision record, before a build; rendered for the chooser as well.
 async function decideWall(room) {
   if (!room.wall) return { record: "", unsupported: [], proposals: [] };
+  // Kano, read from the talk: which needs each person will not do without.
+  // Read again before every build, because the evidence grows as they talk.
+  if (modeOf(room) === "toolkit") {
+    try {
+      const got = await readKano({ wall: room.wall, lines: heardLines(room) });
+      for (const c of room.wall.cards) if (got[c.id]) c.kano = { ...got[c.id], at: Date.now() };
+    } catch (e) { console.error(`kano ${room.id}: ${e.message}`); }
+  }
   const rec = await wallDecide({ wall: room.wall, standing: room.standing ? NAME(room.standing) : null,
                                  props: room.ctx.design ? room.ctx.design.has : [], pureToolkit: modeOf(room) === "toolkit" });
   // Every card gets a decision. A model that drops cards is asked once more
@@ -597,7 +627,7 @@ async function decideWall(room) {
       for (const g of await consolidate({ sheet: room.wall.sheet })) {
         const items = g.map(id => room.wall.sheet.find(p => p.id === id)).filter(p => p && !p.declined);
         if (items.length < 2) continue;
-        const keep = items.find(p => confirmed(room, p)) || items[0];
+        const keep = items.find(p => confirmed(room, p)) || items.find(p => kanoOf(room, p) === "must") || items[0];
         for (const p of items) {
           if (p === keep) continue;
           (keep.aliases ||= []).push({ cardId: p.cardId, who: p.owner, label: p.label || p.what, at: Date.now() },
@@ -609,7 +639,8 @@ async function decideWall(room) {
       }
     } catch (e) { console.error(`consolidate ${room.id}: ${e.message}`); }
   }
-  const record = rec.decisions.map(d => `  [${d.id}] ${byId[d.id].need} → ${d.response}: ${d.what}${d.uncertainty ? " (unsure: " + d.uncertainty + ")" : ""}`).join("\n")
+  if (modeOf(room) === "toolkit") for (const p of room.wall.sheet) p.kano = kanoOf(room, p);
+  const record = rec.decisions.map(d => `  [${d.id}] ${byId[d.id].need}${byId[d.id].kano ? " {" + byId[d.id].kano.level + "}" : ""} → ${d.response}: ${d.what}${d.uncertainty ? " (unsure: " + d.uncertainty + ")" : ""}`).join("\n")
     + (rec.conflicts.length ? "\n  conflicts: " + rec.conflicts.map(c => `${c.a}×${c.b} ${c.note}`).join("; ") : "");
   const unsupported = rec.decisions.filter(d => d.response === "none").map(d => byId[d.id].need);
   return { record, unsupported, proposals: pending(room).map(p => ({ kind: p.kind, what: p.what, label: p.label, primitive: p.primitive, position: p.position, who: ownerOf(room, p) })) };
@@ -1552,6 +1583,46 @@ async function runAutoToolkit(job, update) {
   target.replayOf.completedAt=new Date().toISOString();push(target.id);
 }
 
+// What the toolkit hands the sketch: every need in its owner's words, most
+// important first (Kano, read from the talk), the named parts and where they sit,
+// and the rules — which are rules, not boards with writing on them. Unconfirmed
+// is a note, never a reason to leave a thing out. The kit's shape is not here.
+const PLACE_WORDS = { band: "a strip running beside the walk", deck: { above: "an upper level", below: "a lower level" }, post: { along: "uprights along the edge", ends: "uprights at the ends" },
+  edge: { along: "a line along the edge of the walk", between: "a line between the walk and what runs beside it" }, wash: "the surface of the walk", end: "at both ends" };
+function placeWords(p) { const v = PLACE_WORDS[p.primitive]; return !v ? "" : typeof v === "string" ? v : v[p.position] || Object.values(v)[0]; }
+function toolkitUnderstanding(r) {
+  if (!r.wall) return "";
+  const sheet = (r.wall.sheet || []).filter(p => !p.declined);
+  const aliasOf = new Set(sheet.flatMap(p => (p.aliases || []).map(a => a.cardId)));
+  const partOf = id => sheet.find(p => p.cardId === id);
+  const needs = activeCards(r).filter(c => !aliasOf.has(c.id)).map(c => {
+    const part = partOf(c.id), level = part ? kanoOf(r, part) || c.kano?.level : c.kano?.level;
+    const unsure = part ? !(r.place === "direct" || confirmed(r, part)) : c.met !== "placed" && c.met !== "confirmed";
+    return { c, part, level: level || "", unsure };
+  });
+  const rank = l => l in KANO_RANK ? KANO_RANK[l] : 1.5;
+  needs.sort((a, b) => rank(a.level) - rank(b.level));
+  const say = x => `- ${WHO[x.c.who]}: ${x.c.need}${x.c.why ? " — " + x.c.why : ""}${x.part && x.part.kind !== "rule" && placeWords(x.part) ? ` [drawn as "${x.part.label || x.part.what}": ${placeWords(x.part)}]` : ""}${x.unsure ? " (not yet confirmed)" : ""}`;
+  const group = (title, lv) => { const g = needs.filter(x => lv.includes(x.level) && x.part?.kind !== "rule"); return g.length ? [title, ...g.map(say)] : []; };
+  const rules = needs.filter(x => x.part?.kind === "rule");
+  return [
+    `What the toolkit understood, most important first, each need in the words of the person who asked for it:`,
+    ...group(`MUST-HAVE — draw every one of these clearly, confirmed or not; the bridge is wrong without them:`, ["must"]),
+    ...group(`More is better — draw as well as fits:`, ["performance"]),
+    ...group(`Not yet ranked — draw if it fits:`, [""]),
+    ...group(`Nice to have — only where it does not crowd a must-have:`, ["attractive", "indifferent"]),
+    ...(rules.length ? [`Operating rules — how the bridge is used, not structures. Do not draw signboards or writing for them; draw them only if a rule implies a structure:`, ...rules.map(say)] : []),
+  ].join("\n");
+}
+// Whether there is water under it, from what the toolkit heard: the keys builder
+// sets this through its keys, and the toolkit has none.
+function toolkitGround(r, lines) {
+  const text = [...lines.map(l => l.text), ...activeCards(r).map(c => c.need + " " + (c.why || "") + " " + (c.quote || ""))].join(" ").toLowerCase();
+  const water = /\b(water|river|stream|creek|canal|ships?|boats?|sail|flood|current|swim|harbou?r)\b/.test(text) || !!r.ctx?.world?.water;
+  const rock = /\b(rock|cliff|ravine|gorge|canyon|chasm)\b/.test(text) || !!r.ctx?.world?.rock;
+  return water && rock ? "water at the bottom of a drop in rock" : water ? "water" : rock ? "a drop in rock" : "";
+}
+
 async function generateSketch(r) {
   if(r.sketching)throw Error('Still drawing the last sketch');
   const route=ROUTES[r.route];
@@ -1562,13 +1633,16 @@ async function generateSketch(r) {
   if(!lines.length&&!references.length)throw Error('No input has reached the AI on this route yet');
   r.sketching=true;r.sketchError=null;push(r.id);
   try {
-    const latest=r.transcript.filter(e=>e.who==='builder'&&e.built&&!e.failed&&!e.clarification&&!e.understandingUpdate).at(-1)?.text||'';
-    const toolkit=r.agent==='toolkit'?'\nToolkit interpretation and decisions (uncertain or unaccepted proposals remain proposals):\n'+JSON.stringify({cards:r.wall?.cards,record:r.wall?.record,sheet:r.wall?.sheet}):'';
-    const out=await sketch({title:ARGUMENTS[r.argument].title,ground:r.ctx.world.water?'water':r.ctx.world.rock?'a drop in rock':'',lines,references,process:r.agent,outcome:latest+toolkit});
+    // The toolkit's own understanding, short and most important first — never the
+    // kit's shape, which is the keys builder's approximation, not what was said.
+    const latest=r.agent==='toolkit'?'':r.transcript.filter(e=>e.who==='builder'&&e.built&&!e.failed&&!e.clarification&&!e.understandingUpdate).at(-1)?.text||'';
+    const outcome=r.agent==='toolkit'?toolkitUnderstanding(r):latest;
+    const ground=r.agent==='toolkit'?toolkitGround(r,lines):r.ctx.world.water?'water':r.ctx.world.rock?'a drop in rock':'';
+    const out=await sketch({title:ARGUMENTS[r.argument].title,ground,lines,references,process:r.agent,outcome});
     const n=(r.sketches||[]).length+1;
     const file=path.join(UPLOADS,`${r.id}-sketch-${n}.png`);
     fs.writeFileSync(file+'.tmp',Buffer.from(out.base64,'base64'));fs.renameSync(file+'.tmp',file);
-    (r.sketches||=[]).push({n,at:Date.now(),turn:r.turn,lines:lines.length,media:out.media,prompt:out.prompt,source:r.agent==='toolkit'?'toolkit interpretation + route-visible conversation':'route-visible conversation',references:references.length});
+    (r.sketches||=[]).push({n,at:Date.now(),turn:r.turn,lines:lines.length,media:out.media,prompt:out.prompt,source:r.agent==='toolkit'?'toolkit understanding (Kano-ranked needs, named parts; no kit shape) + route-visible conversation':'route-visible conversation',references:references.length});
   }catch(e){r.sketchError=e.message;throw e;}finally{r.sketching=false;push(r.id);}
 }
 
