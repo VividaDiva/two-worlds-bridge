@@ -297,7 +297,8 @@
     // the words on a sign; a numbered marker for everything else (or the words
     // themselves, when asked for)
     const words = !!(extras && extras.words);
-    for (const l of labels) {
+    // feedback views draw the parts but not the numbered markers
+    for (const l of (feedback && feedback.marks === false ? [] : labels)) {
       const col = WHO[l.who] || SHEET;
       ctx.save();
       if (FOCUS && (X_ID(l) !== FOCUS)) ctx.globalAlpha = 0.3;

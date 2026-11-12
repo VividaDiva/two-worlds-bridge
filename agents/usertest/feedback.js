@@ -343,7 +343,7 @@ function draw(canvas,n,editing=false){
  const ratingColors=Object.fromEntries(Object.entries(draft.ratings).map(([id,c])=>[id,(draft.bridgePalette||colors)[c]]));
  // Draw at a fixed resolution, independent of the screen's device pixel ratio.
  const base=document.createElement('canvas');base.getBoundingClientRect=()=>({width:1200});
- drawCrossing(base,draft.source.shape,draft.source.world,draft.source.extras,{colors:showOriginal||n===1?{}:ratingColors,removed:n===1&&!showOriginal?removedIds():[]});
+ drawCrossing(base,draft.source.shape,draft.source.world,draft.source.extras,{colors:showOriginal||n===1?{}:ratingColors,removed:n===1&&!showOriginal?removedIds():[],marks:false});
  canvas.width=1200;canvas.height=700;ctx.drawImage(base,0,0,1200,700);
  if(n===1&&!showOriginal){if(editing&&mode==='grid'){ctx.strokeStyle='rgba(39,76,67,.13)';ctx.fillStyle='rgba(39,76,67,.3)';ctx.lineWidth=1;ctx.beginPath();for(let x=0;x<=1200;x+=50){ctx.moveTo(x,0);ctx.lineTo(x,700);}for(let y=0;y<=700;y+=50){ctx.moveTo(0,y);ctx.lineTo(1200,y);}ctx.stroke();for(let x=0;x<=1200;x+=50)for(let y=0;y<=700;y+=50){ctx.beginPath();ctx.arc(x,y,2,0,Math.PI*2);ctx.fill();}}
  if(editing&&mode==='restore'){ctx.save();ctx.setLineDash([6,6]);ctx.globalAlpha=.6;for(const m of matches.filter(m=>removedIds().includes(m.id))){ctx.strokeStyle='#b84950';ctx.lineWidth=9;ctx.beginPath();ctx.moveTo(m.x1,m.y1);ctx.lineTo(m.x2,m.y2);ctx.stroke();}ctx.restore();}
