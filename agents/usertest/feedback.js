@@ -260,7 +260,7 @@ $('comment-delete').onclick=()=>{if(!commentEdit)return;const before=commentEdit
 $('comment-bubble').onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();finishComment(true);}};
 window.addEventListener('resize',positionComment);window.addEventListener('scroll',positionComment,true);
 function removedIds(){return [...new Set(draft.rebuildRemoved||[])];}
-const palette=()=>(step===0?bridgeRatingKeys:['red','neutral','some','blue']).map((k,i)=>`<button class="swatch" style="--color:${step===0?bridgeColors[k]:colors[k]}" data-color="${k}" aria-pressed="${k===color}"><span class="color-chip" aria-hidden="true"></span><span>${step===0?`${i+1} · `:''}${labels[k]}${step===0?'':`<small>${({red:'Red',neutral:'Light pink',some:'Light blue',blue:'Blue'})[k]}</small>`}</span></button>`).join('');
+const palette=()=>(step===0?bridgeRatingKeys:['red','neutral','some','blue']).map((k,i)=>`<button class="swatch" style="--color:${step===0?bridgeColors[k]:colors[k]}" data-color="${k}" aria-pressed="${k===color}"><span class="color-chip" aria-hidden="true"></span><span>${labels[k]}${step===0?'':`<small>${({red:'Red',neutral:'Light pink',some:'Light blue',blue:'Blue'})[k]}</small>`}</span></button>`).join('');
 function feedbackCompletionIssue(d){
  const colors=['veryRed','red','neutral','blue','veryBlue','some'];
  if(!Object.values(d.ratings||{}).some(v=>colors.includes(v)))return {step:0,message:'Step 1: choose a rating color and apply it to at least one stick.'};
