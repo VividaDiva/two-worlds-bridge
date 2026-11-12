@@ -143,7 +143,7 @@ function renderPaths(){
  for(const [agent,name] of [['keys','Control'],['toolkit','Toolkit']]){const items=pathItems.filter(p=>p.agent===agent),count=items.filter(p=>pathProgress.get(p.room)===true&&!pendingRooms.has(p.room)).length;const b=document.createElement('button');b.type='button';b.dataset.condition=agent;b.setAttribute('aria-pressed',String(active===agent));b.disabled=switching||saving||!items.length;b.textContent=`${name} ${count}/${items.length}`;conditions.append(b);}
  $('condition-label').textContent=`${active==='keys'?'CONTROL':'TOOLKIT'} · CURRENT CONDITION`;
  const list=$('path-list');list.replaceChildren();
- visible.forEach((p,i)=>{const b=document.createElement('button');b.type='button';b.dataset.room=p.room;b.setAttribute('aria-current',p.room===room?'page':'false');b.disabled=switching||saving;
+ visible.forEach((p,i)=>{const b=document.createElement('button');b.type='button';b.dataset.room=p.room;b.setAttribute('aria-current',p.room===room?'page':'false');b.disabled=switching||saving||profileDone(p.room);
  const label=document.createElement('span');label.textContent=`${i+1}. ${routeLabels[p.route]||p.route}`;
  const tag=document.createElement('small');const submitted=pathProgress.get(p.room)===true;const hasDraft=pendingRooms.has(p.room);
  tag.textContent=submitted?(hasDraft?'Edited':'✓ Complete'):hasDraft?'Draft':pathProgress.get(p.room)===null?'Status unavailable':savedPathDrafts.has(p.room)?'Saved · incomplete':'';b.append(label,tag);list.append(b);});
@@ -153,10 +153,12 @@ function renderPaths(){
  const pending=pathProgress.get(room)!==true||pendingRooms.has(room)?pathItems.find(p=>p.room===room):nextPath();$('continue-path').disabled=!pending||switching||saving;$('continue-path').textContent=pending?.room===room?'Finish this path →':pending?`Continue: ${pending.agent==='keys'?'Control':'Toolkit'} · ${routeLabels[pending.route]||pending.route} →`:'Control and Toolkit submitted ✓';
 }
 function nextPath(){const i=pathItems.findIndex(p=>p.room===room);return [...pathItems.slice(i+1),...pathItems.slice(0,i)].find(p=>pathProgress.get(p.room)!==true||pendingRooms.has(p.room));}
-async function loadPathProgress(){await Promise.all(pathItems.map(async p=>{try{const r=await apiFetch(`/api/feedback?room=${encodeURIComponent(p.room)}`,{cache:'no-store'});if(!r.ok)throw Error();const out=await r.json();const latest=(out.records||[]).filter(r=>ownFeedback(r)&&r.draft.role===$('role').value).sort((a,b)=>b.at.localeCompare(a.at))[0];if(latest)savedPathDrafts.set(p.room,latest.draft);pathProgress.set(p.room,!!latest&&!feedbackCompletionIssue(latest.draft));}catch{pathProgress.set(p.room,null);}}));renderPaths();}
+// Paths a study profile records as already submitted elsewhere (e.g. Control before a Toolkit re-score).
+function profileDone(id){const done=pair?.feedbackCompletedRooms?.[$('role').value];return Array.isArray(done)&&done.includes(id);}
+async function loadPathProgress(){await Promise.all(pathItems.map(async p=>{if(profileDone(p.room)){pathProgress.set(p.room,true);return;}try{const r=await apiFetch(`/api/feedback?room=${encodeURIComponent(p.room)}`,{cache:'no-store'});if(!r.ok)throw Error();const out=await r.json();const latest=(out.records||[]).filter(r=>ownFeedback(r)&&r.draft.role===$('role').value).sort((a,b)=>b.at.localeCompare(a.at))[0];if(latest)savedPathDrafts.set(p.room,latest.draft);pathProgress.set(p.room,!!latest&&!feedbackCompletionIssue(latest.draft));}catch{pathProgress.set(p.room,null);}}));renderPaths();}
 async function switchPath(id){
  finishComment();
- if(id===room||switching||saving||!pathItems.some(p=>p.room===id))return;
+ if(id===room||switching||saving||!pathItems.some(p=>p.room===id)||profileDone(id))return;
  switching=true;renderPaths();status('Opening this path…');
  try{const next=await fetchState(id);if(draft)pageDrafts.set(localKey(),clone(draft));room=id;variant=null;h=next;setSource();dirty=false;zoom=1;await load();await records();const url=new URL(location.href);url.searchParams.set('room',room);url.searchParams.delete('variant');history.replaceState(null,'',url);status('');$('path-tour').scrollIntoView({block:'start'});}
  catch(e){status(`Could not open this path: ${e.message}. Please try again.`);}
@@ -164,7 +166,7 @@ async function switchPath(id){
 }
 $('path-list').onclick=e=>{const b=e.target.closest('[data-room]');if(b)switchPath(b.dataset.room);};
 $('continue-path').onclick=()=>{if(pathProgress.get(room)!==true||pendingRooms.has(room)){const issue=feedbackCompletionIssue({...draft,removed:removedIds()});showingSaved=false;submissionUI();changeStep(issue?.step||0);return;}const next=nextPath();if(next)switchPath(next.room);};
-$('condition-switch').onclick=e=>{const b=e.target.closest('[data-condition]');if(!b)return;const options=pathItems.filter(p=>p.agent===b.dataset.condition);const target=options.find(p=>p.argument===h.argument&&p.route===h.route)||options.find(p=>pathProgress.get(p.room)!==true)||options[0];if(target)switchPath(target.room);};
+$('condition-switch').onclick=e=>{const b=e.target.closest('[data-condition]');if(!b)return;const options=pathItems.filter(p=>p.agent===b.dataset.condition);if(options.every(p=>profileDone(p.room)))return;const target=options.find(p=>p.argument===h.argument&&p.route===h.route)||options.find(p=>pathProgress.get(p.room)!==true)||options[0];if(target)switchPath(target.room);};
 // Two references is paused for feedback; preserve its sessions and submissions.
 if(h.argument==='refs'){
  const available=feedbackPaths(pair?.sessions||[],pair,$('role').value),agent=source.agent==='toolkit'?'toolkit':'keys';
