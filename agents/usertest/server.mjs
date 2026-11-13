@@ -776,6 +776,14 @@ async function layExclusive(room,line,develop,clarification) {
   const choose = toolkit ? await chooseBuildT({cards:activeCards(room),record:plan.record,standing:before ? NAME(before):null,said,pictures:[]})
     : await chooseBuild({wants:[...room.ctx.wants.keys()],avoids:[...room.ctx.avoids.keys()],standing:before ? NAME(before):null,said,pictures:Object.entries(room.uploads).filter(([r])=>room.seenPicture?.[r]).map(([r,p])=>({who:WHO[r],needs:p.needs || []}))});
   if (choose.id) room.ctx.design = KIT.find(k=>k.id===choose.id) || room.ctx.design;
+  // A roof is kept only for someone who asked to be covered.
+  if (toolkit && room.ctx.design && room.ctx.design.shape.cover === "roof") {
+    const said = activeCards(room).map(c => `${c.need} ${c.quote || ""} ${c.why || ""}`).join(" ");
+    if (!/\b(cover\w*|roof\w*|shelter\w*|shade\w*|rain\w*|canop\w*|awning\w*)\b/i.test(said)) {
+      const want = { ...room.ctx.design.shape, cover: "open" };
+      room.ctx.design = KIT.find(k => Object.keys(want).every(a => k.shape[a] === want[a])) || room.ctx.design;
+    }
+  }
   // A span that opens for boats can carry no roof and no tower in its gap.
   if (toolkit && room.ctx.design && room.wall.sheet.some(p => !p.declined && p.primitive === "lift")) {
     const want = { ...room.ctx.design.shape, cover: "open", middle: "none" };
