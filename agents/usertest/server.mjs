@@ -1599,22 +1599,20 @@ async function runAutoToolkit(job, update) {
 // important first (Kano, read from the talk), the named parts and where they sit,
 // and the rules — which are rules, not boards with writing on them. Unconfirmed
 // is a note, never a reason to leave a thing out. The kit's shape is not here.
-const PLACE_WORDS = { band: "a strip running beside the walk", deck: { above: "an upper level", below: "a lower level" }, post: { along: "uprights along the edge", ends: "uprights at the ends" },
-  edge: { along: "a line along the edge of the walk", between: "a line between the walk and what runs beside it" }, wash: "the surface of the walk", end: "at both ends", lift: "the middle of the span, which splits and raises so boats can pass" };
-function placeWords(p) { const v = PLACE_WORDS[p.primitive]; return !v ? "" : typeof v === "string" ? v : v[p.position] || Object.values(v)[0]; }
 function toolkitUnderstanding(r) {
   if (!r.wall) return "";
   const sheet = (r.wall.sheet || []).filter(p => !p.declined);
-  const aliasOf = new Set(sheet.flatMap(p => (p.aliases || []).map(a => a.cardId)));
-  const partOf = id => sheet.find(p => p.cardId === id);
-  const needs = activeCards(r).filter(c => !aliasOf.has(c.id)).map(c => {
-    const part = partOf(c.id), level = part ? kanoOf(r, part) || c.kano?.level : c.kano?.level;
+  // Every person's need is listed in their own words, even one folded into
+  // another person's part: folding is for the matchsticks, not for the picture.
+  const partOf = id => sheet.find(p => p.cardId === id || (p.aliases || []).some(a => a.cardId === id));
+  const needs = activeCards(r).map(c => {
+    const part = partOf(c.id), level = c.kano?.level || (part ? kanoOf(r, part) : "");
     const unsure = part ? !(r.place === "direct" || confirmed(r, part)) : c.met !== "placed" && c.met !== "confirmed";
     return { c, part, level: level || "", unsure };
   });
   const rank = l => l in KANO_RANK ? KANO_RANK[l] : 1.5;
   needs.sort((a, b) => rank(a.level) - rank(b.level));
-  const say = x => `- ${WHO[x.c.who]}: ${x.c.need}${x.c.why ? " — " + x.c.why : ""}${x.part && x.part.kind !== "rule" && placeWords(x.part) ? ` [drawn as "${x.part.label || x.part.what}": ${placeWords(x.part)}]` : ""}${x.unsure ? " (not yet confirmed)" : ""}`;
+  const say = x => `- ${WHO[x.c.who]}: ${x.c.need}${x.c.why ? " — " + x.c.why : ""}${x.unsure ? " (not yet confirmed)" : ""}`;
   const group = (title, lv) => { const g = needs.filter(x => lv.includes(x.level) && x.part?.kind !== "rule"); return g.length ? [title, ...g.map(say)] : []; };
   const rules = needs.filter(x => x.part?.kind === "rule");
   return [

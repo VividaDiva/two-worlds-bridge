@@ -183,7 +183,7 @@ test('the toolkit names, places and draws what the kit cannot make; the owner co
   const sk=String(calls().filter(c=>!c.schema).at(-1).contents);
   assert.ok(sk.includes('MUST-HAVE'),sk);assert.ok(sk.indexOf('the bridge splits and lifts for ships')<sk.indexOf('Nice to have'),'the must comes first');
   assert.ok(!sk.includes('A crossing with a rail and two abreast'),'the kit shape is not handed to the sketch');
-  assert.ok(!sk.includes('"cards"'),'no JSON dump');assert.ok(sk.includes('banks: water'),'ships mean water');
+  assert.ok(!sk.includes('"cards"'),'no JSON dump');assert.ok(!sk.includes('[drawn as'),'no matchstick placing words');assert.ok(sk.includes('a lane for the dogs away from the cars'),'a need folded into another part is still in the sketch, in its owner\'s words');assert.ok(sk.includes('banks: water'),'ships mean water');
   // it survives a restart
   await stop();await start();h=await settled(room);
   assert.equal(h.sheet.find(p=>p.id===dog.id).label,'dog lane');assert.equal(h.sheetDrawn.named.find(n=>n.id===dog.id).status,'confirmed');

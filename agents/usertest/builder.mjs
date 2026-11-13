@@ -417,7 +417,7 @@ export async function sketch({ title, ground, lines, references = [], outcome = 
     ground ? `The ground between the banks: ${ground}.` : `Nothing was said about what is under it.`,
     `The case: ${title}.`,
     ``,
-    ...(process === "toolkit" ? [`Draw the bridge as the Toolkit understood it, from the list below. Every must-have is in the picture. "Not yet confirmed" is a note, never a reason to leave a thing out. Draw nothing the list and their words do not ask for.`, outcome, ``] : []),
+    ...(process === "toolkit" ? [`Draw the bridge as the Toolkit understood it, from the list below. Every must-have is in the picture. "Not yet confirmed" is a note, never a reason to leave a thing out. When the two people want different things, draw both — one bridge that carries each side — never only one person's bridge. Draw nothing the list and their words do not ask for.`, outcome, ``] : []),
     `What they said, in order:`,
     said || "(nothing yet)",
   ].join("\n");
