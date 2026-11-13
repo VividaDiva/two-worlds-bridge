@@ -570,9 +570,9 @@ Set clarificationNeeded=true when the speaker leaves alternatives unresolved tha
 
 // ── named parts ──────────────────────────────────────────────────────────
 // What the kit cannot make is not translated into a part the kit has. It is
-// named in the speaker's words and placed with one of seven drawing primitives
+// named in the speaker's words and placed with one of eight drawing primitives
 // at one of a few positions. The noun is theirs; only the placing is ours.
-export const PRIMITIVES = ["band", "deck", "post", "edge", "wash", "sign", "end"];
+export const PRIMITIVES = ["band", "deck", "post", "edge", "wash", "sign", "end", "lift"];
 export const POSITIONS = ["beside", "above", "below", "along", "between", "ends", "overhead", "onwalk"];
 export const PRIMITIVE_GLOSS = {
   band:  "a second strip running the length of the crossing — a lane for the other direction, an extra lane, a footway, a dog path (position: beside)",
@@ -580,8 +580,9 @@ export const PRIMITIVE_GLOSS = {
   post:  "upright things standing on it — lights, signs on poles, posts (position: along the edge, or at the ends)",
   edge:  "a continuous line along the walk — a wall, a barrier, a kerb, a high rail (position: along the near edge, or between the walk and a band)",
   wash:  "the surface of the walk itself — cement, grass, paint, a sealed surface (position: onwalk)",
-  sign:  "a plate with words: an operating rule — hours, no trucks, no cars, who goes first (position: ends). Two-way traffic or more lanes is not a rule: it is a band.",
+  sign:  "a plate with words: an operating rule — hours, no trucks, no cars, who goes first (position: ends). Two-way traffic or more lanes is not a rule: it is a band. A width — wide enough for two cars, for an SUV — is never a rule: it is a workshop part or a band.",
   end:   "something at the two ends — a gate, a ramp, steps (position: ends)",
+  lift:  "a span that opens: the walk splits in the middle and its halves raise, or a section lifts, so boats can pass — a drawbridge, a bascule, a lift span (position: onwalk). A crossing that opens is this, never a sign; the closing hours are a separate rule.",
 };
 
 const DECIDE_JSON = { type:"object", properties:{
@@ -685,7 +686,7 @@ export async function consolidate({ sheet }) {
 // is. A thing said once can be a must; a thing said three times need not be.
 export const KANO = ["must", "performance", "attractive", "indifferent"];
 const KANO_JSON = { type:"object", properties:{ ranks:{ type:"array", items:{ type:"object", properties:{
-  id:{type:"string"}, kano:{type:"string", enum:KANO}, evidence:{type:"string"} }, required:["id","kano","evidence"] } } }, required:["ranks"] };
+  id:{type:"string"}, kano:{type:"string", enum:KANO}, strength:{type:"integer"}, evidence:{type:"string"} }, required:["id","kano","strength","evidence"] } } }, required:["ranks"] };
 export async function readKano({ wall, lines = [] }) {
   const live = wall.cards.filter(c => !c.withdrawn);
   if (!live.length) return {};
@@ -698,22 +699,37 @@ export async function readKano({ wall, lines = [] }) {
     ``,
     `Classify each need with the Kano model, answering its two questions on the speaker's behalf from this`,
     `conversation only: how would they feel if the bridge had it, and if it did not?`,
-    `- "must": without it they would reject the bridge — it is what the bridge is for, it keeps someone safe,`,
-    `  or they held to it, clarified it when asked, or came back to it. Never trade a must away.`,
+    `- "must": without it they would reject the bridge outright. Rare: at most two per person, and often one.`,
+    `  The evidence is that it is the reason the bridge exists for them, a safety they named themselves, or that`,
+    `  they held to it when it was questioned, traded or left out. Saying "need" or "must" is not enough by`,
+    `  itself when they speak that way about everything. If more than two of one person's needs look like musts,`,
+    `  keep the two the conversation supports most and grade the rest "performance" or "attractive".`,
     `- "performance": more of it is better and less is worse, but it is a matter of degree — wide enough, enough space.`,
     `- "attractive": welcome, but its absence would not be a loss — an extra, a courtesy, a concession to the other.`,
     `- "indifferent": said in passing, or agreement with the other person rather than a need of their own.`,
     `Judge each person against their own way of speaking: someone who says "I hope" about everything has not`,
-    `ranked everything low. How often a thing is said is not by itself evidence. Each person may have more than`,
-    `one must, or none. "evidence": one short clause pointing to what in the conversation shows it.`,
+    `ranked everything low. How often a thing is said is not by itself evidence. A person may have no must.`,
+    `"strength": 1-5, how strongly the conversation supports that level (5: unmistakable).`,
+    `"evidence": one short clause pointing to what in the conversation shows it.`,
   ].join("\n");
   const out = await ask("Answer only what is asked, as JSON. Never use the word \"user\".", user, KANO_JSON);
   const ids = new Set(live.map(c => c.id)), got = {};
   for (const r of Array.isArray(out.ranks) ? out.ranks : [])
-    if (ids.has(String(r.id)) && KANO.includes(r.kano)) got[String(r.id)] = { level: r.kano, why: String(r.evidence || "").trim().slice(0, 160) };
+    if (ids.has(String(r.id)) && KANO.includes(r.kano)) got[String(r.id)] = { level: r.kano, why: String(r.evidence || "").trim().slice(0, 160), strength: Number(r.strength) || 0 };
+  // At most two musts per person: the rest, weakest first, are "more is better".
+  const who = Object.fromEntries(live.map(c => [c.id, c.who]));
+  for (const person of new Set(Object.values(who))) {
+    const musts = Object.entries(got).filter(([id, k]) => who[id] === person && k.level === "must").sort((a, b) => b[1].strength - a[1].strength);
+    for (const [, k] of musts.slice(2)) { k.level = "performance"; k.why = (k.why ? k.why + "; " : "") + "a must beyond this person's two strongest"; }
+  }
+  for (const k of Object.values(got)) delete k.strength;
   return got;
 }
 export const KANO_RANK = { must: 0, performance: 1, attractive: 2, indifferent: 3 };
+// A rule says what someone may or may not do, or when. A need with none of those
+// words that came back "rule" is a thing on the bridge, not a sign.
+const RULE_WORDS = /\b(no|not|never|ban|bann?ed|forbid\w*|prohibit\w*|allow\w*|permit\w*|only|limit\w*|restrict\w*|hours?|o'?clock|at night|in the morning|weekends?|schedul\w*|predict\w*|first|turns?|speed|toll|pay|close[sd]?|closure|open(?:ing)? hours|don'?t|can'?t|must not|rule|notif\w*|warn\w*|signal\w*)\b/i;
+export const looksLikeRule = card => RULE_WORDS.test(`${card.need} ${card.quote || ""}`);
 
 // With the toolkit on, "new" means "name it": the thing stays in their words and
 // is placed, not translated. Rules are placed too — as a sign.
@@ -742,7 +758,7 @@ export function shortLabel(raw) {
   return out + (words.length > 8 || String(raw || "").trim().length > out.length + 2 && out.length >= 52 ? "…" : "");
 }
 
-export async function wallDecide({ wall, standing, props, pureToolkit = false, only = null }) {
+export async function wallDecide({ wall, standing, props, pureToolkit = false, only = null, notRules = false }) {
   const list = ks => ks.length ? ks.map(f => FEATURES[f]).join("; ") : "nothing";
   const cards = wall.cards.filter(c => !c.withdrawn && (!only || only.includes(c.id)));
   if (!cards.length) return { decisions: [], conflicts: [], checks: null };
@@ -764,7 +780,8 @@ export async function wallDecide({ wall, standing, props, pureToolkit = false, o
       .replace(`- "none": neither a part, a rule nor a new part can answer it. Say so; it stays on the wall.`,
                `- "none": only for what cannot be placed on a drawing at all — a quality (quiet, pretty, cheap), a purpose (for families), a wish about the far side of the river. Say so; it stays on the wall and is read back in words.`)
       + "\nReturn exactly one decision for every card listed, with its id, in the order given. Never skip a card: a card the kit cannot serve is answered \"new\" with a label, primitive and position, or \"rule\" with a label — not left out and not forced into \"part\"."
-      + "\nA card marked \"Kano: must\" is what that person will not do without. Never answer it \"rule\" or give it a sign unless it truly is an operating rule (hours, who goes first, what is allowed): a structure or a mechanism — a bridge that opens, splits, lifts, a separate deck — is never a sign. If no primitive can show a must, answer \"none\" and say in \"what\" that it is a must the drawing cannot show yet; never fold it into another part. Never set \"sameAs\" from a must to a part that is not the same thing."
+      + "\nA card marked \"Kano: must\" is what that person will not do without. Never answer it \"rule\" or give it a sign unless it truly is an operating rule (hours, who goes first, what is allowed): a structure or a mechanism — a bridge that opens, splits, lifts, a separate deck — is never a sign. Serve a must the way you serve any card, and most carefully: first with the workshop part that carries it, if one does (something at the hand against falling, two abreast for width), else with a new part (a bridge that splits, opens or lifts is the \"lift\" part). Answer \"none\" for a must only when neither a workshop part nor a new part can show it, and then say in \"what\" that it is a must the drawing cannot show yet; never fold it into another part. Never set \"sameAs\" from a must to a part that is not the same thing."
+      + (notRules ? "\nThese cards were answered \"rule\", but none of them says what someone may or may not do, or when. Each is something on the bridge: answer it \"part\" or \"new\" (with label, primitive and position), or \"none\" — never \"rule\"." : "")
       + "\nAvailable workshop:\n" + kitForChoosing().map(k=>k.id + ": " + k.props).join("\n")
       + "\nGlosses, so the workshop is read in their terms: \"two abreast\" is wide enough for two people side by side or one car; \"takes loads and carts\" bears vehicles; \"something at the hand\" is a railing; \"a coarse surface\" is grip underfoot, not a smooth or sealed one."
     : DECIDE;
@@ -824,6 +841,9 @@ const CHOOSE_T = kit => [
   `- A need said to you directly outweighs one reported by the other person, which outweighs your own`,
   `  inference. A concern someone voiced is not overridden by convenience.`,
   `- Something ruled out is a stronger signal than something asked for.`,
+  `- A card marked {must} comes first. Never pick a shape that drops a must you answered with a part. A must`,
+  `  answered with a rule (no cars, no trucks) is kept on the sheet as that rule; it is not a reason to make the`,
+  `  crossing smaller or narrower than another person's must needs.`,
   `- If nothing on the wall favours a change, keep what is already standing.`,
   `- If the record lists a conflict, name in "alt" one other id that serves the other side, and in "altWhy"`,
   `  what it gives up. Otherwise leave both empty.`,
@@ -859,7 +879,13 @@ export async function chooseBuildT({ cards, record, standing, said, pictures = [
     const entry = hit && KIT.find(k => NAME(k.id) === hit.id);
     return entry ? entry.id : null;
   };
-  const id = find(out.build), altId = find(out.alt);
+  let id = find(out.build), altId = find(out.alt);
+  // An answer that names no id in the workshop builds nothing: ask once more, plainly.
+  if (!id) {
+    const again = await ask(CHOOSE_T(kit), user + `\n\nYou answered "${String(out.build || "").slice(0, 80)}", which is not an id in the list. Answer with one id exactly as written there.`, CHOOSE_T_JSON);
+    id = find(again.build);
+    if (id) { out.why = again.why; out.altWhy = again.altWhy; altId = find(again.alt); }
+  }
   return { id, why: out.why, alt: altId && altId !== id ? { id: altId, why: String(out.altWhy || "").trim() } : null };
 }
 

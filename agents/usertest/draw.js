@@ -155,12 +155,12 @@
 
     // ── named parts ──
     // What the kit has no part for is not translated into one. It is placed
-    // with one of seven primitives and labelled with the speaker's own word.
+    // with one of eight primitives and labelled with the speaker's own word.
     // It is built of the same matchsticks as the rest — it is the same bridge,
     // whoever's word it carries — ghosted while it is only a proposal, solid
     // once its owner has confirmed it or it was placed directly. A numbered
     // marker in the owner's colour ties it to the legend.
-    let bands = 0, decksAbove = 0, decksBelow = 0, signs = 0, washes = 0, edgesBetween = 0, postsAlong = 0;
+    let bands = 0, decksAbove = 0, decksBelow = 0, signs = 0, washes = 0, edgesBetween = 0, postsAlong = 0, lifts = 0;
     const GAPZ = 58, BANDW = 30;                 // space between strips, and a strip's own width
     const nBands = (X.named || []).filter(n => n.primitive === "band").length;
     const outerZ = DW + (nBands ? 14 + nBands * GAPZ - (GAPZ - BANDW) : 0);   // the far edge of the last strip
@@ -221,6 +221,20 @@
             stick(x - w / 2, top - h, 0, x - w / 2, top, 0); stick(x + w / 2, top - h, 0, x + w / 2, top, 0);
             label(x, top - h / 2, 0, n, { align: "center", plate: true, words: String(n.label || "") });
           }
+          break; }
+        case "lift": {                      // a span that opens: two leaves raised from the middle of the walk
+          if (lifts++) break;               // one opening span per crossing
+          // Each half of the middle of the span turns up about its pier, as an open
+          // bascule does: the leaves stand steep, and the water shows between them.
+          const reach = SPAN * 0.36, gapHalf = SPAN * 0.05, up = 70 * Math.PI / 180;
+          const rise = reach * Math.sin(up), lean = reach * Math.cos(up);
+          for (const side of [-1, 1]) {
+            const hinge = MID + side * (gapHalf + reach), tipX = hinge - side * lean, tipY = deck - rise;
+            for (const z of [0, DW]) stick(hinge, deck, z, tipX, tipY, z);
+            for (const t of [0.25, 0.5, 0.75, 1]) { const x = hinge + (tipX - hinge) * t, y = deck + (tipY - deck) * t; stick(x, y, 0, x, y, DW); }
+            stick(hinge, deck, 0, hinge, deck + 30, 0);   // the pivot, standing on the pier
+          }
+          label(MID, deck - rise - 14, DW / 2, n, { align: "center" });
           break; }
         case "end": {                       // gates, ramps, steps: something at the two ends
           for (const x of [GAP_L + 6, GAP_R - 6]) { stick(x, deck, 0, x, deck - 44, 0); stick(x, deck - 32, 0, x, deck - 32, DW); }

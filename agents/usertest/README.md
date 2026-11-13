@@ -173,13 +173,13 @@ With the `toolkit` builder the "new part" answer is **name it**. The kit still
 has no part for a dog path or a lamp, but the need is not translated into a
 part the kit has, and it does not wait for anyone to accept a new part. The AI
 takes the speaker's own word for it — a short noun phrase lifted from their
-quote (`label`) — and places it with one of seven drawing primitives at one
-position: a **band** (a strip beside the walk: a lane, a footway, a dog path),
+quote (`label`) — and places it with one of the drawing primitives at one
+position (eight primitives): a **band** (a strip beside the walk: a lane, a footway, a dog path),
 a **deck** (another level, above or below), a **post** (uprights with a head:
 lights, poles), an **edge** (a wall, barrier, kerb or high rail, along the
 near edge or between the walk and a band), a **wash** (the surface of the walk
 itself), a **sign** (a plate with words: every rule is placed this way, at the
-ends) or an **end** (gates, ramps, steps). The noun is theirs; only the placing
+ends) an **end** (gates, ramps, steps) or a **lift** (a span that splits and raises so boats can pass — a crossing that opens is a structure, never a sign). The noun is theirs; only the placing
 is the drawing's. "None" is kept for what cannot be placed at all — a quality,
 a purpose.
 

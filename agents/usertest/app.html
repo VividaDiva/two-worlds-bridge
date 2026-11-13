@@ -726,7 +726,7 @@ function devExtras(s, l){
 const KANOL = { must: "must-have", performance: "more is better", attractive: "nice to have", indifferent: "said in passing" };
 // Where a named part sits, in words, for the sheet and the legend.
 const PLACE = { band: "a strip beside the walk", post: { along: "uprights along the far edge", ends: "uprights at the ends" }, deck: { above: "an upper level", below: "a lower level" },
-  edge: { along: "a line along the near edge", between: "a line between the walk and what is beside it" }, wash: "the surface of the walk", sign: "a sign at the end", end: "at both ends" };
+  edge: { along: "a line along the near edge", between: "a line between the walk and what is beside it" }, wash: "the surface of the walk", sign: "a sign at the end", end: "at both ends", lift: "the middle of the span, which opens" };
 function placeText(p){ const v = PLACE[p.primitive]; return !v ? "not drawable" : typeof v === "string" ? v : v[p.position] || Object.values(v)[0]; }
 // Named parts: the toolkit's sheet. Each is the owner's word, placed by the AI
 // and drawn at once as a proposal; the owner confirms the position (or says

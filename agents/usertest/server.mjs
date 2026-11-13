@@ -19,7 +19,7 @@ import { fileURLToPath } from "node:url";
 import { mkCtx, hear, newTurn, build, provenance } from "../engine.mjs";
 import { ARGUMENTS, ROUTES, NAME, FEATURES, KIT, propsOf } from "./kit.mjs";
 import { readLine, chooseBuild, speak, readPicture, relay, sketch, readLineB, chooseBuildB, propose,
-         wallHear, wallDecide, relayFromWall, chooseBuildT, readPictureToolkit, toolkitReply, sameNeed, consolidate, readKano, KANO_RANK, POSITIONS } from "./builder.mjs";
+         wallHear, wallDecide, relayFromWall, chooseBuildT, readPictureToolkit, toolkitReply, sameNeed, consolidate, readKano, KANO_RANK, looksLikeRule, POSITIONS } from "./builder.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 8780);
@@ -556,6 +556,18 @@ async function decideWall(room) {
       for (const id of missing) if (!decided.has(id)) rec.decisions.push({ id, response: "none", what: "left undecided by the builder", uncertainty: "no decision was returned for this card", label: "", primitive: "", position: "", undecided: true });
       if (rec.checks) rec.checks.nothingLost = rec.decisions.filter(d => d.undecided).length === 0;
       rec.secondPass = { asked: missing, decided: missing.filter(id => decided.has(id)) };
+    }
+    // A "rule" that names no ban, limit, time or turn is a thing on the bridge:
+    // asked once more as a part. What the model still calls a rule stays one.
+    const byId = Object.fromEntries(activeCards(room).map(c => [c.id, c]));
+    const misruled = rec.decisions.filter(d => d.response === "rule" && byId[d.id] && !looksLikeRule(byId[d.id])).map(d => d.id);
+    if (misruled.length) {
+      try {
+        const again = await wallDecide({ wall: room.wall, standing: room.standing ? NAME(room.standing) : null,
+                                         props: room.ctx.design ? room.ctx.design.has : [], pureToolkit: true, only: misruled, notRules: true });
+        for (const d of again.decisions) if (misruled.includes(d.id) && d.response !== "rule") rec.decisions[rec.decisions.findIndex(x => x.id === d.id)] = d;
+      } catch (e) { console.error(`rule recheck ${room.id}: ${e.message}`); }
+      rec.ruleRecheck = { asked: misruled, changed: misruled.filter(id => rec.decisions.find(d => d.id === id)?.response !== "rule") };
     }
   }
   // A card no key carries cannot be answered with a part, whatever the record
@@ -1588,7 +1600,7 @@ async function runAutoToolkit(job, update) {
 // and the rules — which are rules, not boards with writing on them. Unconfirmed
 // is a note, never a reason to leave a thing out. The kit's shape is not here.
 const PLACE_WORDS = { band: "a strip running beside the walk", deck: { above: "an upper level", below: "a lower level" }, post: { along: "uprights along the edge", ends: "uprights at the ends" },
-  edge: { along: "a line along the edge of the walk", between: "a line between the walk and what runs beside it" }, wash: "the surface of the walk", end: "at both ends" };
+  edge: { along: "a line along the edge of the walk", between: "a line between the walk and what runs beside it" }, wash: "the surface of the walk", end: "at both ends", lift: "the middle of the span, which splits and raises so boats can pass" };
 function placeWords(p) { const v = PLACE_WORDS[p.primitive]; return !v ? "" : typeof v === "string" ? v : v[p.position] || Object.values(v)[0]; }
 function toolkitUnderstanding(r) {
   if (!r.wall) return "";
