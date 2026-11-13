@@ -19,7 +19,7 @@ import { fileURLToPath } from "node:url";
 import { mkCtx, hear, newTurn, build, provenance } from "../engine.mjs";
 import { ARGUMENTS, ROUTES, NAME, FEATURES, KIT, propsOf } from "./kit.mjs";
 import { readLine, chooseBuild, speak, readPicture, relay, sketch, readLineB, chooseBuildB, propose,
-         wallHear, wallDecide, relayFromWall, chooseBuildT, readPictureToolkit, toolkitReply, sameNeed, consolidate, readKano, KANO_RANK, looksLikeRule, POSITIONS } from "./builder.mjs";
+         wallHear, wallDecide, relayFromWall, chooseBuildT, readPictureToolkit, toolkitReply, sameNeed, consolidate, readKano, KANO_RANK, POSITIONS } from "./builder.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 8780);
@@ -556,18 +556,6 @@ async function decideWall(room) {
       for (const id of missing) if (!decided.has(id)) rec.decisions.push({ id, response: "none", what: "left undecided by the builder", uncertainty: "no decision was returned for this card", label: "", primitive: "", position: "", undecided: true });
       if (rec.checks) rec.checks.nothingLost = rec.decisions.filter(d => d.undecided).length === 0;
       rec.secondPass = { asked: missing, decided: missing.filter(id => decided.has(id)) };
-    }
-    // A "rule" that names no ban, limit, time or turn is a thing on the bridge:
-    // asked once more as a part. What the model still calls a rule stays one.
-    const byId = Object.fromEntries(activeCards(room).map(c => [c.id, c]));
-    const misruled = rec.decisions.filter(d => d.response === "rule" && byId[d.id] && !looksLikeRule(byId[d.id])).map(d => d.id);
-    if (misruled.length) {
-      try {
-        const again = await wallDecide({ wall: room.wall, standing: room.standing ? NAME(room.standing) : null,
-                                         props: room.ctx.design ? room.ctx.design.has : [], pureToolkit: true, only: misruled, notRules: true });
-        for (const d of again.decisions) if (misruled.includes(d.id) && d.response !== "rule") rec.decisions[rec.decisions.findIndex(x => x.id === d.id)] = d;
-      } catch (e) { console.error(`rule recheck ${room.id}: ${e.message}`); }
-      rec.ruleRecheck = { asked: misruled, changed: misruled.filter(id => rec.decisions.find(d => d.id === id)?.response !== "rule") };
     }
   }
   // A card no key carries cannot be answered with a part, whatever the record

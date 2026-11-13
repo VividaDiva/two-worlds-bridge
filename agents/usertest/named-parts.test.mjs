@@ -189,9 +189,3 @@ test('the toolkit names, places and draws what the kit cannot make; the owner co
   assert.equal(h.sheet.find(p=>p.id===dog.id).label,'dog lane');assert.equal(h.sheetDrawn.named.find(n=>n.id===dog.id).status,'confirmed');
  }finally{await stop();fs.rmSync(dir,{recursive:true,force:true})}
 });
-
-test('a rule names a ban, a limit, a time or a turn; a width or a cover is a thing on the bridge',async()=>{
-  const {looksLikeRule}=await import('./builder.mjs');
-  for(const n of ['no trucks on the bridge','a predictable schedule for bridge closure','dogs go first in the morning','limit the size of vehicles'])assert.ok(looksLikeRule({need:n}),n);
-  for(const n of ['wide enough for two cars to pass at the same time','sidewalks to have covers','each direction takes a level','stand lights on the bridge'])assert.ok(!looksLikeRule({need:n}),n);
-});
