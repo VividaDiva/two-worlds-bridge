@@ -802,7 +802,10 @@ export async function wallDecide({ wall, standing, props, pureToolkit = false, o
       + "\nAvailable workshop:\n" + kitForChoosing().map(k=>k.id + ": " + k.props).join("\n")
       + "\nGlosses, so the workshop is read in their terms: \"two abreast\" is wide enough for two people side by side or one car; \"takes loads and carts\" bears vehicles; \"something at the hand\" is a railing; \"a coarse surface\" is grip underfoot, not a smooth or sealed one."
     : DECIDE;
-  const out = await ask(instruction, user, DECIDE_JSON);
+  // The toolkit's full decision must write the stories, moments, question and whole:
+  // they are what the drawing and the sketch are built from. Control and second passes do not.
+  const schema = pureToolkit && !only ? { ...DECIDE_JSON, required: [...DECIDE_JSON.required, "stories", "moments", "hmw", "whole"] } : DECIDE_JSON;
+  const out = await ask(instruction, user, schema);
   const str = x => typeof x === "string" ? x.trim() : "";
   const ids = new Set(cards.map(c => c.id));
   return {
