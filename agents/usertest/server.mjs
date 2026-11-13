@@ -1620,7 +1620,9 @@ function toolkitUnderstanding(r) {
   const say = x => `- ${WHO[x.c.who]}: ${x.c.need}${x.c.why ? " — " + x.c.why : ""}${x.unsure ? " (not yet confirmed)" : ""}`;
   const group = (title, lv) => { const g = needs.filter(x => lv.includes(x.level) && x.part?.kind !== "rule"); return g.length ? [title, ...g.map(say)] : []; };
   const rules = needs.filter(x => x.part?.kind === "rule");
+  const rec = r.wall.record || {};
   return [
+    ...(rec.whole ? [`The bridge as one structure — draw this first, and draw everything below as part of it, never as a separate object:`, rec.whole, ...(rec.hmw ? [`(It answers: ${rec.hmw})`] : []), ``] : []),
     `What the toolkit understood, most important first, each need in the words of the person who asked for it:`,
     ...group(`MUST-HAVE — draw every one of these clearly, confirmed or not; the bridge is wrong without them:`, ["must"]),
     ...group(`More is better — draw as well as fits:`, ["performance"]),
@@ -1657,7 +1659,7 @@ async function generateSketch(r) {
     const n=(r.sketches||[]).length+1;
     const file=path.join(UPLOADS,`${r.id}-sketch-${n}.png`);
     fs.writeFileSync(file+'.tmp',Buffer.from(out.base64,'base64'));fs.renameSync(file+'.tmp',file);
-    (r.sketches||=[]).push({n,at:Date.now(),turn:r.turn,lines:lines.length,media:out.media,prompt:out.prompt,source:r.agent==='toolkit'?'toolkit understanding (Kano-ranked needs, named parts; no kit shape) + route-visible conversation':'route-visible conversation',references:references.length});
+    (r.sketches||=[]).push({n,at:Date.now(),turn:r.turn,lines:lines.length,media:out.media,prompt:out.prompt,source:r.agent==='toolkit'?'toolkit understanding: the whole bridge (how-might-we answer) + Kano-ranked needs in their words; no kit shape, no transcript':'route-visible conversation',references:references.length});
   }catch(e){r.sketchError=e.message;throw e;}finally{r.sketching=false;push(r.id);}
 }
 

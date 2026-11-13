@@ -410,14 +410,25 @@ export async function propose({ line, took, before, after, props, changed, alt, 
 const SKETCH_MODEL = process.env.SKETCH_MODEL || "gemini-2.5-flash-image";
 export async function sketch({ title, ground, lines, references = [], outcome = "", process = "keys" }) {
   const said = lines.map(l => `${l.who}: "${l.text}"`).join("\n");
-  const prompt = references.length ? `Draw one graphite pencil line sketch on plain white paper of a bridge from the submitted reference images and recorded AI outcome. No text or labels. Use the outcome when references disagree. This is a visualization of the saved result, not a new design decision. Saved outcome: ${outcome || "Not recorded"}.` : [
+  // The toolkit hands over one description of the bridge, read once: the whole,
+  // then the ranked list. Not the conversation as well — three accounts of one
+  // bridge were drawn as pieces of three.
+  const toolkitPrompt = () => [
+    `A quick pencil sketch on paper, drawn by hand, of one bridge, as the Toolkit understood two people.`,
+    `No text, no labels, no numbers, no captions. Plain paper, graphite lines, a few hatched shadows. A view from slightly above and to one side.`,
+    ground ? `The ground between the banks: ${ground}.` : `Nothing was said about what is under it.`,
+    ``,
+    outcome || "(nothing understood yet)",
+    ``,
+    `Every must-have is in the picture; a part that moves is drawn in motion. "Not yet confirmed" is a note, never a reason to leave a thing out. Draw nothing the list does not ask for.`,
+  ].join("\n");
+  const prompt = references.length ? `Draw one graphite pencil line sketch on plain white paper of a bridge from the submitted reference images and recorded AI outcome. No text or labels. Use the outcome when references disagree. This is a visualization of the saved result, not a new design decision. Saved outcome: ${outcome || "Not recorded"}.` : process === "toolkit" ? toolkitPrompt() : [
     `A quick pencil sketch on paper, drawn by hand, of a bridge — as described only by what two people said.`,
     `Draw what their words support and nothing they did not ask for. Side view with a little depth is fine.`,
     `No text, no labels, no captions, no title. Plain paper, graphite lines, a few hatched shadows.`,
     ground ? `The ground between the banks: ${ground}.` : `Nothing was said about what is under it.`,
     `The case: ${title}.`,
     ``,
-    ...(process === "toolkit" ? [`Draw the bridge as the Toolkit understood it, from the list below. Every must-have is in the picture. "Not yet confirmed" is a note, never a reason to leave a thing out. When the two people want different things, draw both — one bridge that carries each side — never only one person's bridge. Draw nothing the list and their words do not ask for.`, outcome, ``] : []),
     `What they said, in order:`,
     said || "(nothing yet)",
   ].join("\n");
@@ -595,7 +606,9 @@ const DECIDE_JSON = { type:"object", properties:{
     required:["id","response","what","uncertainty","label","primitive","position","sameAs"] } },
   conflicts:{ type:"array", items:{ type:"object", properties:{ a:{type:"string"}, b:{type:"string"}, note:{type:"string"} }, required:["a","b","note"] } },
   checks:{ type:"object", properties:{ nothingLost:{type:"boolean"}, inferencesLabelled:{type:"boolean"}, noFalseConflicts:{type:"boolean"}, defaultsChecked:{type:"boolean"}, buildNotConsent:{type:"boolean"}, kindsDistinct:{type:"boolean"} },
-    required:["nothingLost","inferencesLabelled","noFalseConflicts","defaultsChecked","buildNotConsent","kindsDistinct"] } },
+    required:["nothingLost","inferencesLabelled","noFalseConflicts","defaultsChecked","buildNotConsent","kindsDistinct"] },
+  // Across both people: one question that holds what each most needs, and its answer, the bridge as one thing.
+  hmw:{type:"string"}, whole:{type:"string"} },
   required:["decisions","conflicts","checks"] };
 
 const DECIDE = [
@@ -782,6 +795,7 @@ export async function wallDecide({ wall, standing, props, pureToolkit = false, o
       + "\nReturn exactly one decision for every card listed, with its id, in the order given. Never skip a card: a card the kit cannot serve is answered \"new\" with a label, primitive and position, or \"rule\" with a label — not left out and not forced into \"part\"."
       + "\nA card marked \"Kano: must\" is what that person will not do without. Never answer it \"rule\" or give it a sign unless it truly is an operating rule (hours, who goes first, what is allowed): a structure or a mechanism — a bridge that opens, splits, lifts, a separate deck — is never a sign. Serve a must the way you serve any card, and most carefully: first with the workshop part that carries it, if one does (something at the hand against falling, two abreast for width), else with a new part (a bridge that splits, opens or lifts is the \"lift\" part). Answer \"none\" for a must only when neither a workshop part nor a new part can show it, and then say in \"what\" that it is a must the drawing cannot show yet; never fold it into another part. Never set \"sameAs\" from a must to a part that is not the same thing."
       + (notRules ? "\nThese cards were answered \"rule\", but none of them says what someone may or may not do, or when. Each is something on the bridge: answer it \"part\" or \"new\" (with label, primitive and position), or \"none\" — never \"rule\"." : "")
+      + (only ? "" : "\nThen, across both people: \"hmw\" is one \"How might we ...?\" that holds each person's most important needs in a single question. \"whole\" is its answer: the crossing as one structure, in one or two sentences, saying where each person's things sit on it and how they join — every lane, path, barrier and moving part belongs to the same deck. Where two needs pull apart, the answer serves both. Plain words, no ids.")
       + "\nAvailable workshop:\n" + kitForChoosing().map(k=>k.id + ": " + k.props).join("\n")
       + "\nGlosses, so the workshop is read in their terms: \"two abreast\" is wide enough for two people side by side or one car; \"takes loads and carts\" bears vehicles; \"something at the hand\" is a railing; \"a coarse surface\" is grip underfoot, not a smooth or sealed one."
     : DECIDE;
@@ -799,6 +813,7 @@ export async function wallDecide({ wall, standing, props, pureToolkit = false, o
       nothingLost: !!out.checks.nothingLost, inferencesLabelled: !!out.checks.inferencesLabelled,
       noFalseConflicts: !!out.checks.noFalseConflicts, defaultsChecked: !!out.checks.defaultsChecked,
       buildNotConsent: !!out.checks.buildNotConsent, kindsDistinct: !!out.checks.kindsDistinct } : null,
+    hmw: str(out.hmw).slice(0, 300), whole: str(out.whole).slice(0, 600),
   };
 }
 
