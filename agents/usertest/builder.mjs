@@ -807,7 +807,8 @@ export async function wallDecide({ wall, standing, props, pureToolkit = false, o
   const ids = new Set(cards.map(c => c.id));
   return {
     decisions: (Array.isArray(out.decisions) ? out.decisions : []).map(d => ({
-      id: str(d.id), response: /rule/i.test(str(d.response)) ? "rule" : /new|name|place/i.test(str(d.response)) ? "new" : /none|^no/i.test(str(d.response)) ? "none" : "part",
+      // A decision that names a drawing primitive is placed with it, whatever word it came back under.
+      id: str(d.id), response: /rule/i.test(str(d.response)) ? "rule" : /new|name|place/i.test(str(d.response)) || (pureToolkit && !/none|^no/i.test(str(d.response)) && PRIMITIVES.includes(str(d.primitive)) && str(d.primitive) !== "sign") ? "new" : /none|^no/i.test(str(d.response)) ? "none" : "part",
       what: str(d.what).slice(0, 140), uncertainty: str(d.uncertainty).slice(0, 140),
       label: shortLabel(str(d.label)), primitive: PRIMITIVES.includes(str(d.primitive)) ? str(d.primitive) : "",
       position: POSITIONS.includes(str(d.position)) ? str(d.position) : "", sameAs: str(d.sameAs).slice(0, 12) })).filter(d => ids.has(d.id)),
