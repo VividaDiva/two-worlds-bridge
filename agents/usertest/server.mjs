@@ -19,7 +19,7 @@ import { fileURLToPath } from "node:url";
 import { mkCtx, hear, newTurn, build, provenance } from "../engine.mjs";
 import { ARGUMENTS, ROUTES, NAME, FEATURES, KIT, propsOf } from "./kit.mjs";
 import { readLine, chooseBuild, speak, readPicture, relay, sketch, readLineB, chooseBuildB, propose,
-         wallHear, wallDecide, relayFromWall, chooseBuildT, readPictureToolkit, toolkitReply, sameNeed, consolidate, readKano, KANO_RANK, POSITIONS } from "./builder.mjs";
+         wallHear, wallDecide, relayFromWall, chooseBuildT, readPictureToolkit, toolkitReply, sameNeed, consolidate, readKano, KANO_RANK, looksLikeRule, POSITIONS } from "./builder.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 8780);
@@ -557,6 +557,18 @@ async function decideWall(room) {
       if (rec.checks) rec.checks.nothingLost = rec.decisions.filter(d => d.undecided).length === 0;
       rec.secondPass = { asked: missing, decided: missing.filter(id => decided.has(id)) };
     }
+    // A "rule" that names no ban, limit, time or turn is a thing on the bridge:
+    // asked once more as a part. What the model still calls a rule stays one.
+    const byId = Object.fromEntries(activeCards(room).map(c => [c.id, c]));
+    const misruled = rec.decisions.filter(d => d.response === "rule" && byId[d.id] && !looksLikeRule(byId[d.id])).map(d => d.id);
+    if (misruled.length) {
+      try {
+        const again = await wallDecide({ wall: room.wall, standing: room.standing ? NAME(room.standing) : null,
+                                         props: room.ctx.design ? room.ctx.design.has : [], pureToolkit: true, only: misruled, notRules: true });
+        for (const d of again.decisions) if (misruled.includes(d.id) && d.response !== "rule") rec.decisions[rec.decisions.findIndex(x => x.id === d.id)] = d;
+      } catch (e) { console.error(`rule recheck ${room.id}: ${e.message}`); }
+      rec.ruleRecheck = { asked: misruled, changed: misruled.filter(id => rec.decisions.find(d => d.id === id)?.response !== "rule") };
+    }
   }
   // A card no key carries cannot be answered with a part, whatever the record
   // says: the link to what stands is structural, and the record must agree.
@@ -763,6 +775,11 @@ async function layExclusive(room,line,develop,clarification) {
   const choose = toolkit ? await chooseBuildT({cards:activeCards(room),record:plan.record,standing:before ? NAME(before):null,said,pictures:[]})
     : await chooseBuild({wants:[...room.ctx.wants.keys()],avoids:[...room.ctx.avoids.keys()],standing:before ? NAME(before):null,said,pictures:Object.entries(room.uploads).filter(([r])=>room.seenPicture?.[r]).map(([r,p])=>({who:WHO[r],needs:p.needs || []}))});
   if (choose.id) room.ctx.design = KIT.find(k=>k.id===choose.id) || room.ctx.design;
+  // A span that opens for boats can carry no roof and no tower in its gap.
+  if (toolkit && room.ctx.design && room.wall.sheet.some(p => !p.declined && p.primitive === "lift")) {
+    const want = { ...room.ctx.design.shape, cover: "open", middle: "none" };
+    room.ctx.design = KIT.find(k => Object.keys(want).every(a => k.shape[a] === want[a])) || room.ctx.design;
+  }
   room.standing = room.ctx.design?.id || null;
   const named = toolkit ? pending(room).filter(p => p.primitive).map(p => ({ label: p.label || p.what, kind: p.kind, primitive: p.primitive, position: p.position, owner: WHO[ownerOf(room, p)], canHear: canAskOn(room, ownerOf(room, p)) })) : [];
   const text = toolkit ? await toolkitReply({cards:activeCards(room),record:room.wall.record,before:before ? NAME(before):null,after:room.standing ? NAME(room.standing):null,change:clarification || line?.text,question:"",named,direct:room.place === "direct"})

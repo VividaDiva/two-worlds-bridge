@@ -726,6 +726,10 @@ export async function readKano({ wall, lines = [] }) {
   return got;
 }
 export const KANO_RANK = { must: 0, performance: 1, attractive: 2, indifferent: 3 };
+// A rule says what someone may or may not do, or when. A need with none of those
+// words that came back "rule" is a thing on the bridge, not a sign.
+const RULE_WORDS = /\b(no|not|never|ban|bann?ed|forbid\w*|prohibit\w*|allow\w*|permit\w*|only|limit\w*|restrict\w*|hours?|o'?clock|at night|in the morning|weekends?|schedul\w*|predict\w*|first|turns?|speed|toll|pay|close[sd]?|closure|open(?:ing)? hours|don'?t|can'?t|must not|rule|notif\w*|warn\w*|signal\w*)\b/i;
+export const looksLikeRule = card => RULE_WORDS.test(`${card.need} ${card.quote || ""}`);
 
 // With the toolkit on, "new" means "name it": the thing stays in their words and
 // is placed, not translated. Rules are placed too — as a sign.
@@ -754,7 +758,7 @@ export function shortLabel(raw) {
   return out + (words.length > 8 || String(raw || "").trim().length > out.length + 2 && out.length >= 52 ? "…" : "");
 }
 
-export async function wallDecide({ wall, standing, props, pureToolkit = false, only = null }) {
+export async function wallDecide({ wall, standing, props, pureToolkit = false, only = null, notRules = false }) {
   const list = ks => ks.length ? ks.map(f => FEATURES[f]).join("; ") : "nothing";
   const cards = wall.cards.filter(c => !c.withdrawn && (!only || only.includes(c.id)));
   if (!cards.length) return { decisions: [], conflicts: [], checks: null };
@@ -777,6 +781,7 @@ export async function wallDecide({ wall, standing, props, pureToolkit = false, o
                `- "none": only for what cannot be placed on a drawing at all — a quality (quiet, pretty, cheap), a purpose (for families), a wish about the far side of the river. Say so; it stays on the wall and is read back in words.`)
       + "\nReturn exactly one decision for every card listed, with its id, in the order given. Never skip a card: a card the kit cannot serve is answered \"new\" with a label, primitive and position, or \"rule\" with a label — not left out and not forced into \"part\"."
       + "\nA card marked \"Kano: must\" is what that person will not do without. Never answer it \"rule\" or give it a sign unless it truly is an operating rule (hours, who goes first, what is allowed): a structure or a mechanism — a bridge that opens, splits, lifts, a separate deck — is never a sign. Serve a must the way you serve any card, and most carefully: first with the workshop part that carries it, if one does (something at the hand against falling, two abreast for width), else with a new part (a bridge that splits, opens or lifts is the \"lift\" part). Answer \"none\" for a must only when neither a workshop part nor a new part can show it, and then say in \"what\" that it is a must the drawing cannot show yet; never fold it into another part. Never set \"sameAs\" from a must to a part that is not the same thing."
+      + (notRules ? "\nThese cards were answered \"rule\", but none of them says what someone may or may not do, or when. Each is something on the bridge: answer it \"part\" or \"new\" (with label, primitive and position), or \"none\" — never \"rule\"." : "")
       + "\nAvailable workshop:\n" + kitForChoosing().map(k=>k.id + ": " + k.props).join("\n")
       + "\nGlosses, so the workshop is read in their terms: \"two abreast\" is wide enough for two people side by side or one car; \"takes loads and carts\" bears vehicles; \"something at the hand\" is a railing; \"a coarse surface\" is grip underfoot, not a smooth or sealed one."
     : DECIDE;
@@ -831,8 +836,6 @@ const CHOOSE_T = kit => [
   ``,
   `Rules:`,
   `- Pick exactly one id from that list. Use the id exactly as written.`,
-  `- Pick the plainest crossing that delivers the cards. Every extra — a roof, a tower, footed ends, a raised`,
-  `  level, a rail, struts — must be something someone asked for.`,
   `- Follow your record: every card you answered with a part must be delivered by what you pick, as far as`,
   `  one crossing can. A card answered with a rule or a new part is on the sheet, not in the shape.`,
   `- A need said to you directly outweighs one reported by the other person, which outweighs your own`,
