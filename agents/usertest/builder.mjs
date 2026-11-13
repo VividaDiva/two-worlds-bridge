@@ -608,6 +608,8 @@ const DECIDE_JSON = { type:"object", properties:{
   checks:{ type:"object", properties:{ nothingLost:{type:"boolean"}, inferencesLabelled:{type:"boolean"}, noFalseConflicts:{type:"boolean"}, defaultsChecked:{type:"boolean"}, buildNotConsent:{type:"boolean"}, kindsDistinct:{type:"boolean"} },
     required:["nothingLost","inferencesLabelled","noFalseConflicts","defaultsChecked","buildNotConsent","kindsDistinct"] },
   // Across both people: one question that holds what each most needs, and its answer, the bridge as one thing.
+  stories:{ type:"array", items:{ type:"object", properties:{ who:{type:"string"}, story:{type:"string"} }, required:["who","story"] } },
+  moments:{ type:"array", items:{ type:"object", properties:{ moment:{type:"string"}, check:{type:"string"} }, required:["moment","check"] } },
   hmw:{type:"string"}, whole:{type:"string"} },
   required:["decisions","conflicts","checks"] };
 
@@ -795,7 +797,7 @@ export async function wallDecide({ wall, standing, props, pureToolkit = false, o
       + "\nReturn exactly one decision for every card listed, with its id, in the order given. Never skip a card: a card the kit cannot serve is answered \"new\" with a label, primitive and position, or \"rule\" with a label — not left out and not forced into \"part\"."
       + "\nA card marked \"Kano: must\" is what that person will not do without. Never answer it \"rule\" or give it a sign unless it truly is an operating rule (hours, who goes first, what is allowed): a structure or a mechanism — a bridge that opens, splits, lifts, a separate deck — is never a sign. Serve a must the way you serve any card, and most carefully: first with the workshop part that carries it, if one does (something at the hand against falling, two abreast for width), else with a new part (a bridge that splits, opens or lifts is the \"lift\" part). Answer \"none\" for a must only when neither a workshop part nor a new part can show it, and then say in \"what\" that it is a must the drawing cannot show yet; never fold it into another part. Never set \"sameAs\" from a must to a part that is not the same thing."
       + (notRules ? "\nThese cards were answered \"rule\", but none of them says what someone may or may not do, or when. Each is something on the bridge: answer it \"part\" or \"new\" (with label, primitive and position), or \"none\" — never \"rule\"." : "")
-      + (only ? "" : "\nThen, across both people: \"hmw\" is one \"How might we ...?\" that holds each person's most important needs in a single question. \"whole\" is its answer: the crossing as one structure, in one or two sentences, saying where each person's things sit on it and how they join — every lane, path, barrier and moving part belongs to the same deck. Where two needs pull apart, the answer serves both. Plain words, no ids.")
+      + (only ? "" : "\nThen, across both people. \"stories\": one job story for each person, from their own words: \"When <their situation>, I want <what the crossing does for them>, so I can <their outcome>.\" Leave a part unknown rather than invent it. \"hmw\": one \"How might we ...?\" that holds both stories in a single question. \"moments\": walk the crossing through the moments it will live through — ordinary use, and every other moment a story or a need brings in (when it moves or opens, at night, at a busy hour) — and for each, in \"check\", say what each person meets then and whether their story still holds; name what would break it. \"whole\": the answer to the question — the crossing as one structure, in one or two sentences, that keeps every story true in every moment: where each person's things sit on it and how they join, and, if it moves, how it moves in that person's words and what everything on it does while it moves. Where two stories pull apart, first try to separate them in time or in space so both hold. Plain words, no ids.")
       + "\nAvailable workshop:\n" + kitForChoosing().map(k=>k.id + ": " + k.props).join("\n")
       + "\nGlosses, so the workshop is read in their terms: \"two abreast\" is wide enough for two people side by side or one car; \"takes loads and carts\" bears vehicles; \"something at the hand\" is a railing; \"a coarse surface\" is grip underfoot, not a smooth or sealed one."
     : DECIDE;
@@ -813,6 +815,8 @@ export async function wallDecide({ wall, standing, props, pureToolkit = false, o
       nothingLost: !!out.checks.nothingLost, inferencesLabelled: !!out.checks.inferencesLabelled,
       noFalseConflicts: !!out.checks.noFalseConflicts, defaultsChecked: !!out.checks.defaultsChecked,
       buildNotConsent: !!out.checks.buildNotConsent, kindsDistinct: !!out.checks.kindsDistinct } : null,
+    stories: (Array.isArray(out.stories) ? out.stories : []).map(x => ({ who: str(x.who).slice(0, 20), story: str(x.story).slice(0, 300) })).filter(x => x.story).slice(0, 4),
+    moments: (Array.isArray(out.moments) ? out.moments : []).map(x => ({ moment: str(x.moment).slice(0, 60), check: str(x.check).slice(0, 400) })).filter(x => x.moment).slice(0, 5),
     hmw: str(out.hmw).slice(0, 300), whole: str(out.whole).slice(0, 600),
   };
 }
