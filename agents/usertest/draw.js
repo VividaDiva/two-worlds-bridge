@@ -82,10 +82,11 @@
     return n ? { ax: 0.9, ay: 0.42, k: 1.08, dx: -30, dy: 26, top: false } : { ax: 0.55, ay: 0.32, k: 1.4, dx: -40, dy: 10, top: false };
   };
   const setView = extras => { const v = viewOf(extras); AX = v.ax; AY = v.ay; TOP = v.top; FOCUS = extras && extras.focus || null; return v; };
-  function lay3(list, x1, y1, z1, x2, y2, z2) {
+  function layAt(list, x1, y1, z1, x2, y2, z2) {
     const p = P(x1, y1, z1), q = P(x2, y2, z2);
     lay(list, p.x, p.y, q.x, q.y);
   }
+  const lay3 = layAt;
   // Extras come from the sheet: parts the kit does not have, proposed by the
   // builder and accepted by both people. They are drawn as an added layer, in
   // another colour, and change nothing about the kit, the choosing or the score.
@@ -98,6 +99,19 @@
     const MID = (GAP_L + GAP_R) / 2;
     const DW = d.width === "two" ? 78 : 44;   // across the walk
     const X = extras || {};
+    // A span that opens: between its two hinges nothing stays across — the walk,
+    // its rails, the strips beside it and anything under it all go up with the
+    // two leaves (drawn with the lift part), so the gap is clear water.
+    const LIFT = !TOP && (X.named || []).some(n => n.primitive === "lift");
+    const OPEN_L = MID - SPAN * 0.41, OPEN_R = MID + SPAN * 0.41;
+    const lay3 = (list, x1, y1, z1, x2, y2, z2) => {
+      if (!LIFT) return layAt(list, x1, y1, z1, x2, y2, z2);
+      const at = t => [x1 + (x2 - x1) * t, y1 + (y2 - y1) * t, z1 + (z2 - z1) * t];
+      if (x1 === x2) { if (x1 <= OPEN_L || x1 >= OPEN_R) layAt(list, x1, y1, z1, x2, y2, z2); return; }
+      const tA = (OPEN_L - x1) / (x2 - x1), tB = (OPEN_R - x1) / (x2 - x1), lo = Math.min(tA, tB), hi = Math.max(tA, tB);
+      if (lo > 0) { const e = at(Math.min(lo, 1)); layAt(list, x1, y1, z1, ...e); }
+      if (hi < 1) { const b = at(Math.max(hi, 0)); layAt(list, ...b, x2, y2, z2); }
+    };
 
     // the walk: two long edges and a few ties across
     lay3(list, GAP_L, deck, 0, GAP_R, deck, 0);
@@ -227,12 +241,13 @@
           // Each half of the middle of the span turns up about its pier, as an open
           // bascule does: the leaves stand steep, and the water shows between them.
           const reach = SPAN * 0.36, gapHalf = SPAN * 0.05, up = 70 * Math.PI / 180;
-          const rise = reach * Math.sin(up), lean = reach * Math.cos(up);
+          const rise = reach * Math.sin(up), lean = reach * Math.cos(up), far = Math.max(DW, outerZ);
+          const raw = (x1, y1, z1, x2, y2, z2) => { layAt(list, x1, y1, z1, x2, y2, z2); };
           for (const side of [-1, 1]) {
             const hinge = MID + side * (gapHalf + reach), tipX = hinge - side * lean, tipY = deck - rise;
-            for (const z of [0, DW]) stick(hinge, deck, z, tipX, tipY, z);
-            for (const t of [0.25, 0.5, 0.75, 1]) { const x = hinge + (tipX - hinge) * t, y = deck + (tipY - deck) * t; stick(x, y, 0, x, y, DW); }
-            stick(hinge, deck, 0, hinge, deck + 30, 0);   // the pivot, standing on the pier
+            for (const z of new Set([0, DW, far])) raw(hinge, deck, z, tipX, tipY, z);
+            for (const t of [0.25, 0.5, 0.75, 1]) { const x = hinge + (tipX - hinge) * t, y = deck + (tipY - deck) * t; raw(x, y, 0, x, y, far); }
+            raw(hinge, deck, 0, hinge, deck + 30, 0);   // the pivot, standing on the pier
           }
           label(MID, deck - rise - 14, DW / 2, n, { align: "center" });
           break; }

@@ -20,8 +20,7 @@ test('draw.js builds a named part out of the same matchsticks, ghosted until set
                {id:'s2',label:'lights for night walks',primitive:'post',position:'along',who:'B',status:'confirmed'},
                {id:'s3',label:'No trucks',primitive:'sign',position:'ends',who:'A',status:'proposed',kind:'rule'},
                {id:'s4',label:'upper deck for bikes',primitive:'deck',position:'above',who:'A',status:'objected'},
-               {id:'s5',label:'smooth cement',primitive:'wash',position:'onwalk',who:'A',status:'placed'},
-               {id:'s6',label:'splits and raises',primitive:'lift',position:'onwalk',who:'A',status:'placed'}];
+               {id:'s5',label:'smooth cement',primitive:'wash',position:'onwalk',who:'A',status:'placed'}];
   const layers=vm.runInContext('crossingLayers',ctx);
   const kit=layers(shape,{water:true},null).list, L=layers(shape,{water:true},{named});
   // the kit's own sticks come first, the same sticks (the oblique opens wider with parts beside the walk, so positions shift; identity does not); the named parts are sticks after them
@@ -33,9 +32,15 @@ test('draw.js builds a named part out of the same matchsticks, ghosted until set
   assert.ok(added.filter(m=>m.part==='s4').every(m=>m.ghost),'an objected part stays a proposal');
   assert.ok(added.some(m=>m.part==='s3'),'a sign is a post and a plate of sticks');
   assert.ok(L.strokes.some(st=>st.poly&&st.who==='A'),'a wash is a surface, not sticks');
-  const texts=L.labels.map(l=>l.text);for(const t of ['dog passage','lights for night walks','No trucks','upper deck for bikes','smooth cement','splits and raises'])assert.ok(texts.includes(t),t);
-  assert.equal(JSON.stringify(L.labels.map(l=>l.n)),'[1,2,3,4,5,6]');
-  const leaves=added.filter(m=>m.part==='s6');assert.ok(leaves.length>=12&&leaves.every(m=>!m.ghost),'a span that opens is two raised leaves of sticks');assert.ok(leaves.some(m=>Math.min(m.y1,m.y2)<Math.min(...kit.map(k=>Math.min(k.y1,k.y2)))),'the leaves stand above the deck');assert.equal(L.labels.find(l=>l.text==='upper deck for bikes').status,'objected');
+  const texts=L.labels.map(l=>l.text);for(const t of ['dog passage','lights for night walks','No trucks','upper deck for bikes','smooth cement'])assert.ok(texts.includes(t),t);
+  assert.equal(JSON.stringify(L.labels.map(l=>l.n)),'[1,2,3,4,5]');
+  // a span that opens: two raised leaves, and nothing else stays across the opening
+  const withLift=[...named,{id:'s6',label:'splits and raises',primitive:'lift',position:'onwalk',who:'A',status:'placed'}];
+  const LL=layers(shape,{water:true},{named:withLift}),leaves=LL.list.filter(m=>m.part==='s6');
+  assert.ok(leaves.length>=12&&leaves.every(m=>!m.ghost),'a span that opens is two raised leaves of sticks');
+  assert.ok(leaves.some(m=>Math.min(m.y1,m.y2)<Math.min(...kit.map(k=>Math.min(k.y1,k.y2)))),'the leaves stand above the deck');
+  const midX=(Math.min(...kit.map(k=>Math.min(k.x1,k.x2)))+Math.max(...kit.map(k=>Math.max(k.x1,k.x2))))/2;
+  assert.ok(LL.list.filter(m=>m.part!=='s6').every(m=>!(Math.min(m.x1,m.x2)<midX-2&&Math.max(m.x1,m.x2)>midX+2)),'nothing but the leaves crosses the middle of the opening');assert.equal(L.labels.find(l=>l.text==='upper deck for bikes').status,'objected');
   // the feedback page gets the named sticks too, after the kit's, so they can be rated and removed like any other
   const ids=vm.runInContext('crossingMatches',ctx)(shape,{water:true},{named}).map(m=>m.id);assert.equal(ids.length,L.list.length);
   // the older layer still draws

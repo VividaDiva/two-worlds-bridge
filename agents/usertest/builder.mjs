@@ -597,6 +597,11 @@ export const PRIMITIVE_GLOSS = {
 };
 
 const DECIDE_JSON = { type:"object", properties:{
+  // Across both people, written first so every decision follows from it: a job
+  // story each, the moments the crossing lives through, one question, its answer.
+  stories:{ type:"array", items:{ type:"object", properties:{ who:{type:"string"}, story:{type:"string"} }, required:["who","story"] } },
+  moments:{ type:"array", items:{ type:"object", properties:{ moment:{type:"string"}, check:{type:"string"} }, required:["moment","check"] } },
+  hmw:{type:"string"}, whole:{type:"string"},
   decisions:{ type:"array", items:{ type:"object", properties:{
     id:{type:"string"}, response:{type:"string"}, what:{type:"string"}, uncertainty:{type:"string"},
     // A named part: the thing in the speaker's own words, and the one way the drawing can place it.
@@ -606,11 +611,7 @@ const DECIDE_JSON = { type:"object", properties:{
     required:["id","response","what","uncertainty","label","primitive","position","sameAs"] } },
   conflicts:{ type:"array", items:{ type:"object", properties:{ a:{type:"string"}, b:{type:"string"}, note:{type:"string"} }, required:["a","b","note"] } },
   checks:{ type:"object", properties:{ nothingLost:{type:"boolean"}, inferencesLabelled:{type:"boolean"}, noFalseConflicts:{type:"boolean"}, defaultsChecked:{type:"boolean"}, buildNotConsent:{type:"boolean"}, kindsDistinct:{type:"boolean"} },
-    required:["nothingLost","inferencesLabelled","noFalseConflicts","defaultsChecked","buildNotConsent","kindsDistinct"] },
-  // Across both people: one question that holds what each most needs, and its answer, the bridge as one thing.
-  stories:{ type:"array", items:{ type:"object", properties:{ who:{type:"string"}, story:{type:"string"} }, required:["who","story"] } },
-  moments:{ type:"array", items:{ type:"object", properties:{ moment:{type:"string"}, check:{type:"string"} }, required:["moment","check"] } },
-  hmw:{type:"string"}, whole:{type:"string"} },
+    required:["nothingLost","inferencesLabelled","noFalseConflicts","defaultsChecked","buildNotConsent","kindsDistinct"] } },
   required:["decisions","conflicts","checks"] };
 
 const DECIDE = [
@@ -797,7 +798,7 @@ export async function wallDecide({ wall, standing, props, pureToolkit = false, o
       + "\nReturn exactly one decision for every card listed, with its id, in the order given. Never skip a card: a card the kit cannot serve is answered \"new\" with a label, primitive and position, or \"rule\" with a label — not left out and not forced into \"part\"."
       + "\nA card marked \"Kano: must\" is what that person will not do without. Never answer it \"rule\" or give it a sign unless it truly is an operating rule (hours, who goes first, what is allowed): a structure or a mechanism — a bridge that opens, splits, lifts, a separate deck — is never a sign. Serve a must the way you serve any card, and most carefully: first with the workshop part that carries it, if one does (something at the hand against falling, two abreast for width), else with a new part (a bridge that splits, opens or lifts is the \"lift\" part). Answer \"none\" for a must only when neither a workshop part nor a new part can show it, and then say in \"what\" that it is a must the drawing cannot show yet; never fold it into another part. Never set \"sameAs\" from a must to a part that is not the same thing."
       + (notRules ? "\nThese cards were answered \"rule\", but none of them says what someone may or may not do, or when. Each is something on the bridge: answer it \"part\" or \"new\" (with label, primitive and position), or \"none\" — never \"rule\"." : "")
-      + (only ? "" : "\nThen, across both people. \"stories\": one job story for each person, from their own words: \"When <their situation>, I want <what the crossing does for them>, so I can <their outcome>.\" Leave a part unknown rather than invent it. \"hmw\": one \"How might we ...?\" that holds both stories in a single question. \"moments\": walk the crossing through the moments it will live through — ordinary use, and every other moment a story or a need brings in (when it moves or opens, at night, at a busy hour) — and for each, in \"check\", say what each person meets then and whether their story still holds; name what would break it. \"whole\": the answer to the question — the crossing as one structure, in one or two sentences, that keeps every story true in every moment: where each person's things sit on it and how they join, and, if it moves, how it moves in that person's words and what everything on it does while it moves. Where two stories pull apart, first try to separate them in time or in space so both hold. Plain words, no ids.")
+      + (only ? "" : "\nFirst, across both people, before any decision. \"stories\": one job story for each person, from their own words: \"When <their situation>, I want <what the crossing does for them>, so I can <their outcome>.\" Leave a part unknown rather than invent it. \"hmw\": one \"How might we ...?\" that holds both stories in a single question. \"moments\": walk the crossing through the moments it will live through — ordinary use, and every other moment a story or a need brings in (when it moves or opens, at night, at a busy hour) — and for each, in \"check\", say what each person meets then and whether their story still holds; name what would break it. \"whole\": the answer to the question — the crossing as one structure, in one or two sentences, that keeps every story true in every moment: where each person's things sit on it and how they join, and, if it moves, how it moves in that person's words and what everything on it does while it moves. Where two stories pull apart, first try to separate them in time or in space so both hold. Plain words, no ids. Then decide every card so that the drawing carries this whole.")
       + "\nAvailable workshop:\n" + kitForChoosing().map(k=>k.id + ": " + k.props).join("\n")
       + "\nGlosses, so the workshop is read in their terms: \"two abreast\" is wide enough for two people side by side or one car; \"takes loads and carts\" bears vehicles; \"something at the hand\" is a railing; \"a coarse surface\" is grip underfoot, not a smooth or sealed one."
     : DECIDE;

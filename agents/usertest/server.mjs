@@ -653,7 +653,8 @@ async function decideWall(room) {
   }
   if (modeOf(room) === "toolkit") for (const p of room.wall.sheet) p.kano = kanoOf(room, p);
   const record = rec.decisions.map(d => `  [${d.id}] ${byId[d.id].need}${byId[d.id].kano ? " {" + byId[d.id].kano.level + "}" : ""} → ${d.response}: ${d.what}${d.uncertainty ? " (unsure: " + d.uncertainty + ")" : ""}`).join("\n")
-    + (rec.conflicts.length ? "\n  conflicts: " + rec.conflicts.map(c => `${c.a}×${c.b} ${c.note}`).join("; ") : "");
+    + (rec.conflicts.length ? "\n  conflicts: " + rec.conflicts.map(c => `${c.a}×${c.b} ${c.note}`).join("; ") : "")
+    + (rec.whole ? "\n  the bridge as one, from both people's stories: " + rec.whole : "");
   const unsupported = rec.decisions.filter(d => d.response === "none").map(d => byId[d.id].need);
   return { record, unsupported, proposals: pending(room).map(p => ({ kind: p.kind, what: p.what, label: p.label, primitive: p.primitive, position: p.position, who: ownerOf(room, p) })) };
 }
